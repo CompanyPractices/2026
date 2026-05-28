@@ -56,6 +56,8 @@
 
 ## Быстрый старт (для студентов)
 
+> 📖 **Подробная инструкция по работе с Git:** см. [`docs/git-workflow.md`](docs/git-workflow.md)
+
 ```bash
 # 1. Клонировать репозиторий
 git clone <repo-url>
@@ -105,6 +107,7 @@ processing-practice/
 │   ├── program-overview.md         # Программа практики
 │   ├── evaluation-criteria.md      # Критерии оценки
 │   ├── checklists.md               # Чек-листы само-приёмки
+│   ├── git-workflow.md             # Инструкция по работе с Git
 │   └── readme-template.md          # Шаблон README для сервиса
 ├── scripts/
 │   ├── smoke-test.sh               # Авто-приёмка (Linux/Mac)
