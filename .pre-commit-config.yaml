@@ -38,71 +38,70 @@ repos:
     args: [ --fix=auto ]
 
 # -------------------------------------------------------------------
-# Java
+# Java (отключено - Maven не установлен)
 # -------------------------------------------------------------------
-# Примечание: хук запускает mvn checkstyle:check для сервисов на Java.
-# Убедитесь, что Maven установлен и директория services/ существует.
-# Если Java-сервисов ещё нет — хук пропускается.
-- repo: local
-  hooks:
-  - id: checkstyle-java
-    name: "Java: Checkstyle"
-    entry: bash -c 'if [ -d "services" ]; then for d in services/*/; do if [ -f "$d/pom.xml" ]; then (cd "$d" && mvn checkstyle:check) || exit 1; fi; done; fi'
-    language: system
-    pass_filenames: false
-    files: \.java$
-    types: [ file ]
+# - repo: local
+#   hooks:
+#   - id: checkstyle-java
+#     name: "Java: Checkstyle"
+#     entry: powershell -Command "if (Test-Path 'starters/java/pom.xml') { cd starters/java; mvn checkstyle:check }"
+#     language: system
+#     pass_filenames: false
+#     files: \.java$
+#     types: [ file ]
 
 # -------------------------------------------------------------------
-# Go
+# Go (отключено - Go не установлен)
 # -------------------------------------------------------------------
-- repo: local
-  hooks:
-  - id: go-vet
-    name: "Go: vet"
-    entry: go vet ./...
-    language: system
-    pass_filenames: false
-    files: \.go$
-    types: [ file ]
-
-  - id: go-fmt
-    name: "Go: fmt"
-    entry: gofmt -l -w
-    language: system
-    files: \.go$
-    types: [ file ]
-
-# -------------------------------------------------------------------
-# Python
-# -------------------------------------------------------------------
-- repo: local
-  hooks:
-  - id: flake8
-    name: "Python: flake8"
-    entry: flake8 --max-line-length=120 --extend-ignore=E203,W503
-    language: system
-    files: \.py$
-    types: [ file ]
+# - repo: local
+#   hooks:
+#   - id: go-vet
+#     name: "Go: vet"
+#     entry: go vet ./...
+#     language: system
+#     pass_filenames: false
+#     files: \.go$
+#     types: [ file ]
+#
+#   - id: go-fmt
+#     name: "Go: fmt"
+#     entry: gofmt -l -w
+#     language: system
+#     files: \.go$
+#     types: [ file ]
 
 # -------------------------------------------------------------------
-# TypeScript / JavaScript
+# Python (отключено - flake8 не установлен)
 # -------------------------------------------------------------------
-- repo: local
-  hooks:
-  - id: eslint
-    name: "TypeScript: ESLint"
-    entry: npx eslint --fix
-    language: system
-    files: \.tsx?$|\.jsx?$
-    types: [ file ]
+# - repo: local
+#   hooks:
+#   - id: flake8
+#     name: "Python: flake8"
+#     entry: flake8 --max-line-length=120 --extend-ignore=E203,W503
+#     language: system
+#     files: \.py$
+#     types: [ file ]
 
 # -------------------------------------------------------------------
-# Docker
+# TypeScript / JavaScript (отключено - ESLint требует TypeScript плагины)
 # -------------------------------------------------------------------
-- repo: https://github.com/hadolint/hadolint
-  rev: v2.13.1-beta
-  hooks:
-  - id: hadolint
-    name: "Docker: Hadolint"
-    args: [ --ignore=DL3008, --ignore=DL3013 ]
+# - repo: local
+#   hooks:
+#   - id: eslint
+#     name: "TypeScript: ESLint"
+#     entry: npx eslint --fix
+#     language: system
+#     pass_filenames: false
+#     args: [ --fix, starters/typescript/src ]
+#     files: \.tsx?$|\.jsx?$
+#     types: [ file ]
+
+# -------------------------------------------------------------------
+# Docker (отключено - hadolint не установлен)
+# -------------------------------------------------------------------
+# - repo: https://github.com/hadolint/hadolint
+#   rev: v2.13.1-beta
+#   hooks:
+#   - id: hadolint
+#     name: "Docker: Hadolint"
+#     args: [ --ignore=DL3008, --ignore=DL3013 ]

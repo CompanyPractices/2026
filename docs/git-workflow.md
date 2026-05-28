@@ -77,20 +77,20 @@ graph TB
         A2[authorization]
         A3[logger-receiver]
     end
-    
+
     subgraph "Группа B: Gateway & Frontend"
         B1[gateway]
         B2[dashboard]
         B3[devops]
     end
-    
+
     subgraph "Группа C: Data & Simulators"
         C1[card-management]
         C2[logger-search]
         C3[terminal-simulator]
         C4[merchant-acquirer]
     end
-    
+
     main[main] --> A1 & A2 & A3 & B1 & B2 & B3 & C1 & C2 & C3 & C4
     A1 & A2 & A3 & B1 & B2 & B3 & C1 & C2 & C3 & C4 --> PR[Pull Request]
     PR --> main
@@ -171,7 +171,7 @@ sequenceDiagram
     participant S1 as Студент 1
     participant S2 as Студент 2
     participant Git as Git
-    
+
     S1->>Git: git pull
     S2->>Git: git pull
     S1->>S1: редактирует файл
