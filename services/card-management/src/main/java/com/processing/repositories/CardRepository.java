@@ -8,4 +8,4 @@ import java.util.UUID;
 
 @Repository
 public interface CardRepository
-        extends JpaRepository<UUID, CardEntity> {}
+        extends JpaRepository<CardEntity, UUID> {}
