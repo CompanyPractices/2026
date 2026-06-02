@@ -1,26 +1,16 @@
-# README — Шаблон для сервиса СМП
-
->
-> Скопируй этот шаблон в `services/{имя-сервиса}/README.md` и заполни разделы.
-
----
-
-# {Service Name}
+# Card Management
 
 ## Назначение
 
-{Одно предложение — что делает сервис, его роль в процессинговом центре.}
-
-Пример:
-> Authorization Service проверяет каждую транзакцию: статус карты, лимиты, баланс — и возвращает решение APPROVED или DECLINED.
+Card Management создает карты, управляет балансом, проверяет наличие карты в бд.
 
 ---
 
 ## Технологии
 
-- **Язык:** {Java 21 / Go 1.22 / Python 3.12 / TypeScript 5}
-- **Фреймворк:** {Spring Boot 3 / FastAPI / net/http / React 18}
-- **База данных:** {PostgreSQL / нет}
+- **Язык:** Java 21
+- **Фреймворк:** Spring Boot 3
+- **База данных:** PostgreSQL
 - **Контейнеризация:** Docker
 
 ---
@@ -66,11 +56,11 @@
 ```
 
 **Ошибки:**
+
 | Код | Условие |
 |-----|---------|
 | 400 | Ошибка валидации |
 | 404 | {Сущность} не найдена |
-| 503 | Downstream-сервис недоступен |
 
 ---
 
@@ -80,13 +70,12 @@
 
 | Переменная | Значение по умолчанию | Описание |
 |------------|----------------------|----------|
-| `PORT` | `{8080}` | Порт сервиса |
-| `DB_HOST` | `localhost` | Хост PostgreSQL |
-| `DB_PORT` | `5432` | Порт PostgreSQL |
-| `DB_NAME` | `processing` | Имя базы данных |
-| `DB_USER` | `postgres` | Пользователь БД |
-| `DB_PASSWORD` | `postgres` | Пароль БД |
-| `{UPSTREAM}_URL` | `http://localhost:{port}` | URL смежного сервиса |
+| `PORT` | `8080`               | Порт сервиса |
+| `DB_HOST` | `localhost`          | Хост PostgreSQL |
+| `DB_PORT` | `5432`               | Порт PostgreSQL |
+| `DB_NAME` | `postgres`           | Имя базы данных |
+| `DB_USER` | `postgres`           | Пользователь БД |
+| `DB_PASSWORD` | `postgres`           | Пароль БД |
 
 ---
 
@@ -95,33 +84,21 @@
 ### Локально (без Docker)
 
 ```bash
-# Java (Spring Boot)
 ./mvnw spring-boot:run
-
-# Go
-go run ./cmd/main.go
-
-# Python
-pip install -r requirements.txt
-uvicorn main:app --reload --port {port}
-
-# TypeScript (React)
-npm install
-npm run dev
 ```
 
 ### В Docker
 
 ```bash
-docker build -t {service-name} .
-docker run -p {port}:{port} --env-file ../.env {service-name}
+docker build -t card-management .
+docker run -p 8083:8080 --env-file ../.env card-management
 ```
 
 ### В составе Docker Compose
 
 ```bash
 # Из корня репозитория
-docker compose up -d {service-name}
+docker compose up -d card-management
 ```
 
 ---
@@ -129,52 +106,39 @@ docker compose up -d {service-name}
 ## Тестирование
 
 ```bash
-# Java
 ./mvnw test
-
-# Go
-go test ./...
-
-# Python
-pytest
-
-# TypeScript
-npm test
 ```
 
 ---
 
 ## Взаимодействие с другими сервисами
 
-| Сервис | Направление | Протокол | Зачем |
-|--------|:----------:|----------|-------|
-| {Service A} | ← входящий | HTTP REST | {Кто вызывает и зачем} |
-| {Service B} | → исходящий | HTTP REST | {Кого вызываем и зачем} |
+| Сервис                | Направление | Протокол | Зачем                                             |
+|-----------------------|:----------:|----------|---------------------------------------------------|
+| Authorization Service | ← входящий | HTTP REST | Валидация, создание карт, работа с балансом счета |
 
 ---
 
 ## Структура проекта
 
 ```text
-{service-name}/
+card-management/
 ├── src/
 │   ├── main/
 │   │   ├── controllers/    # HTTP-handlers / controllers
 │   │   ├── services/       # Бизнес-логика
-│   │   ├── models/          # Модели данных / DTO
+│   │   ├── models/         # Модели данных / DTO
 │   │   ├── repositories/   # Доступ к БД
-│   │   └── config/         # Конфигурация
 │   └── test/               # Тесты
 ├── Dockerfile
-├── README.md
-└── {специфичные файлы}
+└── README.md
 ```
 
 ---
 
 ## Авторы
 
-- {Имя Фамилия} — разработчик
-- {Имя Фамилия} — разработчик
+- Владимир Рубахин — разработчик
+- Даниил Станкевич — разработчик
 
-**Группа:** {A / B / C} ({Core / Gateway & Frontend / Data & Simulators})
+**Группа:** C (Data & Simulators)
