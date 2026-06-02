@@ -1,0 +1,19 @@
+services:
+  gateway:
+    build:
+      context: services/gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - LOGGER=http://test-service:8081
+
+  test-service:
+    build:
+      context: services/test-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
