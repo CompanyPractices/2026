@@ -1,7 +1,10 @@
 package com.processing.services;
 
+import org.springframework.stereotype.Service;
+
 import java.util.Random;
 
+@Service
 public class LuhnValidator {
     private static final Random random = new Random();
 
