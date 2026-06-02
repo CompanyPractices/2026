@@ -1,4 +1,4 @@
-package com.processing.dto;
+package com.processing.models;
 
 import java.util.Map;
 
