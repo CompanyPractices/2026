@@ -1,7 +1,10 @@
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
+ENV PORT=""
+ENV LOGGER=""
 COPY pom.xml ./
 COPY src ./src
+COPY . .
 RUN ./mvnw package -DskipTests -q
 
 FROM eclipse-temurin:21-jre-alpine
