@@ -81,9 +81,10 @@ Card Management создает карты, управляет балансом, 
 
 ## Как запустить
 
-### Локально (без Docker)
+### Локально
 
 ```bash
+docker compose -f docker-compose.local.yml up -d # Если нужен Postgres
 ./mvnw spring-boot:run
 ```
 
