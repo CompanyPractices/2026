@@ -14,7 +14,7 @@
     <groupId>com.processing</groupId>
     <artifactId>gateway</artifactId>
     <version>1.0.0</version>
-    <name>SERVICE_NAME</name>
+    <name>gateway</name>
     <description>Microservice for СМП processing simulator</description>
 
     <properties>
@@ -72,6 +72,23 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-gateway -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-gateway</artifactId>
+            <version>5.0.1</version>
+            <type>pom</type>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/org.springframework/spring-webflux -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webflux</artifactId>
+            <version>7.0.7</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
