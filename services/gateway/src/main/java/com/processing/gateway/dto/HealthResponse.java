@@ -1,9 +1,10 @@
-package com.processing.dto;
+package com.processing.gateway.dto;
 
 import java.util.Map;
 
 public record HealthResponse(
         String status,
         String service,
-        Map<String, String> dependencies
+        String version,
+        Map<String, String> services
 ) {}
