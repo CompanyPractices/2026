@@ -3,7 +3,7 @@ from fastapi import FastAPI
 
 app = FastAPI(
     title="SERVICE_NAME",
-    description="Microservice for {PROJECT_NAME} processing simulator",
+    description="Microservice for СМП processing simulator",
     version="1.0.0",
 )
 

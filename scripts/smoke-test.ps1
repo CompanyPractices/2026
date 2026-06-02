@@ -14,7 +14,7 @@ function Info($msg) { Write-Host "⏳ $msg" -ForegroundColor Yellow }
 
 Write-Host "=========================================="
 Write-Host "  Smoke Test — Automated Acceptance"
-Write-Host "  {PROJECT_NAME} Processing Simulator"
+Write-Host "  СМП Processing Simulator"
 Write-Host "=========================================="
 Write-Host ""
 

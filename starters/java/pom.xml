@@ -15,7 +15,7 @@
     <artifactId>SERVICE_NAME</artifactId>
     <version>1.0.0</version>
     <name>SERVICE_NAME</name>
-    <description>Microservice for {PROJECT_NAME} processing simulator</description>
+    <description>Microservice for СМП processing simulator</description>
 
     <properties>
         <java.version>21</java.version>

@@ -1,5 +1,5 @@
 # =========================================================================
-# .pre-commit-config.yaml — Pre-commit хуки для {PROJECT_NAME}
+# .pre-commit-config.yaml — Pre-commit хуки для СМП
 # =========================================================================
 # Установка:
 #   pip install pre-commit          # или brew install pre-commit
