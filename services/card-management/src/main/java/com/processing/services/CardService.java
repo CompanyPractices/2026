@@ -1,10 +1,7 @@
 package com.processing.services;
 
 import com.processing.exceptions.CardNotFoundException;
-import com.processing.models.CardDto;
-import com.processing.models.CreateCardRequest;
-import com.processing.models.GetCardsRequest;
-import com.processing.models.PatchCardRequest;
+import com.processing.models.*;
 import com.processing.options.CardServiceOptions;
 import com.processing.repositories.CardRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +15,21 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final CardServiceOptions options;
+    private final PanGenerator panGenerator;
 
     public CardDto createCard(CreateCardRequest data) {
-        // TODO
-        return null;
+        var cardEntity = new CardEntity(
+            data.bin(),
+            data.cardholderName(),
+            data.concurrencyCode(),
+            data.dailyLimit(),
+            data.monthlyLimit(),
+            data.initialBalance(),
+            options.issuerId()
+        );
+
+        cardEntity.generatePan(data.bin(), panGenerator);
+        return CardDto.fromEntity(cardRepository.save(cardEntity));
     }
 
     public CardDto getCard(String pan) {
@@ -48,6 +56,7 @@ public class CardService {
         var card = cardRepository
             .findByPan(pan)
             .orElseThrow(CardNotFoundException::new);
+
         if (data.status() != null) {
             card.setStatus(data.status());
         }
@@ -60,6 +69,7 @@ public class CardService {
         if (data.availableBalance() != null) {
             card.setAvailableBalance(data.availableBalance());
         }
+
         cardRepository.save(card);
     }
 
@@ -67,8 +77,8 @@ public class CardService {
         var card = cardRepository
             .findByPan(pan)
             .orElseThrow(CardNotFoundException::new);
-        card.delete();
 
+        card.delete();
         cardRepository.save(card);
     }
 }
