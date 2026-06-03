@@ -24,7 +24,7 @@ public record CreateCardRequest(
     @NotBlank
     @ExactSize(3)
     @DigitsOnly
-    String concurrencyCode,
+    String currencyCode,
 
     @NotNull
     @NotNegative

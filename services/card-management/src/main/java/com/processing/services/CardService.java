@@ -5,12 +5,15 @@ import com.processing.models.*;
 import com.processing.options.CardServiceOptions;
 import com.processing.repositories.CardRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CardService {
 
     private final CardRepository cardRepository;
@@ -18,17 +21,18 @@ public class CardService {
     private final PanGenerator panGenerator;
 
     public CardDto createCard(CreateCardRequest data) {
+        log.warn(options.issuerId());
         var cardEntity = new CardEntity(
+            panGenerator.generatePan(data.bin()),
             data.bin(),
             data.cardholderName(),
-            data.concurrencyCode(),
+            data.currencyCode(),
             data.dailyLimit(),
             data.monthlyLimit(),
             data.initialBalance(),
             options.issuerId()
         );
 
-        cardEntity.generatePan(data.bin(), panGenerator);
         return CardDto.fromEntity(cardRepository.save(cardEntity));
     }
 
@@ -45,7 +49,8 @@ public class CardService {
                 data.pan(),
                 data.issuerId(),
                 data.startDate(),
-                data.endDate()
+                data.endDate(),
+                PageRequest.of(data.offset(), data.limit())
             )
             .stream()
             .map(CardDto::fromEntity)

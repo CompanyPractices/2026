@@ -1,6 +1,5 @@
 package com.processing.models;
 
-import com.processing.services.PanGenerator;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -75,6 +74,7 @@ public class CardEntity {
         String pan,
         String bin,
         String cardholderName,
+        String currencyCode,
         int dailyLimit,
         int monthlyLimit,
         int initialBalance,
@@ -83,6 +83,7 @@ public class CardEntity {
         this.pan = pan;
         this.bin = bin;
         this.cardholderName = cardholderName;
+        this.currencyCode = currencyCode;
         this.dailyLimit = dailyLimit;
         this.monthlyLimit = monthlyLimit;
         this.availableBalance = initialBalance;
@@ -105,9 +106,5 @@ public class CardEntity {
 
     public void delete() {
         setStatus(Status.DELETED);
-    }
-
-    public void generatePan(String bin, PanGenerator panGenerator) {
-        this.pan = panGenerator.generatePan(bin);
     }
 }
