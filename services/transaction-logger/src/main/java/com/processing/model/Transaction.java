@@ -30,5 +30,4 @@ public class Transaction {
     private String authCode;
     private Instant transmissionDateTime;
     private Instant createdAt;
-
 }
