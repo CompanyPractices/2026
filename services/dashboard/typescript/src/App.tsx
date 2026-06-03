@@ -20,7 +20,7 @@ function App() {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold mb-4">SERVICE_NAME</h1>
+        <h1 className="text-2xl font-bold mb-4">DASHBOARD</h1>
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
