@@ -1,9 +1,10 @@
 package com.processing.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
-import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
@@ -11,15 +12,24 @@ import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "cards")
+@NoArgsConstructor
 public final class CardEntity {
+
+    enum Status {
+        ACTIVE,
+        INACTIVE,
+        BLOCKED,
+        EXPIRED,
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(length = 16, nullable = false)
+    @Column(length = 16, unique = true, nullable = false)
     private String pan;
 
     @Column(length = 6, nullable = false)
@@ -37,15 +47,19 @@ public final class CardEntity {
     private LocalDate expiryDate = null;
 
     @Column(length = 20, nullable = false)
-    private String status = "ACTIVE";
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.ACTIVE;
 
     @Column(length = 3, nullable = false)
     private String currencyCode = "643";
 
+    @Min(0)
     private int dailyLimit = 15_000_000;
 
+    @Min(0)
     private int monthlyLimit = 300_000_000;
 
+    @Min(0)
     private int availableBalance = 1_000_000;
 
     @Column(length = 10, nullable = false)
@@ -54,7 +68,24 @@ public final class CardEntity {
     private LocalDate createdAt = LocalDate.now();
 
     @Transient
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMM");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMyy");
+
+    public CardEntity(
+            String pan,
+            String bin,
+            String cardholderName,
+            int dailyLimit,
+            int monthlyLimit,
+            int initialBalance
+    ) {
+        this.pan = pan;
+        this.bin = bin;
+        this.cardholderName = cardholderName;
+        this.dailyLimit = dailyLimit;
+        this.monthlyLimit = monthlyLimit;
+        this.availableBalance = initialBalance;
+        setExpiryDate(LocalDate.now().plusYears(3));
+    }
 
     public LocalDate getExpiryDate() {
         if (expiryDate == null && strExpiryDate != null) {
