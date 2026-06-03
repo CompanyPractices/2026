@@ -28,6 +28,7 @@ public class Transaction {
     private TransactionStatus status;
     private String declineReason;
     private String authCode;
+    private long processingTimeMs;
     private Instant transmissionDateTime;
     private Instant createdAt;
 }
