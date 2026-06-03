@@ -1,7 +1,6 @@
 package com.processing.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,14 +14,14 @@ import java.util.UUID;
 @Getter
 @Setter
 @Table(name = "cards", indexes = {
-        @Index(name = "uk_cards_pan", columnList = "pan", unique = true),
-        @Index(name = "idx_cards_issuer_id", columnList = "issuer_id"),
-        @Index(name = "idx_cards_created_at", columnList = "created_at")
+    @Index(name = "uk_cards_pan", columnList = "pan", unique = true),
+    @Index(name = "idx_cards_issuer_id_created_at", columnList = "issuer_id, created_at"),
+    @Index(name = "idx_cards_created_at", columnList = "created_at")
 })
 @NoArgsConstructor
 public final class CardEntity {
 
-    enum Status {
+    public enum Status {
         ACTIVE,
         INACTIVE,
         BLOCKED,
@@ -56,13 +55,10 @@ public final class CardEntity {
     @Column(length = 3, nullable = false)
     private String currencyCode = "643";
 
-    @Min(0)
     private int dailyLimit = 15_000_000;
 
-    @Min(0)
     private int monthlyLimit = 300_000_000;
 
-    @Min(0)
     private int availableBalance = 1_000_000;
 
     @Column(length = 10, nullable = false)
@@ -71,15 +67,15 @@ public final class CardEntity {
     private LocalDate createdAt = LocalDate.now();
 
     @Transient
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMyy");
+    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMyy");
 
     public CardEntity(
-            String pan,
-            String bin,
-            String cardholderName,
-            int dailyLimit,
-            int monthlyLimit,
-            int initialBalance
+        String pan,
+        String bin,
+        String cardholderName,
+        int dailyLimit,
+        int monthlyLimit,
+        int initialBalance
     ) {
         this.pan = pan;
         this.bin = bin;

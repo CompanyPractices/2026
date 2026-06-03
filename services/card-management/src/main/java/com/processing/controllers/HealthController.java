@@ -13,9 +13,9 @@ public class HealthController {
     @GetMapping("/health")
     public ResponseEntity<HealthResponse> health() {
         return ResponseEntity.ok(new HealthResponse(
-                "ok",
-                "SERVICE_NAME",
-                Map.of()
+            "ok",
+            "SERVICE_NAME",
+            Map.of()
         ));
     }
 }
