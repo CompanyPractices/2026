@@ -19,6 +19,7 @@ import java.util.Map;
 public class HealthService {
     private final HttpClient httpClient;
     private final ServiceProperties serviceProperties;
+    private final ObjectMapper mapper;
 
     public Map<String, String> getDownstreamServicesHealth() {
         String switchUrl = serviceProperties.getSwitchUrl() + "/health";
@@ -42,8 +43,6 @@ public class HealthService {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                var mapper = new ObjectMapper();
-
                 JsonNode root = mapper.readTree(response.body());
                 String status = root.path("status").asText();
 
