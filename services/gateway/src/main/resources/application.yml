@@ -22,8 +22,13 @@ management:
         include:
           - health
           - info
+  endpoint:
     health:
       show-details: always
+
+gateway:
+  rate-limit:
+    transactions-per-second: ${TRANSACTIONS_RATE_LIMIT:100}
 
 spring:
   cloud:
@@ -31,25 +36,29 @@ spring:
       mvc:
         routes:
           - id: switch
-            uri: ${SWITCH:http://localhost:8081}
+            uri: ${SWITCH:http://localhost:8082}
             predicates:
               - Path=/api/transactions
             filters:
               - RewritePath=/api/transactions, /api/internal/route
           - id: logger
-            uri: ${LOGGER:http://localhost:8082}
+            uri: ${LOGGER:http://localhost:8088}
             predicates:
-              - Path=/api/dashboard/**, /api/transactions/search
-          - id: terminal-simulator
-            uri: ${TERMINAL:http://localhost:8083}
+              - Path=/api/transactions/search
+          - id: dashboard
+            uri: ${LOGGER:http://localhost:8088}
+            predicates:
+              - Path=/api/dashboard/**
+          - id: terminal
+            uri: ${TERMINAL:http://localhost:8085}
             predicates:
               - Path=/api/simulator/terminal/**
-          - id: merchant-simulator
-            uri: ${MERCHANT:http://localhost:8084}
+          - id: merchant
+            uri: ${MERCHANT:http://localhost:8086}
             predicates:
               - Path=/api/simulator/merchant/**
           - id: cards
-            uri: ${CARDS:http://localhost:8085}
+            uri: ${CARDS:http://localhost:8081}
             predicates:
               - Path=/api/cards/**
   mvc:
