@@ -1,4 +1,4 @@
-package com.processing.config;
+package com.processing.configuration;
 
 import com.processing.services.LuhnValidator;
 import com.processing.services.PanGenerator;
