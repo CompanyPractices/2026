@@ -2,6 +2,7 @@ package com.processing.repositories;
 
 import com.processing.models.CardEntity;
 import jakarta.annotation.Nullable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -31,6 +32,7 @@ public interface CardRepository
         @Nullable @Param("pan") String pan,
         @Nullable @Param("issuerId") String issuerId,
         @Nullable @Param("startDate") LocalDate startDate,
-        @Nullable @Param("endDate") LocalDate endDate
+        @Nullable @Param("endDate") LocalDate endDate,
+        Pageable pageable
     );
 }
