@@ -1,4 +1,9 @@
 import { useEffect, useState } from 'react';
+import {KpiCards} from "./components/KpiCards.tsx";
+import LineChart from "./components/LineChart.tsx";
+import PieChart from "./components/PieChart.tsx";
+import TransactionTable from "./components/TransactionTable.tsx";
+import TransactionModal from "./components/TransactionModal.tsx";
 
 interface HealthResponse {
   status: string;
@@ -18,7 +23,7 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex flex-col items-center justify-center">
       <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
         <h1 className="text-2xl font-bold mb-4">SERVICE_NAME</h1>
 
@@ -45,7 +50,41 @@ function App() {
           </div>
         )}
       </div>
+      <div className="container mx-auto mt-8">
+        <WidgetGrid />
+      </div>
     </div>
+  );
+}
+
+function WidgetGrid(){
+  return (
+      <div className="grid grid-cols-4 gap-4 h-screen">
+        <div className="bg-blue-500">
+            <KpiCards />
+        </div>
+        <div className="bg-blue-500">
+            <KpiCards />
+        </div>
+        <div className="bg-blue-500">
+            <KpiCards />
+        </div>
+        <div className="bg-blue-500">
+            <KpiCards />
+        </div>
+        <div className="col-span-4 bg-blue-500">
+            <LineChart />
+        </div>
+        <div className="col-span-4 bg-blue-500">
+            <PieChart />
+        </div>
+        <div className="col-span-4 bg-blue-500">
+            <TransactionTable />
+        </div>
+        <div className="col-span-4 bg-blue-500">
+            <TransactionModal />
+        </div>
+      </div>
   );
 }
 
