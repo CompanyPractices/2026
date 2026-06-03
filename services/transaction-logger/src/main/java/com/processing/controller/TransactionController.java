@@ -5,6 +5,7 @@ import com.processing.service.TransactionService;
 import com.processing.specification.TransactionFilter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransactionController {
     private final TransactionService transactionService;
 
+    @GetMapping("/search")
     public TransactionSearchResponse search(@Valid @ModelAttribute TransactionFilter filter) {
         return transactionService.search(filter);
     }

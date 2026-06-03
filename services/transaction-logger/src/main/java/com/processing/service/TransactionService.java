@@ -11,9 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class TransactionService {
         long declined = transactionRepository.countByStatus(TransactionStatus.DECLINED);
         long totalAmount = total > 0 ? transactionRepository.sumAmount() : 0;
         long recentCount = transactionRepository.countByCreatedAfter(Instant.now().minusSeconds(60));
+        double avgProcessingTimeMs = total > 0 ? transactionRepository.averageProcessingTimeMs() : 0;
         return new DashboardStatsResponse(
                 total,
                 approved,
@@ -39,8 +42,13 @@ public class TransactionService {
                 total > 0 ? (double) approved / total : 0,
                 totalAmount,
                 total > 0 ? totalAmount / total : 0,
-                0.0,
+                avgProcessingTimeMs,
                 recentCount
         );
+    }
+
+    public List<Transaction> getRecent(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC));
+        return List.of();
     }
 }
