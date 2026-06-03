@@ -52,7 +52,7 @@ public class RouteController {
         request.setIssuerId(issuerId);
 
 
-        // 4. TODO: Отправить в Authorization Service (пока заглушка)
+        //  TODO: Отправить в Authorization Service (пока заглушка)
         //    Временно возвращаем APPROVED для тестирования
 
 
