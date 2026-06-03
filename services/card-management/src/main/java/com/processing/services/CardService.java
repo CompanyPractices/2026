@@ -81,4 +81,8 @@ public class CardService {
         card.delete();
         cardRepository.save(card);
     }
+
+    public long countCards() {
+        return cardRepository.count();
+    }
 }
