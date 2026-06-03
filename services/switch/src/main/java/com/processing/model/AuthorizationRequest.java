@@ -1,9 +1,11 @@
 package com.processing.model;
 
+import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 public class AuthorizationRequest {
     private String mti;
     private String stan;
