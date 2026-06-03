@@ -31,29 +31,29 @@ spring:
       mvc:
         routes:
           - id: switch
-            uri: ${SWITCH:http://localhost:8082}
+            uri: http://switch:${SWITCH_PORT:8082}
             predicates:
               - Path=/api/transactions
             filters:
               - RewritePath=/api/transactions, /api/internal/route
           - id: logger
-            uri: ${LOGGER:http://localhost:8088}
+            uri: http://logger:${LOGGER_PORT:8088}
             predicates:
               - Path=/api/transactions/search
           - id: dashboard
-            uri: ${LOGGER:http://localhost:8088}
+            uri: http://logger:${LOGGER_PORT:8088}
             predicates:
               - Path=/api/dashboard/**
           - id: terminal
-            uri: ${TERMINAL:http://localhost:8085}
+            uri: http://terminal-simulator:${TERMINAL_PORT:http:8085}
             predicates:
               - Path=/api/simulator/terminal/**
           - id: merchant
-            uri: ${MERCHANT:http://localhost:8086}
+            uri: http://merchant-acquirer:${MERCHANT_PORT:8086}
             predicates:
               - Path=/api/simulator/merchant/**
           - id: cards
-            uri: ${CARDS:http://localhost:8081}
+            uri: http://card-management:${CARD_MGMT_PORT:8081}
             predicates:
               - Path=/api/cards/**
   mvc:
