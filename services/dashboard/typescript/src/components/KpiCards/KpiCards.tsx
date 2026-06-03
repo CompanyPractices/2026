@@ -1,10 +1,6 @@
-export type KpiCardData = {
-    label: string;
-    value: number | string;
-    unit?: string;
-};
+import { KpiCardData } from "./types.ts"
 
-export type KpiCardsProps = {
+type KpiCardsProps = {
     cards: KpiCardData[];
 };
 
