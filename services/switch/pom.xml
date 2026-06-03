@@ -12,9 +12,9 @@
     </parent>
 
     <groupId>com.processing</groupId>
-    <artifactId>SERVICE_NAME</artifactId>
+    <artifactId>switch</artifactId>
     <version>1.0.0</version>
-    <name>SERVICE_NAME</name>
+    <name>switch</name>
     <description>Microservice for СМП processing simulator</description>
 
     <properties>
