@@ -1,6 +1,5 @@
 package com.processing.dto;
 
-import com.processing.model.Transaction;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,5 +12,5 @@ public class RunResponse {
     private int approved;
     private int declined;
     private long elapsedMs;
-    private List<Transaction> transactions;
+    private List<AuthorizationResponse> transactions;
 }
