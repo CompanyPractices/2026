@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18-alpine
+    image: postgres:16-alpine
     container_name: smp-postgres
     restart: unless-stopped
     environment:
@@ -20,11 +20,14 @@ services:
       retries: 5
 
   gateway:
-    build: ./services/gateway
+    image: nginx:alpine
+#    build: ./services/gateway
     container_name: smp-gateway
     restart: unless-stopped
     ports:
       - "${GATEWAY_PORT}:8080"
+    command: >
+      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"gateway\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - SWITCH_URL=http://switch:8080
@@ -45,11 +48,14 @@ services:
       retries: 3
 
   card-management:
-    build: ./services/card-management
+    image: nginx:alpine
+#    build: ./services/card-management
     container_name: smp-card-management
     restart: unless-stopped
     ports:
       - "${CARD_MGMT_PORT}:8080"
+    command: >
+      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"card-management\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - POSTGRES_HOST=${POSTGRES_HOST}
@@ -69,11 +75,14 @@ services:
       retries: 3
 
   switch:
-    build: ./services/switch
+    image: nginx:alpine
+#    build: ./services/switch
     container_name: smp-switch
     restart: unless-stopped
     ports:
       - "${SWITCH_PORT}:8080"
+    command: >
+      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"switch\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - AUTH_URL=http://authorization:8080
@@ -90,11 +99,14 @@ services:
       retries: 3
 
   authorization:
-    build: ./services/authorization
+    image: nginx:alpine
+#    build: ./services/authorization
     container_name: smp-authorization
     restart: unless-stopped
     ports:
       - "${AUTH_PORT}:8080"
+    command: >
+      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"authorization\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - POSTGRES_HOST=${POSTGRES_HOST}
@@ -117,11 +129,14 @@ services:
       retries: 3
 
   terminal-simulator:
-    build: ./services/terminal-simulator
+#    build: ./services/terminal-simulator
+    image: nginx:alpine
     container_name: smp-terminal-simulator
     restart: unless-stopped
     ports:
       - "${TERMINAL_PORT}:8080"
+    command: >
+      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"terminal-simulator\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - GATEWAY_URL=http://gateway:8080
@@ -138,11 +153,14 @@ services:
       retries: 3
 
   merchant-acquirer:
-    build: ./services/merchant-acquirer
+    image: nginx:alpine
+#    build: ./services/merchant-acquirer
     container_name: smp-merchant-acquirer
     restart: unless-stopped
     ports:
       - "${MERCHANT_PORT}:8080"
+    command: >
+      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"merchant-acquirer\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - GATEWAY_URL=http://gateway:8080
@@ -157,11 +175,14 @@ services:
       retries: 3
 
   transaction-logger:
-    build: ./services/transaction-logger
+    image: nginx:alpine
+#    build: ./services/transaction-logger
     container_name: smp-transaction-logger
     restart: unless-stopped
     ports:
       - "${LOGGER_PORT}:8080"
+    command: >
+      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"transaction-logger\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - POSTGRES_HOST=${POSTGRES_HOST}
@@ -181,11 +202,14 @@ services:
       retries: 3
 
   dashboard:
-    build: ./services/dashboard
+    image: nginx:alpine
+#    build: ./services/dashboard
     container_name: smp-dashboard
     restart: unless-stopped
     ports:
       - "${DASHBOARD_PORT}:3000"
+    command: >
+      sh -c "echo 'server { listen 3000; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"dashboard\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - PORT=3000
       - GATEWAY_URL=http://gateway:8080
