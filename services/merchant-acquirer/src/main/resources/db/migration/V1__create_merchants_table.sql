@@ -1,4 +1,4 @@
-create table merchants (
+create table Merchants (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     mcc CHAR(4) NOT NULL,

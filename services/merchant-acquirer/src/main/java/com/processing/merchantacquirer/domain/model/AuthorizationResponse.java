@@ -7,6 +7,7 @@ public record AuthorizationResponse(
         String authCode,
         String responseCode,
         String status,
+        String declineReason,
         Integer processingTimeMs
 ) {
 }
