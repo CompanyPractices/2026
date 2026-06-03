@@ -22,13 +22,8 @@ import java.util.UUID;
 @NoArgsConstructor
 public final class CardEntity {
 
-    enum Status {
-        ACTIVE,
-        INACTIVE,
-        BLOCKED,
-        EXPIRED,
-    }
-
+    @Transient
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMyy");
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -62,16 +57,12 @@ public final class CardEntity {
     @Min(0)
     private int monthlyLimit = 300_000_000;
 
-    @Min(0)
     private int availableBalance = 1_000_000;
 
     @Column(length = 10, nullable = false)
     private String issuerId;
 
     private LocalDate createdAt = LocalDate.now();
-
-    @Transient
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMyy");
 
     public CardEntity(
         String pan,
@@ -101,5 +92,12 @@ public final class CardEntity {
     public void setExpiryDate(LocalDate expiryDate) {
         this.expiryDate = expiryDate;
         this.strExpiryDate = expiryDate.format(formatter);
+    }
+
+    enum Status {
+        ACTIVE,
+        INACTIVE,
+        BLOCKED,
+        EXPIRED,
     }
 }
