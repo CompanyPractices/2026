@@ -1,7 +1,6 @@
 package com.processing.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,8 +21,13 @@ import java.util.UUID;
 @NoArgsConstructor
 public final class CardEntity {
 
-    @Transient
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMyy");
+    public enum Status {
+        ACTIVE,
+        INACTIVE,
+        BLOCKED,
+        EXPIRED,
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -51,10 +55,8 @@ public final class CardEntity {
     @Column(length = 3, nullable = false)
     private String currencyCode = "643";
 
-    @Min(0)
     private int dailyLimit = 15_000_000;
 
-    @Min(0)
     private int monthlyLimit = 300_000_000;
 
     private int availableBalance = 1_000_000;
@@ -63,6 +65,9 @@ public final class CardEntity {
     private String issuerId;
 
     private LocalDate createdAt = LocalDate.now();
+
+    @Transient
+    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMyy");
 
     public CardEntity(
         String pan,
@@ -92,12 +97,5 @@ public final class CardEntity {
     public void setExpiryDate(LocalDate expiryDate) {
         this.expiryDate = expiryDate;
         this.strExpiryDate = expiryDate.format(formatter);
-    }
-
-    enum Status {
-        ACTIVE,
-        INACTIVE,
-        BLOCKED,
-        EXPIRED,
     }
 }
