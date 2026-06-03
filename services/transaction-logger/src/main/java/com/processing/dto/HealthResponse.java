@@ -1,4 +1,4 @@
-package com.processing.merchantacquirer.dto;
+package com.processing.dto;
 
 import java.util.Map;
 

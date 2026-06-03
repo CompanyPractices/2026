@@ -1,4 +1,4 @@
-package com.processing.merchantacquirer.dto;
+package com.processing.merchantacquirer.controller.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
