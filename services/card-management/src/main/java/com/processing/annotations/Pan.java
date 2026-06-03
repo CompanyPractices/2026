@@ -13,7 +13,7 @@ import java.lang.annotation.*;
 @Documented
 public @interface Pan {
 
-    String message() default "PAN number must contain exactly 16 symbols";
+    String message() default "PAN number must contain exactly 16 digits";
 
     Class<?>[] groups() default {};
 
