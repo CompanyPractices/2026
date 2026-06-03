@@ -3,7 +3,6 @@ import KpiCards from "./components/KpiCards.tsx";
 import LineChart from "./components/LineChart.tsx";
 import PieChart from "./components/PieChart.tsx";
 import TransactionTable from "./components/TransactionTable.tsx";
-import TransactionModal from "./components/TransactionModal.tsx";
 
 interface HealthResponse {
   status: string;
@@ -62,12 +61,9 @@ function App() {
           <div className="col-span-4 bg-lime-300 m-4 rounded-lg shadow-xl place-content-center">
               <TransactionTable />
           </div>
-          <div className="col-span-4 bg-zinc-300 m-4 rounded-lg shadow-xl place-content-center">
-              <TransactionModal />
-          </div>
       </main>
 
-      <footer className="rounded-2xl m-8 w-5/6 bg-violet-400 w-full h-24 grid grid-cols-3 gap-4">
+      <footer className="rounded-2xl m-8 w-5/6 bg-violet-400 h-24 grid grid-cols-3 gap-4">
           <h1 className="p-8 text-center text-xl font-sans font-bold text-zinc-100">
               Практика
           </h1>
