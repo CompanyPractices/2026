@@ -43,10 +43,7 @@ public class HealthService {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                JsonNode root = mapper.readTree(response.body());
-                String status = root.path("status").asText();
-
-                return status.equals("ok") ? "ok" : "down";
+                return "ok";
             }
 
             return "down";
