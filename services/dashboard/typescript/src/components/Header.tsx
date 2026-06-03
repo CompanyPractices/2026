@@ -1,5 +1,5 @@
 import {KpiCardData} from "./KpiCards/types.ts";
-import {KpiCards} from "./KpiCards.tsx";
+import {KpiCards} from "./KpiCards/KpiCards.tsx";
 
 type HeaderProps = {
     cards: KpiCardData[];
