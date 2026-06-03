@@ -1,12 +1,13 @@
-package com.processing.merchantacquirer.dto;
+package com.processing.merchantacquirer.domain.model;
 
-public record TransactionResponse(
+public record AuthorizationResponse(
         String mti,
         String stan,
         String rrn,
         String authCode,
         String responseCode,
         String status,
+        String declineReason,
         Integer processingTimeMs
 ) {
 }

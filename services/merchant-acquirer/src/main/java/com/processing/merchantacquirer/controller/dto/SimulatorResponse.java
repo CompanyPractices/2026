@@ -1,4 +1,6 @@
-package com.processing.merchantacquirer.dto;
+package com.processing.merchantacquirer.controller.dto;
+
+import com.processing.merchantacquirer.domain.model.AuthorizationResponse;
 
 import java.util.List;
 
