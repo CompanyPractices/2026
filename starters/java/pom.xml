@@ -10,7 +10,7 @@
         <groupId>com.processing</groupId>
         <artifactId>processing-platform</artifactId>
         <version>1.0.0</version>
-        <relativePath>../../services/pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>SERVICE_NAME</artifactId>
