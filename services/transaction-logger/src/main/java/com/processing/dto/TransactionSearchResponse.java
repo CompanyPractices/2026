@@ -7,8 +7,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
-public class TransactionSearchResponse {
+public record TransactionSearchResponse {
     private long total;
     private List<Transaction> transactions;
 }
