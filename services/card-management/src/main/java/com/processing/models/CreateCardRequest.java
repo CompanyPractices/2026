@@ -1,5 +1,6 @@
 package com.processing.models;
 
+import com.processing.annotations.Bin;
 import com.processing.annotations.DigitsOnly;
 import com.processing.annotations.ExactSize;
 import com.processing.annotations.NotNegative;
@@ -10,8 +11,7 @@ import jakarta.validation.constraints.Pattern;
 public record CreateCardRequest(
 
     @NotBlank
-    @ExactSize(6)
-    @DigitsOnly
+    @Bin
     String bin,
 
     @NotBlank
