@@ -1,9 +1,6 @@
 package com.processing.dto;
 
 import com.processing.model.Transaction;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
 import java.util.List;
 
 
