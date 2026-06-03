@@ -1,26 +1,24 @@
-package com.processing.gateway.controller;
+package com.processing.controllers;
 
-import com.processing.gateway.dto.HealthResponse;
-import com.processing.gateway.service.HealthService;
+import com.processing.models.HealthResponse;
+import com.processing.services.CardService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class HealthController {
-    private final HealthService healthService;
+
+    private final CardService cardService;
 
     @GetMapping("/health")
     public ResponseEntity<HealthResponse> health() {
         return ResponseEntity.ok(new HealthResponse(
-                "ok",
-                "gateway",
-                "1.0.0",
-                healthService.getDownstreamServicesHealth()
+            "ok",
+            "card-management",
+            cardService.countCards()
         ));
     }
 }
