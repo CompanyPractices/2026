@@ -14,7 +14,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public final class CardService {
+public class CardService {
 
     private final CardRepository cardRepository;
     private final CardServiceOptions options;

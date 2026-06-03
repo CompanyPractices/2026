@@ -7,7 +7,6 @@ import com.processing.models.GetCardsRequest;
 import com.processing.models.PatchCardRequest;
 import com.processing.services.CardService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,11 +16,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/cards")
-@RequiredArgsConstructor
 @Validated
 public class CardController {
 
     private final CardService cardService;
+
+    public CardController(CardService cardService) {
+        this.cardService = cardService;
+    }
 
     @PostMapping("/")
     public ResponseEntity<CardDto> createCard(@Valid @RequestBody CreateCardRequest data) {

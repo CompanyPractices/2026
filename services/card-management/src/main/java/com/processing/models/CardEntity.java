@@ -19,7 +19,7 @@ import java.util.UUID;
     @Index(name = "idx_cards_created_at", columnList = "created_at")
 })
 @NoArgsConstructor
-public final class CardEntity {
+public class CardEntity {
 
     public enum Status {
         ACTIVE,

@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 @Validated
-@ConfigurationProperties(prefix = "app.bank-service")
+@ConfigurationProperties(prefix = "app.card-service")
 public record CardServiceOptions(
     @NotBlank
     @Size(min = 1, max = 10)
