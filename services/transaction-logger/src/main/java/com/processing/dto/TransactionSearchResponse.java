@@ -6,8 +6,8 @@ import lombok.Data;
 
 import java.util.List;
 
-@Data
-public record TransactionSearchResponse {
-    private long total;
-    private List<Transaction> transactions;
-}
+
+public record TransactionSearchResponse(
+        long total,
+        List<Transaction> transactions
+) {}
