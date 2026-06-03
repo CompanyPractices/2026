@@ -7,7 +7,7 @@ import lombok.Data;
 @Builder
 public class AuthorizationResponse {
     private String mti;
-    private String stane;
+    private String stan;
     private String rrn;
     private String authCode;
     private String responseCode;
