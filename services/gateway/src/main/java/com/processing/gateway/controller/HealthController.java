@@ -18,7 +18,6 @@ import java.util.Map;
 @Slf4j
 public class HealthController {
     private final HttpClient httpClient;
-    // private final WebClient webClient;
 
     @GetMapping("/health")
     public ResponseEntity<HealthResponse> health() {
@@ -53,13 +52,4 @@ public class HealthController {
             return "down";
         }
     }
-
-//    private Mono<String> checkService(String url) {
-//        return webClient.get()
-//                .uri(url)
-//                .retrieve()
-//                .toBodilessEntity()
-//                .map(x -> "ok")
-//                .onErrorReturn("down");
-//    }
 }
