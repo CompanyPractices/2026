@@ -31,11 +31,7 @@ public class CardController {
     }
 
     @GetMapping("/{pan}")
-    public ResponseEntity<CardDto> getCard(
-        @PathVariable
-        @Pan
-        String pan
-    ) {
+    public ResponseEntity<CardDto> getCard(@PathVariable @Pan String pan) {
         return ResponseEntity.ok(cardService.getCard(pan));
     }
 
@@ -46,20 +42,15 @@ public class CardController {
 
     @PatchMapping("/{pan}")
     public ResponseEntity<Void> patchCard(
-        @PathVariable
-        @Pan
-        String pan,
-        @Valid @RequestBody PatchCardRequest data) {
+        @PathVariable @Pan String pan,
+        @Valid @RequestBody PatchCardRequest data
+    ) {
         cardService.patchCard(pan, data);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{pan}")
-    public ResponseEntity<Void> deleteCard(
-        @PathVariable
-        @Pan
-        String pan
-    ) {
+    public ResponseEntity<Void> deleteCard(@PathVariable @Pan String pan) {
         cardService.deleteCard(pan);
         return ResponseEntity.noContent().build();
     }
