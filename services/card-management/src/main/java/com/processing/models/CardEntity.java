@@ -14,7 +14,11 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-@Table(name = "cards")
+@Table(name = "cards", indexes = {
+        @Index(name = "uk_cards_pan", columnList = "pan", unique = true),
+        @Index(name = "idx_cards_issuer_id", columnList = "issuer_id"),
+        @Index(name = "idx_cards_created_at", columnList = "created_at")
+})
 @NoArgsConstructor
 public final class CardEntity {
 
