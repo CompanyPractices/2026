@@ -4,7 +4,6 @@ import com.processing.enums.TransactionStatus;
 import jakarta.persistence.*;
 
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.UUID;
 
 @Entity
