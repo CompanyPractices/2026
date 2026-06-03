@@ -1,0 +1,488 @@
+openapi: 3.0.0
+info:
+  title: СМП (Система маршрутизации и процессинга) API
+  version: 1.0.0
+  description: |
+    Единая спецификация API-контрактов для взаимодействия микросервисов.
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Проверка работоспособности Gateway
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              example:
+                status: "ok"
+                service: "gateway"
+                version: "1.0.0"
+                services:
+                  switch: "ok"
+                  authorization: "ok"
+                  cardManagement: "ok"
+                  logger: "ok"
+
+  /api/cards:
+    post:
+      tags:
+        - Cards
+      summary: Создать карту
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardCreateRequest'
+      responses:
+        '201':
+          description: Карта успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '409':
+          description: Карта с таким PAN уже существует
+
+  /api/cards/generate:
+    post:
+      tags:
+        - Cards
+      summary: Сгенерировать тестовые карты
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  example: 100
+                bins:
+                  type: array
+                  items:
+                    type: string
+                  example: ["400000", "400001", "400002"]
+      responses:
+        '201':
+          description: Карты сгенерированы
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generated:
+                    type: integer
+                  cards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
+
+  /api/cards/{pan}:
+    get:
+      tags:
+        - Cards
+      summary: Получить карту по PAN
+      parameters:
+        - name: pan
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 16
+            maxLength: 16
+      responses:
+        '200':
+          description: Карта найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '404':
+          description: Карта не найдена
+
+  /api/transactions:
+    post:
+      tags:
+        - Transactions
+      summary: Отправить запрос авторизации
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequest'
+      responses:
+        '200':
+          description: Ответ маршрутизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationResponse'
+        '400':
+          description: Ошибка валидации
+        '503':
+          description: Внутренний сервис недоступен
+
+  /api/transactions/search:
+    get:
+      tags:
+        - Transactions
+      summary: Поиск транзакций
+      parameters:
+        - name: pan
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [APPROVED, DECLINED]
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: merchantId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+
+  /api/simulator/terminal/run:
+    post:
+      tags:
+        - Simulator
+      summary: Запуск симулятора терминалов
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                scenario:
+                  type: string
+                  enum: [normal, mixed, high_value, night_time, declines_test]
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulatorResponse'
+
+  /api/simulator/merchant/run:
+    post:
+      tags:
+        - Simulator
+      summary: Запуск симулятора мерчантов
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                mccCodes:
+                  type: array
+                  items:
+                    type: string
+                scenario:
+                  type: string
+                  enum: [grocery, electronics, restaurant, travel]
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulatorResponse'
+
+  /api/dashboard/stats:
+    get:
+      tags:
+        - Dashboard
+      summary: Агрегированная статистика
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              example:
+                totalTransactions: 1250
+                approvedCount: 1100
+                declinedCount: 150
+                approvalRate: 0.88
+                totalAmount: 187500000
+                averageAmount: 150000
+                avgProcessingTimeMs: 38.5
+                transactionsPerMinute: 12.3
+
+  /api/dashboard/recent:
+    get:
+      tags:
+        - Dashboard
+      summary: Последние N транзакций
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+
+  /ws/transactions:
+    get:
+      tags:
+        - Transactions
+      summary: Поток транзакций в реальном времени
+      description:
+        Каждое сообщение - JSON-объект Transaction.
+      responses:
+        '101':
+          description: Соединение успешно переключено на WebSocket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+
+  /api/internal/route:
+    post:
+      tags:
+        - Internal
+      summary: Внутренний Switch - маршрутизация
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequest'
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationResponse'
+
+  /api/internal/authorize:
+    post:
+      tags:
+        - Internal
+      summary: Внутренний Authorization - проверка
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequest'
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationResponse'
+
+  /api/internal/log:
+    post:
+      tags:
+        - Internal
+      summary: Внутренний Logger - сохранение транзакции
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+      responses:
+        '201':
+          description: Успешно сохранено
+          content:
+            application/json:
+              example:
+                id: "uuid"
+                status: "stored"
+
+components:
+  schemas:
+    CardCreateRequest:
+      type: object
+      properties:
+        bin:
+          type: string
+        cardholderName:
+          type: string
+        currencyCode:
+          type: string
+        dailyLimit:
+          type: integer
+        monthlyLimit:
+          type: integer
+        initialBalance:
+          type: integer
+
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pan:
+          type: string
+        bin:
+          type: string
+        cardholderName:
+          type: string
+        expiryDate:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, BLOCKED, EXPIRED]
+        currencyCode:
+          type: string
+        dailyLimit:
+          type: integer
+        monthlyLimit:
+          type: integer
+        availableBalance:
+          type: integer
+        issuerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    AuthorizationRequest:
+      type: object
+      properties:
+        mti:
+          type: string
+        stan:
+          type: string
+        pan:
+          type: string
+        processingCode:
+          type: string
+        amount:
+          type: integer
+        currencyCode:
+          type: string
+        transmissionDateTime:
+          type: string
+          format: date-time
+        terminalId:
+          type: string
+        terminalType:
+          type: string
+          enum: [POS, ATM, ECOM]
+        merchantId:
+          type: string
+        mcc:
+          type: string
+        acquirerId:
+          type: string
+        issuerId:
+          type: string
+
+    AuthorizationResponse:
+      type: object
+      properties:
+        mti:
+          type: string
+        stan:
+          type: string
+        rrn:
+          type: string
+        authCode:
+          type: string
+        responseCode:
+          type: string
+        status:
+          type: string
+          enum: [APPROVED, DECLINED]
+        declineReason:
+          type: string
+        processingTimeMs:
+          type: integer
+
+    SimulatorResponse:
+      type: object
+      properties:
+        totalSubmitted:
+          type: integer
+        approved:
+          type: integer
+        declined:
+          type: integer
+        elapsedMs:
+          type: integer
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorizationResponse'
+
+    Transaction:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AuthorizationRequest'
+        - $ref: '#/components/schemas/AuthorizationResponse'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            acquiringFee:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
