@@ -16,7 +16,7 @@ import java.util.UUID;
 @Setter
 @Table(name = "cards", indexes = {
         @Index(name = "uk_cards_pan", columnList = "pan", unique = true),
-        @Index(name = "idx_cards_issuer_id", columnList = "issuer_id"),
+        @Index(name = "idx_cards_issuer_id_created_at", columnList = "issuer_id, created_at"),
         @Index(name = "idx_cards_created_at", columnList = "created_at")
 })
 @NoArgsConstructor
