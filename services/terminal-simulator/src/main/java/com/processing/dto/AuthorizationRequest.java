@@ -18,4 +18,5 @@ public class AuthorizationRequest {
     private String merchantId;
     private String mcc;
     private String acquirerId;
+    private String issuerId;
 }
