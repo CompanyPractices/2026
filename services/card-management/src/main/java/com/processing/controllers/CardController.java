@@ -1,10 +1,7 @@
 package com.processing.controllers;
 
 import com.processing.annotations.Pan;
-import com.processing.models.CardDto;
-import com.processing.models.CreateCardRequest;
-import com.processing.models.GetCardsRequest;
-import com.processing.models.PatchCardRequest;
+import com.processing.models.*;
 import com.processing.services.CardService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -55,5 +52,14 @@ public class CardController {
     public ResponseEntity<Void> deleteCard(@PathVariable @Pan String pan) {
         cardService.deleteCard(pan);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{pan}/reserve")
+    public ResponseEntity<Void> reserve(
+        @PathVariable @Pan String pan,
+        @Valid @RequestBody ReserveRequest data
+    ) {
+        cardService.reserve(pan, data);
+        return ResponseEntity.ok().build();
     }
 }

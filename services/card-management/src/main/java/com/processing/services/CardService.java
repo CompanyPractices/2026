@@ -21,7 +21,6 @@ public class CardService {
     private final PanGenerator panGenerator;
 
     public CardDto createCard(CreateCardRequest data) {
-        log.warn(options.issuerId());
         var cardEntity = new CardEntity(
             panGenerator.generatePan(data.bin()),
             data.bin(),
@@ -37,10 +36,7 @@ public class CardService {
     }
 
     public CardDto getCard(String pan) {
-        return cardRepository
-            .findByPan(pan)
-            .map(CardDto::fromEntity)
-            .orElseThrow(CardNotFoundException::new);
+        return CardDto.fromEntity(getCardEntity(pan));
     }
 
     public List<CardDto> getCards(GetCardsRequest data) {
@@ -59,9 +55,7 @@ public class CardService {
     }
 
     public void patchCard(String pan, PatchCardRequest data) {
-        var card = cardRepository
-            .findByPan(pan)
-            .orElseThrow(CardNotFoundException::new);
+        var card = getCardEntity(pan);
 
         if (data.status() != null) {
             card.setStatus(data.status());
@@ -80,15 +74,24 @@ public class CardService {
     }
 
     public void deleteCard(String pan) {
-        var card = cardRepository
-            .findByPan(pan)
-            .orElseThrow(CardNotFoundException::new);
-
+        var card = getCardEntity(pan);
         card.delete();
         cardRepository.save(card);
     }
 
     public long countCards() {
         return cardRepository.count();
+    }
+
+    public void reserve(String pan, ReserveRequest data) {
+        var card = getCardEntity(pan);
+        card.reserve(data.amount());
+        cardRepository.save(card);
+    }
+
+    private CardEntity getCardEntity(String pan) {
+        return cardRepository
+            .findByPan(pan)
+            .orElseThrow(CardNotFoundException::new);
     }
 }

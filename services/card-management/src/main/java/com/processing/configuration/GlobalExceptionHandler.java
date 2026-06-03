@@ -1,6 +1,7 @@
 package com.processing.configuration;
 
 import com.processing.exceptions.CardNotFoundException;
+import com.processing.exceptions.InsufficientFundsException;
 import com.processing.models.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,13 @@ public class GlobalExceptionHandler {
         IllegalStateException ex
     ) {
         return new ErrorResponse(HttpStatus.BAD_REQUEST, ex).toResponseEntity();
+    }
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientFundsException(
+        InsufficientFundsException ex
+    ) {
+        return new ErrorResponse(HttpStatus.PAYMENT_REQUIRED, ex).toResponseEntity();
     }
 
     @ExceptionHandler(Exception.class)

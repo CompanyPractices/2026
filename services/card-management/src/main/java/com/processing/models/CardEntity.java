@@ -1,5 +1,6 @@
 package com.processing.models;
 
+import com.processing.exceptions.InsufficientFundsException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -58,11 +59,11 @@ public class CardEntity {
     @Column(length = 3, nullable = false)
     private String currencyCode = "643";
 
-    private int dailyLimit = 15_000_000;
+    private long dailyLimit = 15_000_000;
 
-    private int monthlyLimit = 300_000_000;
+    private long monthlyLimit = 300_000_000;
 
-    private int availableBalance = 1_000_000;
+    private long availableBalance = 1_000_000;
 
     @Column(length = 10, nullable = false)
     private String issuerId;
@@ -77,9 +78,9 @@ public class CardEntity {
         String bin,
         String cardholderName,
         String currencyCode,
-        int dailyLimit,
-        int monthlyLimit,
-        int initialBalance,
+        long dailyLimit,
+        long monthlyLimit,
+        long initialBalance,
         String issuerId
     ) {
         this.pan = pan;
@@ -108,5 +109,12 @@ public class CardEntity {
 
     public void delete() {
         setStatus(Status.DELETED);
+    }
+
+    public void reserve(long amount) {
+        if (this.availableBalance < amount) {
+            throw new InsufficientFundsException();
+        }
+        this.availableBalance -= amount;
     }
 }
