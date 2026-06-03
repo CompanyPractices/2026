@@ -1,41 +1,53 @@
 package com.processing.services;
 
 import com.processing.exceptions.CardNotFoundException;
-import com.processing.models.CardDto;
-import com.processing.models.CreateCardRequest;
-import com.processing.models.GetCardsRequest;
-import com.processing.models.PatchCardRequest;
+import com.processing.models.*;
+import com.processing.options.CardServiceOptions;
 import com.processing.repositories.CardRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public final class CardService {
+@Slf4j
+public class CardService {
 
     private final CardRepository cardRepository;
+    private final CardServiceOptions options;
+    private final PanGenerator panGenerator;
 
     public CardDto createCard(CreateCardRequest data) {
-        // TODO
-        return null;
+        var cardEntity = new CardEntity(
+            panGenerator.generatePan(data.bin()),
+            data.bin(),
+            data.cardholderName(),
+            data.currencyCode(),
+            data.dailyLimit(),
+            data.monthlyLimit(),
+            data.initialBalance(),
+            options.issuerId()
+        );
+
+        return CardDto.fromEntity(cardRepository.save(cardEntity));
     }
 
     public CardDto getCard(String pan) {
-        return cardRepository
-            .findByPan(pan)
-            .map(CardDto::fromEntity)
-            .orElseThrow(CardNotFoundException::new);
+        return CardDto.fromEntity(getCardEntity(pan));
     }
 
     public List<CardDto> getCards(GetCardsRequest data) {
         return cardRepository
             .findCards(
-                data.pan(),
+                data.status(),
+                data.bin(),
                 data.issuerId(),
                 data.startDate(),
-                data.endDate()
+                data.endDate(),
+                PageRequest.of(data.offset(), data.limit())
             )
             .stream()
             .map(CardDto::fromEntity)
@@ -43,9 +55,8 @@ public final class CardService {
     }
 
     public void patchCard(String pan, PatchCardRequest data) {
-        var card = cardRepository
-            .findByPan(pan)
-            .orElseThrow(CardNotFoundException::new);
+        var card = getCardEntity(pan);
+
         if (data.status() != null) {
             card.setStatus(data.status());
         }
@@ -58,15 +69,29 @@ public final class CardService {
         if (data.availableBalance() != null) {
             card.setAvailableBalance(data.availableBalance());
         }
+
         cardRepository.save(card);
     }
 
     public void deleteCard(String pan) {
-        var card = cardRepository
+        var card = getCardEntity(pan);
+        card.delete();
+        cardRepository.save(card);
+    }
+
+    public long countCards() {
+        return cardRepository.count();
+    }
+
+    public void reserve(String pan, ReserveRequest data) {
+        var card = getCardEntity(pan);
+        card.reserve(data.amount());
+        cardRepository.save(card);
+    }
+
+    private CardEntity getCardEntity(String pan) {
+        return cardRepository
             .findByPan(pan)
             .orElseThrow(CardNotFoundException::new);
-        card.delete();
-
-        cardRepository.save(card);
     }
 }

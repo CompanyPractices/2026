@@ -1,16 +1,15 @@
 package com.processing.services;
 
+import com.processing.annotations.Bin;
+import com.processing.annotations.Pan;
+
 import java.util.Random;
 
 public class LuhnValidator implements PanGenerator {
     private final Random random = new Random();
 
     @Override
-    public boolean isValid(String pan) {
-        if (pan == null || !pan.matches("\\d+")) {
-            throw new IllegalArgumentException("PAN must contain only digits");
-        }
-
+    public boolean isValid(@Pan String pan) {
         int total = 0;
         boolean isEvenIdx = false;
 
@@ -31,11 +30,7 @@ public class LuhnValidator implements PanGenerator {
     }
 
     @Override
-    public String generatePan(String bin) {
-        if (bin == null || !bin.matches("\\d{6}")) {
-            throw new IllegalArgumentException("BIN must be exactly 6 digits");
-        }
-
+    public String generatePan(@Bin String bin) {
         int randomNumber = random.nextInt(100_000_000, 1_000_000_000);
         String base = bin + randomNumber;
 

@@ -6,14 +6,14 @@ import jakarta.validation.constraints.Pattern;
 
 import java.lang.annotation.*;
 
-@Pattern(regexp = "^\\d{16}$")
+@Pattern(regexp = "^\\d{6}$")
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {})
 @Documented
-public @interface Pan {
+public @interface Bin {
 
-    String message() default "PAN number must contain exactly 16 digits";
+    String message() default "BIN number must contain exactly 6 digits";
 
     Class<?>[] groups() default {};
 

@@ -1,10 +1,12 @@
 package com.processing.models;
 
+import com.processing.exceptions.InsufficientFundsException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -19,7 +21,8 @@ import java.util.UUID;
     @Index(name = "idx_cards_created_at", columnList = "created_at")
 })
 @NoArgsConstructor
-public final class CardEntity {
+@SQLRestriction("status <> 'DELETED'")
+public class CardEntity {
 
     public enum Status {
         ACTIVE,
@@ -56,11 +59,11 @@ public final class CardEntity {
     @Column(length = 3, nullable = false)
     private String currencyCode = "643";
 
-    private int dailyLimit = 15_000_000;
+    private long dailyLimit = 15_000_000;
 
-    private int monthlyLimit = 300_000_000;
+    private long monthlyLimit = 300_000_000;
 
-    private int availableBalance = 1_000_000;
+    private long availableBalance = 1_000_000;
 
     @Column(length = 10, nullable = false)
     private String issuerId;
@@ -74,16 +77,20 @@ public final class CardEntity {
         String pan,
         String bin,
         String cardholderName,
-        int dailyLimit,
-        int monthlyLimit,
-        int initialBalance
+        String currencyCode,
+        long dailyLimit,
+        long monthlyLimit,
+        long initialBalance,
+        String issuerId
     ) {
         this.pan = pan;
         this.bin = bin;
         this.cardholderName = cardholderName;
+        this.currencyCode = currencyCode;
         this.dailyLimit = dailyLimit;
         this.monthlyLimit = monthlyLimit;
         this.availableBalance = initialBalance;
+        this.issuerId = issuerId;
         setExpiryDate(LocalDate.now().plusYears(3));
     }
 
@@ -102,5 +109,12 @@ public final class CardEntity {
 
     public void delete() {
         setStatus(Status.DELETED);
+    }
+
+    public void reserve(long amount) {
+        if (this.availableBalance < amount) {
+            throw new InsufficientFundsException();
+        }
+        this.availableBalance -= amount;
     }
 }

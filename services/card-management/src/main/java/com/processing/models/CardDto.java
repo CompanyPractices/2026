@@ -10,9 +10,9 @@ public record CardDto(
     String cardholderName,
     String expiryDate,
     String status,
-    int dailyLimit,
-    int monthlyLimit,
-    int availableBalance,
+    long dailyLimit,
+    long monthlyLimit,
+    long availableBalance,
     String issuerId,
     LocalDate createdAt
 ) {
