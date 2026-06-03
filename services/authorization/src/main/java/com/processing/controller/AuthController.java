@@ -7,6 +7,9 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import com.processing.enums.CardStatus;
 import com.processing.dto.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+
 import java.lang.Exception;
 import java.util.UUID;
 
@@ -14,7 +17,7 @@ public class AuthController {
 
     private HttpClient httpClient = HttpClient.newHttpClient();
 
-    private final String cmsUrl = "http://localhost:3000";
+    private final String cmsUrl = "http://localhost:8081";
 
     public AuthorizationResponse authorize(AuthorizationRequest request) throws Exception {
         CardResponse cardResponse = getCard(request.getPan());
@@ -41,12 +44,13 @@ public class AuthController {
         if (request.getAmount() > cardResponse.getAvailableBalance())
             return AuthorizationResponse.declined(request, "INSUFFICIENT_FUNDS", "51");
 
-        reserve();
+        reserve(request.getAmount(), request.getPan()); // rrn
         generateRnn();
         generateAuthCode();
         return AuthorizationResponse.approved(request, "", ""); // Заглушка
     }
 
+    @GetMapping("/api/cards/{pan}")
     private CardResponse getCard(String pan) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(cmsUrl + "/api/cards/" + pan))
@@ -72,8 +76,15 @@ public class AuthController {
         );
     }
 
-    void reserve() {
-        // TODO
+    @PostMapping("/api/cards/{pan}/reserve")
+    void reserve(Integer amount, String pan) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(cmsUrl + "/api/cards/" + pan + "/reserve"))
+                .POST(HttpRequest.BodyPublishers.)
+                .build();
+
+        HttpResponse<String> cardResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
     }
 
     void generateRnn() {
