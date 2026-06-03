@@ -14,7 +14,7 @@ public class HealthController {
     public ResponseEntity<HealthResponse> health() {
         return ResponseEntity.ok(new HealthResponse(
                 "ok",
-                "SERVICE_NAME",
+                "authorization",
                 Map.of()
         ));
     }
