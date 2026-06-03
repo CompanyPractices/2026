@@ -11,8 +11,9 @@ import java.util.*;
 @RequiredArgsConstructor
 public class CardGeneratorService {
     private final CardRepository cardRepository;
+    private final PanGenerator panGenerator;
 
-    private static final Random random = new Random();
+    private final Random random = new Random();
     private static final String ISSUER_ID = "BANK";
 
     private static final List<String> NAMES = List.of(
@@ -31,7 +32,7 @@ public class CardGeneratorService {
             String cardholderName = NAMES.get(random.nextInt(NAMES.size()));
 
             CardEntity card = new CardEntity(
-                    LuhnValidator.generatePan(bin),
+                    panGenerator.generatePan(bin),
                     bin,
                     cardholderName,
                     dailyLimit,
