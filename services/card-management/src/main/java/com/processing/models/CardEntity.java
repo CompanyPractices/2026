@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +20,7 @@ import java.util.UUID;
     @Index(name = "idx_cards_created_at", columnList = "created_at")
 })
 @NoArgsConstructor
+@SQLRestriction("status <> 'DELETED'")
 public class CardEntity {
 
     public enum Status {

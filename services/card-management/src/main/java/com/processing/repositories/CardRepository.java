@@ -23,13 +23,15 @@ public interface CardRepository
         SELECT card
         FROM CardEntity card
         WHERE
-            (:pan IS NULL OR card.pan = :pan) AND
+            (:status IS NULL OR card.status = :status) AND
+            (:bin IS NULL OR card.bin = :bin) AND
             (:issuerId IS NULL OR card.issuerId = :issuerId) AND
             (:startDate IS NULL OR card.createdAt >= :startDate) AND
             (:endDate IS NULL OR card.createdAt <= :endDate)
         """)
     List<CardEntity> findCards(
-        @Nullable @Param("pan") String pan,
+        @Nullable @Param("status") CardEntity.Status status,
+        @Nullable @Param("bin") String bin,
         @Nullable @Param("issuerId") String issuerId,
         @Nullable @Param("startDate") LocalDate startDate,
         @Nullable @Param("endDate") LocalDate endDate,

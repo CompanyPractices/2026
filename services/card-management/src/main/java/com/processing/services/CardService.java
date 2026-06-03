@@ -46,7 +46,8 @@ public class CardService {
     public List<CardDto> getCards(GetCardsRequest data) {
         return cardRepository
             .findCards(
-                data.pan(),
+                data.status(),
+                data.bin(),
                 data.issuerId(),
                 data.startDate(),
                 data.endDate(),
