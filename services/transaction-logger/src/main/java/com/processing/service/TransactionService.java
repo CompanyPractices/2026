@@ -24,7 +24,7 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
 
     public TransactionSearchResponse search(TransactionFilter filter) {
-        Pageable pageable = PageRequest.of(filter.getOffset(), filter.getLimit());
+        Pageable pageable = PageRequest.of(filter.getOffset() / filter.getLimit(), filter.getLimit());
         Page<Transaction> page = transactionRepository.findAll(TransactionSpecification.filter(filter), pageable);
         return new TransactionSearchResponse(page.getTotalElements(), page.getContent());
     }
@@ -34,7 +34,7 @@ public class TransactionService {
         long approved = transactionRepository.countByStatus(TransactionStatus.APPROVED);
         long declined = transactionRepository.countByStatus(TransactionStatus.DECLINED);
         long totalAmount = total > 0 ? transactionRepository.sumAmount() : 0;
-        long recentCount = transactionRepository.countByCreatedAfter(Instant.now().minusSeconds(60));
+        long recentCount = transactionRepository.countByCreatedAtAfter(Instant.now().minusSeconds(60));
         double avgProcessingTimeMs = total > 0 ? transactionRepository.averageProcessingTimeMs() : 0;
         return new DashboardStatsResponse(
                 total,

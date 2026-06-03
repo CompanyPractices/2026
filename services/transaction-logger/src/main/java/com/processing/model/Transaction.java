@@ -2,12 +2,16 @@ package com.processing.model;
 
 import com.processing.enums.TransactionStatus;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "transactions")
+@Getter
+@Setter
 public class Transaction {
     @Id
     private UUID id;
