@@ -1,4 +1,4 @@
-insert into merchants (id, name, mcc, category, acquirer_id, acquiring_fee, average_check) values
+insert into Merchants (id, name, mcc, category, acquirer_id, acquiring_fee, average_check) values
                                                                                                ('MERCH00000000001', 'Пятёрочка #1234', '5411', 'grocery', 'ACQ001', 0.015, 85000),
                                                                                                ('MERCH00000000002', 'Вкусно и точка #5678', '5812', 'restaurant', 'ACQ002', 0.025, 45000),
                                                                                                ('MERCH00000000003', 'М.Видео Онлайн', '5732', 'electronics', 'ACQ001', 0.018, 3500000),
