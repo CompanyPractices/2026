@@ -13,7 +13,7 @@ import java.util.UUID;
 public class CardResponse {
     private UUID id;
 
-    public String pun;
+    private String pun;
 
     private String bin;
 
@@ -25,7 +25,7 @@ public class CardResponse {
 
     private String currencyCode;
 
-    public Integer dailyLimit;
+    private Integer dailyLimit;
 
     private Integer monthlyLimit;
 

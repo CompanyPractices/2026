@@ -7,13 +7,11 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import com.processing.enums.CardStatus;
 import com.processing.dto.*;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.Exception;
 import java.util.Calendar;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -22,10 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class AuthController {
 
-    private HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     private final String cmsUrl = "http://localhost:8081";
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @PostMapping("/api/internal/authorize")
     public AuthorizationResponse authorize(AuthorizationRequest request) throws Exception {
         CardResponse cardResponse = getCard(request.getPan());
 
@@ -64,31 +65,21 @@ public class AuthController {
 
         HttpResponse<String> cardResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        // заглушка
-        return new CardResponse(
-                UUID.randomUUID(),
-                "1234123412341234",
-                "400000",
-                "IVAN IVANOV",
-                "1228",
-                CardStatus.ACTIVE,
-                "643",
-                15000000,
-                300000000,
-                100000000,
-                "ISS001",
-                LocalDate.parse("2026-06-01T10:00:00"));
+        return objectMapper.readValue(cardResponse.body(), CardResponse.class);
     }
 
     @PostMapping("/api/cards/{pan}/reserve")
-    void reserve(Integer amount, String pan, String rrn) {
+    private boolean reserve(Integer amount, String rrn, String pan) throws Exception {
+        ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
+        String requestBody = objectMapper.writeValueAsString(reserveRequest);
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(cmsUrl + "/api/cards/" + pan + "/reserve"))
-                .POST(HttpRequest.BodyPublishers.)
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
-        HttpResponse<String> cardResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        return response.statusCode() == 200;
     }
 
     private static final AtomicInteger counter = new AtomicInteger(0);

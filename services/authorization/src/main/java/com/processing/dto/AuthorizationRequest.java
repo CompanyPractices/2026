@@ -24,7 +24,7 @@ public class AuthorizationRequest {
 
     private LocalDateTime transmissionDateTime;
 
-    private String rerminalId;
+    private String terminalId;
 
     private TerminalType terminalType;
 
