@@ -1,11 +1,11 @@
-package com.processing.model;
+package com.processing.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class Transaction {
+public class AuthorizationRequest {
     private String mti;
     private String stan;
     private String pan;
