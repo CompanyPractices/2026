@@ -1,10 +1,7 @@
 package com.processing.services;
 
-import org.springframework.stereotype.Service;
-
 import java.util.Random;
 
-@Service
 public class LuhnValidator implements PanGenerator {
     private final Random random = new Random();
 
