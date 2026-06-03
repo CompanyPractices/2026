@@ -3,6 +3,7 @@ package com.processing.services;
 import com.processing.models.CardEntity;
 import com.processing.repositories.CardRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -14,7 +15,11 @@ public class CardGeneratorService {
     private final PanGenerator panGenerator;
 
     private final Random random = new Random();
-    private static final String ISSUER_ID = "BANK";
+
+    @Value("${app.card-service.issuer-id}")
+    private String issuerId;
+
+    private static final String CURRENCY_CODE = "643";
 
     private static final List<String> NAMES = List.of(
           "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
@@ -26,23 +31,22 @@ public class CardGeneratorService {
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
 
-            int balance = random.nextInt(1_000_000, 50_000_000);
-            int dailyLimit = random.nextInt(5_000_000, 30_000_000);
-            int monthlyLimit = dailyLimit * 30;
             String cardholderName = NAMES.get(random.nextInt(NAMES.size()));
+            long balance = random.nextInt(1_000_000, 50_000_000);
+            long dailyLimit = random.nextInt(5_000_000, 30_000_000);
+            long monthlyLimit = dailyLimit * 30;
 
             CardEntity card = new CardEntity(
                     panGenerator.generatePan(bin),
                     bin,
                     cardholderName,
+                    CURRENCY_CODE,
                     dailyLimit,
                     monthlyLimit,
-                    balance
+                    balance,
+                    issuerId
             );
-
-            card.setIssuerId(ISSUER_ID);
             card.setStatus(generateStatus());
-
             cards.add(card);
         }
         return cardRepository.saveAll(cards);
