@@ -2,7 +2,6 @@ package com.processing.merchantacquirer.domain.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 
 import java.util.List;
 
@@ -12,7 +11,7 @@ public class Scenario {
     private List<String> mcc;
     private int countLower;
     private int countUpper;
-    private int timeLower;
-    private int timeUpper;
+    private String timeLower;
+    private String timeUpper;
     private int avgApproved;
 }
