@@ -1,16 +1,19 @@
 server:
   port: ${PORT:8080}
 
-# PostgreSQL (раскомментируй, если нужна БД)
-# spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:processing}
-# spring.datasource.username=${DB_USER:postgres}
-# spring.datasource.password=${DB_PASSWORD:postgres}
-# spring.jpa.hibernate.ddl-auto=update
----
+#---
 # Logging
-logging.level.com.processing=INFO
-logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
----
+logging:
+  level:
+    com.processing.gateway: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.server.mvc: TRACE
+    org.springframework.http.client: TRACE
+    org.springframework.web.client: DEBUG
+#  pattern:
+#    console: %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+
+#---
 # Actuator
 management:
   endpoints:
@@ -22,31 +25,32 @@ management:
     health:
       show-details: always
 
-#management.endpoints.web.exposure.include=health,info
-#management.endpoint.health.show-details=always
-
 spring:
   cloud:
     gateway:
-      routes:
-        - id: switch
-          uri: ${SWITCH}
-          predicates:
-            - Path=/api/transactions
-        - id: logger
-          uri: ${LOGGER}
-          predicates:
-            - Path=/api/transactions/search
-            - Path=/api/dashboard/**
-        - id: terminal-simulator
-          uri: ${TERMINAL}
-          predicates:
-            - Path=/api/simulator/terminal/**
-        - id: merchant-simulator
-          uri: ${MERCHANT}
-          predicates:
-            - Path=/api/simulator/merchant/**
-        - id: cards
-          uri: ${CARDS}
-          predicates:
-            - Path=/api/cards/**
+      mvc:
+        routes:
+          - id: switch
+            uri: ${SWITCH:http://localhost:8081}
+            predicates:
+              - Path=/api/transactions
+            filters:
+              - RewritePath=/api/transactions, /api/internal/route
+          - id: logger
+            uri: ${LOGGER:http://localhost:8082}
+            predicates:
+              - Path=/api/dashboard/**, /api/transactions/search
+          - id: terminal-simulator
+            uri: ${TERMINAL:http://localhost:8083}
+            predicates:
+              - Path=/api/simulator/terminal/**
+          - id: merchant-simulator
+            uri: ${MERCHANT:http://localhost:8084}
+            predicates:
+              - Path=/api/simulator/merchant/**
+          - id: cards
+            uri: ${CARDS:http://localhost:8085}
+            predicates:
+              - Path=/api/cards/**
+  mvc:
+    log-request-details: true
