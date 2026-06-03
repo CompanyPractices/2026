@@ -26,6 +26,7 @@ public final class CardEntity {
         INACTIVE,
         BLOCKED,
         EXPIRED,
+        DELETED,
     }
 
     @Id
@@ -97,5 +98,9 @@ public final class CardEntity {
     public void setExpiryDate(LocalDate expiryDate) {
         this.expiryDate = expiryDate;
         this.strExpiryDate = expiryDate.format(formatter);
+    }
+
+    public void delete() {
+        setStatus(Status.DELETED);
     }
 }
