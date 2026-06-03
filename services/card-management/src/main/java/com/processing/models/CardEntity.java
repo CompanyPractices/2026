@@ -38,7 +38,6 @@ public final class CardEntity {
     @Column(nullable = false)
     private String cardholderName;
 
-    @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     @Column(name = "expiry_date", nullable = false, length = 4)
     private String strExpiryDate;
