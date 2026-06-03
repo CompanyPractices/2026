@@ -5,10 +5,11 @@ import org.springframework.stereotype.Service;
 import java.util.Random;
 
 @Service
-public class LuhnValidator {
-    private static final Random random = new Random();
+public class LuhnValidator implements PanGenerator {
+    private final Random random = new Random();
 
-    public static boolean isValid(String pan) {
+    @Override
+    public boolean isValid(String pan) {
         if (pan == null || !pan.matches("\\d+")) {
             throw new IllegalArgumentException("PAN must contain only digits");
         }
@@ -32,12 +33,13 @@ public class LuhnValidator {
         return total % 10 == 0;
     }
 
-    public static String generatePan(String bin) {
+    @Override
+    public String generatePan(String bin) {
         if (bin == null || !bin.matches("\\d{6}")) {
             throw new IllegalArgumentException("BIN must be exactly 6 digits");
         }
 
-        long randomNumber = random.nextLong(100_000_000L, 1_000_000_000L);
+        int randomNumber = random.nextInt(100_000_000, 1_000_000_000);
         String base = bin + randomNumber;
 
         for (int checkDigit = 0; checkDigit < 10; checkDigit++) {
