@@ -4,6 +4,7 @@ import com.processing.dto.DashboardStatsResponse;
 import com.processing.dto.TransactionSearchResponse;
 import com.processing.enums.TransactionStatus;
 import com.processing.model.Transaction;
+import com.processing.model.Transaction_;
 import com.processing.repository.TransactionRepository;
 import com.processing.specification.TransactionFilter;
 import com.processing.specification.TransactionSpecification;
@@ -48,7 +49,7 @@ public class TransactionService {
     }
 
     public List<Transaction> getRecent(int limit) {
-        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC));
-        return List.of();
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, Transaction_.CREATED_AT));
+        return transactionRepository.findAll(pageable).getContent();
     }
 }
