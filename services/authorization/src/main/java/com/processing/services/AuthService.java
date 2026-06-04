@@ -59,6 +59,9 @@ public class AuthService {
         }
 
         CardStatus currCardStatus = cardResponse.getStatus();
+        if (currCardStatus == null) {
+            return AuthorizationResponse.declined(request, "UNKNOWN_REASON", "05");
+        }
         if (!currCardStatus.equals(CardStatus.ACTIVE)) {
             return switch (currCardStatus) {
                 case EXPIRED -> AuthorizationResponse.declined(request, "CARD_EXPIRED", "54");

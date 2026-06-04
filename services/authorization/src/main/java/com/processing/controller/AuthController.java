@@ -4,7 +4,6 @@ import com.processing.dto.*;
 import com.processing.services.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
-import java.lang.Exception;
 
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,7 +14,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/api/internal/authorize")
-    public AuthorizationResponse authorize(@RequestBody AuthorizationRequest request) throws Exception {
+    public AuthorizationResponse authorize(@RequestBody AuthorizationRequest request) {
         return authService.authorize(request);
     }
 }
