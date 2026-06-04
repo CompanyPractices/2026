@@ -4,13 +4,13 @@ import com.processing.dto.TransactionRequest;
 import com.processing.dto.TransactionResponse;
 import com.processing.dto.TransactionStoredResponse;
 import com.processing.enums.TransactionStatus;
+import com.processing.service.TransactionStoreResult;
 import com.processing.service.TransactionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,7 +21,9 @@ class InternalTransactionControllerTest {
     void storeReturnsExistingTransactionWhenIdAlreadyExists() {
         TransactionRequest request = transactionRequest();
         TransactionResponse existingResponse = transactionResponse(request.id());
-        StubTransactionService transactionService = new StubTransactionService(Optional.of(existingResponse), null);
+        StubTransactionService transactionService = new StubTransactionService(
+                TransactionStoreResult.existing(existingResponse)
+        );
         InternalTransactionController controller = new InternalTransactionController(transactionService);
 
         ResponseEntity<?> response = controller.store(request);
@@ -34,7 +36,9 @@ class InternalTransactionControllerTest {
     void storeSavesTransactionWhenIdDoesNotExist() {
         TransactionRequest request = transactionRequest();
         TransactionStoredResponse storedResponse = new TransactionStoredResponse(request.id(), "stored");
-        StubTransactionService transactionService = new StubTransactionService(Optional.empty(), storedResponse);
+        StubTransactionService transactionService = new StubTransactionService(
+                TransactionStoreResult.created(storedResponse)
+        );
         InternalTransactionController controller = new InternalTransactionController(transactionService);
 
         ResponseEntity<?> response = controller.store(request);
@@ -95,28 +99,18 @@ class InternalTransactionControllerTest {
     }
 
     private static class StubTransactionService extends TransactionService {
-        private final Optional<TransactionResponse> existingResponse;
-        private final TransactionStoredResponse storedResponse;
+        private final TransactionStoreResult result;
         private boolean storeCalled;
 
-        StubTransactionService(
-                Optional<TransactionResponse> existingResponse,
-                TransactionStoredResponse storedResponse
-        ) {
+        StubTransactionService(TransactionStoreResult result) {
             super(null, null, null, null);
-            this.existingResponse = existingResponse;
-            this.storedResponse = storedResponse;
+            this.result = result;
         }
 
         @Override
-        public Optional<TransactionResponse> findExistingTransaction(UUID id) {
-            return existingResponse;
-        }
-
-        @Override
-        public TransactionStoredResponse store(TransactionRequest request) {
+        public TransactionStoreResult store(TransactionRequest request) {
             storeCalled = true;
-            return storedResponse;
+            return result;
         }
     }
 }

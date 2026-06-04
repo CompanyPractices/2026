@@ -2,7 +2,6 @@ package com.processing.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.dto.TransactionRequest;
-import com.processing.dto.TransactionResponse;
 import com.processing.dto.TransactionStoredResponse;
 import com.processing.enums.TransactionStatus;
 import com.processing.mapper.TransactionMapper;
@@ -26,16 +25,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TransactionServiceTest {
 
     @Test
-    void findExistingTransactionReturnsMappedResponse() {
+    void storeReturnsExistingTransactionWhenIdAlreadyExists() {
         UUID id = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
         Transaction transaction = transaction(id);
         RepositoryFake repository = new RepositoryFake(transaction);
-        TransactionService transactionService = transactionService(repository, new CapturingWebSocketManager());
+        CapturingWebSocketManager webSocketManager = new CapturingWebSocketManager();
+        TransactionService transactionService = transactionService(repository, webSocketManager);
 
-        Optional<TransactionResponse> response = transactionService.findExistingTransaction(id);
+        TransactionStoreResult result = transactionService.store(transactionRequest());
 
-        assertThat(response).isPresent();
-        assertThat(response.get().id()).isEqualTo(id);
+        assertThat(result.created()).isFalse();
+        assertThat(result.existingTransaction().id()).isEqualTo(id);
+        assertThat(result.storedTransaction()).isNull();
+        assertThat(repository.saveCount).isZero();
+        assertThat(webSocketManager.lastMessage).isNull();
     }
 
     @Test
@@ -45,11 +48,14 @@ class TransactionServiceTest {
         CapturingWebSocketManager webSocketManager = new CapturingWebSocketManager();
         TransactionService transactionService = transactionService(repository, webSocketManager);
 
-        TransactionStoredResponse response = transactionService.store(request);
+        TransactionStoreResult result = transactionService.store(request);
 
-        assertThat(response.id()).isEqualTo(request.id());
-        assertThat(response.status()).isEqualTo("stored");
+        assertThat(result.created()).isTrue();
+        assertThat(result.existingTransaction()).isNull();
+        assertThat(result.storedTransaction().id()).isEqualTo(request.id());
+        assertThat(result.storedTransaction().status()).isEqualTo("stored");
         assertThat(repository.findById(request.id())).isPresent();
+        assertThat(repository.saveCount).isOne();
         assertThat(webSocketManager.lastMessage).contains(request.id().toString());
     }
 
@@ -98,6 +104,7 @@ class TransactionServiceTest {
 
     private static class RepositoryFake implements InvocationHandler {
         private final Map<UUID, Transaction> transactions = new HashMap<>();
+        private int saveCount;
 
         RepositoryFake(Transaction... transactions) {
             for (Transaction transaction : transactions) {
@@ -128,6 +135,7 @@ class TransactionServiceTest {
         }
 
         private Transaction save(Transaction transaction) {
+            saveCount++;
             transactions.put(transaction.getId(), transaction);
             return transaction;
         }

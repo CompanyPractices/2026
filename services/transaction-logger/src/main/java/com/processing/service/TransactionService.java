@@ -27,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -38,13 +37,14 @@ public class TransactionService {
     private final WebSocketManager webSocketManager;
     private final ObjectMapper objectMapper;
 
-    @Transactional(readOnly = true)
-    public Optional<TransactionResponse> findExistingTransaction(UUID id) {
-        return transactionRepository.findById(id).map(transactionMapper::toResponse);
-    }
-
     @Transactional
-    public TransactionStoredResponse store(TransactionRequest request) {
+    public TransactionStoreResult store(TransactionRequest request) {
+        Optional<Transaction> existingTransaction = transactionRepository.findById(request.id());
+        if (existingTransaction.isPresent()) {
+            TransactionResponse response = transactionMapper.toResponse(existingTransaction.get());
+            return TransactionStoreResult.existing(response);
+        }
+
         Transaction savedTransaction = transactionRepository.save(transactionMapper.toEntity(request));
 
         try {
@@ -54,7 +54,7 @@ public class TransactionService {
             log.error("Failed to serialize transaction for WebSocket broadcast: {}", savedTransaction.getId(), exception);
         }
 
-        return transactionMapper.toStoredResponse(savedTransaction);
+        return TransactionStoreResult.created(transactionMapper.toStoredResponse(savedTransaction));
     }
 
     public TransactionSearchResponse search(TransactionFilter filter) {

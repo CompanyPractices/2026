@@ -1,8 +1,7 @@
 package com.processing.controller;
 
 import com.processing.dto.TransactionRequest;
-import com.processing.dto.TransactionResponse;
-import com.processing.dto.TransactionStoredResponse;
+import com.processing.service.TransactionStoreResult;
 import com.processing.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Optional;
-
 @RestController
 @RequestMapping("/api/internal")
 @RequiredArgsConstructor
@@ -23,12 +20,11 @@ public class InternalTransactionController {
 
     @PostMapping("/log")
     public ResponseEntity<?> store(@Valid @RequestBody TransactionRequest request) {
-        Optional<TransactionResponse> existingTransaction = transactionService.findExistingTransaction(request.id());
-        if (existingTransaction.isPresent()) {
-            return ResponseEntity.ok(existingTransaction.get());
+        TransactionStoreResult result = transactionService.store(request);
+        if (result.created()) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(result.storedTransaction());
         }
 
-        TransactionStoredResponse response = transactionService.store(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.ok(result.existingTransaction());
     }
 }
