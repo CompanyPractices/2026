@@ -1,6 +1,5 @@
 package com.processing.service;
 
-
 import com.processing.config.SwitchProperties;
 import com.processing.model.AuthorizationRequest;
 import com.processing.model.AuthorizationResponse;
@@ -9,29 +8,23 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-
 @Service
 public class AuthorizationClient {
 
-
     private static final Logger log = LoggerFactory.getLogger(AuthorizationClient.class);
-
 
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
-
 
     public AuthorizationClient(SwitchProperties switchProperties, RestClient restClient) {
         this.switchProperties = switchProperties;
         this.restClient = restClient;
     }
 
-
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         if (switchProperties.authorizationStubEnabled()) {
             return stubApprove(request);
         }
-
 
         // POST /api/internal/authorize
         try {
@@ -51,12 +44,10 @@ public class AuthorizationClient {
         }
     }
 
-
     public String checkHealth() {
         if (switchProperties.authorizationStubEnabled()) {
             return "ok";
         }
-
 
         // GET /health
         try {
@@ -70,7 +61,6 @@ public class AuthorizationClient {
             return "down";
         }
     }
-
 
     private AuthorizationResponse stubApprove(AuthorizationRequest request) {
         log.debug("Authorization stub: STAN={} issuerId={}", request.stan(), request.issuerId());

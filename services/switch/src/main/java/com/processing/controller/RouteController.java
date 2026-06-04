@@ -1,6 +1,5 @@
 package com.processing.controller;
 
-
 import com.processing.model.AuthorizationRequest;
 import com.processing.model.AuthorizationResponse;
 import com.processing.service.RouteService;
@@ -12,22 +11,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @RestController
 @RequestMapping("/api/internal")
 public class RouteController {
 
-
     private static final Logger log = LoggerFactory.getLogger(RouteController.class);
 
-
     private final RouteService routeService;
-
 
     public RouteController(RouteService routeService) {
         this.routeService = routeService;
     }
-
 
     @PostMapping("/route")
     public ResponseEntity<AuthorizationResponse> routeTransaction(
@@ -36,7 +30,6 @@ public class RouteController {
         AuthorizationResponse response = routeService.route(request);
         return ResponseEntity.ok(response);
     }
-
 
     private String maskPan(String pan) {
         if (pan == null || pan.length() < 8) {

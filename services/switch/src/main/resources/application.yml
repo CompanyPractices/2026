@@ -3,6 +3,9 @@ server:
 
 switch:
   version: ${SWITCH_VERSION:1.0.0}
+  authorization-url: ${AUTH_URL:http://localhost:8083}
+  logger-url: ${LOGGER_URL:http://localhost:8088}
+  authorization-stub-enabled: ${SWITCH_AUTH_STUB:true}
   bin-routing:
     "400000": ISS001
     "400001": ISS002
