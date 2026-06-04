@@ -2,22 +2,17 @@ package com.processing.services;
 
 import com.processing.models.CardDto;
 import com.processing.models.CardEntity;
-import com.processing.models.CreateCardRequest;
 import com.processing.models.GeneratedCardDto;
 import com.processing.options.CardGeneratorOptions;
-import com.processing.repositories.CardRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.smartcardio.Card;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class CardGeneratorService {
-    private final CardRepository cardRepository;
-    private final PanGenerator panGenerator;
+    private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
 
     private final Random random = new Random();
@@ -26,7 +21,7 @@ public class CardGeneratorService {
           "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
     );
 
-    public List<GeneratedCardDto> generate(int count, List<String> bins) {
+    public List<CardDto> generate(int count, List<String> bins) {
         List<GeneratedCardDto> cards = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
@@ -49,7 +44,7 @@ public class CardGeneratorService {
 
             cards.add(card);
         }
-        return cards;
+        return cardService.createCards(cards);
     }
 
     private CardEntity.Status generateStatus() {

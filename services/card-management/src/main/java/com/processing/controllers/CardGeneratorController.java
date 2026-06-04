@@ -1,7 +1,6 @@
 package com.processing.controllers;
 
 import com.processing.models.CardDto;
-import com.processing.models.CardEntity;
 import com.processing.models.GenerateCardResponse;
 import com.processing.models.GenerateCardsRequest;
 import com.processing.services.CardGeneratorService;
@@ -23,10 +22,7 @@ public class CardGeneratorController {
 
     @PostMapping("/generate")
     public ResponseEntity<GenerateCardResponse> generate(@Valid @RequestBody GenerateCardsRequest request) {
-        List<CardEntity> cards = generatorService.generate(request.count(), request.bins());
-        List<CardDto> result = cards.stream()
-                .map(CardDto::fromEntity)
-                .toList();
+        List<CardDto> result = generatorService.generate(request.count(), request.bins());
 
         return ResponseEntity.status(201).body(new GenerateCardResponse(result.size(), result));
     }
