@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,8 +33,8 @@ public interface CardRepository
         @Nullable @Param("status") CardEntity.Status status,
         @Nullable @Param("bin") String bin,
         @Nullable @Param("issuerId") String issuerId,
-        @Nullable @Param("startDate") LocalDate startDate,
-        @Nullable @Param("endDate") LocalDate endDate,
+        @Nullable @Param("startDate") LocalDateTime startDate,
+        @Nullable @Param("endDate") LocalDateTime endDate,
         Pageable pageable
     );
 }

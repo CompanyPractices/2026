@@ -17,14 +17,15 @@ Card Management создает карты, управляет балансом, 
 
 ## Endpoints
 
-| Метод  | Путь               | Описание                              |
-|--------|--------------------|---------------------------------------|
-| GET    | `/health`          | Health-check сервиса                  |
-| POST   | `/api/cards`       | Создать карту                         |
-| GET    | `/api/cards/{PAN}` | Получить карту по номеру              |
-| GET    | `/api/cards/`      | Получить карты по фильтрам            |
-| PATCH  | `/api/cards/{PAN}` | Изменить информацию о карте           |
-| DELETE | `/api/cards/{PAN}` | Удалить карту по номеру (soft delete) |
+| Метод  | Путь                  | Описание                              |
+|--------|-----------------------|---------------------------------------|
+| GET    | `/health`             | Health-check сервиса                  |
+| POST   | `/api/cards`          | Создать карту                         |
+| GET    | `/api/cards/{PAN}`    | Получить карту по номеру              |
+| GET    | `/api/cards/`         | Получить карты по фильтрам            |
+| PATCH  | `/api/cards/{PAN}`    | Изменить информацию о карте           |
+| DELETE | `/api/cards/{PAN}`    | Удалить карту по номеру (soft delete) |
+| POST   | `/api/cards/generate` | Сгенерировать N карт                  |
 
 ### Подробно
 
@@ -34,10 +35,8 @@ Card Management создает карты, управляет балансом, 
 ```json
 {
   "status": "ok",
-  "service": "{service-name}",
-  "dependencies": {
-    "{dep1}": "ok"
-  }
+  "service": "card-management",
+  "cardsInDatabase": 100500
 }
 ```
 
@@ -47,7 +46,7 @@ Card Management создает карты, управляет балансом, 
 ```json
 {
   "bin": "400000",
-  "cardholderName": "Tyler Durden",
+  "cardholderName": "TYLER DURDEN",
   "concurrencyCode": "683",
   "dailyLimit": 15000000,
   "monthlyLimit": 300000000,
@@ -61,8 +60,8 @@ Card Management создает карты, управляет балансом, 
   "id": "d3b07384-d113-44a6-a070-658b446a81d4",
   "pan": "1234567891011121",
   "bin": "123456",
-  "cardholderName": "Tyler Durden",
-  "expiryDate": "1970-01-01",
+  "cardholderName": "TYLER DURDEN",
+  "expiryDate": "1234",
   "status": "ACTIVE",
   "dailyLimit": 15000000,
   "monthlyLimit": 300000000,
@@ -73,13 +72,14 @@ Card Management создает карты, управляет балансом, 
 ```
 
 #### `GET /api/cards/{PAN}`
+
 **Ответ 200:**
 ```json
 {
   "id": "d3b07384-d113-44a6-a070-658b446a81d4",
   "pan": "1234567891011121",
   "bin": "123456",
-  "cardholderName": "Tyler Durden",
+  "cardholderName": "TYLER DURDEN",
   "expiryDate": "1970-01-01",
   "status": "ACTIVE",
   "dailyLimit": 15000000,
@@ -92,13 +92,108 @@ Card Management создает карты, управляет балансом, 
 
 #### `GET /api/cards/`
 
+**Тело запроса** (все данные опциональны)
+```json
+{
+  "limit": 10,
+  "offset": 0,
+  "status": "ACTIVE",
+  "bin": "123456",
+  "issuerId": "ZZZZZZ",
+  "startDate": "1970-01-01T00:00:00",
+  "endDate": "2077-01-01T00:00:00"
+}
+```
+
+**Ответ 200:**
+```json
+[
+  {
+    "id": "d3b07384-d113-44a6-a070-658b446a81d4",
+    "pan": "1234567891011121",
+    "bin": "123456",
+    "cardholderName": "TYLER DURDEN",
+    "expiryDate": "1970-01-01",
+    "status": "ACTIVE",
+    "dailyLimit": 15000000,
+    "monthlyLimit": 300000000,
+    "availableBalance": 1000000,
+    "issuerId": "ZZZZZZ",
+    "createdAt": "1970-01-01T00:00:00"
+  },
+  // ...
+]
+```
+#### `PATCH /api/cards/{pan}`
+
+**Тело запроса** (все данные опциональны)
+```json
+{
+  "status": "ACTIVE",
+  "dailyLimit": 15000000,
+  "monthlyLimit": 300000000,
+  "availableBalance": 1000000
+}
+```
+
+**Ответ 204 (no content)**
+
+#### `DELETE /api/cards/{pan}`
+**Ответ 204 (no content)**
+
+#### `POST /api/cards/generate`
+
+**Тело запроса**
+```json
+{
+  "count": 100,
+  "bin": [123456, 222333, 400000] // not empty
+}
+```
+
+**Ответ 201**
+```json
+{
+  "generated": 100,
+  "cards": [
+    {
+      "id": "d3b07384-d113-44a6-a070-658b446a81d4",
+      "pan": "1234567891011121",
+      "bin": "123456",
+      "cardholderName": "TYLER DURDEN",
+      "expiryDate": "1970-01-01",
+      "status": "ACTIVE",
+      "dailyLimit": 15000000,
+      "monthlyLimit": 300000000,
+      "availableBalance": 1000000,
+      "issuerId": "ZZZZZZ",
+      "createdAt": "1970-01-01T00:00:00"
+    },
+    // ...
+  ]
+}
+```
+
+---
 
 **Ошибки:**
 
-| Код | Условие          |
-|-----|------------------|
-| 400 | Ошибка валидации |
-| 404 | Карта не найдена |
+| Код | Условие              |
+|-----|----------------------|
+| 400 | Ошибка валидации     |
+| 402 | Недостаточно средств |
+| 404 | Карта не найдена     |
+| 500 | Неизвестная ошибка   |
+
+**Пример**
+```json
+{
+  "status": 404,
+  "error": "com.processing.exceptions.CardNotFoundException",
+  "message": "Card with present PAN was not found",
+  "timestamp": "1970-01-01T00:00:00"
+}
+```
 
 ---
 
@@ -114,7 +209,6 @@ Card Management создает карты, управляет балансом, 
 | `DB_NAME`     | `postgres`            | Имя базы данных      |
 | `DB_USER`     | `postgres`            | Пользователь БД      |
 | `DB_PASSWORD` | `postgres`            | Пароль БД            |
-| `ISSUER_ID`   | `ZZZZZZ`              | Номер банка-эмитента |
 
 ---
 
@@ -146,7 +240,7 @@ docker compose up -d card-management
 ## Тестирование
 
 ```bash
-./mvnw test
+mvn test
 ```
 
 ---

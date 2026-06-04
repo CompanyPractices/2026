@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Schema(description = "Request parameters for getting cards list")
 public record GetCardsRequest(
@@ -37,11 +37,11 @@ public record GetCardsRequest(
 
     @Nullable
     @Schema(description = "Start date")
-    LocalDate startDate,
+    LocalDateTime startDate,
 
     @Nullable
     @Schema(description = "End date")
-    LocalDate endDate
+    LocalDateTime endDate
 ) {
 
     public GetCardsRequest {
