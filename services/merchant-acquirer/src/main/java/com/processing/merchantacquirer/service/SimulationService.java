@@ -26,6 +26,7 @@ import java.util.Map;
 public class SimulationService {
     private final MerchantRepository merchantRepository;
     private final GatewayClient gatewayClient;
+    private final AuthorizationRequestFactory authorizationRequestFactory;
 
     private final Map<String, Scenario> scenarios = Map.of(
             "grocery", new Scenario(List.of("5411", "5499"), 100, 3000, "8:00", "23:00", 95),
@@ -60,7 +61,6 @@ public class SimulationService {
 
         // Создание транакций
         List<AuthorizationRequest> authorizationRequests = new ArrayList<>();
-        AuthorizationRequestFactory authorizationRequestFactory = new AuthorizationRequestFactory();
         for(CardDataResponse card : cardsResponse.cards()){
             AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
                     "0100",
@@ -68,7 +68,7 @@ public class SimulationService {
                     100,
                     terminal,
                     merchants.getFirst());
-
+            log.info(String.valueOf(authorizationRequest));
             authorizationRequests.add(authorizationRequest);
         }
 
