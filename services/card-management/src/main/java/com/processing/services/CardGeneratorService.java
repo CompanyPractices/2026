@@ -19,7 +19,20 @@ public class CardGeneratorService {
     @Value("${app.card-service.issuer-id}")
     private String issuerId;
 
-    private static final String CURRENCY_CODE = "643";
+    @Value("${app.card-service.currency-code}")
+    private String currencyCode;
+
+    @Value("${app.card-service.min-balance}")
+    private long minBalance;
+
+    @Value("${app.card-service.max-balance}")
+    private long maxBalance;
+
+    @Value("${app.card-service.min-daily-limit}")
+    private long minDailyLimit;
+
+    @Value("${app.card-service.max-daily-limit}")
+    private long maxDailyLimit;
 
     private static final List<String> NAMES = List.of(
           "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
@@ -32,15 +45,15 @@ public class CardGeneratorService {
             String bin = bins.get(i % bins.size());
 
             String cardholderName = NAMES.get(random.nextInt(NAMES.size()));
-            long balance = random.nextInt(1_000_000, 50_000_000);
-            long dailyLimit = random.nextInt(5_000_000, 30_000_000);
+            long balance = random.nextLong(minBalance, maxBalance);
+            long dailyLimit = random.nextLong(minDailyLimit, maxDailyLimit);
             long monthlyLimit = dailyLimit * 30;
 
             CardEntity card = new CardEntity(
                     panGenerator.generatePan(bin),
                     bin,
                     cardholderName,
-                    CURRENCY_CODE,
+                    currencyCode,
                     dailyLimit,
                     monthlyLimit,
                     balance,

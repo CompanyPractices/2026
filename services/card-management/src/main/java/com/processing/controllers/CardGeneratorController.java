@@ -23,7 +23,7 @@ public class CardGeneratorController {
 
     @PostMapping("/generate")
     public ResponseEntity<GenerateCardResponse> generate(@Valid @RequestBody GenerateCardsRequest request) {
-        List<CardEntity> cards = generatorService.generate(request.getCount(), request.getBins());
+        List<CardEntity> cards = generatorService.generate(request.count(), request.bins());
         List<CardDto> result = cards.stream()
                 .map(CardDto::fromEntity)
                 .toList();
