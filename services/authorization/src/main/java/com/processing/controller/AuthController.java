@@ -52,7 +52,7 @@ public class AuthController {
             return AuthorizationResponse.declined(request, "INSUFFICIENT_FUNDS", "51");
 
         String rrn = generateRRN();
-        reserve(request.getAmount(), request.getPan(), rrn);
+        reserve(request.getAmount(), rrn, request.getPan());
         String authCode = generateAuthCode();
         return AuthorizationResponse.approved(request, rrn, authCode);
     }
