@@ -1,8 +1,152 @@
 import { KpiCardData } from "./components/KpiCards/types.ts";
+import {TransactionTableRowData} from "./components/TransactionTable/types.ts";
 
 export const MOCK_KPI_CARDS: KpiCardData[] = [
     { label: "Всего ТХ", value: 1250 },
     { label: "Одобрено", value: 88, unit: "%" },
     { label: "Общая сумма", value: "1 875 000", unit: "₽" },
     { label: "Среднее время", value: 38, unit: "ms" }
+];
+
+export const MOCK_TRANSACTIONS_TABLE: TransactionTableRowData[] = [
+    {
+        time: '2026-06-04T12:05:30Z',
+        pan: '4111111111111111',
+        amount: 250000,
+        merchantId: 'Пятёрочка',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T12:04:15Z',
+        pan: '5500000000000004',
+        amount: 1500000,
+        merchantId: 'М.Видео',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T12:03:45Z',
+        pan: '4000001234567890',
+        amount: 45000,
+        merchantId: 'Вкусно и точка',
+        status: 'DECLINED',
+    },
+    {
+        time: '2026-06-04T12:02:20Z',
+        pan: '4276123456789012',
+        amount: 7500000,
+        merchantId: 'Ozon.ru',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T12:01:10Z',
+        pan: '5100000000000008',
+        amount: 1299000,
+        merchantId: 'Золотое Яблоко',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T12:00:05Z',
+        pan: '4000009876543210',
+        amount: 89000,
+        merchantId: 'Starbucks',
+        status: 'DECLINED',
+    },
+    {
+        time: '2026-06-04T11:58:50Z',
+        pan: '4532123456789012',
+        amount: 320000,
+        merchantId: 'Лента',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:57:30Z',
+        pan: '5200000000000007',
+        amount: 4500000,
+        merchantId: 'Wildberries',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:56:15Z',
+        pan: '4111222233334444',
+        amount: 67000,
+        merchantId: 'Кофемания',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:55:00Z',
+        pan: '4000005555666677',
+        amount: 2500000,
+        merchantId: 'DNS',
+        status: 'DECLINED',
+    },
+    {
+        time: '2026-06-04T11:53:45Z',
+        pan: '5300000000000006',
+        amount: 180000,
+        merchantId: 'Перекрёсток',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:52:30Z',
+        pan: '4276987654321098',
+        amount: 95000,
+        merchantId: 'Яндекс.Такси',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:51:15Z',
+        pan: '4000001111222233',
+        amount: 1200000,
+        merchantId: 'IKEA',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:50:00Z',
+        pan: '5400000000000005',
+        amount: 340000,
+        merchantId: 'Спортмастер',
+        status: 'DECLINED',
+    },
+    {
+        time: '2026-06-04T11:48:45Z',
+        pan: '4111333344445555',
+        amount: 56000,
+        merchantId: 'Макдоналдс',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:47:30Z',
+        pan: '4532987654321098',
+        amount: 8900000,
+        merchantId: 'AliExpress',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:46:15Z',
+        pan: '4000007777888899',
+        amount: 230000,
+        merchantId: 'Дикси',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:45:00Z',
+        pan: '5500000000000004',
+        amount: 175000,
+        merchantId: 'KFC',
+        status: 'DECLINED',
+    },
+    {
+        time: '2026-06-04T11:43:45Z',
+        pan: '4276111122223333',
+        amount: 4200000,
+        merchantId: 'Lamoda',
+        status: 'APPROVED',
+    },
+    {
+        time: '2026-06-04T11:42:30Z',
+        pan: '4000003333444455',
+        amount: 78000,
+        merchantId: 'Burger King',
+        status: 'APPROVED',
+    },
 ];
