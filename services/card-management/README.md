@@ -189,7 +189,7 @@ Card Management создает карты, управляет балансом, 
 ```json
 {
   "status": 404,
-  "error": "com.processing.exceptions.CardNotFoundException",
+  "error": "com.processing.cardmanagement.exceptions.CardNotFoundException",
   "message": "Card with present PAN was not found",
   "timestamp": "1970-01-01T00:00:00"
 }
