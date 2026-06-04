@@ -1,11 +1,16 @@
 package com.processing.services;
 
+import com.processing.models.CardDto;
 import com.processing.models.CardEntity;
+import com.processing.models.CreateCardRequest;
+import com.processing.models.GeneratedCardDto;
+import com.processing.options.CardGeneratorOptions;
 import com.processing.repositories.CardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.smartcardio.Card;
 import java.util.*;
 
 @Service
@@ -13,56 +18,38 @@ import java.util.*;
 public class CardGeneratorService {
     private final CardRepository cardRepository;
     private final PanGenerator panGenerator;
+    private final CardGeneratorOptions generatorOptions;
 
     private final Random random = new Random();
-
-    @Value("${app.card-service.issuer-id}")
-    private String issuerId;
-
-    @Value("${app.card-service.currency-code}")
-    private String currencyCode;
-
-    @Value("${app.card-service.min-balance}")
-    private long minBalance;
-
-    @Value("${app.card-service.max-balance}")
-    private long maxBalance;
-
-    @Value("${app.card-service.min-daily-limit}")
-    private long minDailyLimit;
-
-    @Value("${app.card-service.max-daily-limit}")
-    private long maxDailyLimit;
 
     private static final List<String> NAMES = List.of(
           "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
     );
 
-    public List<CardEntity> generate(int count, List<String> bins) {
-        List<CardEntity> cards = new ArrayList<>();
+    public List<GeneratedCardDto> generate(int count, List<String> bins) {
+        List<GeneratedCardDto> cards = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
 
             String cardholderName = NAMES.get(random.nextInt(NAMES.size()));
-            long balance = random.nextLong(minBalance, maxBalance);
-            long dailyLimit = random.nextLong(minDailyLimit, maxDailyLimit);
-            long monthlyLimit = dailyLimit * 30;
+            int balance = random.nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
+            int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
+            int monthlyLimit = dailyLimit * 30;
 
-            CardEntity card = new CardEntity(
-                    panGenerator.generatePan(bin),
+            GeneratedCardDto card = new GeneratedCardDto(
                     bin,
                     cardholderName,
-                    currencyCode,
+                    generatorOptions.currencyCode(),
                     dailyLimit,
                     monthlyLimit,
                     balance,
-                    issuerId
+                    generateStatus()
             );
-            card.setStatus(generateStatus());
+
             cards.add(card);
         }
-        return cardRepository.saveAll(cards);
+        return cards;
     }
 
     private CardEntity.Status generateStatus() {
