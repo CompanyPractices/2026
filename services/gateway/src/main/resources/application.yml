@@ -22,6 +22,43 @@ management:
         include:
           - health
           - info
+    health:
+      show-details: always
+
+spring:
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: switch
+            uri: http://switch:${SWITCH_PORT:8082}
+            predicates:
+              - Path=/api/transactions
+              - Method=POST
+            filters:
+              - RewritePath=/api/transactions, /api/internal/route
+          - id: logger
+            uri: http://logger:${LOGGER_PORT:8088}
+            predicates:
+              - Path=/api/transactions/search
+          - id: dashboard
+            uri: http://logger:${LOGGER_PORT:8088}
+            predicates:
+              - Path=/api/dashboard/**
+          - id: terminal
+            uri: http://terminal-simulator:${TERMINAL_PORT:8085}
+            predicates:
+              - Path=/api/simulator/terminal/**
+          - id: merchant
+            uri: http://merchant-acquirer:${MERCHANT_PORT:8086}
+            predicates:
+              - Path=/api/simulator/merchant/**
+          - id: cards
+            uri: http://card-management:${CARD_MGMT_PORT:8081}
+            predicates:
+              - Path=/api/cards/**
+  mvc:
+    log-request-details: true
   endpoint:
     health:
       show-details: always

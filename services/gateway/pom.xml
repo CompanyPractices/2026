@@ -78,14 +78,6 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway-mvc</artifactId>
         </dependency>
-
-        <!-- Source: https://mvnrepository.com/artifact/org.springframework/spring-webflux -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webflux</artifactId>
-            <version>7.0.7</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>
