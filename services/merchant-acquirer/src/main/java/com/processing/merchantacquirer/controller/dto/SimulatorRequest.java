@@ -1,16 +1,18 @@
 package com.processing.merchantacquirer.controller.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import com.processing.merchantacquirer.domain.entity.ScenarioType;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
-@Data
-public class SimulatorRequest {
-    private int count;
+public record SimulatorRequest(
+        @Min(1)
+        int count,
 
-    @NotBlank
-    private String scenario;
+        @NotNull(message = "Scenario is required")
+        ScenarioType scenario,
 
-    private List<String> mccCodes;
+        List<String> mccCodes
+) {
 }
