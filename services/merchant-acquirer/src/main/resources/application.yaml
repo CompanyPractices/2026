@@ -1,0 +1,23 @@
+spring.application.name: merchant-acquirer
+server.port: ${PORT:8080}
+
+# PostgreSQL
+spring.datasource.url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:smp_db}
+spring.datasource.username: ${POSTGRES_USER:smp_user}
+spring.datasource.password: ${POSTGRES_PASSWORD:smp_password}
+spring.jpa.hibernate.ddl-auto: update
+
+spring.flyway.clean-disabled: false
+spring.flyway.clean-on-validation-error: true
+---
+# Logging
+logging.level.com.processing: INFO
+logging.pattern.console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+spring.jpa.show-sql: true
+spring.jpa.properties.hibernate.format_sql: true
+logging.level.org.hibernate.orm.jdbc.bind: trace
+---
+# Actuator
+management.endpoints.web.exposure.include: health,info
+management.endpoint.health.show-details: always
+spring.application.name: merchant-acquirer
