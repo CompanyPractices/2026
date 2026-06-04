@@ -2,6 +2,8 @@ package com.processing.cardmanagement.controllers;
 
 import com.processing.cardmanagement.models.HealthResponse;
 import com.processing.cardmanagement.services.CardService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +15,8 @@ public class HealthController {
 
     private final CardService cardService;
 
+    @Operation(description = "Check service health")
+    @ApiResponse(responseCode = "200", description = "Service is helthy")
     @GetMapping("/health")
     public ResponseEntity<HealthResponse> health() {
         return ResponseEntity.ok(new HealthResponse(
