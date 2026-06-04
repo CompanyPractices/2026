@@ -1,14 +1,15 @@
 import {Header} from "./components/Header"
-
-const cards = [
-  {label: "Всего ТХ", value: 1250},
-  {label: "Одобрено", value: 88, unit: "%"},
-  {label: "Общая сумма", value: "1,875,000", unit: "₽"},
-  {label: "Среднее время", value: 38, unit: "ms"}
-]
+import {TransactionTable} from "./components/TransactionTable/TransactionTable.tsx";
+import {MOCK_KPI_CARDS, MOCK_TRANSACTIONS_TABLE} from "./mockData.ts";
 
 function App() {
-  return <Header cards={cards} />
+  return (
+      <div>
+        <Header cards={MOCK_KPI_CARDS} />
+        <TransactionTable transactions={MOCK_TRANSACTIONS_TABLE} />
+      </div>
+
+  )
 }
 
 export default App;

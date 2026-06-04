@@ -3,44 +3,46 @@ import { getStatusIcon } from '../../utils/statusIcon';
 import {TransactionTableRowData} from "./types";
 
 type TransactionTableProps = {
-    transactions: TransactionTbleRowData[]
+    transactions: TransactionTableRowData[]
 }
 
 export function TransactionTable({ transactions } : TransactionTableProps ){
     return (
-        <div>
-            <h2>Последние 20 транзакций</h2>
+        <div className="font-mono flex flex-col items-center">
+            <h2 className="text-2xl font-bold mb-6 text-center drop-shadow-lg ">Последние 20 транзакций</h2>
 
-            <table>
-                <thead> Последние 20 транзакций </thead>
-                <tr>
-                    <th> Время </th>
-                    <th> PAN </th>
-                    <th> Сумма </th>
-                    <th> Мерчант </th>
-                    <th> Статус </th>
-                </tr>
-                {transactions.map((transaction) => {
-                    const statusIconData = getStatusIcon(transaction.status);
+            <div className="rounded-3xl overflow-hidden border-2 border-gray-400 min-w-1/2 max-w-3/4 shadow-lg">
+                <table className="table-auto w-full">
+                    <tr className=" border-b-2 border-gray-400 text-center text-semibold bg-gray-50">
+                        <th className="px-10 py-5"> Время </th>
+                        <th className="px-10 py-2"> PAN </th>
+                        <th className="px-10 py-2"> Сумма </th>
+                        <th className="px-10 py-2"> Мерчант </th>
+                        <th className="px-10 py-2"> Статус </th>
+                    </tr>
+                    {transactions.map((transaction) => {
+                        const statusIconData = getStatusIcon(transaction.status);
 
-                    return(
-                        <tr key={transaction.pan + transaction.time}>
-                            <td> {formatTime(transaction.time)} </td>
-                            <td> {hidePan(transaction.pan)} </td>
-                            <td> {convertPenniesToRubles(transaction.amount)} </td>
-                            <td> {transaction.merchantId} </td>
-                            <td>
-                                <div>
-                                    <statusIconData.icon
-                                        className={statusIconData.color}
-                                        size={statusIconData.size}
-                                        aria-hidden="true"
-                                    />
-                                    <span>{statusIconData.label}</span>
-                                </div>
-                            </td>
-                        </tr>)})}
-            </table>
+                        return(
+                            <tr key={transaction.pan + transaction.time}
+                                className=" text-center">
+                                <td className="px-10 py-2"> {formatTime(transaction.time)} </td>
+                                <td className="px-10 py-2"> {hidePan(transaction.pan)} </td>
+                                <td className="px-10 py-2"> {convertPenniesToRubles(transaction.amount)} </td>
+                                <td className="px-10 py-2"> {transaction.merchantId} </td>
+                                <td className="px-10 py-2">
+                                    <div className="flex justify-center" >
+                                        <statusIconData.icon
+                                            className={statusIconData.color}
+                                            size={statusIconData.size}
+                                            aria-hidden="true"
+                                        />
+                                        <span className="sr-only" >{statusIconData.label}</span>
+                                    </div>
+                                </td>
+                            </tr>)})}
+                </table>
+            </div>
        </div>
     );
 }
