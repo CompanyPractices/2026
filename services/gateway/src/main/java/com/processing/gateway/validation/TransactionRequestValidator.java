@@ -3,8 +3,6 @@ package com.processing.gateway.validation;
 import com.processing.gateway.dto.AuthorizationRequest;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-
 @Component
 public class TransactionRequestValidator {
 
@@ -20,7 +18,6 @@ public class TransactionRequestValidator {
         requireValue(request.currencyCode(), "currencyCode");
         requireValue(request.transmissionDateTime(), "transmissionDateTime");
         requireValue(request.terminalId(), "terminalId");
-        requireValue(request.terminalType(), "terminalType");
         requireValue(request.merchantId(), "merchantId");
         requireValue(request.mcc(), "mcc");
         requireValue(request.acquirerId(), "acquirerId");
@@ -34,7 +31,7 @@ public class TransactionRequestValidator {
         if (request.amount() == null) {
             throw new TransactionValidationException("Field 'amount' is required");
         }
-        if (request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+        if (request.amount().compareTo(0) <= 0) {
             throw new TransactionValidationException("Field 'amount' must be > 0");
         }
         if (request.currencyCode().length() != 3) {
@@ -50,4 +47,5 @@ public class TransactionRequestValidator {
             throw new TransactionValidationException("Field '" + fieldName + "' is required");
         }
     }
+
 }

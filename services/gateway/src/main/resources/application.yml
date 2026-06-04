@@ -29,6 +29,12 @@ management:
 gateway:
   rate-limit:
     transactions-per-second: ${TRANSACTIONS_RATE_LIMIT:100}
+  downstream-services:
+    urls:
+      switch-url: http://switch:${SWITCH_PORT:8082}
+      logger-url: http://logger:${LOGGER_PORT:8088}
+      auth-url: http://authorization:${AUTH_PORT:8083}
+      cards-url: http://card-management:${CARD_MGMT_PORT:8081}
 
 spring:
   cloud:

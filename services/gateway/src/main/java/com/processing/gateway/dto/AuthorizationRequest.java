@@ -1,17 +1,15 @@
 package com.processing.gateway.dto;
 
-import java.math.BigDecimal;
-
 public record AuthorizationRequest(
         String mti,
         String stan,
         String pan,
         String processingCode,
-        BigDecimal amount,
+        Integer amount,
         String currencyCode,
         String transmissionDateTime,
         String terminalId,
-        String terminalType,
+        TerminalType terminalType,
         String merchantId,
         String mcc,
         String acquirerId

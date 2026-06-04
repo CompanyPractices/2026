@@ -1,9 +1,8 @@
 package com.processing.gateway.validation;
 
 import com.processing.gateway.dto.AuthorizationRequest;
+import com.processing.gateway.dto.TerminalType;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,11 +24,11 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "400000123456000",
                 "000000",
-                BigDecimal.valueOf(150000),
+                150000,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
-                "POS",
+                TerminalType.POS,
                 "MERCH12345678901",
                 "5411",
                 "ACQ001"
@@ -47,11 +46,11 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560001",
                 "000000",
-                BigDecimal.ZERO,
+                0,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
-                "POS",
+                TerminalType.POS,
                 "MERCH12345678901",
                 "5411",
                 "ACQ001"
@@ -69,11 +68,11 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560001",
                 "000000",
-                BigDecimal.valueOf(150000),
+                150000,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
-                "POS",
+                TerminalType.POS,
                 "MERCH12345678901",
                 "5411",
                 "ACQ001"
@@ -90,14 +89,35 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560001",
                 "000000",
-                BigDecimal.valueOf(150000),
+                150000,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
-                "POS",
+                TerminalType.POS,
                 "MERCH12345678901",
                 "5411",
                 "ACQ001"
         );
+    }
+
+    @Test
+    void acceptsRequestWithoutTerminalType() {
+        AuthorizationRequest request = new AuthorizationRequest(
+                "0100",
+                "000001",
+                "4000001234560000",
+                "000000",
+                150000,
+                "643",
+                "2026-06-01T10:30:00Z",
+                "TERM001",
+                null,
+                "MERCH12345678901",
+                "5411",
+                "ACQ001"
+        );
+
+        assertThatCode(() -> validator.validate(request))
+                .doesNotThrowAnyException();
     }
 }
