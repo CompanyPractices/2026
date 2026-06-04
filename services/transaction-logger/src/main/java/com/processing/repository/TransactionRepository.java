@@ -11,8 +11,9 @@ import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
     long countByStatus(TransactionStatus status);
+    @Query("SELECT SUM(t.amount) FROM Transaction t")
     long sumAmount();
     long countByCreatedAtAfter(Instant since);
-    @Query("SELECT AVG(t.processingTimeMs) FROM  Transaction tП")
+    @Query("SELECT AVG(t.processingTimeMs) FROM  Transaction t")
     double averageProcessingTimeMs();
 }
