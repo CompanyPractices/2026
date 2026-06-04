@@ -1,14 +1,14 @@
 package com.processing.service;
 
+import com.processing.client.GatewayClient;
 import com.processing.dto.AuthorizationResponse;
 import com.processing.dto.RunResponse;
 import com.processing.dto.AuthorizationRequest;
-import com.processing.model.Card;
+import com.processing.dto.Card;
 import com.processing.model.TerminalType;
 import com.processing.model.CardStatus;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -20,11 +20,13 @@ import static com.processing.model.CardStatus.ACTIVE;
 import static com.processing.model.CardStatus.BLOCKED;
 
 @Service
+@RequiredArgsConstructor
 public class TerminalSimulatorService {
+    private final GatewayClient gatewayClient;
 
     private final Random random = new Random();
     private int stanCounter = 1;
-    private final List<Card> cards = List.of(new Card[]{new Card(1, "1", "1", "name", "1",
+    private List<Card> cards = List.of(new Card[]{new Card(1, "1", "1", "name", "1",
             ACTIVE, "1", 15, 35, 50, "1", "1"),
             new Card(1, "2", "2", "name2", "2",
                     BLOCKED, "2", 23, 123, 140, "2", "2")});
@@ -57,7 +59,7 @@ public class TerminalSimulatorService {
     }
 
     private String getInvalidPan() {
-        String validPan = getRandomCard(ACTIVE).getPan();
+        String validPan = getRandomCard(ACTIVE).pan();
         char last = validPan.charAt(validPan.length() - 1);
         char newLast = (last == 0) ? '1' : '0';
         return validPan.substring(0, validPan.length() - 1) + newLast;
@@ -65,7 +67,7 @@ public class TerminalSimulatorService {
 
     private Card getRandomCard(CardStatus cardStatus) {
         List<Card> filtered = cards.stream()
-                .filter(c -> c.getStatus() == null || c.getStatus() == cardStatus)
+                .filter(c -> c.status() == null || c.status() == cardStatus)
                 .toList();
         return filtered.get(random.nextInt(filtered.size()));
     }
@@ -92,17 +94,17 @@ public class TerminalSimulatorService {
                 mcc = "5411";
             }
             case "high_value" -> amount = 10_000_000 + (long) (Math.random() * 40_000_000);
-            case "daily_limit" -> amount = card.getDailyLimit() - 1;
+            case "daily_limit" -> amount = card.dailyLimit() - 1;
             case "blocked" -> card = getRandomCard(BLOCKED);
-            case "no_money" -> amount = card.getAvailableBalance() + (int)(Math.random()*100000);
-            case "more_day_limit" -> amount = card.getDailyLimit() + (int)(Math.random()*10000);
+            case "no_money" -> amount = card.availableBalance() + (int)(Math.random()*100000);
+            case "more_day_limit" -> amount = card.dailyLimit() + (int)(Math.random()*10000);
         }
 
-        String pan = card.getPan();
+        String pan = card.pan();
         if (scenario.equals("invalid_pan")) {
             pan = getInvalidPan();
         }
-        String currencyCode = card.getCurrencyCode();
+        String currencyCode = card.currencyCode();
 
         return new AuthorizationRequest(mti, stan, pan, processingCode, amount, currencyCode, transmissionDateTime,
                 terminalId, terminalType, merchantId, mcc, acquirerId, issuerId);
@@ -112,7 +114,7 @@ public class TerminalSimulatorService {
                          String scenario, List<AuthorizationResponse> authResps, String partOfDay) {
         for (int i = start; i < end; i++) {
             AuthorizationRequest tx = createTransaction(scenario, partOfDay);
-            AuthorizationResponse authResp = sendToGateway(tx);
+            AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
             authResps.add(authResp);
             System.out.println(tx);
 
@@ -125,15 +127,14 @@ public class TerminalSimulatorService {
 
     public RunResponse run(int count, String scenario) {
         long start = System.currentTimeMillis();
-        getCardsFromCardManager();
+        List<Card> cardManagementCards = gatewayClient.getCardsFromCardManager();
+        cards = (cardManagementCards != null) ? cardManagementCards : cards;   // TODO: как заработает модуль gateway
+                                                                              // - убрать хардкод карт
         List<AuthorizationResponse> authResps = new ArrayList<>();
         AtomicInteger approved = new AtomicInteger(0), declined = new AtomicInteger(0);
 
         switch (scenario) {
             case "mixed" -> {
-                System.out.println((int)(count * 0.7));
-                System.out.println((int)(count * 0.7 + count * 0.15));
-                System.out.println((int)(count * 0.7 + count * 0.15 + count * 0.1));
                 handler(0, (int)(count * 0.7), approved, declined, "normal", authResps, "day");
                 handler((int)(count * 0.7), (int)(count * 0.7 + count * 0.15), approved, declined,
                         "high_value", authResps, "day");
@@ -162,24 +163,5 @@ public class TerminalSimulatorService {
 
         long elapsed = System.currentTimeMillis() - start;
         return new RunResponse(count, approved.get(), declined.get(), elapsed, authResps);
-    }
-
-    private AuthorizationResponse sendToGateway(AuthorizationRequest tx) {
-        RestTemplate rest = new RestTemplate();
-        String gatewayUrl = "http://gateway:8080/api/transactions";
-        try {
-            ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl, tx, AuthorizationResponse.class);
-            return response.getBody();
-        } catch (Exception e) {
-            AuthorizationResponse errorResponse = new AuthorizationResponse();
-            errorResponse.setStatus("DECLINED");
-            errorResponse.setResponseCode("505");
-            errorResponse.setDeclineReason(e.getMessage());
-            return errorResponse;
-        }
-    }
-
-    private void getCardsFromCardManager() {
-        // TODO
     }
 }
