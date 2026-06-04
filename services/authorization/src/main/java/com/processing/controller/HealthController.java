@@ -2,6 +2,8 @@ package com.processing.controller;
 
 import com.processing.dto.HealthResponse;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 record Response(String service, String status) {}
 
+@Slf4j
 @RestController
 public class HealthController {
     @Value ("${services-to-health-check}")
@@ -44,11 +47,12 @@ public class HealthController {
         return result;
     }
 
+    
     private Response checkHealth(String serviceUrl) {
         try {
             String fullUrl = serviceUrl.startsWith("http") ? serviceUrl : "http://" + serviceUrl;
             String healthUrl = fullUrl + "/health";
-            // System.out.println("[DEBUG] Checking health of: " + healthUrl);
+            log.debug("Checking health of {}", healthUrl);
 
             ResponseEntity<Map> response = restTemplate.getForEntity(healthUrl, Map.class);
             
@@ -60,7 +64,7 @@ public class HealthController {
             }
             return new Response(serviceUrl, "unhealthy");
         } catch (Exception e) {
-            // System.err.println("[ERROR] Health check failed for " + serviceUrl + ": " + e.getMessage());
+            log.error("Health check failed for {}", serviceUrl, e.getMessage());
             return new Response(serviceUrl, "down");
         }
     } 
