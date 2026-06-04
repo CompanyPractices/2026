@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -64,15 +65,23 @@ public class CardService {
         return CardDto.fromEntity(getCardEntity(pan));
     }
 
-    public List<CardDto> getCards(GetCardsRequest data) {
+    public List<CardDto> getCards(
+        Integer limit,
+        Integer offset,
+        CardEntity.Status status,
+        String bin,
+        String issuerId,
+        LocalDateTime startDate,
+        LocalDateTime endDate
+    ) {
         return cardRepository
             .findCards(
-                data.status(),
-                data.bin(),
-                data.issuerId(),
-                data.startDate(),
-                data.endDate(),
-                PageRequest.of(data.offset(), data.limit())
+                status,
+                bin,
+                issuerId,
+                startDate,
+                endDate,
+                PageRequest.of(offset, limit)
             )
             .stream()
             .map(CardDto::fromEntity)

@@ -1,5 +1,7 @@
 package com.processing.cardmanagement.controllers;
 
+import com.processing.cardmanagement.annotations.Bin;
+import com.processing.cardmanagement.annotations.NotNegative;
 import com.processing.cardmanagement.annotations.Pan;
 import com.processing.cardmanagement.models.*;
 import com.processing.cardmanagement.services.CardService;
@@ -9,12 +11,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -31,12 +38,12 @@ public class CardController {
 
     @Operation(summary = "Create a new card")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Card create successfully",
-                    content = @Content(schema = @Schema(implementation = CardDto.class))),
-            @ApiResponse(responseCode = "400", description = "invalid request data",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "201", description = "Card create successfully",
+            content = @Content(schema = @Schema(implementation = CardDto.class))),
+        @ApiResponse(responseCode = "400", description = "invalid request data",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<CardDto> createCard(@Valid @RequestBody CreateCardRequest data) {
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -45,12 +52,12 @@ public class CardController {
 
     @Operation(summary = "Get card by PAN")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Card found",
-                    content = @Content(schema = @Schema(implementation = CardDto.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid PAN format",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Card not found",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "200", description = "Card found",
+            content = @Content(schema = @Schema(implementation = CardDto.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid PAN format",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Card not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/{pan}")
     public ResponseEntity<CardDto> getCard(@PathVariable @Pan String pan) {
@@ -59,22 +66,73 @@ public class CardController {
 
     @Operation(summary = "Get list of cards with pagination and filters")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Cards retrieved successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request parameters",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "200", description = "Cards retrieved successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request parameters",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
     })
-    @GetMapping("/")
-    public ResponseEntity<List<CardDto>> getCards(@Valid @RequestBody GetCardsRequest data) {
-        return ResponseEntity.ok(cardService.getCards(data));
+    @GetMapping
+    public ResponseEntity<List<CardDto>> getCards(
+
+        @Nullable
+        @Positive
+        @Schema(description = "Number of cards per page", example = "10")
+        @RequestParam(required = false, defaultValue = "10")
+        Integer limit,
+
+        @Nullable
+        @NotNegative
+        @Schema(description = "Offset for pagination", example = "0")
+        @RequestParam(required = false, defaultValue = "0")
+        Integer offset,
+
+        @Nullable
+        @Schema(description = "Card status", example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "BLOCKED", "EXPIRED", "DELETED"})
+        @RequestParam(required = false)
+        CardEntity.Status status,
+
+        @Nullable
+        @Bin
+        @Schema(description = "Bank Identification Number (BIN)", example = "400000")
+        @RequestParam(required = false)
+        String bin,
+
+        @Nullable
+        @Size(min = 1, max = 10)
+        @Pattern(regexp = "^[A-Z0-9]+$")
+        @Schema(description = "Issuer ID", example = "ZZZZZZ")
+        @RequestParam(required = false)
+        String issuerId,
+
+        @Nullable
+        @Schema(description = "Start date")
+        @RequestParam(required = false)
+        LocalDateTime startDate,
+
+        @Nullable
+        @Schema(description = "End date")
+        @RequestParam(required = false)
+        LocalDateTime endDate
+    ) {
+        return ResponseEntity.ok(
+            cardService.getCards(
+                limit,
+                offset,
+                status,
+                bin,
+                issuerId,
+                startDate,
+                endDate
+            )
+        );
     }
 
     @Operation(summary = "Partially update a card")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Card update successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Card not found",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "204", description = "Card update successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request data",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Card not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PatchMapping("/{pan}")
     public ResponseEntity<Void> patchCard(
@@ -87,11 +145,11 @@ public class CardController {
 
     @Operation(summary = "Delete a card (sets status to DELETED)")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Card deleted successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid PAN format",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Card not found",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "200", description = "Card deleted successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid PAN format",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Card not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{pan}")
     public ResponseEntity<Void> deleteCard(@PathVariable @Pan String pan) {
@@ -101,13 +159,13 @@ public class CardController {
 
     @Operation(summary = "Reserve funds on a card")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Funds reserve successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "402", description = "Insufficient funds",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Card not found",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "200", description = "Funds reserve successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request data",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "402", description = "Insufficient funds",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Card not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{pan}/reserve")
     public ResponseEntity<Void> reserve(
