@@ -61,15 +61,29 @@ public class SimulationService {
 
         // Создание транакций
         List<AuthorizationRequest> authorizationRequests = new ArrayList<>();
-        for(CardDataResponse card : cardsResponse.cards()){
-            AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
-                    "0100",
-                    card.pan(),
-                    100,
-                    terminal,
-                    merchants.getFirst());
-            log.info(String.valueOf(authorizationRequest));
-            authorizationRequests.add(authorizationRequest);
+        if(cardsResponse.cards().size() < request.getCount()){
+            int count = request.getCount();
+            int iterableCard = cardsResponse.cards().size();
+            log.info(String.valueOf(iterableCard));
+            log.info(String.valueOf(count));
+            while(count > 0){
+                CardDataResponse card = cardsResponse.cards().get(iterableCard - 1);
+
+                AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
+                        "0100",
+                        card.pan(),
+                        100,
+                        terminal,
+                        merchants.getFirst());
+                log.info(String.valueOf(authorizationRequest));
+                authorizationRequests.add(authorizationRequest);
+
+                iterableCard--;
+                count--;
+                if(iterableCard == 0){
+                    iterableCard = cardsResponse.cards().size();
+                }
+            }
         }
 
         // Отправка транзакций
@@ -83,7 +97,7 @@ public class SimulationService {
                 authorizationResponses.add(response);
                 approved += 1;
             } catch (Exception e) {
-                authorizationResponses.add(new AuthorizationResponse("", " ", " ", " ", " ", " ", "999", 999));
+                authorizationResponses.add(new AuthorizationResponse("0100", transaction.getStan(), null, null, "505", "DECLINED", e.toString(), 999));
                 declined += 1;
             }
         }
