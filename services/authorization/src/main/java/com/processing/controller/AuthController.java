@@ -15,6 +15,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -27,7 +28,7 @@ public class AuthController {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostMapping("/api/internal/authorize")
-    public AuthorizationResponse authorize(AuthorizationRequest request) throws Exception {
+    public AuthorizationResponse authorize(@RequestBody AuthorizationRequest request) throws Exception {
         CardResponse cardResponse = getCard(request.getPan());
 
         CardStatus currCardStatus = cardResponse.getStatus();
@@ -52,7 +53,7 @@ public class AuthController {
             return AuthorizationResponse.declined(request, "INSUFFICIENT_FUNDS", "51");
 
         String rrn = generateRRN();
-        reserve(request.getAmount(), request.getPan(), rrn);
+        reserve(request.getAmount(), rrn, request.getPan());
         String authCode = generateAuthCode();
         return AuthorizationResponse.approved(request, rrn, authCode);
     }
@@ -68,7 +69,6 @@ public class AuthController {
         return objectMapper.readValue(cardResponse.body(), CardResponse.class);
     }
 
-    @PostMapping("/api/cards/{pan}/reserve")
     private boolean reserve(Integer amount, String rrn, String pan) throws Exception {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
         String requestBody = objectMapper.writeValueAsString(reserveRequest);
