@@ -48,7 +48,7 @@ public class Transaction {
     private String declineReason;
     @Column(length = 6)
     private String authCode;
-    private long processingTimeMs;
+    private Integer processingTimeMs;
     @Column(nullable = false)
     private Instant transmissionDateTime;
     private Instant createdAt;
