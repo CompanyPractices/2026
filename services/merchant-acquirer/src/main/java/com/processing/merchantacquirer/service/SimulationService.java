@@ -16,9 +16,12 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 @Slf4j
 @Service
@@ -30,10 +33,14 @@ public class SimulationService {
 
     private final Map<String, Scenario> scenarios = Map.of(
             "grocery", new Scenario(List.of("5411", "5499"), 100, 3000, "8:00", "23:00", 95),
-            "electronics", new Scenario(List.of("5732", "5045"), 5000, 100000, "10:00", "22:00", 90)
+            "electronics", new Scenario(List.of("5732", "5045"), 5000, 100000, "10:00", "22:00", 90),
+            "restaurant", new Scenario(List.of("5812", "5814"), 500, 5000, "11:00", "01:00", 90),
+            "travel", new Scenario(List.of("3501", "4511", "4722"), 5000, 50000, "00:00", "24:00", 90)
     );
 
     public SimulatorResponse run(SimulatorRequest request){
+        LocalDateTime startTime = LocalDateTime.now();
+        log.info(String.valueOf(startTime));
         log.info(String.valueOf(request));
         // Получение карт (пока замокано на получение 1 захаркоженной карточки)
         CardsRequest cardsRequest = new CardsRequest(request.getCount(), 0, null, null);
@@ -47,12 +54,15 @@ public class SimulationService {
 
         // Получение мерчантов
         List<Merchant> merchants;
+        int countMerchants;
         if(request.getMccCodes() == null){
             merchants = merchantRepository.findByMccIn(scenario.getMcc());
             log.info(String.valueOf(merchants));
+            countMerchants = merchants.size();
         }else{
             merchants = merchantRepository.findByMccIn(request.getMccCodes());
             log.info(String.valueOf(merchants));
+            countMerchants = merchants.size();
         }
         log.info(String.valueOf(merchants));
 
@@ -66,15 +76,19 @@ public class SimulationService {
             int iterableCard = cardsResponse.cards().size();
             log.info(String.valueOf(iterableCard));
             log.info(String.valueOf(count));
+            Random random = new Random();
             while(count > 0){
                 CardDataResponse card = cardsResponse.cards().get(iterableCard - 1);
+                Merchant merchant = merchants.get(random.nextInt(0, countMerchants - 1));
+
+                // Генерация цены
+                int amount = random.nextInt(scenario.getCountLower(), scenario.getCountUpper());
 
                 AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
-                        "0100",
                         card.pan(),
-                        100,
+                        amount,
                         terminal,
-                        merchants.getFirst());
+                        merchant);
                 log.info(String.valueOf(authorizationRequest));
                 authorizationRequests.add(authorizationRequest);
 
@@ -102,12 +116,14 @@ public class SimulationService {
             }
         }
 
-        // Формирование ответа
+        // Формирование
+        LocalDateTime endTime = LocalDateTime.now();
+        log.info(String.valueOf(endTime));
         SimulatorResponse simulatorResponse = new SimulatorResponse(
                 authorizationResponses.size(),
                 approved,
                 declined,
-                2222,
+                (int) Duration.between(startTime, endTime).toMillis(),
                 authorizationResponses
         );
         return simulatorResponse;

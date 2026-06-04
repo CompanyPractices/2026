@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class AuthorizationRequestFactory {
     private final StanGenerator stanGenerator;
 
-    public AuthorizationRequest build(String typeTransaction, String pan, Integer amount, Terminal terminal, Merchant merchant){
+    public AuthorizationRequest build(String pan, Integer amount, Terminal terminal, Merchant merchant){
         LocalDateTime time = LocalDateTime.now();
 
         return AuthorizationRequest.builder()
