@@ -31,6 +31,7 @@
 
     <!-- Модули (добавляются по мере создания сервисов) -->
     <modules>
+        <module>common</module>
         <module>merchant-acquirer</module>
         <module>terminal-simulator</module>
         <module>switch</module>

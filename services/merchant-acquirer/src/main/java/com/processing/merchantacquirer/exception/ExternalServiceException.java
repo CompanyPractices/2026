@@ -3,6 +3,7 @@ package com.processing.merchantacquirer.exception;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
+import com.processing.common.dto.ErrorResponse;
 import org.springframework.web.client.HttpStatusCodeException;
 
 public class ExternalServiceException extends RuntimeException{
