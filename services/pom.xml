@@ -33,6 +33,7 @@
     <modules>
         <module>merchant-acquirer</module>
         <module>terminal-simulator</module>
+        <module>authorization</module>
     </modules>
 
     <!-- Управление версиями НЕ-Spring-Boot зависимостей -->
