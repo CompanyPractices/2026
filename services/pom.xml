@@ -35,6 +35,7 @@
         <module>terminal-simulator</module>
         <module>switch</module>
         <module>authorization</module>
+        <module>transaction-logger</module>
     </modules>
 
     <!-- Управление версиями НЕ-Spring-Boot зависимостей -->
