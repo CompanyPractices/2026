@@ -2,9 +2,9 @@ spring.application.name: merchant-acquirer
 server.port: ${PORT:8080}
 
 # PostgreSQL
-spring.datasource.url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:postgre}
-spring.datasource.username: ${DB_USER:user}
-spring.datasource.password: ${DB_PASSWORD:pass}
+spring.datasource.url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:smp_db}
+spring.datasource.username: ${POSTGRES_USER:smp_user}
+spring.datasource.password: ${POSTGRES_PASSWORD:smp_password}
 spring.jpa.hibernate.ddl-auto: update
 
 spring.flyway.clean-disabled: false
