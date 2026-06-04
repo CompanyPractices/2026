@@ -15,10 +15,19 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/health')
-      .then((res) => res.json())
-      .then(setHealth)
-      .catch((err) => setError(err.message));
+      const mock = import.meta.env.DEV;
+      if (mock){
+          setHealth({
+              status: 'UP',
+              service: 'dashboard',
+              version: '1.0.0'
+          })
+      } else {
+          fetch('/health')
+              .then((res) => res.json())
+              .then(setHealth)
+              .catch((err) => setError(err.message));
+      }
   }, []);
 
   return (
@@ -68,7 +77,7 @@ function App() {
               Практика
           </h1>
           <h1 className="p-8 text-center text-xl font-sans font-bold text-zinc-100">
-              СМП - Система медленных платежей
+              Система медленных платежей
           </h1>
           <h1 className="p-8 text-center text-xl font-sans font-bold text-zinc-100">
               2026
