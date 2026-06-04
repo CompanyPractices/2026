@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.Exception;
 import java.util.Calendar;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.springframework.web.bind.annotation.RequestBody;
@@ -84,8 +84,7 @@ public class AuthController {
         return response.statusCode() == 200;
     }
 
-    private static final AtomicInteger counter = new AtomicInteger(0);
-    private static String lastSecond = "";
+    private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
 
     private String generateRRN() {
         Calendar calendar = Calendar.getInstance();
@@ -97,13 +96,21 @@ public class AuthController {
                 calendar.get(Calendar.MINUTE),
                 calendar.get(Calendar.SECOND));
 
-        if (!currentSecond.equals(lastSecond)) {
-            lastSecond = currentSecond;
-            counter.set(0);
-        }
+        String nextValue;
+        while (true) {
+            String currentState = lastTimestampAndSeq.get();
+            int nextSeq = 0;
+            if (currentState != null && currentState.startsWith(currentSecond)) {
+                int lastSeq = Integer.parseInt(currentState.substring(10));
+                nextSeq = (lastSeq + 1) % 100;
+            }
 
-        int sequence = counter.getAndIncrement() % 10;
-        return currentSecond + sequence;
+            nextValue = currentSecond + String.format("%02d", nextSeq);
+            if (lastTimestampAndSeq.compareAndSet(currentState, nextValue)) {
+                break;
+            }
+        }
+        return nextValue;
     }
 
     private String generateAuthCode() {
