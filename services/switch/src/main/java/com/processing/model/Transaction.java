@@ -1,8 +1,12 @@
 package com.processing.model;
 
+
+import com.processing.enums.TransactionStatus;
+
+
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.UUID;
+
 
 public record Transaction(
         UUID id,
@@ -14,17 +18,15 @@ public record Transaction(
         Long amount,
         String currencyCode,
         String terminalId,
-        String terminalType,
         String merchantId,
         String mcc,
         String acquirerId,
         String issuerId,
-        String status,
-        String responseCode,
+        Long acquiringFee,
+        TransactionStatus status,
         String declineReason,
         String authCode,
         Integer processingTimeMs,
-        LocalDateTime transmissionDateTime,
-        Instant createdAt,
-        Long acquiringFee
+        Instant transmissionDateTime,
+        Instant createdAt
 ) {}
