@@ -1,0 +1,18 @@
+server:
+  port: ${PORT:8083}
+logging:
+  level:
+    com.processing: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+card-management:
+  url: http://localhost:8081
+services-to-health-check: cardManager:8081
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
