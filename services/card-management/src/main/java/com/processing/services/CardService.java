@@ -21,18 +21,29 @@ public class CardService {
     private final PanGenerator panGenerator;
 
     public CardDto createCard(CreateCardRequest data) {
-        var cardEntity = new CardEntity(
-            panGenerator.generatePan(data.bin()),
-            data.bin(),
-            data.cardholderName(),
-            data.currencyCode(),
-            data.dailyLimit(),
-            data.monthlyLimit(),
-            data.initialBalance(),
-            options.issuerId()
+        var entity = cardRepository.save(
+            data.toEntity(
+                panGenerator.generatePan(data.bin()),
+                options.issuerId()
+            )
         );
+        return CardDto.fromEntity(entity);
+    }
 
-        return CardDto.fromEntity(cardRepository.save(cardEntity));
+    public List<CardDto> createCards(List<CreateCardRequest> data) {
+        var entities = data
+            .stream()
+            .map(req -> req.toEntity(
+                panGenerator.generatePan(req.bin()),
+                options.issuerId()
+            ))
+            .toList();
+
+        return cardRepository
+            .saveAll(entities)
+            .stream()
+            .map(CardDto::fromEntity)
+            .toList();
     }
 
     public CardDto getCard(String pan) {

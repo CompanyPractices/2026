@@ -36,4 +36,18 @@ public record CreateCardRequest(
 
     @NotNull
     Integer initialBalance
-) {}
+) {
+
+    public CardEntity toEntity(String pan, String issuerId) {
+        return new CardEntity(
+            pan,
+            bin,
+            cardholderName,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            initialBalance,
+            issuerId
+        );
+    }
+}

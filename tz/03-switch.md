@@ -99,7 +99,13 @@ POST http://logger:8088/api/internal/log
 
 - Если BIN не найден в таблице — возвращаем decline с `responseCode: "14"` (Invalid Card Number)
 - Если Authorization Service недоступен — retry (3 попытки), затем decline с `responseCode: "05"` (Do Not Honor)
-- Если Logger недоступен — логируем ошибку, но транзакцию не блокируем (graceful degradation). Ответ клиенту уходит в любом случае.
+- **Если Logger недоступен после успешной авторизации** — это критическая ситуация. Деньги зарезервированы, но транзакция не записана. Действия:
+  1. Retry к Logger: **3 попытки** с таймаутом **2 секунды** на каждую
+  2. Если все попытки провалились — **откатить резервирование**: отправить reversal-запрос (`mti="0400"`) в Authorization
+  3. Вернуть клиенту `DECLINED` с `responseCode: "96"` (System Error)
+  4. Это гарантирует: **ни одна транзакция не будет отмечена как APPROVED без записи в Logger**
+
+> **Почему нельзя просто «пропустить» Logger:** Если транзакция одобрена, но не записана — деньги списаны, а в системе нет следа. Дашборд не покажет транзакцию, поиск не найдёт, при reconcilliation будет расхождение. Поэтому Logger — **обязательный** шаг перед ответом клиенту.
 
 ### 5. Логирование
 
@@ -107,7 +113,7 @@ POST http://logger:8088/api/internal/log
 ```
 [INFO] TX 000001 | BIN=400000 → ISS001 | Status=APPROVED | 42ms
 [WARN] TX 000002 | BIN=999999 → unknown BIN | DECLINED
-[ERROR] Logger unavailable for TX 000001 — continuing without logging
+[ERROR] Logger unavailable for TX 000001 — rolling back reservation
 ```
 
 ---
@@ -116,9 +122,9 @@ POST http://logger:8088/api/internal/log
 
 - Circuit Breaker для вызова Authorization (Resilience4j)
 - Динамическая таблица BIN (загрузка из Card Management Service при старте)
-- Обработка reversal-транзакций (mti="0400")
+- **Reversal-транзакции (mti="0400")** — ⭐ рекомендуется: Switch должен уметь маршрутизировать reversal в Authorization для разрезервирования средств. Это требуется для отката при недоступности Logger (см. п. 4)
 - Idempotency key (защита от дублирования транзакций)
-- Retry с exponential backoff для Logger
+- Retry с exponential backoff для Logger (3 попытки, 1s → 2s → 4s)
 
 ---
 
@@ -131,7 +137,7 @@ POST http://logger:8088/api/internal/log
 | 3–4 | Реализовать маршрутизацию: BIN → issuerId. Интеграция с Authorization (пока заглушка) |
 | 5 | Интеграция с Logger: синхронный POST /api/internal/log. Dockerfile |
 | 6–8 | Интеграция с реальным Authorization Service. Обработка всех decline-сценариев |
-| 9–10 | Retry, обработка ошибок, graceful degradation |
+| 9–10 | Retry, обработка ошибок, rollback при недоступности Logger |
 | 11–13 | Интеграционное тестирование с Gateway, Authorization и Logger |
 | 14–15 | Полировка сервиса. Ревью куратора №3 (день 15). Code freeze |
 | 16 | Рефакторинг: читаемость, стиль, комментарии, разделение на слои |
