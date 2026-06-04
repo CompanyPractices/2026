@@ -22,7 +22,7 @@ public class GatewayClient {
     private final RestTemplate restTemplate = new RestTemplate();
 
     public CardsResponse getCards(CardsRequest request){
-        String url = "http://localhost:8081/api/cards";
+        String url = "http://gateway:8080/api/cards";
         if(request.limit() > 0){
             url += "?limit=" + request.limit();
         }
@@ -40,7 +40,7 @@ public class GatewayClient {
     }
 
     public AuthorizationResponse processAuthorize(AuthorizationRequest authorizationRequest){
-        String url = "http://localhost:8080/api/transactions";
+        String url = "http://gateway:8080/api/transactions";
         try{
             return restTemplate.postForEntity(url, authorizationRequest, AuthorizationResponse.class).getBody();
         }catch(HttpClientErrorException | HttpServerErrorException ex){
