@@ -10,18 +10,42 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.processing.model.CardStatus.ACTIVE;
+import static com.processing.model.CardStatus.BLOCKED;
 
 @Service
 public class TerminalSimulatorService {
 
     private final Random random = new Random();
     private int stanCounter = 1;
-    private List<Card> cards = List.of(new Card[]{new Card(1, "1", "1", "name", "1",
-            ACTIVE, "1", 1, 1, 1, "1", "1")});
+    private final List<Card> cards = List.of(new Card[]{new Card(1, "1", "1", "name", "1",
+            ACTIVE, "1", 15, 35, 50, "1", "1"),
+            new Card(1, "2", "2", "name2", "2",
+                    BLOCKED, "2", 23, 123, 140, "2", "2")});
+
+    private static String randomDateTime(String timeOfDay) {
+        int year = 2026;
+        int month = ThreadLocalRandom.current().nextInt(1, 13);
+        int day = ThreadLocalRandom.current().nextInt(1, 28);
+
+        int hour;
+        if ("night".equals(timeOfDay)) {
+            hour = ThreadLocalRandom.current().nextInt(1, 5);
+        } else {
+            hour = ThreadLocalRandom.current().nextInt(9, 22);
+        }
+        int minute = ThreadLocalRandom.current().nextInt(0, 60);
+        int second = ThreadLocalRandom.current().nextInt(0, 60);
+
+        LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, minute, second);
+        return ldt.toInstant(ZoneOffset.UTC).toString();
+    }
 
     private String getNextStan() {
         int stan = stanCounter;
@@ -46,78 +70,98 @@ public class TerminalSimulatorService {
         return filtered.get(random.nextInt(filtered.size()));
     }
 
-    private AuthorizationRequest createTransaction(String scenario) {
+    private AuthorizationRequest createTransaction(String scenario, String partOfDay) {
         Card card;
         String mti = "0100";
         String stan = getNextStan();
-        String processingCode = "000000";  // TODO: random/const?
-        long amount;
-        String transmissionDateTime;
+        String processingCode = "000000";
+        String transmissionDateTime = randomDateTime(partOfDay);
         String terminalId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));
         String terminalType = String.valueOf(TerminalType.values()[(int)(Math.random()*3)]);
-        String merchantId = "MERCH12345678901";  // TODO: random/const?
+        String merchantId = "MERCH12345678901";
         String mcc = new String[]{"5411", "5812", "5814", "5732", "5399", "4814",
                 "7994", "3501"}[ThreadLocalRandom.current().nextInt(8)];
-        String acquirerId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));  // TODO: random/const?
+        String acquirerId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));
         String issuerId = "";
+        card = getRandomCard(ACTIVE);
+        long amount = (long)(Math.random() * 2_000_000);
 
         switch (scenario) {
-            case "normal" -> { // TODO: random day time
-                card = getRandomCard(ACTIVE);
-                amount = 10_000 + (long) (Math.random() * 490_000);
+            case "normal" -> {
+                amount = 10_000 + (long)(Math.random() * 490_000);
                 mcc = "5411";
-                transmissionDateTime = "2026-06-01T14:30:00Z";
             }
-            case "high_value" -> { // TODO: random day time
-                card = getRandomCard(ACTIVE);
-                amount = 10_000_000 + (long) (Math.random() * 40_000_000);
-                transmissionDateTime = "2026-06-01T12:17:00Z";
-            }
-            default -> {  // TODO: random day/night time
-                card = getRandomCard(ACTIVE);
-                amount = 10_000 + (long) (Math.random() * 490_000);
-                transmissionDateTime = "2026-06-01T14:30:00Z";
-            }
+            case "high_value" -> amount = 10_000_000 + (long) (Math.random() * 40_000_000);
+            case "daily_limit" -> amount = card.getDailyLimit() - 1;
+            case "blocked" -> card = getRandomCard(BLOCKED);
+            case "no_money" -> amount = card.getAvailableBalance() + (int)(Math.random()*100000);
+            case "more_day_limit" -> amount = card.getDailyLimit() + (int)(Math.random()*10000);
         }
 
         String pan = card.getPan();
+        if (scenario.equals("invalid_pan")) {
+            pan = getInvalidPan();
+        }
         String currencyCode = card.getCurrencyCode();
 
         return new AuthorizationRequest(mti, stan, pan, processingCode, amount, currencyCode, transmissionDateTime,
                 terminalId, terminalType, merchantId, mcc, acquirerId, issuerId);
     }
 
+    private void handler(int start, int end, AtomicInteger approved, AtomicInteger declined,
+                         String scenario, List<AuthorizationResponse> authResps, String partOfDay) {
+        for (int i = start; i < end; i++) {
+            AuthorizationRequest tx = createTransaction(scenario, partOfDay);
+            AuthorizationResponse authResp = sendToGateway(tx);
+            authResps.add(authResp);
+            System.out.println(tx);
+
+            if ("APPROVED".equals(authResp.getStatus())) {
+                approved.incrementAndGet();
+            }
+            else declined.incrementAndGet();
+        }
+    }
+
     public RunResponse run(int count, String scenario) {
         long start = System.currentTimeMillis();
         getCardsFromCardManager();
         List<AuthorizationResponse> authResps = new ArrayList<>();
-        int approved = 0, declined = 0;
+        AtomicInteger approved = new AtomicInteger(0), declined = new AtomicInteger(0);
 
         switch (scenario) {
-            case "mixed" -> { // TODO
+            case "mixed" -> {
+                System.out.println((int)(count * 0.7));
+                System.out.println((int)(count * 0.7 + count * 0.15));
+                System.out.println((int)(count * 0.7 + count * 0.15 + count * 0.1));
+                handler(0, (int)(count * 0.7), approved, declined, "normal", authResps, "day");
+                handler((int)(count * 0.7), (int)(count * 0.7 + count * 0.15), approved, declined,
+                        "high_value", authResps, "day");
+                handler((int)(count * 0.7 + count * 0.15), (int)(count * 0.7 + count * 0.15 + count * 0.1),
+                        approved, declined, "daily_limit", authResps, "day");
+                handler((int)(count * 0.7 + count * 0.15 + count * 0.1), count, approved, declined,
+                        "blocked", authResps, "day");
             }
-            case "declines_test"-> { // TODO
+            case "declines_test"-> {
+                handler(0, (int)(count * 0.2), approved, declined, "invalid_pan", authResps,
+                        "day");
+                handler((int)(count * 0.2), (int)(count * 0.4), approved, declined, "blocked", authResps,
+                        "day");
+                handler((int)(count * 0.4), (int)(count * 0.6), approved, declined, "no_money", authResps,
+                        "day");
+                handler((int)(count * 0.6), (int)(count * 0.8), approved, declined, "more_day_limit",
+                        authResps, "day");
+                handler((int)(count * 0.8), count, approved, declined, "normal", authResps, "day");
             }
-            case "night_time" ->  // TODO: random night time
-            {
-                //  AuthorizationRequest tx = createTransaction(norm, high);
-                //  tx.setTransmissionDateTime("2026-06-01T03:50:00Z");
+            case "night_time" -> {
+                handler(0, count/2, approved, declined, "normal", authResps, "night");
+                handler(count/2, count, approved, declined, "high_value", authResps, "night");
             }
-            case "normal", "high_value" -> {
-                for (int i = 0; i < count; i++) {
-                    AuthorizationRequest tx = createTransaction(scenario);
-                    AuthorizationResponse authResp = sendToGateway(tx);
-                    authResps.add(authResp);
-                    System.out.println(tx);
-
-                    if ("APPROVED".equals(authResp.getStatus())) approved++;
-                    else declined++;
-                }
-            }
+            case "normal", "high_value" -> handler(0, count, approved, declined, scenario, authResps, "day");
         }
 
         long elapsed = System.currentTimeMillis() - start;
-        return new RunResponse(count, approved, declined, elapsed, authResps);
+        return new RunResponse(count, approved.get(), declined.get(), elapsed, authResps);
     }
 
     private AuthorizationResponse sendToGateway(AuthorizationRequest tx) {
