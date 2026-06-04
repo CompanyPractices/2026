@@ -5,7 +5,6 @@
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Наследуем общий родительский POM (НЕ spring-boot-starter-parent напрямую) -->
     <parent>
         <groupId>com.processing</groupId>
         <artifactId>processing-platform</artifactId>
@@ -13,8 +12,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>SERVICE_NAME</artifactId>
-    <name>SERVICE_NAME</name>
+    <artifactId>switch</artifactId>
+    <name>switch</name>
     <description>Microservice for СМП processing simulator</description>
 
     <dependencies>
@@ -49,13 +48,11 @@
         </dependency>
         -->
 
-        <!-- OpenAPI / Swagger (версия управляется родительским POM) -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
 
-        <!-- Lombok (версия управляется родительским POM) -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -72,12 +69,10 @@
 
     <build>
         <plugins>
-            <!-- spring-boot-maven-plugin — создаёт bootable JAR -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            <!-- Checkstyle — конфигурация унаследована из родительского POM -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>

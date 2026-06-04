@@ -1,0 +1,73 @@
+server:
+  port: ${GATEWAY_PORT:8080}
+
+#---
+# Logging
+logging:
+  level:
+    com.processing.gateway: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.server.mvc: TRACE
+    org.springframework.http.client: TRACE
+    org.springframework.web.client: DEBUG
+#  pattern:
+#    console: %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+
+#---
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+  endpoint:
+    health:
+      show-details: always
+
+gateway:
+  rate-limit:
+    transactions-per-second: ${TRANSACTIONS_RATE_LIMIT:100}
+
+spring:
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: switch
+            uri: ${SWITCH:http://localhost:8082}
+            predicates:
+              - Path=/api/transactions
+            filters:
+              - RewritePath=/api/transactions, /api/internal/route
+          - id: logger
+            uri: ${LOGGER:http://localhost:8088}
+            predicates:
+              - Path=/api/transactions/search
+          - id: dashboard
+            uri: ${LOGGER:http://localhost:8088}
+            predicates:
+              - Path=/api/dashboard/**
+          - id: terminal
+            uri: ${TERMINAL:http://localhost:8085}
+            predicates:
+              - Path=/api/simulator/terminal/**
+          - id: merchant
+            uri: ${MERCHANT:http://localhost:8086}
+            predicates:
+              - Path=/api/simulator/merchant/**
+          - id: cards
+            uri: ${CARDS:http://localhost:8081}
+            predicates:
+              - Path=/api/cards/**
+  mvc:
+    log-request-details: true
+# Gateway
+gateway:
+  downstream-services:
+    urls:
+      switch-url: http://switch:${SWITCH_PORT:8082}
+      logger-url: http://logger:${LOGGER_PORT:8088}
+      auth-url: http://authorization:${AUTH_PORT:8083}
+      cards-url: http://card-management:${CARD_MGMT_PORT:8081}
