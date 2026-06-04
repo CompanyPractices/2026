@@ -10,8 +10,8 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>merchant-acquirer</artifactId>
-    <name>merchant-acquirer</name>
+    <artifactId>common</artifactId>
+    <name>common</name>
     <description>Microservice for СМП processing simulator</description>
 
     <dependencies>
@@ -31,17 +31,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
-        <!-- Database (раскомментируй, если нужен PostgreSQL) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
         </dependency>
 
         <!-- OpenAPI / Swagger -->
@@ -65,16 +54,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.processing</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0.0</version>
-        </dependency>
     </dependencies>
 
     <build>
