@@ -23,7 +23,6 @@
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/health` | Health-check сервиса |
-| GET | `/api/cards/{pan}` | Получить карту по PAN |
 | POST | `/api/internal/authorize` | Authorization: проверка |
 | POST | `/api/cards/{pan}/reserve` | Резервирует сумму с availableBalance карты. |
 
@@ -35,36 +34,31 @@
 ```json
 {
   "status": "ok",
-  "service": "{service-name}",
+  "service": "authorization",
   "dependencies": {
-    "{dep1}": "ok"
+    "cardManagement": "ok"
   }
 }
 ```
-
-#### `GET /api/cards/{pan}`
-
-get card 
 
 #### `POST /api/internal/authorize`
 
 **Тело запроса:**
 ```json
 {
-  "mti": "value",
-  "stan": "value",
-  "rrn": "",
-  "pan": "",
-  "processingCode": "",
-  "amount": 0,
-  "currencyCode": "",
-  "transmissionDateTime": "2026-06-03T12:00:00",
-  "terminalId": "",
-  "terminalType": "ATM",
-  "merchantId": "",
-  "mcc": "",
-  "acquirerId": "",
-  "issuerId": ""
+  "mti": "0100",
+  "stan": "000001",
+  "pan": "4000001234560001",
+  "processingCode": "000000",
+  "amount": 150000,
+  "currencyCode": "643",
+  "transmissionDateTime": "2026-06-01T10:30:00Z",
+  "terminalId": "TERM001",
+  "terminalType": "POS",
+  "merchantId": "MERCH12345678901",
+  "mcc": "5411",
+  "acquirerId": "ACQ001",
+  "issuerId": "ISS001"
 }
 ```
 
@@ -72,17 +66,39 @@ get card
 ```json
 {
   "mti": "0110",
-  "stan": "",
-  "rrn": "",
-  "authCode": "",
-  "responseCode": "",
-  "status": "",
+  "stan": "000001",
+  "rrn": "012345678901",
+  "authCode": "ABC123",
+  "responseCode": "00",
+  "status": "APPROVED",
   "declineReason": "",
-  "processingTimeMs": 0
+  "processingTimeMs": 42
 }
 ```
 
-**Ошибки:**
+**Ошибки:** //TODO
+| Код | Условие |
+|-----|---------|
+| 400 | Ошибка валидации |
+| 404 | {Сущность} не найдена |
+| 503 | Downstream-сервис недоступен |
+
+#### `POST /api/cards/{pan}/reserve`
+
+**Тело запроса:**
+```json
+{
+  "amount": 150000,
+  "rrn": "012345678901"
+}
+```
+
+**Ответ 200:**
+```json
+true
+```
+
+**Ошибки:** //TODO
 | Код | Условие |
 |-----|---------|
 | 400 | Ошибка валидации |
@@ -97,7 +113,7 @@ get card
 
 | Переменная | Значение по умолчанию | Описание |
 |------------|----------------------|----------|
-| `PORT` | `{8080}` | Порт сервиса |
+| `PORT` | `{8083}` | Порт сервиса |
 | `DB_HOST` | `localhost` | Хост PostgreSQL |
 | `DB_PORT` | `5432` | Порт PostgreSQL |
 | `DB_NAME` | `processing` | Имя базы данных |
@@ -156,10 +172,13 @@ docker compose up -d {service-name}
 {authorization}/
 ├── src/main
 │   ├── java.com.processing/
-│   │   ├── controllers/    # HTTP-handlers / controllers
-│   │   ├── dto/          # Модели данных / DTO
+│   │   ├── controller/             # HTTP-handlers / controllers
+│   │   ├── dto/                    # Модели данных / DTO
 │   │   ├── enums/   
-│   └── test/               # Тесты
+│   │   └── Application.java        # Точка входа
+│   ├── resourses/ 
+│   │   └── application.properties
+│   └── test/                       # Тесты
 ├── Dockerfile
 ├── README.md
 ├── pom.xml
