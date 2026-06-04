@@ -33,6 +33,7 @@
     <modules>
         <module>merchant-acquirer</module>
         <module>terminal-simulator</module>
+        <module>switch</module>
         <module>authorization</module>
     </modules>
 
