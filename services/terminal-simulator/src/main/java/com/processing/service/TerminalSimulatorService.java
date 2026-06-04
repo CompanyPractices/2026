@@ -61,7 +61,7 @@ public class TerminalSimulatorService {
     private String getInvalidPan() {
         String validPan = getRandomCard(ACTIVE).pan();
         char last = validPan.charAt(validPan.length() - 1);
-        char newLast = (last == 0) ? '1' : '0';
+        char newLast = (last == '0') ? '1' : '0';
         return validPan.substring(0, validPan.length() - 1) + newLast;
     }
 

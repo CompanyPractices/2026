@@ -11,13 +11,12 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class GatewayClient {
     private final RestTemplate rest = new RestTemplate();
     private final String gatewayUrl = "http://gateway:8080/api/transactions";
-    private final String cardManagementUrl = "http://gateway:8080/api/cards?limit=200";
+    private final String cardManagementUrl = "http://gateway:8080/api/cards";
 
     public AuthorizationResponse sendToGateway(AuthorizationRequest tx) {
         try {
@@ -35,7 +34,7 @@ public class GatewayClient {
     public List<Card> getCardsFromCardManager(CardStatus status, int amount) {
         try {
             String fullUrl = UriComponentsBuilder.fromUriString(cardManagementUrl)
-                    .queryParamIfPresent("status", Optional.ofNullable(status))
+                    .queryParam("status", status)
                     .queryParam("limit", amount != 0 ? amount : null)
                     .build()
                     .toUriString();
@@ -45,7 +44,7 @@ public class GatewayClient {
             }
             return resp.cards();
         } catch (Exception e) {  // TODO: кидать ошибку
-            System.out.println("Cards from CardManager: " + e.getMessage());
+            System.out.println("Error CardManager: " + e.getMessage());
             return null;
         }
     }
