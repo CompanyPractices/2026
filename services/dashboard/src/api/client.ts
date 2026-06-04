@@ -10,3 +10,5 @@ function fetchApi<T>(route: string): Promise<T> {
         })
         .catch(error => {throw new Error(`Error status: ${error.message}`)})
 }
+
+export default fetchApi;
