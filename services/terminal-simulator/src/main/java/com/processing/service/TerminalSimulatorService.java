@@ -73,7 +73,6 @@ public class TerminalSimulatorService {
     }
 
     private AuthorizationRequest createTransaction(String scenario, String partOfDay) {
-        Card card;
         String mti = "0100";
         String stan = getNextStan();
         String processingCode = "000000";
@@ -85,7 +84,7 @@ public class TerminalSimulatorService {
                 "7994", "3501"}[ThreadLocalRandom.current().nextInt(8)];
         String acquirerId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));
         String issuerId = "";
-        card = getRandomCard(ACTIVE);
+        Card card = getRandomCard(ACTIVE);
         long amount = (long)(Math.random() * 2_000_000);
 
         switch (scenario) {
@@ -110,8 +109,8 @@ public class TerminalSimulatorService {
                 terminalId, terminalType, merchantId, mcc, acquirerId, issuerId);
     }
 
-    private void handler(int start, int end, AtomicInteger approved, AtomicInteger declined,
-                         String scenario, List<AuthorizationResponse> authResps, String partOfDay) {
+    private void GenerateTransactionHandler(int start, int end, AtomicInteger approved, AtomicInteger declined,
+                                            String scenario, List<AuthorizationResponse> authResps, String partOfDay) {
         for (int i = start; i < end; i++) {
             AuthorizationRequest tx = createTransaction(scenario, partOfDay);
             AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
@@ -127,38 +126,41 @@ public class TerminalSimulatorService {
 
     public RunResponse run(int count, String scenario) {
         long start = System.currentTimeMillis();
-        List<Card> cardManagementCards = gatewayClient.getCardsFromCardManager();
-        cards = (cardManagementCards != null) ? cardManagementCards : cards;   // TODO: как заработает модуль gateway
-                                                                              // - убрать хардкод карт
+        List<Card> activeCards = gatewayClient.getCardsFromCardManager(ACTIVE, 70);
+        List<Card> blockedCards = gatewayClient.getCardsFromCardManager(BLOCKED, 30);
+        if (activeCards != null && blockedCards != null) {  // TODO: как заработает модуль gateway - убрать хардкод карт
+            cards.addAll(activeCards);
+            cards.addAll(blockedCards);
+        }
         List<AuthorizationResponse> authResps = new ArrayList<>();
         AtomicInteger approved = new AtomicInteger(0), declined = new AtomicInteger(0);
 
         switch (scenario) {
             case "mixed" -> {
-                handler(0, (int)(count * 0.7), approved, declined, "normal", authResps, "day");
-                handler((int)(count * 0.7), (int)(count * 0.7 + count * 0.15), approved, declined,
+                GenerateTransactionHandler(0, (int)(count * 0.7), approved, declined, "normal", authResps, "day");
+                GenerateTransactionHandler((int)(count * 0.7), (int)(count * 0.7 + count * 0.15), approved, declined,
                         "high_value", authResps, "day");
-                handler((int)(count * 0.7 + count * 0.15), (int)(count * 0.7 + count * 0.15 + count * 0.1),
+                GenerateTransactionHandler((int)(count * 0.7 + count * 0.15), (int)(count * 0.7 + count * 0.15 + count * 0.1),
                         approved, declined, "daily_limit", authResps, "day");
-                handler((int)(count * 0.7 + count * 0.15 + count * 0.1), count, approved, declined,
+                GenerateTransactionHandler((int)(count * 0.7 + count * 0.15 + count * 0.1), count, approved, declined,
                         "blocked", authResps, "day");
             }
             case "declines_test"-> {
-                handler(0, (int)(count * 0.2), approved, declined, "invalid_pan", authResps,
+                GenerateTransactionHandler(0, (int)(count * 0.2), approved, declined, "invalid_pan", authResps,
                         "day");
-                handler((int)(count * 0.2), (int)(count * 0.4), approved, declined, "blocked", authResps,
+                GenerateTransactionHandler((int)(count * 0.2), (int)(count * 0.4), approved, declined, "blocked", authResps,
                         "day");
-                handler((int)(count * 0.4), (int)(count * 0.6), approved, declined, "no_money", authResps,
+                GenerateTransactionHandler((int)(count * 0.4), (int)(count * 0.6), approved, declined, "no_money", authResps,
                         "day");
-                handler((int)(count * 0.6), (int)(count * 0.8), approved, declined, "more_day_limit",
+                GenerateTransactionHandler((int)(count * 0.6), (int)(count * 0.8), approved, declined, "more_day_limit",
                         authResps, "day");
-                handler((int)(count * 0.8), count, approved, declined, "normal", authResps, "day");
+                GenerateTransactionHandler((int)(count * 0.8), count, approved, declined, "normal", authResps, "day");
             }
             case "night_time" -> {
-                handler(0, count/2, approved, declined, "normal", authResps, "night");
-                handler(count/2, count, approved, declined, "high_value", authResps, "night");
+                GenerateTransactionHandler(0, count/2, approved, declined, "normal", authResps, "night");
+                GenerateTransactionHandler(count/2, count, approved, declined, "high_value", authResps, "night");
             }
-            case "normal", "high_value" -> handler(0, count, approved, declined, scenario, authResps, "day");
+            case "normal", "high_value" -> GenerateTransactionHandler(0, count, approved, declined, scenario, authResps, "day");
         }
 
         long elapsed = System.currentTimeMillis() - start;

@@ -4,11 +4,14 @@ import com.processing.dto.AuthorizationRequest;
 import com.processing.dto.AuthorizationResponse;
 import com.processing.dto.Card;
 import com.processing.dto.CardsManagementResponse;
+import com.processing.model.CardStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class GatewayClient {
@@ -20,7 +23,7 @@ public class GatewayClient {
         try {
             ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl, tx, AuthorizationResponse.class);
             return response.getBody();
-        } catch (Exception e) {
+        } catch (Exception e) {  // TODO: кидать ошибку
             AuthorizationResponse errorResponse = new AuthorizationResponse();
             errorResponse.setStatus("DECLINED");
             errorResponse.setResponseCode("505");
@@ -29,12 +32,19 @@ public class GatewayClient {
         }
     }
 
-    public List<Card> getCardsFromCardManager() {  // TODO: кидать ошибки
+    public List<Card> getCardsFromCardManager(CardStatus status, int amount) {
         try {
-            ResponseEntity<CardsManagementResponse> response = rest.getForEntity(cardManagementUrl, CardsManagementResponse.class);
+            String fullUrl = UriComponentsBuilder.fromUriString(cardManagementUrl)
+                    .queryParamIfPresent("status", Optional.ofNullable(status))
+                    .queryParam("limit", amount != 0 ? amount : null)
+                    .build()
+                    .toUriString();
+            ResponseEntity<CardsManagementResponse> response = rest.getForEntity(fullUrl, CardsManagementResponse.class);
             CardsManagementResponse resp = response.getBody();
+            if (resp.total() == 0) {   // TODO: кидать ошибку мало карт
+            }
             return resp.cards();
-        } catch (Exception e) {
+        } catch (Exception e) {  // TODO: кидать ошибку
             System.out.println("Cards from CardManager: " + e.getMessage());
             return null;
         }

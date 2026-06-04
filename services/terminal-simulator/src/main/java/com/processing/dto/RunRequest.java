@@ -7,5 +7,6 @@ public record RunRequest (
     @NotNull
     @Min(1)
     Integer count,
+    @NotNull
     String scenario
 ) {}
