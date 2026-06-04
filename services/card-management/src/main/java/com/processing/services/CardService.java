@@ -22,19 +22,33 @@ public class CardService {
 
     public CardDto createCard(CreateCardRequest data) {
         var entity = cardRepository.save(
-            data.toEntity(
+            new CardEntity(
                 panGenerator.generatePan(data.bin()),
+                data.bin(),
+                data.cardholderName(),
+                data.currencyCode(),
+                CardEntity.Status.ACTIVE,
+                data.dailyLimit(),
+                data.monthlyLimit(),
+                data.initialBalance(),
                 options.issuerId()
             )
         );
         return CardDto.fromEntity(entity);
     }
 
-    public List<CardDto> createCards(List<CreateCardRequest> data) {
+    public List<CardDto> createCards(List<GeneratedCardDto> data) {
         var entities = data
             .stream()
-            .map(req -> req.toEntity(
-                panGenerator.generatePan(req.bin()),
+            .map(dto -> new CardEntity(
+                panGenerator.generatePan(dto.bin()),
+                dto.bin(),
+                dto.cardholderName(),
+                dto.currencyCode(),
+                dto.status(),
+                dto.dailyLimit(),
+                dto.monthlyLimit(),
+                dto.balance(),
                 options.issuerId()
             ))
             .toList();
