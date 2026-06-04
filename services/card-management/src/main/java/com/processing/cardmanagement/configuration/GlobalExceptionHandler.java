@@ -5,60 +5,67 @@ import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.cardmanagement.models.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CardNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCardNotFoundException(
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleCardNotFoundException(
         CardNotFoundException ex
     ) {
-        return new ErrorResponse(HttpStatus.NOT_FOUND, ex).toResponseEntity();
+        return new ErrorResponse(ex);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConstraintViolationException(
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleConstraintViolationException(
         ConstraintViolationException ex
     ) {
-        return new ErrorResponse(HttpStatus.BAD_REQUEST, ex).toResponseEntity();
+        return new ErrorResponse(ex);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMethodArgumentNotValidException(
         MethodArgumentNotValidException ex
     ) {
-        return new ErrorResponse(HttpStatus.BAD_REQUEST, ex).toResponseEntity();
+        return new ErrorResponse(ex);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalArgumentException(
         IllegalArgumentException ex
     ) {
-        return new ErrorResponse(HttpStatus.BAD_REQUEST, ex).toResponseEntity();
+        return new ErrorResponse(ex);
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalStateException(
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalStateException(
         IllegalStateException ex
     ) {
-        return new ErrorResponse(HttpStatus.BAD_REQUEST, ex).toResponseEntity();
+        return new ErrorResponse(ex);
     }
 
     @ExceptionHandler(InsufficientFundsException.class)
-    public ResponseEntity<ErrorResponse> handleInsufficientFundsException(
+    @ResponseStatus(HttpStatus.PAYMENT_REQUIRED)
+    public ErrorResponse handleInsufficientFundsException(
         InsufficientFundsException ex
     ) {
-        return new ErrorResponse(HttpStatus.PAYMENT_REQUIRED, ex).toResponseEntity();
+        return new ErrorResponse(ex);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleException(
         Exception ex
     ) {
-        return new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex).toResponseEntity();
+        return new ErrorResponse(ex);
     }
 }
