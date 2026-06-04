@@ -1,6 +1,8 @@
 package com.processing.service;
 
 
+
+
 import com.processing.enums.TransactionStatus;
 import com.processing.model.AuthorizationRequest;
 import com.processing.model.AuthorizationResponse;
@@ -10,21 +12,31 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 
+
+
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.UUID;
+
+
 
 
 @Service
 public class RouteService {
 
 
+
+
     private static final Logger log = LoggerFactory.getLogger(RouteService.class);
+
+
 
 
     private final RoutingService routingService;
     private final AuthorizationClient authorizationClient;
     private final LoggerClient loggerClient;
+
+
 
 
     public RouteService(
@@ -37,10 +49,14 @@ public class RouteService {
     }
 
 
+
+
     public AuthorizationResponse route(AuthorizationRequest request) {
         long startMs = System.currentTimeMillis();
         String pan = request.pan();
         String bin = pan != null && pan.length() >= 6 ? pan.substring(0, 6) : "??????";
+
+
 
 
         String issuerId = routingService.getIssuerIdByPan(pan);
@@ -50,11 +66,15 @@ public class RouteService {
         }
 
 
+
+
         AuthorizationRequest routedRequest = request.withIssuerId(issuerId);
         AuthorizationResponse response = authorizationClient.authorize(routedRequest);
 
 
-        Transaction transaction = buildTransaction(routedRequest, response, issuerId);
+
+
+        Transaction transaction = buildTransaction(routedRequest, response);
         boolean logged = loggerClient.log(transaction);
         if (!logged && TransactionStatus.APPROVED.name().equals(response.status())) {
             // rollback + responseCode 96
@@ -62,19 +82,24 @@ public class RouteService {
         }
 
 
+
+
         long elapsed = System.currentTimeMillis() - startMs;
         log.info("TX {} | BIN={} → {} | Status={} | {}ms",
                 request.stan(), bin, issuerId, response.status(), elapsed);
+
+
 
 
         return response;
     }
 
 
+
+
     private Transaction buildTransaction(
             AuthorizationRequest request,
-            AuthorizationResponse response,
-            String issuerId) {
+            AuthorizationResponse response) {
         return new Transaction(
                 UUID.randomUUID(),
                 request.mti(),
@@ -88,7 +113,7 @@ public class RouteService {
                 request.merchantId(),
                 request.mcc(),
                 request.acquirerId(),
-                issuerId,
+                request.issuerId(),
                 null,
                 toTransactionStatus(response.status()),
                 response.declineReason(),
@@ -100,9 +125,13 @@ public class RouteService {
     }
 
 
+
+
     private static TransactionStatus toTransactionStatus(String status) {
         return TransactionStatus.valueOf(status);
     }
+
+
 
 
     private static Instant toInstant(java.time.LocalDateTime dateTime) {
