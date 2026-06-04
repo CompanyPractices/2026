@@ -65,7 +65,7 @@ public class CardService {
         return CardDto.fromEntity(getCardEntity(pan));
     }
 
-    public List<CardDto> getCards(
+    public GetCardsResponse getCards(
         Integer limit,
         Integer offset,
         CardEntity.Status status,
@@ -74,18 +74,22 @@ public class CardService {
         LocalDateTime startDate,
         LocalDateTime endDate
     ) {
-        return cardRepository
-            .findCards(
-                status,
-                bin,
-                issuerId,
-                startDate,
-                endDate,
-                PageRequest.of(offset, limit)
-            )
-            .stream()
-            .map(CardDto::fromEntity)
-            .toList();
+        var cards = cardRepository
+                .findCards(
+                        status,
+                        bin,
+                        issuerId,
+                        startDate,
+                        endDate,
+                        PageRequest.of(offset, limit)
+                )
+                .stream()
+                .map(CardDto::fromEntity)
+                .toList();
+
+        int total = cardRepository.countCards(status, bin, issuerId, startDate, endDate);
+
+        return new GetCardsResponse(total, cards);
     }
 
     public void patchCard(String pan, PatchCardRequest data) {

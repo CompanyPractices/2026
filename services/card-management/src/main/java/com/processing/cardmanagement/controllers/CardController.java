@@ -71,7 +71,7 @@ public class CardController {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
     })
     @GetMapping
-    public ResponseEntity<List<CardDto>> getCards(
+    public ResponseEntity<GetCardsResponse> getCards(
 
         @Nullable
         @Positive

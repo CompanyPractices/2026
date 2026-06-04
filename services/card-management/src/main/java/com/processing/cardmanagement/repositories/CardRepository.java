@@ -37,4 +37,23 @@ public interface CardRepository
         @Nullable @Param("endDate") LocalDateTime endDate,
         Pageable pageable
     );
+
+    @Query(value = """
+        SELECT COUNT(card)
+        FROM CardEntity card
+        WHERE
+            (:status IS NULL OR card.status = :status) AND
+            (:bin IS NULL OR card.bin = :bin) AND
+            (:issuerId IS NULL OR card.issuerId = :issuerId) AND
+            (:startDate IS NULL OR card.createdAt >= :startDate) AND
+            (:endDate IS NULL OR card.createdAt <= :endDate)
+
+        """)
+    int countCards(
+            @Nullable @Param("status") CardEntity.Status status,
+            @Nullable @Param("bin") String bin,
+            @Nullable @Param("issuerId") String issuerId,
+            @Nullable @Param("startDate") LocalDateTime startDate,
+            @Nullable @Param("endDate") LocalDateTime endDate
+    );
 }
