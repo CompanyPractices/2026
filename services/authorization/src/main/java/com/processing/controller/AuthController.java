@@ -7,6 +7,7 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import com.processing.enums.CardStatus;
 import com.processing.dto.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.Exception;
@@ -23,7 +24,8 @@ public class AuthController {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
-    private final String cmsUrl = "http://localhost:8081";
+    @Value("${card-management.url}")
+    private String cmsUrl;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
