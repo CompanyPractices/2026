@@ -1,12 +1,19 @@
-import React, {useState, useEffect} from "react";
+import fetchApi from "../api/client";
+import { DashboardStats } from "../types/index.ts";
 
 function useStats() {
-    const [totalTransactions, setTotalTransactions] = useState(0);
-    const [approvalRate, setApprovalRate] = useState(0);
-    const [totalAmount, setTotalAmount] = useState(0);
-    const [avgTime, setAvgTime] = useState(0);
-
+    const [transactionStats, setTransactionStats] = useState<DashboardStats | null>(null);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
     useEffect(() => {
-        fetchStats()
-    }
+        fetchApi<DashboardStats>("/api/dashboard/stats")
+            .then((data) => {
+                setTransactionStats(data);
+                setLoading(false);
+            })
+            .catch((error) => {
+                setError(error.message);
+                setLoading(false)});
+    }, []);
+    return {transactionStats, error, loading}
 }
