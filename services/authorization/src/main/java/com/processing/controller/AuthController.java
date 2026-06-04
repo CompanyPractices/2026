@@ -1,9 +1,5 @@
 package com.processing.controller;
 
-import java.time.LocalDate;
-import java.util.concurrent.TimeoutException;
-
-import com.processing.enums.CardStatus;
 import com.processing.dto.*;
 import com.processing.services.AuthService;
 import lombok.RequiredArgsConstructor;
