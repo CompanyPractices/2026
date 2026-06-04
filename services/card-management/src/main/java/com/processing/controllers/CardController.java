@@ -26,7 +26,7 @@ public class CardController {
     public ResponseEntity<CardDto> createCard(@Valid @RequestBody CreateCardRequest data) {
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(cardService.createCards(List.of(data)).getFirst());
+            .body(cardService.createCard(data));
     }
 
     @GetMapping("/{pan}")

@@ -78,6 +78,7 @@ public class CardEntity {
         String bin,
         String cardholderName,
         String currencyCode,
+        Status status,
         long dailyLimit,
         long monthlyLimit,
         long initialBalance,
