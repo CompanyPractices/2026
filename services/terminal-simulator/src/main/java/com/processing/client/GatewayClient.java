@@ -37,7 +37,7 @@ public class GatewayClient {
                     .toUriString();
             ResponseEntity<CardsManagementResponse> response = rest.getForEntity(fullUrl, CardsManagementResponse.class);
             CardsManagementResponse resp = response.getBody();
-            if (resp.total() == 0) {   // TODO: кидать ошибку мало карт
+            if (resp == null || resp.total() == 0) {   // TODO: кидать ошибку мало карт
             }
             return resp.cards();
         } catch (Exception e) {  // TODO: кидать ошибку
