@@ -66,7 +66,8 @@ public class CardController {
 
     @Operation(summary = "Get list of cards with pagination and filters")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Cards retrieved successfully"),
+        @ApiResponse(responseCode = "200", description = "Cards retrieved successfully",
+                content = @Content(schema = @Schema(implementation = GetCardsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request parameters",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
     })
