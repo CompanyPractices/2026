@@ -1,4 +1,35 @@
-# JetBrains IDE
+# Переменные окружения
+.env
+.env.local
+.env.*.local
+
+# Зависимости
+node_modules/
+target/
+__pycache__/
+*.pyc
+vendor/
+
+# Логи
+*.log
+logs/
+
+# Временные файлы
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
 .idea/
 .vscode/
-target/
+*.iml
+
+# Maven
+.mvn
+mvnw
+mvnw.cmd
+
+# Вирутальное окружение
+.venv
