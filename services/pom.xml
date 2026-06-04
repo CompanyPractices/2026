@@ -31,6 +31,8 @@
     <!-- Модули (добавляются по мере создания сервисов) -->
     <modules>
         <module>terminal-simulator</module>
+        <module>switch</module>
+        <module>authorization</module>
     </modules>
 
     <!-- Управление версиями НЕ-Spring-Boot зависимостей -->
