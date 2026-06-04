@@ -23,6 +23,6 @@ const ICON_STATUS: Record<TransactionStatus, TransactionIconStatus> = {
     }
 }
 
-export const getStatusIcon = (status: TransactionStatus): StatusIconConfig => {
+export const getStatusIcon = (status: TransactionStatus): TransactionIconStatus => {
     return ICON_STATUS[status];
 };
