@@ -23,11 +23,8 @@ public class GatewayClient {
             ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl, tx, AuthorizationResponse.class);
             return response.getBody();
         } catch (Exception e) {  // TODO: кидать ошибку
-            AuthorizationResponse errorResponse = new AuthorizationResponse();
-            errorResponse.setStatus("DECLINED");
-            errorResponse.setResponseCode("505");
-            errorResponse.setDeclineReason(e.getMessage());
-            return errorResponse;
+            return new AuthorizationResponse(tx.mti(), tx.stan(), null, null, "505",
+                    "DECLINED", e.getMessage(), 0);
         }
     }
 

@@ -117,7 +117,7 @@ public class TerminalSimulatorService {
             authResps.add(authResp);
             System.out.println(tx);
 
-            if ("APPROVED".equals(authResp.getStatus())) {
+            if ("APPROVED".equals(authResp.status())) {
                 approved.incrementAndGet();
             }
             else declined.incrementAndGet();
