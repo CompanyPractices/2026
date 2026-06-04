@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record GetCardsRequest(
 
@@ -30,10 +30,10 @@ public record GetCardsRequest(
     String issuerId,
 
     @Nullable
-    LocalDate startDate,
+    LocalDateTime startDate,
 
     @Nullable
-    LocalDate endDate
+    LocalDateTime endDate
 ) {
 
     public GetCardsRequest {
