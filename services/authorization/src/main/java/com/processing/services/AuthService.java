@@ -16,6 +16,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Random;
@@ -24,11 +25,13 @@ import java.util.stream.Collectors;
 
 import javax.smartcardio.CardException;
 
-@Service
 @Slf4j
+@Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final HttpClient httpClient;
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(3))
+            .build();
 
     @Value("${card-management.url}")
     private String cmsUrl;
@@ -51,7 +54,7 @@ public class AuthService {
         try {
             cardResponse = getCard(request.getPan());
         } catch (Exception e) {
-            log.error("getting card from card managment service failed for pan: {}", request.getPan(), e.getMessage());
+            log.error("getting card from card managment service failed for pan: {}", request.getPan(), e);
             return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
         }
 
@@ -80,10 +83,10 @@ public class AuthService {
         try {
             reserve(request.getAmount(), rrn, request.getPan());
         } catch (Exception e) {
-            log.error("reserving failed for card {}",cardResponse.getId(), e.getMessage());
+            log.error("reserving failed for card {}", cardResponse.getId(), e);
             return AuthorizationResponse.declined(request, "RESERVATION_FAILED", "96");
         }
-        
+
         String authCode = generateAuthCode();
         return AuthorizationResponse.approved(request, rrn, authCode);
     }
