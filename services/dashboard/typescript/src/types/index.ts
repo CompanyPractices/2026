@@ -1,25 +1,14 @@
-enum TransactionStatus {
-    APPROVED = "APPROVED",
-    DECLINED = "DECLINED",
-}
+export type TransactionStatus = 'APPROVED' | 'DECLINED'
 
-enum FilterStatus {
-    ALL = "All",
-    APPROVED = "Approved",
-    DECLINED = "Declined"
-}
+export type FilterStatus = 'All' | 'APPROVED' | 'DECLINED'
 
-enum TerminalType {
-    POS = "POS",
-    ATM = "ATM",
-    ECOM = "ECOM",
-}
+export type TerminalType = 'POS' | 'ATM' | 'ECOM'
 
 export type Transaction = {
     id: string
     mti: string
     stan: string
-    rrn: string
+    rrn?: string
     pan: string
     processingCode: string
     processingTimeMs: number
@@ -31,11 +20,11 @@ export type Transaction = {
     merchantId: string
     mcc: string
     acquirerId: string
-    acquiringFee: number
+    acquiringFee?: number
     issuerId?: string
     status: TransactionStatus
     declineReason?: string
-    authCode: string
+    authCode?: string
     transmissionDateTime: string
     createdAt: string
 }
