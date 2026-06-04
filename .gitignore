@@ -25,3 +25,11 @@ Thumbs.db
 .idea/
 .vscode/
 *.iml
+
+# Maven
+.mvn
+mvnw
+mvnw.cmd
+
+# Вирутальное окружение
+.venv
