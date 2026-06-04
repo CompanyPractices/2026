@@ -4,6 +4,8 @@ import com.processing.cardmanagement.annotations.Pan;
 import com.processing.cardmanagement.models.*;
 import com.processing.cardmanagement.services.CardService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,8 +31,10 @@ public class CardController {
 
     @Operation(summary = "Create a new card")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Card create successfully"),
-            @ApiResponse(responseCode = "400", description = "invalid request data")
+            @ApiResponse(responseCode = "201", description = "Card create successfully",
+                    content = @Content(schema = @Schema(implementation = CardDto.class))),
+            @ApiResponse(responseCode = "400", description = "invalid request data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/")
     public ResponseEntity<CardDto> createCard(@Valid @RequestBody CreateCardRequest data) {
@@ -41,9 +45,12 @@ public class CardController {
 
     @Operation(summary = "Get card by PAN")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Card found"),
-            @ApiResponse(responseCode = "400", description = "Invalid PAN format"),
-            @ApiResponse(responseCode = "404", description = "Card not found")
+            @ApiResponse(responseCode = "200", description = "Card found",
+                    content = @Content(schema = @Schema(implementation = CardDto.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid PAN format",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Card not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/{pan}")
     public ResponseEntity<CardDto> getCard(@PathVariable @Pan String pan) {
@@ -53,7 +60,8 @@ public class CardController {
     @Operation(summary = "Get list of cards with pagination and filters")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Cards retrieved successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request parameters"),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
     })
     @GetMapping("/")
     public ResponseEntity<List<CardDto>> getCards(@Valid @RequestBody GetCardsRequest data) {
@@ -63,8 +71,10 @@ public class CardController {
     @Operation(summary = "Partially update a card")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Card update successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "404", description = "Card not found")
+            @ApiResponse(responseCode = "400", description = "Invalid request data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Card not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PatchMapping("/{pan}")
     public ResponseEntity<Void> patchCard(
@@ -78,8 +88,10 @@ public class CardController {
     @Operation(summary = "Delete a card (sets status to DELETED)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Card deleted successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid PAN format"),
-            @ApiResponse(responseCode = "404", description = "Card not found")
+            @ApiResponse(responseCode = "400", description = "Invalid PAN format",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Card not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{pan}")
     public ResponseEntity<Void> deleteCard(@PathVariable @Pan String pan) {
@@ -90,9 +102,12 @@ public class CardController {
     @Operation(summary = "Reserve funds on a card")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Funds reserve successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "402", description = "Insufficient funds"),
-            @ApiResponse(responseCode = "404", description = "Card not found")
+            @ApiResponse(responseCode = "400", description = "Invalid request data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "402", description = "Insufficient funds",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Card not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{pan}/reserve")
     public ResponseEntity<Void> reserve(
