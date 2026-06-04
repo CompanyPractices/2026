@@ -6,6 +6,7 @@ import com.processing.merchantacquirer.client.dto.CardsRequest;
 import com.processing.merchantacquirer.client.dto.CardsResponse;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
+import com.processing.merchantacquirer.domain.entity.ScenarioType;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactory;
 import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
@@ -31,11 +32,11 @@ public class SimulationService {
     private final GatewayClient gatewayClient;
     private final AuthorizationRequestFactory authorizationRequestFactory;
 
-    private final Map<String, Scenario> scenarios = Map.of(
-            "grocery", new Scenario(List.of("5411", "5499"), 100, 3000, "8:00", "23:00", 95),
-            "electronics", new Scenario(List.of("5732", "5045"), 5000, 100000, "10:00", "22:00", 90),
-            "restaurant", new Scenario(List.of("5812", "5814"), 500, 5000, "11:00", "01:00", 90),
-            "travel", new Scenario(List.of("3501", "4511", "4722"), 5000, 50000, "00:00", "24:00", 90)
+    private final Map<ScenarioType, Scenario> scenarios = Map.of(
+            ScenarioType.grocery, new Scenario(List.of("5411", "5499"), 100, 3000, "8:00", "23:00", 95),
+            ScenarioType.electronics, new Scenario(List.of("5732", "5045"), 5000, 100000, "10:00", "22:00", 90),
+            ScenarioType.restaurant, new Scenario(List.of("5812", "5814"), 500, 5000, "11:00", "01:00", 90),
+            ScenarioType.travel, new Scenario(List.of("3501", "4511", "4722"), 5000, 50000, "00:00", "24:00", 90)
     );
 
     public SimulatorResponse run(SimulatorRequest request){
@@ -43,24 +44,24 @@ public class SimulationService {
         log.info(String.valueOf(startTime));
         log.info(String.valueOf(request));
         // Получение карт (пока замокано на получение 1 захаркоженной карточки)
-        CardsRequest cardsRequest = new CardsRequest(request.getCount(), 0, null, null);
+        CardsRequest cardsRequest = new CardsRequest(request.count(), 0, null, null);
 //        CardsResponse cardsResponse = gatewayClient.getCards(cardsRequest);
         CardsResponse cardsResponse = new CardsResponse(1, List.of(new CardDataResponse("123", "1234567891234567", "123456", "IVAN VANYA", "0404", "ACTIVE", "643", "1", "2", "3", "123", "123")));
         log.info(String.valueOf(cardsResponse));
 
         // Получение сценария
-        Scenario scenario = scenarios.get(request.getScenario());
+        Scenario scenario = scenarios.get(request.scenario());
         log.info(String.valueOf(scenario));
 
         // Получение мерчантов
         List<Merchant> merchants;
         int countMerchants;
-        if(request.getMccCodes() == null){
+        if(request.mccCodes() == null){
             merchants = merchantRepository.findByMccIn(scenario.getMcc());
             log.info(String.valueOf(merchants));
             countMerchants = merchants.size();
         }else{
-            merchants = merchantRepository.findByMccIn(request.getMccCodes());
+            merchants = merchantRepository.findByMccIn(request.mccCodes());
             log.info(String.valueOf(merchants));
             countMerchants = merchants.size();
         }
@@ -71,8 +72,8 @@ public class SimulationService {
 
         // Создание транакций
         List<AuthorizationRequest> authorizationRequests = new ArrayList<>();
-        if(cardsResponse.cards().size() < request.getCount()){
-            int count = request.getCount();
+        if(cardsResponse.cards().size() < request.count()){
+            int count = request.count();
             int iterableCard = cardsResponse.cards().size();
             log.info(String.valueOf(iterableCard));
             log.info(String.valueOf(count));
