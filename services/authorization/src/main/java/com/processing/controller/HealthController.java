@@ -15,7 +15,7 @@ record Response(String service, String status) {}
 
 @RestController
 public class HealthController {
-    @Value ("${services.to.health.check:}")
+    @Value ("${services-to-health-check}")
     private List<String> toHealthCheck;
 
     private final RestTemplate restTemplate;
