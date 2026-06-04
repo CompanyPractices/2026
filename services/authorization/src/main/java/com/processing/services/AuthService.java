@@ -3,8 +3,9 @@ package com.processing.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.dto.CardResponse;
 import com.processing.dto.ReserveRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-
+import org.springframework.stereotype.Service;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -14,13 +15,15 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+@Service
+@RequiredArgsConstructor
 public class AuthService {
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient;
 
     @Value("${card-management.url}")
     private String cmsUrl;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public CardResponse getCard(String pan) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
