@@ -9,6 +9,7 @@ import com.processing.model.Transaction;
 import com.processing.repository.TransactionRepository;
 import com.processing.websocket.WebSocketManager;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.lang.reflect.InvocationHandler;
@@ -38,6 +39,24 @@ class TransactionServiceTest {
         assertThat(result.existingTransaction().id()).isEqualTo(id);
         assertThat(result.storedTransaction()).isNull();
         assertThat(repository.saveCount).isZero();
+        assertThat(webSocketManager.lastMessage).isNull();
+    }
+
+    @Test
+    void storeReturnsExistingTransactionWhenConcurrentRetryAlreadySavedIt() {
+        TransactionRequest request = transactionRequest();
+        RepositoryFake repository = new RepositoryFake(transaction(request.id()));
+        repository.hideExistingOnFirstFind();
+        repository.failSaveWith(new DataIntegrityViolationException("duplicate id"));
+        CapturingWebSocketManager webSocketManager = new CapturingWebSocketManager();
+        TransactionService transactionService = transactionService(repository, webSocketManager);
+
+        TransactionStoreResult result = transactionService.store(request);
+
+        assertThat(result.created()).isFalse();
+        assertThat(result.existingTransaction().id()).isEqualTo(request.id());
+        assertThat(result.storedTransaction()).isNull();
+        assertThat(repository.saveCount).isOne();
         assertThat(webSocketManager.lastMessage).isNull();
     }
 
@@ -105,6 +124,9 @@ class TransactionServiceTest {
     private static class RepositoryFake implements InvocationHandler {
         private final Map<UUID, Transaction> transactions = new HashMap<>();
         private int saveCount;
+        private int findByIdCount;
+        private boolean hideExistingOnFirstFind;
+        private RuntimeException saveException;
 
         RepositoryFake(Transaction... transactions) {
             for (Transaction transaction : transactions) {
@@ -121,14 +143,26 @@ class TransactionServiceTest {
         }
 
         Optional<Transaction> findById(UUID id) {
+            findByIdCount++;
+            if (hideExistingOnFirstFind && findByIdCount == 1) {
+                return Optional.empty();
+            }
             return Optional.ofNullable(transactions.get(id));
+        }
+
+        void hideExistingOnFirstFind() {
+            hideExistingOnFirstFind = true;
+        }
+
+        void failSaveWith(RuntimeException exception) {
+            saveException = exception;
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
             return switch (method.getName()) {
                 case "findById" -> findById((UUID) args[0]);
-                case "save" -> save((Transaction) args[0]);
+                case "save", "saveAndFlush" -> save((Transaction) args[0]);
                 case "toString" -> "RepositoryFake";
                 default -> throw new UnsupportedOperationException(method.getName());
             };
@@ -136,6 +170,9 @@ class TransactionServiceTest {
 
         private Transaction save(Transaction transaction) {
             saveCount++;
+            if (saveException != null) {
+                throw saveException;
+            }
             transactions.put(transaction.getId(), transaction);
             return transaction;
         }

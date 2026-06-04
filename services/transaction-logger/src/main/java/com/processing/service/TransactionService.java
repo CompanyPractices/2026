@@ -17,12 +17,12 @@ import com.processing.specification.TransactionSpecification;
 import com.processing.websocket.WebSocketManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,7 +37,6 @@ public class TransactionService {
     private final WebSocketManager webSocketManager;
     private final ObjectMapper objectMapper;
 
-    @Transactional
     public TransactionStoreResult store(TransactionRequest request) {
         Optional<Transaction> existingTransaction = transactionRepository.findById(request.id());
         if (existingTransaction.isPresent()) {
@@ -45,7 +44,15 @@ public class TransactionService {
             return TransactionStoreResult.existing(response);
         }
 
-        Transaction savedTransaction = transactionRepository.save(transactionMapper.toEntity(request));
+        Transaction savedTransaction;
+        try {
+            savedTransaction = transactionRepository.saveAndFlush(transactionMapper.toEntity(request));
+        } catch (DataIntegrityViolationException exception) {
+            return transactionRepository.findById(request.id())
+                    .map(transactionMapper::toResponse)
+                    .map(TransactionStoreResult::existing)
+                    .orElseThrow(() -> exception);
+        }
 
         try {
             TransactionResponse response = transactionMapper.toResponse(savedTransaction);
