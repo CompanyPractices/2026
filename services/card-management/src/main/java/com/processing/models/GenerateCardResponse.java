@@ -1,5 +1,12 @@
 package com.processing.models;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
-public record GenerateCardResponse(int generated, List<CardDto> cards) {}
+@Schema(description = "Response for card generation")
+public record GenerateCardResponse(
+        @Schema(description = "Number of generated cards", example = "100")
+        int generated,
+        @Schema(description = "List of generated cards")
+        List<CardDto> cards) {}

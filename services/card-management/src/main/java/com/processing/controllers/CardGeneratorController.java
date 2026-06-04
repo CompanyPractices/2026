@@ -4,6 +4,10 @@ import com.processing.models.CardDto;
 import com.processing.models.GenerateCardResponse;
 import com.processing.models.GenerateCardsRequest;
 import com.processing.services.CardGeneratorService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +21,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/cards")
 @RequiredArgsConstructor
+@Tag(name = "Cards", description = "Card management endpoints")
 public class CardGeneratorController {
     private final CardGeneratorService generatorService;
 
+    @Operation(summary = "Generate test cards")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Cards generated successfully"),
+            @ApiResponse(responseCode = "400", description = "invalid request data")
+    })
     @PostMapping("/generate")
     public ResponseEntity<GenerateCardResponse> generate(@Valid @RequestBody GenerateCardsRequest request) {
         List<CardDto> result = generatorService.generate(request.count(), request.bins());
