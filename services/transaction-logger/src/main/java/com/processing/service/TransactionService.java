@@ -1,27 +1,61 @@
 package com.processing.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.dto.DashboardStatsResponse;
+import com.processing.dto.TransactionRequest;
+import com.processing.dto.TransactionResponse;
 import com.processing.dto.TransactionSearchResponse;
+import com.processing.dto.TransactionStoredResponse;
 import com.processing.enums.TransactionStatus;
+import com.processing.mapper.TransactionMapper;
 import com.processing.model.Transaction;
 import com.processing.model.Transaction_;
 import com.processing.repository.TransactionRepository;
 import com.processing.specification.TransactionFilter;
 import com.processing.specification.TransactionSpecification;
+import com.processing.websocket.WebSocketManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
     private final TransactionRepository transactionRepository;
+    private final TransactionMapper transactionMapper;
+    private final WebSocketManager webSocketManager;
+    private final ObjectMapper objectMapper;
+
+    @Transactional(readOnly = true)
+    public Optional<TransactionResponse> findExistingTransaction(UUID id) {
+        return transactionRepository.findById(id).map(transactionMapper::toResponse);
+    }
+
+    @Transactional
+    public TransactionStoredResponse store(TransactionRequest request) {
+        Transaction savedTransaction = transactionRepository.save(transactionMapper.toEntity(request));
+
+        try {
+            TransactionResponse response = transactionMapper.toResponse(savedTransaction);
+            webSocketManager.broadcast(objectMapper.writeValueAsString(response));
+        } catch (JsonProcessingException exception) {
+            log.error("Failed to serialize transaction for WebSocket broadcast: {}", savedTransaction.getId(), exception);
+        }
+
+        return transactionMapper.toStoredResponse(savedTransaction);
+    }
 
     public TransactionSearchResponse search(TransactionFilter filter) {
         Pageable pageable = PageRequest.of(filter.getOffset() / filter.getLimit(), filter.getLimit());
