@@ -209,7 +209,6 @@ Card Management создает карты, управляет балансом, 
 | `DB_NAME`     | `postgres`            | Имя базы данных      |
 | `DB_USER`     | `postgres`            | Пользователь БД      |
 | `DB_PASSWORD` | `postgres`            | Пароль БД            |
-| `ISSUER_ID`   | `ZZZZZZ`              | Номер банка-эмитента |
 
 ---
 
