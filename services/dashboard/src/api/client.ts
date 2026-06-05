@@ -1,6 +1,6 @@
 const base_url = import.meta.env.VITE_API_URL;
 
-function fetchApi<T>(route: string, options?: RequestInit): Promise<T> {
+function fetchApi<T>(route: string): Promise<T> {
     return fetch(base_url + route)
         .then((response) => {
             if (!response.ok) {

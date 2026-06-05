@@ -1,5 +1,4 @@
 import {KpiCards} from "./KpiCards.tsx";
-import {DashboardStats} from "../types";
 import useStats from "../hooks/useStats.ts"
 
 export function Header() {

@@ -1,21 +1,18 @@
 import { hidePan, convertPenniesToRubles, formatTime } from '../utils/format.ts';
 import { getStatusIcon } from '../utils/statusIcon.ts';
-import {TransactionStatus} from "../types";
+import useTransactions from "../hooks/useTransactions.ts"
 
-export type TransactionTableRowData = {
-    id: string,
-    time: string,
-    pan: string,
-    amount: number,
-    merchantId: string,
-    status: TransactionStatus,
-}
-
-type TransactionTableProps = {
-    transactions: TransactionTableRowData[]
-}
-
-export function TransactionTable({ transactions } : TransactionTableProps ){
+export function TransactionTable(){
+    const {transactions, error, loading} = useTransactions();
+    if (error){
+        return <div>Ошибка загрузки транзакций: {error}</div>
+    }
+    if (loading){
+        return <div>Загрузка транзакций...</div>
+    }
+    if (!transactions){
+        return <div>Транзакций не найдено</div>
+    }
     return (
         <div className="font-mono flex flex-col items-center">
             <h2 className="text-2xl font-bold mb-3 text-center drop-shadow-lg ">Последние 20 транзакций</h2>
@@ -35,7 +32,7 @@ export function TransactionTable({ transactions } : TransactionTableProps ){
                         return(
                             <tr key={transaction.id}
                                 className=" text-center">
-                                <td className="px-10 py-2"> {formatTime(transaction.time)} </td>
+                                <td className="px-10 py-2"> {formatTime(transaction.createdAt)} </td>
                                 <td className="px-10 py-2"> {hidePan(transaction.pan)} </td>
                                 <td className="px-10 py-2 text-right"> {convertPenniesToRubles(transaction.amount)} </td>
                                 <td className="px-10 py-2 text-left"> {transaction.merchantId} </td>
