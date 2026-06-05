@@ -36,7 +36,6 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <modules>
-                <module>common</module>
                 <module>gateway</module>
                 <module>card-management</module>
                 <module>switch</module>
