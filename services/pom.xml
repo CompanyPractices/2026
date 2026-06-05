@@ -29,13 +29,74 @@
         <checkstyle.version>3.6.0</checkstyle.version>
     </properties>
 
-    <!-- Модули (добавляются по мере создания сервисов) -->
-    <modules>
-        <module>merchant-acquirer</module>
-        <module>terminal-simulator</module>
-        <module>switch</module>
-        <module>authorization</module>
-    </modules>
+    <profiles>
+        <!-- Профиль для сборки всех модулей (по умолчанию) -->
+        <profile>
+            <id>all</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>gateway</module>
+                <module>card-management</module>
+                <module>switch</module>
+                <module>authorization</module>
+                <module>terminal-simulator</module>
+                <module>merchant-acquirer</module>
+                <module>transaction-logger</module>
+            </modules>
+        </profile>
+
+        <!-- Индивидуальные профили для каждого сервиса -->
+        <profile>
+            <id>gateway</id>
+            <modules>
+                <module>gateway</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>card-management</id>
+            <modules>
+                <module>card-management</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>switch</id>
+            <modules>
+                <module>switch</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>authorization</id>
+            <modules>
+                <module>authorization</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>terminal-simulator</id>
+            <modules>
+                <module>terminal-simulator</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>merchant-acquirer</id>
+            <modules>
+                <module>merchant-acquirer</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>transaction-logger</id>
+            <modules>
+                <module>transaction-logger</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <!-- Управление версиями НЕ-Spring-Boot зависимостей -->
     <dependencyManagement>

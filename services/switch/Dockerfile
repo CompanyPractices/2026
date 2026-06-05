@@ -1,15 +1,20 @@
-FROM public.ecr.aws/docker/library/maven:3.9-eclipse-temurin-21-alpine AS build
+FROM maven:3.9.16-eclipse-temurin-21-alpine AS build
 WORKDIR /app
-COPY pom.xml ./
-COPY src ./src
-RUN mvn package -DskipTests -q
 
-FROM public.ecr.aws/docker/library/eclipse-temurin:21-jre-alpine
-RUN apk add --no-cache wget
+COPY ./services/pom.xml ./pom.xml
+COPY ./services/switch/pom.xml ./switch/pom.xml
+COPY ./services/switch/src ./switch/src
+
+RUN mvn -P switch -pl switch -am package -DskipTests
+
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-ENV PORT=8082
-EXPOSE 8082
+
+COPY --from=build /app/switch/target/switch-*.jar app.jar
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=40s \
+    CMD wget -qO- http://localhost:8080/actuator/health || exit 1
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
-HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-    CMD wget -qO- http://localhost:8082/health || exit 1
