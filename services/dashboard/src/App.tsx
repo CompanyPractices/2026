@@ -21,13 +21,13 @@ function App() {
       </main>
 
       <footer className="rounded-2xl m-4 w-5/6 h-24 grid grid-cols-3 gap-4">
-          <h1 className="p-8 text-center text-xl font-mono font-bold">
+          <h1 className="p-4 text-center text-xl font-mono font-bold">
               Практика
           </h1>
-          <h1 className="p-8 text-center text-xl font-mono font-bold">
+          <h1 className="p-4 text-center text-xl font-mono font-bold">
               СМП - Система медленных платежей
           </h1>
-          <h1 className="p-8 text-center text-xl font-mono font-bold">
+          <h1 className="p-4 text-center text-xl font-mono font-bold">
               2026
           </h1>
       </footer>
