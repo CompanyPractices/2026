@@ -71,6 +71,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Common DTOs -->
+        <dependency>
+            <groupId>com.processing</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
