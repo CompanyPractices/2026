@@ -86,7 +86,7 @@ public class TerminalSimulatorService {
         String acquirerId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));
         String issuerId = "";
         Card card = getRandomCard(ACTIVE);
-        long amount = (long)(Math.random() * 2_000_000);
+        long amount = 1000 + (long)(Math.random() * 2_000_000);
 
         switch (scenario) {
             case "normal" -> {
@@ -121,7 +121,9 @@ public class TerminalSimulatorService {
             if ("APPROVED".equals(authResp.status())) {
                 approved.incrementAndGet();
             }
-            else declined.incrementAndGet();
+            else if ("DECLINED".equals(authResp.status())) {
+                declined.incrementAndGet();
+            }
         }
     }
 
