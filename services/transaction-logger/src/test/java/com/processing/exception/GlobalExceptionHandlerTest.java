@@ -1,6 +1,8 @@
 package com.processing.exception;
 
+import com.processing.common.dto.ErrorResponse;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -21,10 +23,11 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleDatabaseAccessReturnsServiceUnavailable() {
-        ResponseEntity<Map<String, String>> response = handler.handleDatabaseAccess();
+    void handleDataAccessReturnsServiceUnavailable() {
+        ResponseEntity<ErrorResponse> response =
+                handler.handleDataAccess(new DataAccessResourceFailureException("db down"));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
-        assertThat(response.getBody()).containsEntry("error", "Database operation failed");
+        assertThat(response.getBody().error()).isEqualTo("DB_UNAVAILABLE");
     }
 }
