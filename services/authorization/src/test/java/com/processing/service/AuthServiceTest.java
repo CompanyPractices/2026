@@ -1,6 +1,5 @@
 package com.processing.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.dto.AuthorizationRequest;
 import com.processing.dto.AuthorizationResponse;
 import com.processing.dto.CardResponse;
@@ -11,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 class AuthServiceTest {
 
     private AuthService authService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestTemplate objectMapper = new RestTemplate();
 
     private AuthorizationRequest correctRequest;
     private CardResponse activeCardResponse;
@@ -45,8 +45,7 @@ class AuthServiceTest {
                 "M001",
                 "5411",
                 "A001",
-                "I001"
-        );
+                "I001");
 
         activeCardResponse = new CardResponse(
                 UUID.randomUUID(),
@@ -60,8 +59,7 @@ class AuthServiceTest {
                 500000,
                 10000,
                 "I001",
-                LocalDate.now()
-        );
+                LocalDate.now());
     }
 
     @Test
@@ -110,8 +108,7 @@ class AuthServiceTest {
                 activeCardResponse.getMonthlyLimit(),
                 activeCardResponse.getAvailableBalance(),
                 activeCardResponse.getIssuerId(),
-                activeCardResponse.getCreatedAt()
-        );
+                activeCardResponse.getCreatedAt());
         AuthService spyService = spy(authService);
         doReturn(expiredCard).when(spyService).getCard(anyString());
 
@@ -136,8 +133,7 @@ class AuthServiceTest {
                 activeCardResponse.getMonthlyLimit(),
                 activeCardResponse.getAvailableBalance(),
                 activeCardResponse.getIssuerId(),
-                activeCardResponse.getCreatedAt()
-        );
+                activeCardResponse.getCreatedAt());
         AuthService spyService = spy(authService);
         doReturn(blockedCard).when(spyService).getCard(anyString());
 
@@ -161,8 +157,7 @@ class AuthServiceTest {
                 activeCardResponse.getMonthlyLimit(),
                 activeCardResponse.getAvailableBalance(),
                 activeCardResponse.getIssuerId(),
-                activeCardResponse.getCreatedAt()
-        );
+                activeCardResponse.getCreatedAt());
         AuthService spyService = spy(authService);
         doReturn(inactiveCard).when(spyService).getCard(anyString());
 
@@ -183,8 +178,7 @@ class AuthServiceTest {
                 null,
                 activeCardResponse.getCurrencyCode(), activeCardResponse.getDailyLimit(),
                 activeCardResponse.getMonthlyLimit(), activeCardResponse.getAvailableBalance(),
-                activeCardResponse.getIssuerId(), activeCardResponse.getCreatedAt()
-        );
+                activeCardResponse.getIssuerId(), activeCardResponse.getCreatedAt());
         AuthService spyService = spy(authService);
         doReturn(unknownStatusCard).when(spyService).getCard(anyString());
 
@@ -207,8 +201,7 @@ class AuthServiceTest {
                 activeCardResponse.getMonthlyLimit(),
                 activeCardResponse.getAvailableBalance(),
                 activeCardResponse.getIssuerId(),
-                activeCardResponse.getCreatedAt()
-        );
+                activeCardResponse.getCreatedAt());
         AuthService spyService = spy(authService);
         doReturn(activeButExpiredCard).when(spyService).getCard(anyString());
 
@@ -232,8 +225,7 @@ class AuthServiceTest {
                 activeCardResponse.getMonthlyLimit(),
                 1000,
                 activeCardResponse.getIssuerId(),
-                activeCardResponse.getCreatedAt()
-        );
+                activeCardResponse.getCreatedAt());
         AuthService spyService = spy(authService);
         doReturn(lowBalanceCard).when(spyService).getCard(anyString());
 

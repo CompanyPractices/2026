@@ -1,6 +1,7 @@
 package com.processing.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.exceptions.CardNotFoundException;
+import com.exceptions.ReserveCardException;
 import com.processing.dto.AuthorizationRequest;
 import com.processing.dto.AuthorizationResponse;
 import com.processing.dto.CardResponse;
@@ -11,50 +12,37 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import org.springframework.web.client.RestTemplate;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import javax.smartcardio.CardException;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(3))
-            .build();
+    private final RestTemplate restTemplate;
 
     @Value("${card-management.url}")
     private String cmsUrl;
-
-    private final ObjectMapper objectMapper;
-
-    public CardResponse getCard(String pan) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(cmsUrl + "/api/cards/" + pan))
-                .GET()
-                .build();
-
-        HttpResponse<String> cardResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        return objectMapper.readValue(cardResponse.body(), CardResponse.class);
-    }
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         CardResponse cardResponse;
         try {
             cardResponse = getCard(request.getPan());
+        } catch (CardNotFoundException e) {
+            log.debug("Card not found for pan: {}", request.getPan());
+            return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
         } catch (Exception e) {
-            log.error("getting card from card managment service failed for pan: {}", request.getPan(), e);
+            log.debug("getting card from card managment service failed for pan: {}", request.getPan(), e);
             return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
         }
 
@@ -86,7 +74,7 @@ public class AuthService {
         try {
             reserve(request.getAmount(), rrn, request.getPan());
         } catch (Exception e) {
-            log.error("reserving failed for card {}", cardResponse.getId(), e);
+            log.debug("reserving failed for card {}", cardResponse.getId(), e);
             return AuthorizationResponse.declined(request, "RESERVATION_FAILED", "96");
         }
 
@@ -94,19 +82,34 @@ public class AuthService {
         return AuthorizationResponse.approved(request, rrn, authCode);
     }
 
+    public CardResponse getCard(String pan) throws Exception {
+        String url = cmsUrl + "/api/cards/" + pan;
+        log.debug("Getting card info for pan {}", pan);
+        ResponseEntity<CardResponse> response = restTemplate.getForEntity(url, CardResponse.class);
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            log.debug("Failed to get card. Status: {}", response.getStatusCode());
+            throw new RuntimeException("Failed to get card. Status: " + response.getStatusCode());
+        }
+        return response.getBody();
+    }
+
     public void reserve(Integer amount, String rrn, String pan) throws Exception {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
-        String requestBody = objectMapper.writeValueAsString(reserveRequest);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(cmsUrl + "/api/cards/" + pan + "/reserve"))
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new CardException("Failed to reserve. Status: " + response.statusCode());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<ReserveRequest> requestEntity = new HttpEntity<>(reserveRequest, headers);
+        String url = cmsUrl + "/api/cards/" + pan + "/reserve";
+        log.debug("Reserving amount {} for card {} with rrn {}", amount, pan, rrn);
+        ResponseEntity<String> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                requestEntity,
+                String.class);
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            log.debug("Reserve failed. Status: {}", response.getStatusCode());
+            throw new ReserveCardException("Failed to reserve. Status: " + response.getStatusCode());
         }
+        log.debug("Reserve successful for card {}", pan);
     }
 
     private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
