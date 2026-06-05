@@ -1,16 +1,18 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.annotations.Bin;
-import com.processing.cardmanagement.annotations.Pan;
+import com.processing.common.dto.annotations.Bin;
+import com.processing.common.dto.annotations.Pan;
 
 import java.util.Random;
 
 public class LuhnValidator implements PanGenerator {
 
     private final Random random = new Random();
+    private String pan;
 
     @Override
     public boolean isValid(@Pan String pan) {
+        this.pan = pan;
         int total = 0;
         boolean isEvenIdx = false;
 

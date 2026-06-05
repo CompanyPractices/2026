@@ -18,6 +18,12 @@
     <description>Card Management System for СМП processing simulator</description>
 
     <dependencies>
+        <!-- Common Module -->
+        <dependency>
+            <groupId>com.processing</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
         <!-- Web (REST API) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

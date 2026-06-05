@@ -4,6 +4,7 @@ import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.models.*;
 import com.processing.cardmanagement.options.CardServiceOptions;
 import com.processing.cardmanagement.repositories.CardRepository;
+import com.processing.common.dto.cardmanagement.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -21,24 +22,24 @@ public class CardService {
     private final CardServiceOptions options;
     private final PanGenerator panGenerator;
 
-    public CardDto createCard(CreateCardRequest data) {
+    public CardModel createCard(CreateCardRequest data) {
         var entity = cardRepository.save(
             new CardEntity(
                 panGenerator.generatePan(data.bin()),
                 data.bin(),
                 data.cardholderName(),
                 data.currencyCode(),
-                CardEntity.Status.ACTIVE,
+                CardStatus.ACTIVE,
                 data.dailyLimit(),
                 data.monthlyLimit(),
                 data.initialBalance(),
                 options.issuerId()
             )
         );
-        return CardDto.fromEntity(entity);
+        return cardModelFromEntity(entity);
     }
 
-    public List<CardDto> createCards(List<GeneratedCardDto> data) {
+    public List<CardModel> createCards(List<GeneratedCardDto> data) {
         var entities = data
             .stream()
             .map(dto -> new CardEntity(
@@ -57,35 +58,35 @@ public class CardService {
         return cardRepository
             .saveAll(entities)
             .stream()
-            .map(CardDto::fromEntity)
+            .map(this::cardModelFromEntity)
             .toList();
     }
 
-    public CardDto getCard(String pan) {
-        return CardDto.fromEntity(getCardEntity(pan));
+    public CardModel getCard(String pan) {
+        return cardModelFromEntity(getCardEntity(pan));
     }
 
     public GetCardsResponse getCards(
         Integer limit,
         Integer offset,
-        CardEntity.Status status,
+        CardStatus status,
         String bin,
         String issuerId,
         LocalDateTime startDate,
         LocalDateTime endDate
     ) {
         var cards = cardRepository
-                .findCards(
-                        status,
-                        bin,
-                        issuerId,
-                        startDate,
-                        endDate,
-                        PageRequest.of(offset, limit)
-                )
-                .stream()
-                .map(CardDto::fromEntity)
-                .toList();
+            .findCards(
+                status,
+                bin,
+                issuerId,
+                startDate,
+                endDate,
+                PageRequest.of(offset, limit)
+            )
+            .stream()
+            .map(this::cardModelFromEntity)
+            .toList();
 
         int total = cardRepository.countCards(status, bin, issuerId, startDate, endDate);
 
@@ -131,5 +132,21 @@ public class CardService {
         return cardRepository
             .findByPan(pan)
             .orElseThrow(CardNotFoundException::new);
+    }
+
+    private CardModel cardModelFromEntity(CardEntity entity) {
+        return new CardModel(
+            entity.getId(),
+            entity.getPan(),
+            entity.getBin(),
+            entity.getCardholderName(),
+            entity.getStrExpiryDate(),
+            entity.getStatus().name(),
+            entity.getDailyLimit(),
+            entity.getMonthlyLimit(),
+            entity.getAvailableBalance(),
+            entity.getIssuerId(),
+            entity.getCreatedAt()
+        );
     }
 }

@@ -1,13 +1,16 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.models.CardDto;
 import com.processing.cardmanagement.models.CardEntity;
-import com.processing.cardmanagement.models.GeneratedCardDto;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
+import com.processing.common.dto.cardmanagement.CardStatus;
+import com.processing.common.dto.cardmanagement.GeneratedCardDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.processing.common.dto.cardmanagement.CardModel;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +25,7 @@ public class CardGeneratorService {
         "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
     );
 
-    public List<CardDto> generate(int count, List<String> bins) {
+    public List<CardModel> generate(int count, List<String> bins) {
         List<GeneratedCardDto> cards = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
@@ -48,17 +51,17 @@ public class CardGeneratorService {
         return cardService.createCards(cards);
     }
 
-    private CardEntity.Status generateStatus() {
+    private CardStatus generateStatus() {
         int roll = random.nextInt(100);
 
         if (roll < 95) {
-            return CardEntity.Status.ACTIVE;
+            return CardStatus.ACTIVE;
         }
 
         if (roll < 98) {
-            return CardEntity.Status.INACTIVE;
+            return CardStatus.INACTIVE;
         }
 
-        return CardEntity.Status.BLOCKED;
+        return CardStatus.BLOCKED;
     }
 }
