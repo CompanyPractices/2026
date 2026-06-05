@@ -1,4 +1,4 @@
-package com.processing.dto;
+package com.processing.terminalsimulator.dto;
 
 public record AuthorizationRequest(
     String mti,

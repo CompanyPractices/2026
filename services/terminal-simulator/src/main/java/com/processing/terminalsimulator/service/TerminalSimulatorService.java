@@ -1,12 +1,12 @@
-package com.processing.service;
+package com.processing.terminalsimulator.service;
 
-import com.processing.client.GatewayClient;
-import com.processing.dto.AuthorizationResponse;
-import com.processing.dto.RunResponse;
-import com.processing.dto.AuthorizationRequest;
-import com.processing.dto.Card;
-import com.processing.model.TerminalType;
-import com.processing.model.CardStatus;
+import com.processing.terminalsimulator.client.GatewayClient;
+import com.processing.terminalsimulator.dto.AuthorizationResponse;
+import com.processing.terminalsimulator.dto.RunResponse;
+import com.processing.terminalsimulator.dto.AuthorizationRequest;
+import com.processing.terminalsimulator.dto.Card;
+import com.processing.terminalsimulator.model.TerminalType;
+import com.processing.terminalsimulator.model.CardStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +16,8 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.processing.model.CardStatus.ACTIVE;
-import static com.processing.model.CardStatus.BLOCKED;
+import static com.processing.terminalsimulator.model.CardStatus.ACTIVE;
+import static com.processing.terminalsimulator.model.CardStatus.BLOCKED;
 
 @Service
 @RequiredArgsConstructor
@@ -86,7 +86,7 @@ public class TerminalSimulatorService {
         String acquirerId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));
         String issuerId = "";
         Card card = getRandomCard(ACTIVE);
-        long amount = (long)(Math.random() * 2_000_000);
+        long amount = 1000 + (long)(Math.random() * 2_000_000);
 
         switch (scenario) {
             case "normal" -> {
@@ -121,7 +121,9 @@ public class TerminalSimulatorService {
             if ("APPROVED".equals(authResp.status())) {
                 approved.incrementAndGet();
             }
-            else declined.incrementAndGet();
+            else if ("DECLINED".equals(authResp.status())) {
+                declined.incrementAndGet();
+            }
         }
     }
 

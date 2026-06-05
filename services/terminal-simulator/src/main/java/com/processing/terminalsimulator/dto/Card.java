@@ -1,6 +1,6 @@
-package com.processing.dto;
+package com.processing.terminalsimulator.dto;
 
-import com.processing.model.CardStatus;
+import com.processing.terminalsimulator.model.CardStatus;
 
 public record Card(
     String id,
