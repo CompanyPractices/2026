@@ -1,23 +1,25 @@
 package com.processing.model;
 
-import lombok.Builder;
-import lombok.Data;
 import java.time.LocalDateTime;
 
-@Data
-@Builder
-public class AuthorizationRequest {
-    private String mti;
-    private String stan;
-    private String pan;
-    private String processingCode;
-    private Long amount;
-    private String currencyCode;
-    private LocalDateTime transmissionDateTime;
-    private String terminalId;
-    private String terminalType;
-    private String merchantId;
-    private String mcc;
-    private String acquirerId;
-    private String issuerId;
+public record AuthorizationRequest(
+        String mti,
+        String stan,
+        String pan,
+        String processingCode,
+        Long amount,
+        String currencyCode,
+        LocalDateTime transmissionDateTime,
+        String terminalId,
+        String terminalType,
+        String merchantId,
+        String mcc,
+        String acquirerId,
+        String issuerId
+) {
+    public AuthorizationRequest withIssuerId(String issuerId) {
+        return new AuthorizationRequest(
+                mti, stan, pan, processingCode, amount, currencyCode,
+                transmissionDateTime, terminalId, terminalType, merchantId, mcc, acquirerId, issuerId);
+    }
 }
