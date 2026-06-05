@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import fetchApi from "../api/client";
 import { DashboardStats } from "../types/index.ts";
 
@@ -17,3 +18,5 @@ function useStats() {
     }, []);
     return {transactionStats, error, loading}
 }
+
+export default useStats;
