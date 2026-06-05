@@ -47,7 +47,7 @@ public class HealthController {
         return result;
     }
 
-    
+
     private Response checkHealth(String serviceUrl) {
         try {
             String fullUrl = serviceUrl.startsWith("http") ? serviceUrl : "http://" + serviceUrl;
@@ -55,7 +55,7 @@ public class HealthController {
             log.debug("Checking health of {}", healthUrl);
 
             ResponseEntity<Map> response = restTemplate.getForEntity(healthUrl, Map.class);
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, Object> body = response.getBody();
                 String service = (String) body.getOrDefault("service", serviceUrl);
@@ -67,5 +67,5 @@ public class HealthController {
             log.error("Health check failed for {}", serviceUrl, e.getMessage());
             return new Response(serviceUrl, "down");
         }
-    } 
+    }
 }

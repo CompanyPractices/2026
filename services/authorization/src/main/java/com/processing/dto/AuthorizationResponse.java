@@ -37,7 +37,7 @@ public class AuthorizationResponse {
             1 // TODO
         );
     }
- 
+
     public static AuthorizationResponse declined(AuthorizationRequest request, String reason, String code) {
         return new AuthorizationResponse(
             request.getMti(),
