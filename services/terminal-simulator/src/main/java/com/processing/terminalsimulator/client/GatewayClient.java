@@ -19,32 +19,22 @@ public class GatewayClient {
     private final String cardManagementUrl = "http://card-management:8080/api/cards";
 
     public AuthorizationResponse sendToGateway(AuthorizationRequest tx) {
-        try {
-            ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl, tx, AuthorizationResponse.class);
-            return response.getBody();
-        } catch (Exception e) {  // TODO: правильно кидать ошибку
-            return new AuthorizationResponse(tx.mti(), tx.stan(), null, null, "505",
-                    "DECLINED", e.getMessage(), 0);
-        }
+        ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl, tx, AuthorizationResponse.class);
+        return response.getBody();
     }
 
     public List<Card> getCardsFromCardManager(CardStatus status, int amount) {
-        try {
-            String fullUrl = UriComponentsBuilder.fromUriString(cardManagementUrl)
-                    .queryParam("status", status)
-                    .queryParam("limit", amount != 0 ? amount : null)
-                    .build()
-                    .toUriString();
-            ResponseEntity<CardsManagementResponse> response = rest.getForEntity(fullUrl, CardsManagementResponse.class);
-            CardsManagementResponse resp = response.getBody();
-            if (resp == null || resp.total() == 0 || resp.cards().isEmpty()) {
-                throw new IllegalStateException("No" + status + "cards available");
-            }
-            return resp.cards();
-        } catch (Exception e) {  // TODO: правильно кидать ошибку
-            System.out.println("Error CardManager: " + e.getMessage());
-            throw e;
+        String fullUrl = UriComponentsBuilder.fromUriString(cardManagementUrl)
+                .queryParam("status", status)
+                .queryParam("limit", amount != 0 ? amount : null)
+                .build()
+                .toUriString();
+        ResponseEntity<CardsManagementResponse> response = rest.getForEntity(fullUrl, CardsManagementResponse.class);
+        CardsManagementResponse resp = response.getBody();
+        if (resp == null || resp.total() == 0 || resp.cards().isEmpty()) {
+            throw new IllegalStateException("No " + status + " cards available");
         }
+        return resp.cards();
     }
 
 }
