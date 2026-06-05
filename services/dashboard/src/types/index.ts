@@ -1,6 +1,6 @@
 export type TransactionStatus = 'APPROVED' | 'DECLINED'
 
-export type FilterStatus = 'All' | 'APPROVED' | 'DECLINED'
+export type FilterStatus = 'APPROVED' | 'DECLINED'
 
 export type TerminalType = 'POS' | 'ATM' | 'ECOM'
 
@@ -41,9 +41,14 @@ export type DashboardStats = {
 }
 
 export type Filter = {
-    status: FilterStatus
+    status?: FilterStatus
     dateFrom?: string
     dateTo?: string
     bin?: string
     mcc?: string
+}
+
+export type SearchResponse = {
+    total: number
+    transactions: Transaction[]
 }
