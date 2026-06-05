@@ -11,15 +11,16 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class HealthService {
+    private static final Duration HEALTH_REQUEST_TIMEOUT = Duration.ofSeconds(2);
     private final HttpClient httpClient;
     private final ServiceProperties serviceProperties;
-    private final ObjectMapper mapper;
 
     public Map<String, String> getDownstreamServicesHealth() {
         String switchUrl = serviceProperties.getSwitchUrl() + "/health";
@@ -38,6 +39,7 @@ public class HealthService {
             HttpRequest request = HttpRequest.newBuilder()
                     .GET()
                     .uri(URI.create(url))
+                    .timeout(HEALTH_REQUEST_TIMEOUT)
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());

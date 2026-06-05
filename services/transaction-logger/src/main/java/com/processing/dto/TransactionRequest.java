@@ -57,6 +57,7 @@ public record TransactionRequest(
         @Size(max = 10)
         String acquirerId,
 
+        @NotBlank
         @Size(max = 10)
         String issuerId,
 

@@ -16,13 +16,13 @@ import java.util.List;
 public class GatewayClient {
     private final RestTemplate rest = new RestTemplate();
     private final String gatewayUrl = "http://gateway:8080/api/transactions";
-    private final String cardManagementUrl = "http://gateway:8080/api/cards";
+    private final String cardManagementUrl = "http://card-management:8080/api/cards";
 
     public AuthorizationResponse sendToGateway(AuthorizationRequest tx) {
         try {
             ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl, tx, AuthorizationResponse.class);
             return response.getBody();
-        } catch (Exception e) {  // TODO: кидать ошибку
+        } catch (Exception e) {  // TODO: правильно кидать ошибку
             return new AuthorizationResponse(tx.mti(), tx.stan(), null, null, "505",
                     "DECLINED", e.getMessage(), 0);
         }
@@ -37,12 +37,13 @@ public class GatewayClient {
                     .toUriString();
             ResponseEntity<CardsManagementResponse> response = rest.getForEntity(fullUrl, CardsManagementResponse.class);
             CardsManagementResponse resp = response.getBody();
-            if (resp == null || resp.total() == 0) {   // TODO: кидать ошибку мало карт
+            if (resp == null || resp.total() == 0 || resp.cards().isEmpty()) {
+                throw new IllegalStateException("No" + status + "cards available");
             }
             return resp.cards();
-        } catch (Exception e) {  // TODO: кидать ошибку
+        } catch (Exception e) {  // TODO: правильно кидать ошибку
             System.out.println("Error CardManager: " + e.getMessage());
-            return null;
+            throw e;
         }
     }
 
