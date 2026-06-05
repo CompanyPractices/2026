@@ -1,4 +1,4 @@
-package com.processing.gateway.logger;
+package com.processing.gateway.logging;
 
 import lombok.Builder;
 import lombok.Data;
@@ -8,7 +8,7 @@ import java.util.UUID;
 @Data
 @Builder
 public class RequestLog {
-    private UUID requestId;
+    private String requestId;
     private String method;
     private String path;
     private Integer responseCode;

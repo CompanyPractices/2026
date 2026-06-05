@@ -2,7 +2,7 @@ package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.gateway.logger.RequestLog;
+import com.processing.gateway.logging.RequestLog;
 import com.processing.gateway.wrapper.MutableHeadersRequestWrapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -31,10 +32,16 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
         long startTime = System.currentTimeMillis();
-        UUID requestId = UUID.randomUUID();
+
+        String incoming = request.getHeader(ID_HEADER_NAME);
+        String requestId = incoming != null ? incoming : UUID.randomUUID().toString();
 
         var wrappedRequest = new MutableHeadersRequestWrapper(request);
-        wrappedRequest.addHeader(ID_HEADER_NAME, requestId.toString());
+        wrappedRequest.setHeader(ID_HEADER_NAME, requestId);
+
+        response.setHeader(ID_HEADER_NAME, requestId);
+
+        MDC.put("requestId", requestId);
 
         try {
             filterChain.doFilter(wrappedRequest, response);
@@ -53,7 +60,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                 String mappedLog = mapper.writeValueAsString(requestLog);
                 log.info(mappedLog);
             } catch (JsonProcessingException e) {
-                log.error("Exception occurred while mapping log message: {}", String.valueOf(e));
+                log.error("Exception occurred while mapping log message", e);
+            }
+            finally {
+                MDC.remove("requestId");
             }
         }
     }

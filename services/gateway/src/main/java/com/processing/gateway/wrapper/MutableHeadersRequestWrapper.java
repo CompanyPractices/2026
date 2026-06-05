@@ -12,7 +12,7 @@ public class MutableHeadersRequestWrapper extends HttpServletRequestWrapper {
         super(request);
     }
 
-    public void addHeader(String name, String value) {
+    public void setHeader(String name, String value) {
         mutableHeaders.put(name, value);
     }
 
@@ -25,19 +25,17 @@ public class MutableHeadersRequestWrapper extends HttpServletRequestWrapper {
 
     @Override
     public Enumeration<String> getHeaderNames() {
-        List<String> headerNames = Collections.list(super.getHeaderNames());
-        headerNames.addAll(mutableHeaders.keySet());
+        Set<String> headerNames = mutableHeaders.keySet();
+        headerNames.addAll(Collections.list(super.getHeaderNames()));
 
         return Collections.enumeration(headerNames);
     }
 
     @Override
     public Enumeration<String> getHeaders(String name) {
-        List<String> headers = Collections.list(super.getHeaders(name));
-
         if (mutableHeaders.containsKey(name))
-            headers.add(mutableHeaders.get(name));
+            return Collections.enumeration(List.of(mutableHeaders.get(name)));
 
-        return Collections.enumeration(headers);
+        return super.getHeaders(name);
     }
 }
