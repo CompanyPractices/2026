@@ -1,14 +1,23 @@
 package com.processing.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.dto.DashboardStatsResponse;
+import com.processing.dto.TransactionRequest;
+import com.processing.dto.TransactionResponse;
 import com.processing.dto.TransactionSearchResponse;
+import com.processing.dto.TransactionStoredResponse;
 import com.processing.enums.TransactionStatus;
+import com.processing.mapper.TransactionMapper;
 import com.processing.model.Transaction;
 import com.processing.model.Transaction_;
 import com.processing.repository.TransactionRepository;
 import com.processing.specification.TransactionFilter;
 import com.processing.specification.TransactionSpecification;
+import com.processing.websocket.WebSocketManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,11 +26,43 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
     private final TransactionRepository transactionRepository;
+    private final TransactionMapper transactionMapper;
+    private final WebSocketManager webSocketManager;
+    private final ObjectMapper objectMapper;
+
+    public TransactionStoreResult store(TransactionRequest request) {
+        Optional<Transaction> existingTransaction = transactionRepository.findById(request.id());
+        if (existingTransaction.isPresent()) {
+            TransactionResponse response = transactionMapper.toResponse(existingTransaction.get());
+            return TransactionStoreResult.existing(response);
+        }
+
+        Transaction savedTransaction;
+        try {
+            savedTransaction = transactionRepository.saveAndFlush(transactionMapper.toEntity(request));
+        } catch (DataIntegrityViolationException exception) {
+            return transactionRepository.findById(request.id())
+                    .map(transactionMapper::toResponse)
+                    .map(TransactionStoreResult::existing)
+                    .orElseThrow(() -> exception);
+        }
+
+        try {
+            TransactionResponse response = transactionMapper.toResponse(savedTransaction);
+            webSocketManager.broadcast(objectMapper.writeValueAsString(response));
+        } catch (JsonProcessingException exception) {
+            log.error("Failed to serialize transaction for WebSocket broadcast: {}", savedTransaction.getId(), exception);
+        }
+
+        return TransactionStoreResult.created(transactionMapper.toStoredResponse(savedTransaction));
+    }
 
     public TransactionSearchResponse search(TransactionFilter filter) {
         Pageable pageable = PageRequest.of(filter.getOffset() / filter.getLimit(), filter.getLimit());
