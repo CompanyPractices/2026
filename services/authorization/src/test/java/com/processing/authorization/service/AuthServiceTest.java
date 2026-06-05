@@ -1,11 +1,11 @@
-package com.processing.service;
+package com.processing.authorization.service;
 
-import com.processing.dto.AuthorizationRequest;
-import com.processing.dto.AuthorizationResponse;
-import com.processing.dto.CardResponse;
-import com.processing.enums.AuthorizationRequestStatus;
-import com.processing.enums.CardStatus;
-import com.processing.services.AuthService;
+import com.processing.authorization.dto.AuthorizationRequest;
+import com.processing.authorization.dto.AuthorizationResponse;
+import com.processing.authorization.dto.CardResponse;
+import com.processing.authorization.enums.AuthorizationRequestStatus;
+import com.processing.authorization.enums.CardStatus;
+import com.processing.authorization.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +31,8 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(objectMapper);
+        RestTemplate restTemplate = new RestTemplate();
+        authService = new AuthService(restTemplate);
 
         correctRequest = new AuthorizationRequest(
                 "0100",
@@ -39,7 +41,7 @@ class AuthServiceTest {
                 "000000",
                 5000,
                 "810",
-                null,
+                LocalDateTime.now(),
                 "T0000001",
                 null,
                 "M00000000000001",
@@ -251,10 +253,8 @@ class AuthServiceTest {
 
     @Test
     void generateRRNReturnUniqueValues() {
-        AuthService service = new AuthService(objectMapper);
-
-        String rrn1 = service.generateRRN();
-        String rrn2 = service.generateRRN();
+        String rrn1 = authService.generateRRN();
+        String rrn2 = authService.generateRRN();
 
         assertThat(rrn1).isNotBlank();
         assertThat(rrn2).isNotBlank();
@@ -265,9 +265,7 @@ class AuthServiceTest {
 
     @Test
     void generateAuthCode_shouldReturnSixDigitAlphanumeric() {
-        AuthService service = new AuthService(objectMapper);
-
-        String code = service.generateAuthCode();
+        String code = authService.generateAuthCode();
 
         assertThat(code).hasSize(6);
         assertThat(code).matches("[0-9A-Z]{6}");

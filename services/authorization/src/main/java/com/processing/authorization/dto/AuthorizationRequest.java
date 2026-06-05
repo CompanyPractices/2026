@@ -1,7 +1,7 @@
-package com.processing.dto;
+package com.processing.authorization.dto;
 
 import java.time.LocalDateTime;
-import com.processing.enums.TerminalType;
+import com.processing.authorization.enums.TerminalType;
 import jakarta.validation.constraints.*;
 import lombok.Setter;
 import lombok.Getter;

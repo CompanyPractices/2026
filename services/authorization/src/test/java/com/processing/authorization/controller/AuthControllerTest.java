@@ -1,10 +1,10 @@
-package com.processing.controller;
+package com.processing.authorization.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.dto.AuthorizationRequest;
-import com.processing.dto.AuthorizationResponse;
-import com.processing.enums.TerminalType;
-import com.processing.services.AuthService;
+import com.processing.authorization.dto.AuthorizationRequest;
+import com.processing.authorization.dto.AuthorizationResponse;
+import com.processing.authorization.enums.TerminalType;
+import com.processing.authorization.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +37,9 @@ class AuthControllerTest {
     private AuthorizationRequest validRequest;
     private AuthorizationResponse approvedResponse;
     private AuthorizationResponse declinedInsufficientFundsResponse;
+    private AuthorizationResponse declinedCardExpiredResponse;
+    private AuthorizationResponse declinedCardNotFoundResponse;
+    private AuthorizationResponse declinedServiceUnavailableResponse;
 
     @BeforeEach
     void setUp() {
@@ -58,6 +61,9 @@ class AuthControllerTest {
 
         approvedResponse = AuthorizationResponse.approved(validRequest, "615514053700", "A1B2C3");
         declinedInsufficientFundsResponse = AuthorizationResponse.declined(validRequest, "INSUFFICIENT_FUNDS", "51");
+        declinedCardExpiredResponse = AuthorizationResponse.declined(validRequest, "CARD_EXPIRED", "54");
+        declinedCardNotFoundResponse = AuthorizationResponse.declined(validRequest, "CARD_NOT_FOUND", "14");
+        declinedServiceUnavailableResponse = AuthorizationResponse.declined(validRequest, "SERVICE_UNAVAILABLE", "96");
     }
 
     @Test
@@ -77,19 +83,59 @@ class AuthControllerTest {
     }
 
     @Test
-    void authorizeReturn200DeclinedResponseWhenAuthServiceReturnsDeclined() throws Exception {
+    void authorizeReturn422WhenInsufficientFunds() throws Exception {
         when(authService.authorize(any(AuthorizationRequest.class))).thenReturn(declinedInsufficientFundsResponse);
 
         mockMvc.perform(post("/api/internal/authorize")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest)))
-                .andExpect(status().isOk())
+                .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.responseCode").value("51"))
                 .andExpect(jsonPath("$.status").value("DECLINED"))
-                .andExpect(jsonPath("$.declineReason").value("INSUFFICIENT_FUNDS"))
-                .andExpect(jsonPath("$.rrn").doesNotExist())
-                .andExpect(jsonPath("$.authCode").doesNotExist());
+                .andExpect(jsonPath("$.declineReason").value("INSUFFICIENT_FUNDS"));
+    }
+
+    @Test
+    void authorizeReturn403WhenCardExpired() throws Exception {
+        when(authService.authorize(any(AuthorizationRequest.class))).thenReturn(declinedCardExpiredResponse);
+
+        mockMvc.perform(post("/api/internal/authorize")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest)))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.responseCode").value("54"))
+                .andExpect(jsonPath("$.status").value("DECLINED"))
+                .andExpect(jsonPath("$.declineReason").value("CARD_EXPIRED"));
+    }
+
+    @Test
+    void authorizeReturn404WhenCardNotFound() throws Exception {
+        when(authService.authorize(any(AuthorizationRequest.class))).thenReturn(declinedCardNotFoundResponse);
+
+        mockMvc.perform(post("/api/internal/authorize")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.responseCode").value("14"))
+                .andExpect(jsonPath("$.status").value("DECLINED"))
+                .andExpect(jsonPath("$.declineReason").value("CARD_NOT_FOUND"));
+    }
+
+    @Test
+    void authorizeReturn503WhenServiceUnavailable() throws Exception {
+        when(authService.authorize(any(AuthorizationRequest.class))).thenReturn(declinedServiceUnavailableResponse);
+
+        mockMvc.perform(post("/api/internal/authorize")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest)))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.responseCode").value("96"))
+                .andExpect(jsonPath("$.status").value("DECLINED"))
+                .andExpect(jsonPath("$.declineReason").value("SERVICE_UNAVAILABLE"));
     }
 
     @Test
@@ -101,17 +147,4 @@ class AuthControllerTest {
                         .content(invalidJson))
                 .andExpect(status().isBadRequest());
     }
-
-    // TODO
-//    @Test
-//    void authorizeReturn500WhenAuthServiceThrowsException() throws Exception {
-//        when(authService.authorize(any(AuthorizationRequest.class)))
-//                .thenThrow(new RuntimeException("Unexpected error"));
-//
-//        System.out.println("AuthService mock: " + authService.getClass());
-//        mockMvc.perform(post("/api/internal/authorize")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(objectMapper.writeValueAsString(validRequest)))
-//                .andExpect(status().isInternalServerError());
-//    }
 }

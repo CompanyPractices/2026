@@ -164,6 +164,15 @@ services:
     environment:
       - SERVER_PORT=8080
       - GATEWAY_URL=http://gateway:8080
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_PORT=${DB_PORT}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      # Схему public наполняют card-management/logger (JPA) — Flyway требует
+      # baseline; версия 0, чтобы собственные V1/V2 миграции применились.
+      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+      - SPRING_FLYWAY_BASELINE_VERSION=0
     depends_on:
       - gateway
     networks:

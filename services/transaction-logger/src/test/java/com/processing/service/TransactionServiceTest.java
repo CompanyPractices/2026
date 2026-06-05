@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.dto.TransactionRequest;
 import com.processing.dto.TransactionStoredResponse;
 import com.processing.enums.TransactionStatus;
+import com.processing.exception.TransactionConflictException;
 import com.processing.mapper.TransactionMapper;
 import com.processing.model.Transaction;
 import com.processing.repository.TransactionRepository;
@@ -22,22 +23,40 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TransactionServiceTest {
 
     @Test
     void storeReturnsExistingTransactionWhenIdAlreadyExists() {
-        UUID id = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
-        Transaction transaction = transaction(id);
+        TransactionRequest request = transactionRequest();
+        Transaction transaction = transaction(request);
         RepositoryFake repository = new RepositoryFake(transaction);
         CapturingWebSocketManager webSocketManager = new CapturingWebSocketManager();
         TransactionService transactionService = transactionService(repository, webSocketManager);
 
-        TransactionStoreResult result = transactionService.store(transactionRequest());
+        TransactionStoreResult result = transactionService.store(request);
 
         assertThat(result.created()).isFalse();
-        assertThat(result.existingTransaction().id()).isEqualTo(id);
+        assertThat(result.existingTransaction().id()).isEqualTo(request.id());
         assertThat(result.storedTransaction()).isNull();
+        assertThat(repository.saveCount).isZero();
+        assertThat(webSocketManager.lastMessage).isNull();
+    }
+
+    @Test
+    void storeThrowsConflictWhenExistingTransactionDiffersFromRequest() {
+        TransactionRequest request = transactionRequest();
+        Transaction transaction = transaction(request);
+        transaction.setAmount(200000L);
+        RepositoryFake repository = new RepositoryFake(transaction);
+        CapturingWebSocketManager webSocketManager = new CapturingWebSocketManager();
+        TransactionService transactionService = transactionService(repository, webSocketManager);
+
+        assertThatThrownBy(() -> transactionService.store(request))
+                .isInstanceOf(TransactionConflictException.class)
+                .hasMessageContaining(request.id().toString());
+
         assertThat(repository.saveCount).isZero();
         assertThat(webSocketManager.lastMessage).isNull();
     }
@@ -45,7 +64,7 @@ class TransactionServiceTest {
     @Test
     void storeReturnsExistingTransactionWhenConcurrentRetryAlreadySavedIt() {
         TransactionRequest request = transactionRequest();
-        RepositoryFake repository = new RepositoryFake(transaction(request.id()));
+        RepositoryFake repository = new RepositoryFake(transaction(request));
         repository.hideExistingOnFirstFind();
         repository.failSaveWith(new DataIntegrityViolationException("duplicate id"));
         CapturingWebSocketManager webSocketManager = new CapturingWebSocketManager();
@@ -56,6 +75,25 @@ class TransactionServiceTest {
         assertThat(result.created()).isFalse();
         assertThat(result.existingTransaction().id()).isEqualTo(request.id());
         assertThat(result.storedTransaction()).isNull();
+        assertThat(repository.saveCount).isOne();
+        assertThat(webSocketManager.lastMessage).isNull();
+    }
+
+    @Test
+    void storeThrowsConflictWhenConcurrentRetrySavedDifferentTransaction() {
+        TransactionRequest request = transactionRequest();
+        Transaction transaction = transaction(request);
+        transaction.setAmount(200000L);
+        RepositoryFake repository = new RepositoryFake(transaction);
+        repository.hideExistingOnFirstFind();
+        repository.failSaveWith(new DataIntegrityViolationException("duplicate id"));
+        CapturingWebSocketManager webSocketManager = new CapturingWebSocketManager();
+        TransactionService transactionService = transactionService(repository, webSocketManager);
+
+        assertThatThrownBy(() -> transactionService.store(request))
+                .isInstanceOf(TransactionConflictException.class)
+                .hasMessageContaining(request.id().toString());
+
         assertThat(repository.saveCount).isOne();
         assertThat(webSocketManager.lastMessage).isNull();
     }
@@ -115,9 +153,28 @@ class TransactionServiceTest {
         );
     }
 
-    private static Transaction transaction(UUID id) {
+    private static Transaction transaction(TransactionRequest request) {
         Transaction transaction = new Transaction();
-        transaction.setId(id);
+        transaction.setId(request.id());
+        transaction.setMti(request.mti());
+        transaction.setStan(request.stan());
+        transaction.setRrn(request.rrn());
+        transaction.setPan(request.pan());
+        transaction.setProcessingCode(request.processingCode());
+        transaction.setAmount(request.amount());
+        transaction.setCurrencyCode(request.currencyCode());
+        transaction.setTerminalId(request.terminalId());
+        transaction.setMerchantId(request.merchantId());
+        transaction.setMcc(request.mcc());
+        transaction.setAcquirerId(request.acquirerId());
+        transaction.setIssuerId(request.issuerId());
+        transaction.setAcquiringFee(request.acquiringFee());
+        transaction.setStatus(request.status());
+        transaction.setDeclineReason(request.declineReason());
+        transaction.setAuthCode(request.authCode());
+        transaction.setProcessingTimeMs(request.processingTimeMs());
+        transaction.setTransmissionDateTime(request.transmissionDateTime());
+        transaction.setCreatedAt(request.createdAt());
         return transaction;
     }
 

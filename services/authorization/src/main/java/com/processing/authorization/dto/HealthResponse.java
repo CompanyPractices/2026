@@ -1,4 +1,4 @@
-package com.processing.dto;
+package com.processing.authorization.dto;
 
 import java.util.Map;
 
