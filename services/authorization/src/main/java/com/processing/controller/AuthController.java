@@ -2,6 +2,7 @@ package com.processing.controller;
 
 import com.processing.dto.*;
 import com.processing.services.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -14,7 +15,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/api/internal/authorize")
-    public AuthorizationResponse authorize(@RequestBody AuthorizationRequest request) {
+    public AuthorizationResponse authorize(@Valid @RequestBody AuthorizationRequest request) {
         return authService.authorize(request);
     }
 }
