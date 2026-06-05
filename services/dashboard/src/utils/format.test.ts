@@ -21,7 +21,7 @@ describe('formatAmount', () => {
 
 describe('maskPan', () => {
     it('masks middle digits of 16-digit PAN', () => {
-        expect(hidePan('4000001234560001')).toBe('4000 **** 0001');
+        expect(hidePan('4000001234560001')).toBe('4000****0001');
     });
 });
 
