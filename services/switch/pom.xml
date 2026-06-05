@@ -78,11 +78,13 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
             <plugin>
-    <!-- Для unit-тестов с Mockito -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Dnet.bytebuddy.experimental=true -XX:+EnableDynamicAgentLoading</argLine>
+                    <argLine>
+                        -Dnet.bytebuddy.experimental=true -XX:+EnableDynamicAgentLoading
+                        <!-- Для unit-тестов с Mockito -->
+                    </argLine>
                 </configuration>
             </plugin>
         </plugins>
