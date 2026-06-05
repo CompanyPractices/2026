@@ -1,20 +1,25 @@
 package com.processing.merchantacquirer.domain.factory;
 
+import com.processing.merchantacquirer.domain.StanGenerator;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
 @Component
+@RequiredArgsConstructor
 public class AuthorizationRequestFactory {
-    public AuthorizationRequest build(String typeTransaction, String pan, Integer amount, Terminal terminal, Merchant merchant){
+    private final StanGenerator stanGenerator;
+
+    public AuthorizationRequest build(String pan, Integer amount, Terminal terminal, Merchant merchant){
         LocalDateTime time = LocalDateTime.now();
 
         return AuthorizationRequest.builder()
                 .mti("0100")
-                .stan("123456")
+                .stan(stanGenerator.next())
                 .pan(pan) // number card
                 .processingCode("000000") // тип транзакции
                 .amount(amount) // цена
