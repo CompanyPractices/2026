@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidDateRange {
-    String message() default "dateFrom must not be after dateTo";
+    String message() default "From date must not be after to";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

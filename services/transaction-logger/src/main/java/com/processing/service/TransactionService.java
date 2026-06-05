@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -65,12 +66,14 @@ public class TransactionService {
     }
 
     public TransactionSearchResponse search(TransactionFilter filter) {
-        Pageable pageable = PageRequest.of(filter.getOffset() / filter.getLimit(), filter.getLimit());
+        Pageable pageable = PageRequest.of(0, filter.getLimit(),
+                Sort.by(Sort.Direction.ASC, Transaction_.ID));
         Page<Transaction> page = transactionRepository.findAll(TransactionSpecification.filter(filter), pageable);
+        UUID nextPagingKey = page.hasNext() ? page.getContent().getLast().getId() : null;
         List<TransactionResponse> dtos = page.getContent().stream()
                 .map(transactionMapper::toResponse)
                 .toList();
-        return new TransactionSearchResponse(page.getTotalElements(), dtos);
+        return new TransactionSearchResponse(dtos, nextPagingKey);
     }
 
     public DashboardStatsResponse getStats() {
