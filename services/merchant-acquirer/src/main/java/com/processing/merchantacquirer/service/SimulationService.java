@@ -45,8 +45,8 @@ public class SimulationService {
         log.info(String.valueOf(request));
         // Получение карт (пока замокано на получение 1 захаркоженной карточки)
         CardsRequest cardsRequest = new CardsRequest(request.count(), 0, null, null);
-//        CardsResponse cardsResponse = gatewayClient.getCards(cardsRequest);
-        CardsResponse cardsResponse = new CardsResponse(1, List.of(new CardDataResponse("123", "1234567891234567", "123456", "IVAN VANYA", "0404", "ACTIVE", "643", "1", "2", "3", "123", "123")));
+        CardsResponse cardsResponse = gatewayClient.getCards(cardsRequest);
+//        CardsResponse cardsResponse = new CardsResponse(1, List.of(new CardDataResponse("123", "1234567891234567", "123456", "IVAN VANYA", "0404", "ACTIVE", "643", "1", "2", "3", "123", "123")));
         log.info(String.valueOf(cardsResponse));
 
         // Получение сценария
@@ -72,32 +72,31 @@ public class SimulationService {
 
         // Создание транакций
         List<AuthorizationRequest> authorizationRequests = new ArrayList<>();
-        if(cardsResponse.cards().size() < request.count()){
-            int count = request.count();
-            int iterableCard = cardsResponse.cards().size();
-            log.info(String.valueOf(iterableCard));
-            log.info(String.valueOf(count));
-            Random random = new Random();
-            while(count > 0){
-                CardDataResponse card = cardsResponse.cards().get(iterableCard - 1);
-                Merchant merchant = merchants.get(random.nextInt(0, countMerchants - 1));
 
-                // Генерация цены
-                int amount = random.nextInt(scenario.getCountLower(), scenario.getCountUpper());
+        int count = request.count();
+        int iterableCard = cardsResponse.cards().size();
+        log.info(String.valueOf(iterableCard));
+        log.info(String.valueOf(count));
+        Random random = new Random();
+        while(count > 0){
+            CardDataResponse card = cardsResponse.cards().get(iterableCard - 1);
+            Merchant merchant = merchants.get(random.nextInt(0, countMerchants - 1));
 
-                AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
-                        card.pan(),
-                        amount,
-                        terminal,
-                        merchant);
-                log.info(String.valueOf(authorizationRequest));
-                authorizationRequests.add(authorizationRequest);
+            // Генерация цены
+            int amount = random.nextInt(scenario.getCountLower(), scenario.getCountUpper());
 
-                iterableCard--;
-                count--;
-                if(iterableCard == 0){
-                    iterableCard = cardsResponse.cards().size();
-                }
+            AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
+                    card.pan(),
+                    amount,
+                    terminal,
+                    merchant);
+            log.info("AuthorizationRequest: " + String.valueOf(authorizationRequest));
+            authorizationRequests.add(authorizationRequest);
+
+            iterableCard--;
+            count--;
+            if(iterableCard == 0){
+                iterableCard = cardsResponse.cards().size();
             }
         }
 
@@ -112,7 +111,7 @@ public class SimulationService {
                 authorizationResponses.add(response);
                 approved += 1;
             } catch (Exception e) {
-                authorizationResponses.add(new AuthorizationResponse("0100", transaction.getStan(), null, null, "505", "DECLINED", e.toString(), 999));
+                authorizationResponses.add(new AuthorizationResponse("0100", transaction.getStan(), null, null, "505", "DECLINED", e.getMessage(), 999));
                 declined += 1;
             }
         }
