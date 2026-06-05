@@ -109,9 +109,13 @@ public class SimulationService {
             try {
                 AuthorizationResponse response = gatewayClient.processAuthorize(transaction);
                 authorizationResponses.add(response);
-                approved += 1;
+                if(response.status().equals("APPROVED")){
+                    approved += 1;
+                }else{
+                    declined += 1;
+                }
             } catch (Exception e) {
-                authorizationResponses.add(new AuthorizationResponse("0100", transaction.getStan(), null, null, "505", "DECLINED", e.getMessage(), 999));
+                authorizationResponses.add(new AuthorizationResponse("0100", transaction.stan(), null, null, "505", "DECLINED", e.getMessage(), 999));
                 declined += 1;
             }
         }

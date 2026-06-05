@@ -20,9 +20,10 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class GatewayClient {
     private final RestTemplate restTemplate = new RestTemplate();
+    public final String gatewayUrl = "http://gateway:8080";
 
     public CardsResponse getCards(CardsRequest request){
-        String url = "http://gateway:8080/api/cards";
+        String url = gatewayUrl + "/api/cards";
         if(request.limit() > 0){
             url += "?limit=" + request.limit();
         }
@@ -40,7 +41,7 @@ public class GatewayClient {
     }
 
     public AuthorizationResponse processAuthorize(AuthorizationRequest authorizationRequest){
-        String url = "http://gateway:8080/api/transactions";
+        String url = gatewayUrl + "/api/transactions";
         try{
             return restTemplate.postForEntity(url, authorizationRequest, AuthorizationResponse.class).getBody();
         }catch(HttpClientErrorException | HttpServerErrorException ex){
