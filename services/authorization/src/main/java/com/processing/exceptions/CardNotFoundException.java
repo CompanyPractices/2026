@@ -1,4 +1,4 @@
-package com.exceptions;
+package com.processing.exceptions;
 
 public class CardNotFoundException extends Exception {
     public CardNotFoundException(String message) {
