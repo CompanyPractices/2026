@@ -1,4 +1,4 @@
-package com.processing.configs;
+package com.processing.authorization.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,6 +1,6 @@
-package com.processing.dto;
+package com.processing.authorization.dto;
 
-import com.processing.enums.CardStatus;
+import com.processing.authorization.enums.CardStatus;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDate;

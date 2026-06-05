@@ -1,8 +1,9 @@
-package com.processing.controller;
+package com.processing.authorization.controller;
 
-import com.processing.dto.*;
-import com.processing.enums.AuthorizationRequestStatus;
-import com.processing.services.AuthService;
+import com.processing.authorization.dto.AuthorizationRequest;
+import com.processing.authorization.dto.AuthorizationResponse;
+import com.processing.authorization.enums.AuthorizationRequestStatus;
+import com.processing.authorization.services.AuthService;
 import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.Operation;
