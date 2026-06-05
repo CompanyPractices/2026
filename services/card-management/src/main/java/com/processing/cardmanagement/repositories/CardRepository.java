@@ -1,6 +1,7 @@
 package com.processing.cardmanagement.repositories;
 
 import com.processing.cardmanagement.models.CardEntity;
+import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.annotation.Nullable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,7 +31,7 @@ public interface CardRepository
             (:endDate IS NULL OR card.createdAt <= :endDate)
         """)
     List<CardEntity> findCards(
-        @Nullable @Param("status") CardEntity.Status status,
+        @Nullable @Param("status") CardStatus status,
         @Nullable @Param("bin") String bin,
         @Nullable @Param("issuerId") String issuerId,
         @Nullable @Param("startDate") LocalDateTime startDate,
@@ -50,7 +51,7 @@ public interface CardRepository
 
         """)
     int countCards(
-            @Nullable @Param("status") CardEntity.Status status,
+            @Nullable @Param("status") CardStatus status,
             @Nullable @Param("bin") String bin,
             @Nullable @Param("issuerId") String issuerId,
             @Nullable @Param("startDate") LocalDateTime startDate,

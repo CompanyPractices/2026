@@ -1,12 +1,10 @@
 package com.processing.cardmanagement.controllers;
 
-import com.processing.common.dto.annotations.Bin;
+import com.processing.cardmanagement.annotations.Bin;
+import com.processing.cardmanagement.annotations.NotNegative;
+import com.processing.cardmanagement.annotations.Pan;
 import com.processing.cardmanagement.models.*;
 import com.processing.cardmanagement.services.CardService;
-import com.processing.common.dto.ErrorResponse;
-import com.processing.common.dto.annotations.NotNegative;
-import com.processing.common.dto.annotations.Pan;
-import com.processing.common.dto.cardmanagement.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,7 +22,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/cards")
@@ -91,7 +88,7 @@ public class CardController {
         @Nullable
         @Schema(description = "Card status", example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "BLOCKED", "EXPIRED", "DELETED"})
         @RequestParam(required = false)
-        CardStatus status,
+        CardEntity.Status status,
 
         @Nullable
         @Bin
