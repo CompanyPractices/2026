@@ -4,9 +4,9 @@ services:
     container_name: smp-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
@@ -14,20 +14,19 @@ services:
     networks:
       - smp-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   gateway:
-    image: nginx:alpine
-#    build: ./services/gateway
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
     container_name: smp-gateway
     restart: unless-stopped
     ports:
       - "${GATEWAY_PORT}:8080"
-    command: >
-      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"gateway\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - SWITCH_URL=http://switch:8080
@@ -46,23 +45,23 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 40s
 
   card-management:
-    image: nginx:alpine
-#    build: ./services/card-management
+    build:
+      context: .
+      dockerfile: services/card-management/Dockerfile
     container_name: smp-card-management
     restart: unless-stopped
     ports:
       - "${CARD_MGMT_PORT}:8080"
-    command: >
-      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"card-management\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_PORT=${DB_PORT}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,16 +72,16 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 40s
 
   switch:
-    image: nginx:alpine
-#    build: ./services/switch
+    build:
+      context: .
+      dockerfile: services/switch/Dockerfile
     container_name: smp-switch
     restart: unless-stopped
     ports:
       - "${SWITCH_PORT}:8080"
-    command: >
-      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"switch\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - AUTH_URL=http://authorization:8080
@@ -97,23 +96,23 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 40s
 
   authorization:
-    image: nginx:alpine
-#    build: ./services/authorization
+    build:
+      context: .
+      dockerfile: services/authorization/Dockerfile
     container_name: smp-authorization
     restart: unless-stopped
     ports:
       - "${AUTH_PORT}:8080"
-    command: >
-      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"authorization\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_PORT=${DB_PORT}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
       - CARD_MGMT_URL=http://card-management:8080
     depends_on:
       postgres:
@@ -127,16 +126,16 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 40s
 
   terminal-simulator:
-#    build: ./services/terminal-simulator
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: services/terminal-simulator/Dockerfile
     container_name: smp-terminal-simulator
     restart: unless-stopped
     ports:
       - "${TERMINAL_PORT}:8080"
-    command: >
-      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"terminal-simulator\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - GATEWAY_URL=http://gateway:8080
@@ -151,16 +150,16 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 40s
 
   merchant-acquirer:
-    image: nginx:alpine
-#    build: ./services/merchant-acquirer
+    build:
+      context: .
+      dockerfile: services/merchant-acquirer/Dockerfile
     container_name: smp-merchant-acquirer
     restart: unless-stopped
     ports:
       - "${MERCHANT_PORT}:8080"
-    command: >
-      sh -c "echo 'server { listen 8080; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"merchant-acquirer\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - SERVER_PORT=8080
       - GATEWAY_URL=http://gateway:8080
@@ -173,20 +172,23 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 40s
 
   transaction-logger:
-    build: ./services/transaction-logger
+    build:
+      context: .
+      dockerfile: services/transaction-logger/Dockerfile
     container_name: smp-transaction-logger
     restart: unless-stopped
     ports:
       - "${LOGGER_PORT}:8080"
     environment:
       - SERVER_PORT=8080
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_PORT=${DB_PORT}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     depends_on:
       postgres:
         condition: service_healthy
@@ -197,16 +199,16 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 40s
 
   dashboard:
-    image: nginx:alpine
-#    build: ./services/dashboard
+    build:
+      context: ./services/dashboard
+      dockerfile: Dockerfile
     container_name: smp-dashboard
     restart: unless-stopped
     ports:
       - "${DASHBOARD_PORT}:3000"
-    command: >
-      sh -c "echo 'server { listen 3000; location / { return 200 \"{\\\"status\\\":\\\"OK\\\",\\\"service\\\":\\\"dashboard\\\"}\"; add_header Content-Type application/json; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     environment:
       - PORT=3000
       - GATEWAY_URL=http://gateway:8080
@@ -222,6 +224,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 10s
 
 networks:
   smp-network:
