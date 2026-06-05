@@ -1,6 +1,7 @@
 import {Transaction} from "../types";
 import {getStatusIcon} from "../utils/statusIcon.ts";
 import {convertPenniesToRubles, formatTime, hidePan} from "../utils/format.ts";
+import { Fragment } from 'react';
 
 type TransactionModalProps = {
     transaction: Transaction;
@@ -12,11 +13,11 @@ export function TransactionModal({ transaction, onClose }: TransactionModalProps
 
     const rows = [
         {label: "STAN", value: transaction.stan },
-        {label: "RRN", value: transaction.rrn },
+        {label: "RRN", value: transaction.rrn || "—" },
         {label: "PAN", value: hidePan(transaction.pan) },
         {label: "Сумма", value: convertPenniesToRubles(transaction.amount) },
         {label: "Статус", value: (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 justify-end">
                 <statusIconData.icon className={statusIconData.color} size={statusIconData.size} />
                 <span>{transaction.status}</span>
             </div>
@@ -36,19 +37,26 @@ export function TransactionModal({ transaction, onClose }: TransactionModalProps
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50" onClick={onClose}>
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-2xl max-w-md w-full mx-4 relative"
                  onClick={(e) => e.stopPropagation()} >
-                <h3> Детали транзакции </h3>
-                <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+                <h3 className="font-bold  text-xl text-gray-600 m-5 text-center font-mono "> Детали транзакции </h3>
+                <div className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3">
                     {rows.map((row) => (
-                            <div>
-                                <dt key={row.label + '-label'} >
-                                    {row.label}:
-                                </dt>
-                                <dd key={row.label + '-value'}>
-                                    {row.value}
-                                </dd>
-                            </div>
+                        <Fragment key={row.label}>
+                            <dt className="font-semibold text-gray-600 text-left whitespace-nowrap pl-5 font-mono">
+                                {row.label}:
+                            </dt>
+                            <dd className="text-gray-900 dark:text-gray-100 text-right whitespace-nowrap pr-5">
+                                {row.value}
+                            </dd>
+                        </Fragment>
                         ))}
                 </div>
+
+                <button
+                    onClick={onClose}
+                    className="mt-6 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+                >
+                    ✕ Закрыть
+                </button>
             </div>
         </div>
     );
