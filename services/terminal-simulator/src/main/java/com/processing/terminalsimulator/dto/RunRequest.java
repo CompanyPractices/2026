@@ -1,4 +1,4 @@
-package com.processing.dto;
+package com.processing.terminalsimulator.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

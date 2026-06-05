@@ -1,4 +1,4 @@
-package com.processing.dto;
+package com.processing.terminalsimulator.dto;
 
 import java.util.Map;
 

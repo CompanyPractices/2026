@@ -1,10 +1,10 @@
-package com.processing.client;
+package com.processing.terminalsimulator.client;
 
-import com.processing.dto.AuthorizationRequest;
-import com.processing.dto.AuthorizationResponse;
-import com.processing.dto.Card;
-import com.processing.dto.CardsManagementResponse;
-import com.processing.model.CardStatus;
+import com.processing.terminalsimulator.dto.Card;
+import com.processing.terminalsimulator.dto.CardsManagementResponse;
+import com.processing.terminalsimulator.model.CardStatus;
+import com.processing.terminalsimulator.dto.AuthorizationRequest;
+import com.processing.terminalsimulator.dto.AuthorizationResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;

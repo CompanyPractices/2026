@@ -1,8 +1,8 @@
-package com.processing.controller;
+package com.processing.terminalsimulator.controller;
 
-import com.processing.dto.RunRequest;
-import com.processing.dto.RunResponse;
-import com.processing.service.TerminalSimulatorService;
+import com.processing.terminalsimulator.dto.RunRequest;
+import com.processing.terminalsimulator.dto.RunResponse;
+import com.processing.terminalsimulator.service.TerminalSimulatorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

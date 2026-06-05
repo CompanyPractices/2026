@@ -1,6 +1,6 @@
-package com.processing.controller;
+package com.processing.terminalsimulator.controller;
 
-import com.processing.dto.HealthResponse;
+import com.processing.terminalsimulator.dto.HealthResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
