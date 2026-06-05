@@ -1,6 +1,6 @@
 package com.processing.cardmanagement.controllers;
 
-import com.processing.cardmanagement.annotations.Bin;
+import com.processing.common.dto.annotations.Bin;
 import com.processing.cardmanagement.models.*;
 import com.processing.cardmanagement.services.CardService;
 import com.processing.common.dto.ErrorResponse;
