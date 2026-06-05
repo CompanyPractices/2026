@@ -1,4 +1,4 @@
-package com.processing.enums;
+package com.processing.authorization.enums;
 
 public enum CardStatus {
     ACTIVE,

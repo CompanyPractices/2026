@@ -1,9 +1,9 @@
-package com.processing.dto;
+package com.processing.authorization.dto;
 
 import lombok.Setter;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
-import com.processing.enums.AuthorizationRequestStatus;
+import com.processing.authorization.enums.AuthorizationRequestStatus;
 
 @Getter
 @Setter

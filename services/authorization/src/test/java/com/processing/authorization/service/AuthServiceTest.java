@@ -1,11 +1,11 @@
-package com.processing.service;
+package com.processing.authorization.service;
 
-import com.processing.dto.AuthorizationRequest;
-import com.processing.dto.AuthorizationResponse;
-import com.processing.dto.CardResponse;
-import com.processing.enums.AuthorizationRequestStatus;
-import com.processing.enums.CardStatus;
-import com.processing.services.AuthService;
+import com.processing.authorization.dto.AuthorizationRequest;
+import com.processing.authorization.dto.AuthorizationResponse;
+import com.processing.authorization.dto.CardResponse;
+import com.processing.authorization.enums.AuthorizationRequestStatus;
+import com.processing.authorization.enums.CardStatus;
+import com.processing.authorization.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

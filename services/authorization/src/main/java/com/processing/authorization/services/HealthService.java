@@ -1,4 +1,4 @@
-package com.processing.services;
+package com.processing.authorization.services;
 
 import java.util.HashMap;
 import java.util.List;

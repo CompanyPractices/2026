@@ -1,7 +1,7 @@
-package com.processing.controller;
+package com.processing.authorization.controller;
 
-import com.processing.dto.HealthResponse;
-import com.processing.services.HealthService;
+import com.processing.authorization.dto.HealthResponse;
+import com.processing.authorization.services.HealthService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

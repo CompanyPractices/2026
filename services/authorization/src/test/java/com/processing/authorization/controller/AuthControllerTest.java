@@ -1,10 +1,10 @@
-package com.processing.controller;
+package com.processing.authorization.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.dto.AuthorizationRequest;
-import com.processing.dto.AuthorizationResponse;
-import com.processing.enums.TerminalType;
-import com.processing.services.AuthService;
+import com.processing.authorization.dto.AuthorizationRequest;
+import com.processing.authorization.dto.AuthorizationResponse;
+import com.processing.authorization.enums.TerminalType;
+import com.processing.authorization.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
