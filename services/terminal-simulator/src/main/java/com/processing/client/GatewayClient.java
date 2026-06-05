@@ -16,7 +16,7 @@ import java.util.List;
 public class GatewayClient {
     private final RestTemplate rest = new RestTemplate();
     private final String gatewayUrl = "http://gateway:8080/api/transactions";
-    private final String cardManagementUrl = "http://gateway:8080/api/cards";
+    private final String cardManagementUrl = "http://card-management:8080/api/cards";
 
     public AuthorizationResponse sendToGateway(AuthorizationRequest tx) {
         try {
@@ -43,7 +43,7 @@ public class GatewayClient {
             return resp.cards();
         } catch (Exception e) {  // TODO: правильно кидать ошибку
             System.out.println("Error CardManager: " + e.getMessage());
-            return null;
+            throw e;
         }
     }
 
