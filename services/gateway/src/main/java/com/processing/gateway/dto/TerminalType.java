@@ -4,5 +4,4 @@ public enum TerminalType {
     POS,
     ATM,
     ECOM,
-    DEFAULT
 }
