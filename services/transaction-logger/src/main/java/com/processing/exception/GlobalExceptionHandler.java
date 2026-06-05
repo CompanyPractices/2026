@@ -99,11 +99,4 @@ public class GlobalExceptionHandler {
                 "error", "Data integrity violation"
         ));
     }
-
-    @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<Map<String, String>> handleDatabaseAccess() {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
-                "error", "Database operation failed"
-        ));
-    }
 }
