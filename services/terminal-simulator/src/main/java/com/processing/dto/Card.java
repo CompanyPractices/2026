@@ -3,7 +3,7 @@ package com.processing.dto;
 import com.processing.model.CardStatus;
 
 public record Card(
-    long id,
+    String id,
     String pan,
     String bin,
     String cardholderName,

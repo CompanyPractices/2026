@@ -1,19 +1,24 @@
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM maven:3.9.16-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
-COPY mvnw ./
-COPY .mvn ./.mvn
+COPY ./services/pom.xml ./pom.xml
 
-COPY pom.xml ./
-COPY src ./src
-RUN ./mvnw package -DskipTests -q
+COPY ./services/common/pom.xml ./common/pom.xml
+COPY ./services/authorization/pom.xml ./authorization/pom.xml
+
+COPY ./services/common/src ./common/src
+COPY ./services/authorization/src ./authorization/src
+
+RUN mvn -P authorization -pl authorization -am package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-ARG PORT=8083
-ENV PORT=${PORT}
-EXPOSE ${PORT}
+
+COPY --from=build /app/authorization/target/authorization-*.jar app.jar
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=40s \
+    CMD wget -qO- http://localhost:8080/health || exit 1
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
-HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-    CMD wget -qO- http://localhost:${PORT}/health || exit 1
