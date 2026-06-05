@@ -49,17 +49,6 @@ public class GlobalExceptionHandler {
                                 null));
     }
 
-    @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<ErrorResponse> handleDataAccess(DataAccessException exception) {
-        log.error("Database error: {}", exception.getMessage(), exception);
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(new ErrorResponse("DB_UNAVAILABLE",
-                        "Database unavailable, please try again later",
-                        OffsetDateTime.now().toString(),
-                        SERVICE_NAME,
-                        "5000"));
-    }
-
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException exception) {
         log.warn("Method not allowed: {}", exception.getMessage());
@@ -97,6 +86,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleDataIntegrityViolation() {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
                 "error", "Data integrity violation"
+        ));
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<Map<String, String>> handleDatabaseAccess() {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                "error", "Database operation failed"
         ));
     }
 }
