@@ -16,7 +16,7 @@ describe('App', () => {
     expect(screen.getByText(/Всего ТХ/)).toBeInTheDocument();
     expect(screen.getByText(/88/)).toBeInTheDocument();
     expect(screen.getByText(/Одобрено/)).toBeInTheDocument();
-    expect(screen.getByText(/1,875,000/)).toBeInTheDocument();
+    expect(screen.getByText(/1 875 000.00/)).toBeInTheDocument();
     expect(screen.getByText(/Общая сумма/)).toBeInTheDocument();
     expect(screen.getByText(/38/)).toBeInTheDocument();
     expect(screen.getByText(/Среднее время/)).toBeInTheDocument();

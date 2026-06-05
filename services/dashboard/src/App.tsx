@@ -1,14 +1,8 @@
 import {Header} from "./components/Header"
-
-const cards = [
-  {label: "Всего ТХ", value: 1250},
-  {label: "Одобрено", value: 88, unit: "%"},
-  {label: "Общая сумма", value: "1,875,000", unit: "₽"},
-  {label: "Среднее время", value: 38, unit: "ms"}
-]
+import {MOCK_DASHBOARD_STATS} from "./mockData.ts";
 
 function App() {
-  return <Header cards={cards} />
+  return <Header stats={MOCK_DASHBOARD_STATS} />
 }
 
 export default App;
