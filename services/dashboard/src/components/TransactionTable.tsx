@@ -1,6 +1,6 @@
 import { hidePan, convertPenniesToRubles, formatTime } from '../utils/format.ts';
 import { getStatusIcon } from '../utils/statusIcon.ts';
-import {Transaction, TransactionStatus} from "../types";
+import {Transaction} from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
 
