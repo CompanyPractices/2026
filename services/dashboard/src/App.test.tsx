@@ -14,11 +14,17 @@ describe('App', () => {
 
     expect(screen.getByText(/1250/)).toBeInTheDocument();
     expect(screen.getByText(/Всего ТХ/)).toBeInTheDocument();
-    expect(screen.getByText(/88/)).toBeInTheDocument();
-    expect(screen.getByText(/Одобрено/)).toBeInTheDocument();
+    expect(screen.getByText(/88\s*%/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Одобрено/).length).toBeGreaterThan(0);
     expect(screen.getByText(/1 875 000.00/)).toBeInTheDocument();
     expect(screen.getByText(/Общая сумма/)).toBeInTheDocument();
-    expect(screen.getByText(/38/)).toBeInTheDocument();
+    expect(screen.getByText(/38\s*ms/)).toBeInTheDocument();
     expect(screen.getByText(/Среднее время/)).toBeInTheDocument();
+  });
+
+  it ('render transaction table', () => {
+    render(<App />);
+
+    expect(screen.getByText(/Последние 20 транзакций/)).toBeInTheDocument();
   });
 });

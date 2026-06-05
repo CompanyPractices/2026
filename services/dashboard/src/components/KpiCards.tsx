@@ -1,4 +1,5 @@
 import {DashboardStats} from "../types";
+import {convertPenniesToRubles} from "../utils/format.ts";
 
 type KpiCardsProps = {
     stats: DashboardStats;
@@ -8,12 +9,7 @@ export function KpiCards( { stats } : KpiCardsProps) {
     const kpiCards = [
         { label: 'Всего ТХ', value: stats.totalTransactions },
         { label: 'Одобрено', value: stats.approvalRate, unit: '%' },
-        { label: 'Общая сумма',
-            value: (stats.totalAmount / 100).toLocaleString('ru-RU', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            }).replace(',', '.') + ' ₽'
-        },
+        { label: 'Общая сумма', value: convertPenniesToRubles(stats.totalAmount) },
         { label: 'Среднее время', value: stats.avgProcessingTimeMs, unit: 'ms' },
     ];
 
