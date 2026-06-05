@@ -25,8 +25,10 @@ class DownstreamErrorFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/transactions");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        filter.doFilter(request, response, (servletRequest, servletResponse) -> {
-            throw new ResourceAccessException("Connection refused", new ConnectException("Connection refused"));
+        filter.doFilter(request, response,
+                (servletRequest, servletResponse) -> {
+            throw new ResourceAccessException("Connection refused",
+                    new ConnectException("Connection refused"));
         });
 
         assertThat(response.getStatus()).isEqualTo(503);
@@ -42,8 +44,10 @@ class DownstreamErrorFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/cards/4000001234560001");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        filter.doFilter(request, response, (servletRequest, servletResponse) -> {
-            throw new ResourceAccessException("Connection refused", new ConnectException("Connection refused"));
+        filter.doFilter(request, response,
+                (servletRequest, servletResponse) -> {
+            throw new ResourceAccessException("Connection refused",
+                    new ConnectException("Connection refused"));
         });
 
         assertThat(response.getStatus()).isEqualTo(503);
@@ -57,7 +61,8 @@ class DownstreamErrorFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/transactions");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThatThrownBy(() -> filter.doFilter(request, response, (servletRequest, servletResponse) -> {
+        assertThatThrownBy(() -> filter.doFilter(request, response,
+                (servletRequest, servletResponse) -> {
             throw new ServletException("Unexpected failure");
         }))
                 .isInstanceOf(ServletException.class)
@@ -69,8 +74,10 @@ class DownstreamErrorFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/health");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThatThrownBy(() -> filter.doFilter(request, response, (servletRequest, servletResponse) -> {
-            throw new ResourceAccessException("Connection refused", new ConnectException("Connection refused"));
+        assertThatThrownBy(() -> filter.doFilter(request, response,
+                (servletRequest, servletResponse) -> {
+            throw new ResourceAccessException("Connection refused",
+                    new ConnectException("Connection refused"));
         }))
                 .isInstanceOf(ResourceAccessException.class)
                 .hasMessage("Connection refused");
