@@ -2,10 +2,13 @@ package com.processing.controller;
 
 import com.processing.dto.HealthResponse;
 import com.processing.repository.TransactionRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Health", description = "Состояние сервиса")
 @RestController
 public class HealthController {
 
@@ -15,6 +18,7 @@ public class HealthController {
         this.transactionRepository = transactionRepository;
     }
 
+    @Operation(summary = "Health-check")
     @GetMapping("/health")
     public ResponseEntity<HealthResponse> health() {
         return ResponseEntity.ok(new HealthResponse(
