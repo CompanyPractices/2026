@@ -1,18 +1,24 @@
-FROM public.ecr.aws/docker/library/maven:3.9-eclipse-temurin-21-alpine AS build
-WORKDIR /build
-COPY pom.xml .
-COPY switch/pom.xml switch/
-COPY switch/src switch/src
-COPY merchant-acquirer/pom.xml merchant-acquirer/
-COPY terminal-simulator/pom.xml terminal-simulator/
-RUN mvn -pl switch package -DskipTests -q
-
-FROM public.ecr.aws/docker/library/eclipse-temurin:21-jre-alpine
-RUN apk add --no-cache wget
+FROM maven:3.9.16-eclipse-temurin-21-alpine AS build
 WORKDIR /app
-COPY --from=build /build/switch/target/*.jar app.jar
-ENV PORT=8082
-EXPOSE 8082
+
+COPY ./services/pom.xml ./pom.xml
+
+COPY ./services/common/pom.xml ./common/pom.xml
+COPY ./services/switch/pom.xml ./switch/pom.xml
+
+COPY ./services/common/src ./common/src
+COPY ./services/switch/src ./switch/src
+
+RUN mvn -P switch -pl switch -am package -DskipTests
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+COPY --from=build /app/switch/target/switch-*.jar app.jar
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=40s \
+    CMD wget -qO- http://localhost:8080/health || exit 1
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
-HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-    CMD wget -qO- http://localhost:8082/health || exit 1

@@ -4,106 +4,126 @@ import com.processing.common.dto.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import java.time.OffsetDateTime;
-import java.util.Map;
+import java.time.Instant;
 import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    private static final String SERVICE_NAME = "TRANSACTION_LOGGER";
+
+    private static final String SERVICE_NAME = "transaction-logger";
+    private static final String NO_RETRY = "0";
+    private static final String DATABASE_RETRY = "1000";
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
         String message = exception.getFieldErrors().stream()
-                .map(FieldError::getDefaultMessage)
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .sorted()
                 .collect(Collectors.joining("; "));
-        return ResponseEntity.badRequest()
-                .body(new ErrorResponse("VALIDATION_ERROR",
-                        message,
-                        OffsetDateTime.now().toString(),
-                        SERVICE_NAME,
-                        null));
+
+        return ResponseEntity.badRequest().body(errorResponse(
+                "Validation error",
+                message,
+                NO_RETRY
+        ));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException exception) {
         String message = exception.getConstraintViolations().stream()
-                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
-                .collect(Collectors.joining(": "));
-        return ResponseEntity.badRequest()
-                        .body(new ErrorResponse("VALIDATION_ERROR",
-                                message, OffsetDateTime.now().toString(),
-                                SERVICE_NAME,
-                                null));
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .collect(Collectors.joining("; "));
+
+        return ResponseEntity.badRequest().body(errorResponse(
+                "Validation error",
+                message,
+                NO_RETRY
+        ));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMalformedJson() {
+        return ResponseEntity.badRequest().body(errorResponse(
+                "Invalid request body",
+                "Request body is malformed or contains unsupported values",
+                NO_RETRY
+        ));
+    }
+
+    @ExceptionHandler(TransactionConflictException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionConflict(TransactionConflictException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse(
+                "Transaction conflict",
+                exception.getMessage(),
+                NO_RETRY
+        ));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse(
+                "Data integrity violation",
+                "Transaction data violates database constraints",
+                NO_RETRY
+        ));
     }
 
     @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<ErrorResponse> handleDataAccess(DataAccessException exception) {
-        log.error("Database error: {}", exception.getMessage(), exception);
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(new ErrorResponse("DB_UNAVAILABLE",
-                        "Database unavailable, please try again later",
-                        OffsetDateTime.now().toString(),
-                        SERVICE_NAME,
-                        "5000"));
+    public ResponseEntity<ErrorResponse> handleDatabaseAccess() {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse(
+                "Database operation failed",
+                "Transaction logger database is unavailable",
+                DATABASE_RETRY
+        ));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException exception) {
         log.warn("Method not allowed: {}", exception.getMessage());
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
-                .body(new ErrorResponse("METHOD_NOT_ALLOWED",
-                        exception.getMessage(),
-                        OffsetDateTime.now().toString(),
-                        SERVICE_NAME,
-                        null));
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(errorResponse(
+                "Method not allowed",
+                exception.getMessage(),
+                NO_RETRY
+        ));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NoResourceFoundException exception) {
         log.warn("Resource not found: {}", exception.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse("NOT FOUND",
-                        "Resource not found: " + exception.getResourcePath(),
-                        OffsetDateTime.now().toString(),
-                        SERVICE_NAME,
-                        null));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse(
+                "Not found",
+                "Resource not found: " + exception.getResourcePath(),
+                NO_RETRY
+        ));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneral(Exception exception) {
-        log.error("Unexpected error: {}", exception.getMessage(), exception);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("INTERNAL_ERROR",
-                        "Internal server error",
-                        OffsetDateTime.now().toString(),
-                        SERVICE_NAME,
-                        "3000"));
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, String>> handleDataIntegrityViolation() {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
-                "error", "Data integrity violation"
+    public ResponseEntity<ErrorResponse> handleInternalError() {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse(
+                "Internal server error",
+                "Unexpected transaction logger error",
+                NO_RETRY
         ));
     }
 
-    @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<Map<String, String>> handleDatabaseAccess() {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
-                "error", "Database operation failed"
-        ));
+    private ErrorResponse errorResponse(String error, String message, String retryAfterMs) {
+        return new ErrorResponse(
+                error,
+                message,
+                Instant.now().toString(),
+                SERVICE_NAME,
+                retryAfterMs
+        );
     }
 }

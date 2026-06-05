@@ -80,7 +80,7 @@ public class TerminalSimulatorService {
         String transmissionDateTime = randomDateTime(partOfDay);
         String terminalId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));
         String terminalType = String.valueOf(TerminalType.values()[(int)(Math.random()*3)]);
-        String merchantId = "MERCH12345678901";
+        String merchantId = "MERCH1234567890";
         String mcc = new String[]{"5411", "5812", "5814", "5732", "5399", "4814",
                 "7994", "3501"}[ThreadLocalRandom.current().nextInt(8)];
         String acquirerId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));

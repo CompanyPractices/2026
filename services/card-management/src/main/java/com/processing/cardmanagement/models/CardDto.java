@@ -19,6 +19,8 @@ public record CardDto(
     String expiryDate,
     @Schema(description = "Card status", example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "BLOCKED", "EXPIRED", "DELETED"})
     String status,
+    @Schema(description = "Currency code (ISO 4217)", example = "643")
+    String currencyCode,
     @Schema(description = "Daily limit in kopecks", example = "15000000")
     long dailyLimit,
     @Schema(description = "Monthly limit in kopecks", example = "300000000")
@@ -39,6 +41,7 @@ public record CardDto(
             entity.getCardholderName(),
             entity.getStrExpiryDate(),
             entity.getStatus().name(),
+            entity.getCurrencyCode(),
             entity.getDailyLimit(),
             entity.getMonthlyLimit(),
             entity.getAvailableBalance(),
