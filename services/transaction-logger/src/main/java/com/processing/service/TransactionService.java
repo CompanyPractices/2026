@@ -67,7 +67,10 @@ public class TransactionService {
     public TransactionSearchResponse search(TransactionFilter filter) {
         Pageable pageable = PageRequest.of(filter.getOffset() / filter.getLimit(), filter.getLimit());
         Page<Transaction> page = transactionRepository.findAll(TransactionSpecification.filter(filter), pageable);
-        return new TransactionSearchResponse(page.getTotalElements(), page.getContent());
+        List<TransactionResponse> dtos = page.getContent().stream()
+                .map(transactionMapper::toResponse)
+                .toList();
+        return new TransactionSearchResponse(page.getTotalElements(), dtos);
     }
 
     public DashboardStatsResponse getStats() {
@@ -89,8 +92,11 @@ public class TransactionService {
         );
     }
 
-    public List<Transaction> getRecent(int limit) {
+    public List<TransactionResponse> getRecent(int limit) {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, Transaction_.CREATED_AT));
-        return transactionRepository.findAll(pageable).getContent();
+        return transactionRepository.findAll(pageable).getContent()
+                .stream()
+                .map(transactionMapper::toResponse)
+                .toList();
     }
 }

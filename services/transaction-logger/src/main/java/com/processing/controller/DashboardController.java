@@ -1,6 +1,7 @@
 package com.processing.controller;
 
 import com.processing.dto.DashboardStatsResponse;
+import com.processing.dto.TransactionResponse;
 import com.processing.model.Transaction;
 import com.processing.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +38,7 @@ public class DashboardController {
             @ApiResponse(responseCode = "200", description = "Список транзакций, отсортированных по createdAt DESC")
     })
     @GetMapping("/recent")
-    public List<Transaction> getRecent(@Positive(message = "limit must be positive")
+    public List<TransactionResponse> getRecent(@Positive(message = "limit must be positive")
                                            @Max(value = 500, message = "limit must not exceed 500")
                                            @RequestParam(defaultValue = "20") int limit) {
         return transactionService.getRecent(limit);
