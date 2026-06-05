@@ -32,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 1)
+@Order(Ordered.HIGHEST_PRECEDENCE + 2)
 @RequiredArgsConstructor
 public class TransactionValidationFilter extends OncePerRequestFilter {
 
