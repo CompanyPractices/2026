@@ -1,12 +1,13 @@
 import {Header} from "./components/Header"
+import {MOCK_DASHBOARD_STATS, MOCK_TRANSACTIONS_TABLE} from "./mockData.ts";
 import {TransactionTable} from "./components/TransactionTable/TransactionTable.tsx";
-import {MOCK_KPI_CARDS, MOCK_TRANSACTIONS_TABLE} from "./mockData.ts";
 
 function App() {
+  return
   return (
       <div>
-        <Header cards={MOCK_KPI_CARDS} />
-        <TransactionTable transactions={MOCK_TRANSACTIONS_TABLE} />
+          <Header stats={MOCK_DASHBOARD_STATS} />
+          <TransactionTable transactions={MOCK_TRANSACTIONS_TABLE} />
       </div>
 
   )
