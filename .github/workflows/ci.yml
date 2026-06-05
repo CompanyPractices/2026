@@ -43,7 +43,7 @@ jobs:
           cache: 'maven'
 
       - name: Build common module
-        run: mvn -P common -pl services/common -am package
+        run: mvn -f services/pom.xml -P common -pl common -am package
 
   java-services:
     runs-on: ubuntu-latest
@@ -73,14 +73,12 @@ jobs:
           cache: 'maven'
 
       - name: Run java linter
-        working-directory: ./services/${{ matrix.service }}
-        run: mvn checkstyle:check
+        run: mvn -f services/pom.xml -pl ${{ matrix.service }} checkstyle:check
 
       - name: Build and run unit tests
-        run: mvn -P${{ matrix.service }} -pl services/${{ matrix.service }} -am package
+        run: mvn -f services/pom.xml -P${{ matrix.service }} -pl ${{ matrix.service }} -am package
 
       - name: Build docker image
-        if: matrix.service != 'common'
         run: docker build -f services/${{ matrix.service }}/Dockerfile -t ${{ matrix.service }}:latest .
 
   frontend-dashboard:
@@ -95,7 +93,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
 
       - name: Install dependencies
         working-directory: ./services/dashboard
