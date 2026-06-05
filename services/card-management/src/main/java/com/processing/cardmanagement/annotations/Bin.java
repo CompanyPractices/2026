@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import java.lang.annotation.*;
 
 @Pattern(regexp = "^\\d{6}$")
-@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {})
 @Documented
