@@ -7,5 +7,8 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "switch")
 public record SwitchProperties(
         String version,
-        Map<String, String> binRouting
+        Map<String, String> binRouting,
+        String authorizationUrl,
+        String loggerUrl,
+        boolean authorizationStubEnabled
 ) {}
