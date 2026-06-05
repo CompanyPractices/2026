@@ -24,7 +24,7 @@ public class AuthorizationRequestFactory {
                 .processingCode("000000") // тип транзакции
                 .amount(amount) // цена
                 .currencyCode("643") // тип валюты
-                .transmissionDateTime(time) // генерировать текущее время
+                .transmissionDateTime(time.toString()) // генерировать текущее время
                 .terminalId(terminal.getId()) // terminal.id
                 .terminalType(terminal.getType()) // terminal.type
                 .merchantId(merchant.getId()) // merchant.id
