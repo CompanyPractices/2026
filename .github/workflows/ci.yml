@@ -73,7 +73,7 @@ jobs:
           cache: 'maven'
 
       - name: Run java linter
-        run: mvn -f services/pom.xml -pl ${{ matrix.service }} checkstyle:check
+        run: mvn -f services/pom.xml -pl ${{ matrix.service }} verify -DskipTests
 
       - name: Build and run unit tests
         run: mvn -f services/pom.xml -P${{ matrix.service }} -pl ${{ matrix.service }} -am package
