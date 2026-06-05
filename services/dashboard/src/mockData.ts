@@ -1,5 +1,5 @@
 import {DashboardStats} from "./types";
-import {TransactionTableRowData} from "./components/TransactionTable/types.ts";
+import {TransactionTableRowData} from "./components/TransactionTable.tsx";
 
 export const MOCK_DASHBOARD_STATS: DashboardStats = {
     totalTransactions: 1250,
