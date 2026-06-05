@@ -76,7 +76,7 @@ jobs:
         run: mvn -f services/pom.xml -P${{ matrix.service }} -pl ${{ matrix.service }} verify -DskipTests
 
       - name: Build and run unit tests
-        run: mvn -f services/pom.xml -P${{ matrix.service }} -pl ${{ matrix.service }} -am package
+        run: mvn -f services/pom.xml -P${{ matrix.service }} -pl ${{ matrix.service }} -am install
 
       - name: Build docker image
         run: docker build -f services/${{ matrix.service }}/Dockerfile -t ${{ matrix.service }}:latest .
