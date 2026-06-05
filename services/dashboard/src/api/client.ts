@@ -1,14 +1,13 @@
-const base_url = "http://localhost:8080";
+const base_url = import.meta.env.VITE_API_URL;
 
-function fetchApi<T>(route: string): Promise<T> {
+function fetchApi<T>(route: string, options?: RequestInit): Promise<T> {
     return fetch(base_url + route)
         .then((response) => {
             if (!response.ok) {
-                throw new Error(response.status);
+                throw new Error(`Error: HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json()
         })
-        .catch(error => {throw new Error(`Error status: ${error.message}`)})
 }
 
 export default fetchApi;
