@@ -1,5 +1,5 @@
 server:
-  port: ${GATEWAY_PORT:8080}
+  port: ${SERVER_PORT:${GATEWAY_PORT:8080}}
 
 #---
 # Logging
@@ -31,30 +31,30 @@ spring:
       mvc:
         routes:
           - id: switch
-            uri: http://switch:${SWITCH_PORT:8082}
+            uri: ${SWITCH_URL:http://localhost:8082}
             predicates:
               - Path=/api/transactions
               - Method=POST
             filters:
               - RewritePath=/api/transactions, /api/internal/route
           - id: logger
-            uri: http://logger:${LOGGER_PORT:8088}
+            uri: ${LOGGER_URL:http://localhost:8088}
             predicates:
               - Path=/api/transactions/search
           - id: dashboard
-            uri: http://logger:${LOGGER_PORT:8088}
+            uri: ${LOGGER_URL:http://localhost:8088}
             predicates:
               - Path=/api/dashboard/**
           - id: terminal
-            uri: http://terminal-simulator:${TERMINAL_PORT:8085}
+            uri: ${TERMINAL_SIM_URL:http://localhost:8085}
             predicates:
               - Path=/api/simulator/terminal/**
           - id: merchant
-            uri: http://merchant-acquirer:${MERCHANT_PORT:8086}
+            uri: ${MERCHANT_SIM_URL:http://localhost:8086}
             predicates:
               - Path=/api/simulator/merchant/**
           - id: cards
-            uri: http://card-management:${CARD_MGMT_PORT:8081}
+            uri: ${CARD_MGMT_URL:http://localhost:8081}
             predicates:
               - Path=/api/cards/**
   mvc:
@@ -63,48 +63,15 @@ spring:
     health:
       show-details: always
 
-gateway:
-  rate-limit:
-    transactions-per-second: ${TRANSACTIONS_RATE_LIMIT:100}
 
-spring:
-  cloud:
-    gateway:
-      mvc:
-        routes:
-          - id: switch
-            uri: ${SWITCH:http://localhost:8082}
-            predicates:
-              - Path=/api/transactions
-            filters:
-              - RewritePath=/api/transactions, /api/internal/route
-          - id: logger
-            uri: ${LOGGER:http://localhost:8088}
-            predicates:
-              - Path=/api/transactions/search
-          - id: dashboard
-            uri: ${LOGGER:http://localhost:8088}
-            predicates:
-              - Path=/api/dashboard/**
-          - id: terminal
-            uri: ${TERMINAL:http://localhost:8085}
-            predicates:
-              - Path=/api/simulator/terminal/**
-          - id: merchant
-            uri: ${MERCHANT:http://localhost:8086}
-            predicates:
-              - Path=/api/simulator/merchant/**
-          - id: cards
-            uri: ${CARDS:http://localhost:8081}
-            predicates:
-              - Path=/api/cards/**
-  mvc:
-    log-request-details: true
+
 # Gateway
 gateway:
   downstream-services:
     urls:
-      switch-url: http://switch:${SWITCH_PORT:8082}
-      logger-url: http://logger:${LOGGER_PORT:8088}
-      auth-url: http://authorization:${AUTH_PORT:8083}
-      cards-url: http://card-management:${CARD_MGMT_PORT:8081}
+      switch-url: ${SWITCH_URL:http://localhost:8082}
+      logger-url: ${LOGGER_URL:http://localhost:8088}
+      auth-url: ${AUTH_URL:http://localhost:8083}
+      cards-url: ${CARD_MGMT_URL:http://localhost:8081}
+  rate-limit:
+    transactions-per-second: ${TRANSACTIONS_RATE_LIMIT:100}
