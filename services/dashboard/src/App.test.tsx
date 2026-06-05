@@ -4,6 +4,11 @@ import App from './App';
 import '@testing-library/jest-dom';
 
 describe('App', () => {
+  it('renders dashboard title', () => {
+    render(<App />);
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+  });
+
   it('renders footer with all three texts', () => {
     render(<App />);
     expect(screen.getByText('Практика')).toBeInTheDocument();
@@ -18,11 +23,20 @@ describe('App', () => {
     expect(document.querySelector('footer')).toBeInTheDocument();
   });
 
-  it('passes mock data to Header', () => {
+  it('renders KPI cards with mock data', () => {
     render(<App />);
-    expect(screen.getByText('Всего ТХ')).toBeInTheDocument();
-    expect(screen.getByText('Одобрено')).toBeInTheDocument();
-    expect(screen.getByText('Общая сумма')).toBeInTheDocument();
-    expect(screen.getByText('Среднее время')).toBeInTheDocument();
+    expect(screen.getByText(/1250/)).toBeInTheDocument();
+    expect(screen.getByText(/Всего ТХ/)).toBeInTheDocument();
+    expect(screen.getByText(/88\s*%/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Одобрено/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/1 875 000.00/)).toBeInTheDocument();
+    expect(screen.getByText(/Общая сумма/)).toBeInTheDocument();
+    expect(screen.getByText(/38\s*ms/)).toBeInTheDocument();
+    expect(screen.getByText(/Среднее время/)).toBeInTheDocument();
+  });
+
+  it ('render transaction table', () => {
+    render(<App />);
+    expect(screen.getByText(/Последние 20 транзакций/)).toBeInTheDocument();
   });
 });
