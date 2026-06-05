@@ -104,7 +104,7 @@ jobs:
 
       - name: Run frontend tests
         working-directory: ./services/dashboard
-        run: npm test -- --watchAll=false
+        run: npm test -- --run
 
       - name: Build frontend application
         working-directory: ./services/dashboard
