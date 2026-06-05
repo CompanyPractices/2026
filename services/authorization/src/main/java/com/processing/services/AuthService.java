@@ -1,12 +1,12 @@
 package com.processing.services;
 
-import com.exceptions.CardNotFoundException;
-import com.exceptions.ReserveCardException;
 import com.processing.dto.AuthorizationRequest;
 import com.processing.dto.AuthorizationResponse;
 import com.processing.dto.CardResponse;
 import com.processing.dto.ReserveRequest;
 import com.processing.enums.CardStatus;
+import com.processing.exceptions.CardNotFoundException;
+import com.processing.exceptions.ReserveCardException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
