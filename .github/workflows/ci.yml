@@ -99,7 +99,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./services/dashboard
-        run: npm ci
+        run: npm install
 
       - name: Run ESLint
         working-directory: ./services/dashboard
