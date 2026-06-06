@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/internal")
 public class RouteController {
 
-    private static final Logger log = LoggerFactory.getLogger(RouteController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RouteController.class);
 
     private final RouteService routeService;
 
@@ -26,7 +26,7 @@ public class RouteController {
     @PostMapping("/route")
     public ResponseEntity<AuthorizationResponse> routeTransaction(
             @RequestBody AuthorizationRequest request) {
-        log.info("Received: STAN={}, PAN={}", request.stan(), maskPan(request.pan()));
+        LOG.info("Received: STAN={}, PAN={}", request.stan(), maskPan(request.pan()));
         AuthorizationResponse response = routeService.route(request);
         return ResponseEntity.ok(response);
     }

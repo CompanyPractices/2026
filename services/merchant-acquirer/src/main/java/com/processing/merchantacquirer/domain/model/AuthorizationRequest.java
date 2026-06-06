@@ -13,25 +13,25 @@ import java.time.LocalDateTime;
 @Builder
 public class AuthorizationRequest {
     @NotNull
-    private String mti;// "0100" = Auth Request, всегда одинаковый
+    private String mti; // "0100" = Auth Request, всегда одинаковый
     @NotNull
-    private String stan;// System Trace Audit Number, написать реализацию генерации
+    private String stan; // System Trace Audit Number, написать реализацию генерации
     @NotNull
     private String pan; //card
     @NotNull
     private String processingCode; //"000000" = покупка
     @NotBlank
-    private int amount;//Сумма в копейках
+    private int amount; //Сумма в копейках
     @NotNull
-    private String currencyCode; //"643" - идентификатор валюты (рубли), есть в CardsResponse
+    private String currencyCode; //"643" - идентификатор валюты(рубли), есть в CardsResponse
     @NotNull
-    private LocalDateTime transmissionDateTime;// Время отправки
+    private LocalDateTime transmissionDateTime; // Время отправки
     @NotNull
-    private String terminalId;// terminal ?
-    private String terminalType;// terminal ?
+    private String terminalId; // terminal ?
+    private String terminalType; // terminal ?
     @NotNull
-    private String merchantId;// merchant
+    private String merchantId; // merchant
     @NotNull
     private String mcc; // merchant
-    private String acquirerId;// merchant
+    private String acquirerId; // merchant
 }
