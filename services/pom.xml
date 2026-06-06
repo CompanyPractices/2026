@@ -171,10 +171,10 @@
                         </execution>
                     </executions>
                     <configuration>
-                        <configLocation>sun_checks.xml</configLocation>
+                        <configLocation>checkstyle.xml</configLocation>
                         <consoleOutput>true</consoleOutput>
-                        <failsOnError>false</failsOnError>
-                        <failOnViolation>false</failOnViolation>
+                        <failsOnError>true</failsOnError>
+                        <failOnViolation>true</failOnViolation>
                         <violationSeverity>warning</violationSeverity>
                     </configuration>
                 </plugin>
@@ -194,5 +194,11 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
 </project>

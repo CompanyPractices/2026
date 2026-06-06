@@ -73,10 +73,10 @@ jobs:
           cache: 'maven'
 
       - name: Run java linter
-        run: mvn -f services/pom.xml -P${{ matrix.service }} verify -DskipTests
+        run: mvn -f services/pom.xml -P${{ matrix.service }} checkstyle:check
 
       - name: Build and run unit tests
-        run: mvn -f services/pom.xml -P${{ matrix.service }} install
+        run: mvn -f services/pom.xml -P${{ matrix.service }} install -Dcheckstyle.skip=true
 
       - name: Build docker image
         run: docker build -f services/${{ matrix.service }}/Dockerfile -t ${{ matrix.service }}:latest .
