@@ -8,30 +8,19 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Data
-@AllArgsConstructor
 @Builder
-public class AuthorizationRequest {
-    @NotNull
-    private String mti; // "0100" = Auth Request, всегда одинаковый
-    @NotNull
-    private String stan; // System Trace Audit Number, написать реализацию генерации
-    @NotNull
-    private String pan; //card
-    @NotNull
-    private String processingCode; //"000000" = покупка
-    @NotBlank
-    private int amount; //Сумма в копейках
-    @NotNull
-    private String currencyCode; //"643" - идентификатор валюты(рубли), есть в CardsResponse
-    @NotNull
-    private LocalDateTime transmissionDateTime; // Время отправки
-    @NotNull
-    private String terminalId; // terminal ?
-    private String terminalType; // terminal ?
-    @NotNull
-    private String merchantId; // merchant
-    @NotNull
-    private String mcc; // merchant
-    private String acquirerId; // merchant
+public record AuthorizationRequest(
+        String mti,// "0100" = Auth Request, всегда одинаковый
+        String stan,// System Trace Audit Number, написать реализацию генерации
+        String pan, //card
+        String processingCode, //"000000" = покупка
+        int amount,//Сумма в копейках
+        String currencyCode, //"643" - идентификатор валюты (рубли), есть в CardsResponse
+        String transmissionDateTime,// Время отправки
+        String terminalId,// terminal ?
+        String terminalType,// terminal ?
+        String merchantId,// merchant
+        String mcc, // merchant
+        String acquirerId// merchant
+) {
 }

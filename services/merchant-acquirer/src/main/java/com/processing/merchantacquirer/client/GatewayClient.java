@@ -1,31 +1,37 @@
 package com.processing.merchantacquirer.client;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.processing.merchantacquirer.client.dto.CardsRequest;
 import com.processing.merchantacquirer.client.dto.CardsResponse;
 import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
 import com.processing.merchantacquirer.domain.model.AuthorizationResponse;
 import com.processing.merchantacquirer.exception.ExternalServiceException;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+
 @Component
 @RequiredArgsConstructor
 public class GatewayClient {
     private final RestTemplate restTemplate = new RestTemplate();
+    public final String gatewayUrl = "http://gateway:8080";
 
-    public CardsResponse getCards(CardsRequest request) {
-        String url = "http://gateway:8080/api/cards";
-        if (request.limit() > 0) {
+    public CardsResponse getCards(CardsRequest request){
+        String url = gatewayUrl + "/api/cards";
+        if(request.limit() > 0){
             url += "?limit=" + request.limit();
         }
-        try {
+        try{
             return restTemplate.getForEntity(url, CardsResponse.class).getBody();
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
+        }catch(HttpClientErrorException | HttpServerErrorException ex){
             throw ExternalServiceException.fromResponse(ex);
-        } catch (Exception ex) {
+        }catch(Exception ex){
             throw new ExternalServiceException(
                     "Card management",
                     ex.getMessage(),
@@ -34,13 +40,13 @@ public class GatewayClient {
         }
     }
 
-    public AuthorizationResponse processAuthorize(AuthorizationRequest authorizationRequest) {
-        String url = "http://gateway:8080/api/transactions";
-        try {
+    public AuthorizationResponse processAuthorize(AuthorizationRequest authorizationRequest){
+        String url = gatewayUrl + "/api/transactions";
+        try{
             return restTemplate.postForEntity(url, authorizationRequest, AuthorizationResponse.class).getBody();
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
+        }catch(HttpClientErrorException | HttpServerErrorException ex){
             throw ExternalServiceException.fromResponse(ex);
-        } catch (Exception ex) {
+        }catch(Exception ex){
             throw new ExternalServiceException(
                     "API Gateway",
                     ex.getMessage(),
