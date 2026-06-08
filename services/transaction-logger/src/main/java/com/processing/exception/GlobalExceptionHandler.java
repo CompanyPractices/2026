@@ -71,7 +71,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation() {
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+        log.warn("Transaction logger data integrity violation", exception);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse(
                 "Data integrity violation",
                 "Transaction data violates database constraints",
@@ -91,7 +92,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException exception) {
-        log.warn("Method not allowed: {}", exception.getMessage());
+        log.warn("Method not allowed", exception);
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(errorResponse(
                 "Method not allowed",
                 exception.getMessage(),
@@ -101,7 +102,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NoResourceFoundException exception) {
-        log.warn("Resource not found: {}", exception.getMessage());
+        log.warn("Resource not found", exception);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse(
                 "Not found",
                 "Resource not found: " + exception.getResourcePath(),
@@ -110,7 +111,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleInternalError() {
+    public ResponseEntity<ErrorResponse> handleInternalError(Exception exception) {
+        log.error("Unexpected transaction logger error", exception);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse(
                 "Internal server error",
                 "Unexpected transaction logger error",
