@@ -7,7 +7,15 @@ import jakarta.annotation.Nullable;
 public record PatchCardRequest(
 
     @Nullable
-    @Schema(description = "Card status", example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "BLOCKED", "EXPIRED", "DELETED"})
+    @Schema(
+        description = "Card status",
+        example = "ACTIVE",
+        allowableValues = {"ACTIVE",
+        "INACTIVE",
+        "BLOCKED",
+        "EXPIRED",
+        "DELETED"}
+    )
     CardStatus status,
 
     @Nullable

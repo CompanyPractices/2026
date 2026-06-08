@@ -20,6 +20,7 @@ Transaction Logger сохраняет все транзакции процесс
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/health` | Health-check сервиса |
+| POST | `/api/internal/log` | Приём транзакции от Switch и сохранение в PostgreSQL |
 | GET | `/api/transactions/search` | Поиск транзакций с фильтрацией и пагинацией |
 | GET | `/api/dashboard/stats` | Агрегированная статистика |
 | GET | `/api/dashboard/recent` | Последние N транзакций |
@@ -37,6 +38,94 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`
   "status": "ok",
   "service": "transaction-logger",
   "dependencies": {}
+}
+```
+
+---
+
+#### `POST /api/internal/log`
+
+Endpoint принимает транзакцию от Switch и сохраняет её в PostgreSQL.
+
+Если запрос повторяется с уже существующим `id` и все поля совпадают с сохранённой транзакцией, новая запись не создаётся, а сервис возвращает существующую транзакцию.
+
+**Тело запроса:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "mti": "0100",
+  "stan": "000001",
+  "rrn": "012345678901",
+  "pan": "4000001234560001",
+  "processingCode": "000000",
+  "amount": 150000,
+  "currencyCode": "643",
+  "terminalId": "TERM001",
+  "merchantId": "MERCH12345678901",
+  "mcc": "5411",
+  "acquirerId": "ACQ001",
+  "issuerId": "ISS001",
+  "acquiringFee": 2250,
+  "status": "APPROVED",
+  "declineReason": null,
+  "authCode": "ABC123",
+  "processingTimeMs": 42,
+  "transmissionDateTime": "2026-06-01T10:30:00Z",
+  "createdAt": "2026-06-01T10:30:01Z"
+}
+```
+
+**Ответ 201:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "stored"
+}
+```
+
+**Ответ 200:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "mti": "0100",
+  "stan": "000001",
+  "rrn": "012345678901",
+  "pan": "4000001234560001",
+  "processingCode": "000000",
+  "amount": 150000,
+  "currencyCode": "643",
+  "terminalId": "TERM001",
+  "merchantId": "MERCH12345678901",
+  "mcc": "5411",
+  "acquirerId": "ACQ001",
+  "issuerId": "ISS001",
+  "acquiringFee": 2250,
+  "status": "APPROVED",
+  "declineReason": null,
+  "authCode": "ABC123",
+  "processingTimeMs": 42,
+  "transmissionDateTime": "2026-06-01T10:30:00Z",
+  "createdAt": "2026-06-01T10:30:01Z"
+}
+```
+
+**Ошибки:**
+
+| Код | Условие |
+|-----|---------|
+| 400 | Невалидные поля запроса или некорректное JSON-тело |
+| 409 | Транзакция с таким `id` уже существует, но поля отличаются |
+| 503 | Ошибка доступа к PostgreSQL |
+| 500 | Внутренняя ошибка сервиса |
+
+**Пример ошибки:**
+```json
+{
+  "error": "Transaction conflict",
+  "message": "Transaction with id 550e8400-e29b-41d4-a716-446655440000 already exists with different data",
+  "timestamp": "2026-06-05T08:30:00Z",
+  "serviceName": "transaction-logger",
+  "retryAfterMs": "0"
 }
 ```
 
@@ -216,6 +305,6 @@ transaction-logger/
 ## Авторы
 
 - Капусткин Никита — разработчик Logger #2(Поиск и WebSocket)
-- Ярослав Сидякин — разработчик Logger #1(Прием транзакций)
+- Сидякин Ярослав — разработчик Logger #1(Прием транзакций)
 
-**Группа:** C (Data)
+**Группа:** C (Data), A (Core)

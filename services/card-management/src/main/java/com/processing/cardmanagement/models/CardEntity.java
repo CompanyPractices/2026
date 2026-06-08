@@ -1,6 +1,7 @@
 package com.processing.cardmanagement.models;
 
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
+import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -24,14 +25,6 @@ import java.util.UUID;
 @SQLRestriction("status <> 'DELETED'")
 public class CardEntity {
 
-    public enum Status {
-        ACTIVE,
-        INACTIVE,
-        BLOCKED,
-        EXPIRED,
-        DELETED,
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -54,7 +47,7 @@ public class CardEntity {
 
     @Column(length = 20, nullable = false)
     @Enumerated(EnumType.STRING)
-    private Status status = Status.ACTIVE;
+    private CardStatus status = CardStatus.ACTIVE;
 
     @Column(length = 3, nullable = false)
     private String currencyCode = "643";
@@ -78,7 +71,7 @@ public class CardEntity {
         String bin,
         String cardholderName,
         String currencyCode,
-        Status status,
+        CardStatus status,
         long dailyLimit,
         long monthlyLimit,
         long initialBalance,
@@ -109,7 +102,7 @@ public class CardEntity {
     }
 
     public void delete() {
-        setStatus(Status.DELETED);
+        setStatus(CardStatus.DELETED);
     }
 
     public void reserve(long amount) {

@@ -6,8 +6,8 @@ import com.processing.dto.DashboardStatsResponse;
 import com.processing.dto.TransactionRequest;
 import com.processing.dto.TransactionResponse;
 import com.processing.dto.TransactionSearchResponse;
-import com.processing.dto.TransactionStoredResponse;
 import com.processing.enums.TransactionStatus;
+import com.processing.exception.TransactionConflictException;
 import com.processing.mapper.TransactionMapper;
 import com.processing.model.Transaction;
 import com.processing.model.Transaction_;
@@ -40,8 +40,7 @@ public class TransactionService {
     public TransactionStoreResult store(TransactionRequest request) {
         Optional<Transaction> existingTransaction = transactionRepository.findById(request.id());
         if (existingTransaction.isPresent()) {
-            TransactionResponse response = transactionMapper.toResponse(existingTransaction.get());
-            return TransactionStoreResult.existing(response);
+            return existingTransactionResult(existingTransaction.get(), request);
         }
 
         Transaction savedTransaction;
@@ -49,8 +48,7 @@ public class TransactionService {
             savedTransaction = transactionRepository.saveAndFlush(transactionMapper.toEntity(request));
         } catch (DataIntegrityViolationException exception) {
             return transactionRepository.findById(request.id())
-                    .map(transactionMapper::toResponse)
-                    .map(TransactionStoreResult::existing)
+                    .map(transaction -> existingTransactionResult(transaction, request))
                     .orElseThrow(() -> exception);
         }
 
@@ -62,6 +60,15 @@ public class TransactionService {
         }
 
         return TransactionStoreResult.created(transactionMapper.toStoredResponse(savedTransaction));
+    }
+
+    private TransactionStoreResult existingTransactionResult(Transaction transaction, TransactionRequest request) {
+        if (!transactionMapper.matches(transaction, request)) {
+            throw new TransactionConflictException(request.id());
+        }
+
+        TransactionResponse response = transactionMapper.toResponse(transaction);
+        return TransactionStoreResult.existing(response);
     }
 
     public TransactionSearchResponse search(TransactionFilter filter) {

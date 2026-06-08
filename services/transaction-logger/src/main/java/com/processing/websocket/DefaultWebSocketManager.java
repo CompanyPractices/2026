@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
-public class DefaultWebSocketManager implements WebSocketManager{
+public class DefaultWebSocketManager implements WebSocketManager {
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
 
     @Override

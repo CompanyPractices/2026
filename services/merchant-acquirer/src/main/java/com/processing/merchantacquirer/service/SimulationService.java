@@ -39,14 +39,15 @@ public class SimulationService {
             ScenarioType.travel, new Scenario(List.of("3501", "4511", "4722"), 5000, 50000, "00:00", "24:00", 90)
     );
 
-    public SimulatorResponse run(SimulatorRequest request){
+    public SimulatorResponse run(SimulatorRequest request) {
         LocalDateTime startTime = LocalDateTime.now();
         log.info(String.valueOf(startTime));
         log.info(String.valueOf(request));
         // Получение карт (пока замокано на получение 1 захаркоженной карточки)
         CardsRequest cardsRequest = new CardsRequest(request.count(), 0, null, null);
         CardsResponse cardsResponse = gatewayClient.getCards(cardsRequest);
-//        CardsResponse cardsResponse = new CardsResponse(1, List.of(new CardDataResponse("123", "1234567891234567", "123456", "IVAN VANYA", "0404", "ACTIVE", "643", "1", "2", "3", "123", "123")));
+//        CardsResponse cardsResponse = new CardsResponse(1, List.of(new CardDataResponse("123", "1234567891234567",
+//        "123456", "IVAN VANYA", "0404", "ACTIVE", "643", "1", "2", "3", "123", "123")));
         log.info(String.valueOf(cardsResponse));
 
         // Получение сценария
@@ -56,11 +57,11 @@ public class SimulationService {
         // Получение мерчантов
         List<Merchant> merchants;
         int countMerchants;
-        if(request.mccCodes() == null){
+        if (request.mccCodes() == null) {
             merchants = merchantRepository.findByMccIn(scenario.getMcc());
             log.info(String.valueOf(merchants));
             countMerchants = merchants.size();
-        }else{
+        } else {
             merchants = merchantRepository.findByMccIn(request.mccCodes());
             log.info(String.valueOf(merchants));
             countMerchants = merchants.size();
@@ -78,7 +79,7 @@ public class SimulationService {
         log.info(String.valueOf(iterableCard));
         log.info(String.valueOf(count));
         Random random = new Random();
-        while(count > 0){
+        while (count > 0) {
             CardDataResponse card = cardsResponse.cards().get(iterableCard - 1);
             Merchant merchant = merchants.get(random.nextInt(0, countMerchants - 1));
 
@@ -95,7 +96,7 @@ public class SimulationService {
 
             iterableCard--;
             count--;
-            if(iterableCard == 0){
+            if (iterableCard == 0) {
                 iterableCard = cardsResponse.cards().size();
             }
         }
@@ -105,13 +106,18 @@ public class SimulationService {
         int declined = 0;
 
         List<AuthorizationResponse> authorizationResponses = new ArrayList<>();
-        for(AuthorizationRequest transaction: authorizationRequests){
+        for (AuthorizationRequest transaction: authorizationRequests) {
             try {
                 AuthorizationResponse response = gatewayClient.processAuthorize(transaction);
                 authorizationResponses.add(response);
-                approved += 1;
+                if (response.status().equals("APPROVED")) {
+                    approved += 1;
+                } else {
+                    declined += 1;
+                }
             } catch (Exception e) {
-                authorizationResponses.add(new AuthorizationResponse("0100", transaction.getStan(), null, null, "505", "DECLINED", e.getMessage(), 999));
+                authorizationResponses.add(new AuthorizationResponse("0100", transaction.stan(), null,
+                        null, "505", "DECLINED", e.getMessage(), 999));
                 declined += 1;
             }
         }

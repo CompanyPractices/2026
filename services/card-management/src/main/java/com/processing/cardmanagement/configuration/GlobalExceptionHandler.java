@@ -2,13 +2,15 @@ package com.processing.cardmanagement.configuration;
 
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
-import com.processing.cardmanagement.models.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.processing.common.dto.ErrorResponse;
+
+import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -18,7 +20,7 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleCardNotFoundException(
         CardNotFoundException ex
     ) {
-        return new ErrorResponse(ex);
+        return errorResponseFromException(ex);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -26,7 +28,7 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleConstraintViolationException(
         ConstraintViolationException ex
     ) {
-        return new ErrorResponse(ex);
+        return errorResponseFromException(ex);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -34,7 +36,7 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleMethodArgumentNotValidException(
         MethodArgumentNotValidException ex
     ) {
-        return new ErrorResponse(ex);
+        return errorResponseFromException(ex);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -42,7 +44,7 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleIllegalArgumentException(
         IllegalArgumentException ex
     ) {
-        return new ErrorResponse(ex);
+        return errorResponseFromException(ex);
     }
 
     @ExceptionHandler(IllegalStateException.class)
@@ -50,7 +52,7 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleIllegalStateException(
         IllegalStateException ex
     ) {
-        return new ErrorResponse(ex);
+        return errorResponseFromException(ex);
     }
 
     @ExceptionHandler(InsufficientFundsException.class)
@@ -58,7 +60,7 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleInsufficientFundsException(
         InsufficientFundsException ex
     ) {
-        return new ErrorResponse(ex);
+        return errorResponseFromException(ex);
     }
 
     @ExceptionHandler(Exception.class)
@@ -66,6 +68,16 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleException(
         Exception ex
     ) {
-        return new ErrorResponse(ex);
+        return errorResponseFromException(ex);
+    }
+
+    private ErrorResponse errorResponseFromException(Exception ex) {
+        return new ErrorResponse(
+            ex.getClass().getSimpleName(),
+            ex.getMessage(),
+            LocalDateTime.now().toString(),
+            null,
+            null
+        );
     }
 }

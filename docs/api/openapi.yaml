@@ -368,7 +368,7 @@ paths:
       summary: Отправить запрос на авторизацию транзакции
       description:
         Главный входной эндпоинт. Gateway валидирует запрос и отправляет его в Switch.
-        Switch определяет эмитента по BIN, передаёт запрос в Authorization Service, 
+        Switch определяет эмитента по BIN, передаёт запрос в Authorization Service,
         получает решение и записывает транзакцию в Logger. Возвращает итоговый ответ авторизации.
       operationId: authorizeTransaction
       requestBody:
