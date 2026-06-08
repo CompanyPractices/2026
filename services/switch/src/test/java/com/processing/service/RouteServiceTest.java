@@ -9,7 +9,6 @@ import com.processing.support.CapturingAuthorizationClient;
 import com.processing.support.TrackingLoggerClient;
 import org.junit.jupiter.api.Test;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 
