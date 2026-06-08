@@ -2,18 +2,17 @@ package com.processing.cardmanagement.repositories;
 
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.models.Card;
-import com.processing.cardmanagement.models.CardStatus;
-import jakarta.transaction.Transactional;
+import com.processing.common.dto.cardmanagement.CardStatus;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.UnaryOperator;
 
 @RequiredArgsConstructor
-public class JavaPersistenceAdapter implements CardRepository {
+public final class JavaPersistenceAdapter implements CardRepository {
 
     private final CardPersistenceMapper persistenceMapper;
     private final CardJpaRepository jpaRepository;
@@ -35,15 +34,17 @@ public class JavaPersistenceAdapter implements CardRepository {
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
     ) {
+        int pageNumber = (int) (offset / limit);
+        int pageSize = (int) limit;
+
         return jpaRepository
             .findCards(
-                limit,
-                offset,
-                status != null ? status.name() : null,
+                status,
                 bin,
                 issuerId,
                 startDate,
-                endDate
+                endDate,
+                PageRequest.of(pageNumber, pageSize)
             )
             .stream()
             .map(persistenceMapper::toDomain)
@@ -51,7 +52,7 @@ public class JavaPersistenceAdapter implements CardRepository {
     }
 
     @Override
-    public long countCardsFiltered(
+    public long countCards(
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
@@ -59,7 +60,7 @@ public class JavaPersistenceAdapter implements CardRepository {
         @Nullable LocalDateTime endDate
     ) {
         return jpaRepository.countCards(
-            status != null ? status.name() : null,
+            status,
             bin,
             issuerId,
             startDate,
@@ -67,7 +68,7 @@ public class JavaPersistenceAdapter implements CardRepository {
         );
     }
 
-    public long countAllCards() {
+    public long countCards() {
         return jpaRepository.count();
     }
 
@@ -88,17 +89,5 @@ public class JavaPersistenceAdapter implements CardRepository {
             .stream()
             .map(persistenceMapper::toDomain)
             .toList();
-    }
-
-    @Override
-    @Transactional
-    public Card updateWithPessimisticLock(String pan, UnaryOperator<Card> businessLogic) {
-        var cardEntity = jpaRepository
-            .findWithPessimisticLockByPan(pan)
-            .orElseThrow();
-
-        var card = businessLogic.apply(persistenceMapper.toDomain(cardEntity));
-        persistenceMapper.updateEntityFromDomain(card, cardEntity);
-        return persistenceMapper.toDomain(jpaRepository.save(cardEntity));
     }
 }
