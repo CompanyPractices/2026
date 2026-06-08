@@ -8,9 +8,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StanGenerator {
     private final AtomicInteger counter = new AtomicInteger(0);
 
-    public String next(){
+    public String next() {
         int value = counter.addAndGet(1);
-        if(value > 999999){
+        if (value > 999999) {
             counter.set(1);
             value = counter.get();
         }
