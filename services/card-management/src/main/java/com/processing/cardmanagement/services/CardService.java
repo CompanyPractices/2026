@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Сервис для управления банковскими картами
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -22,6 +25,12 @@ public class CardService {
     private final CardServiceOptions options;
     private final PanGenerator panGenerator;
 
+    /**
+     * Создает новую карту с авотматически сгенерированным PAN
+     *
+     * @param data данные для создания карты
+     * @return созданная карта
+     */
     public CardModel createCard(CreateCardRequest data) {
         var entity = cardRepository.save(
             new CardEntity(
@@ -39,6 +48,13 @@ public class CardService {
         return cardModelFromEntity(entity);
     }
 
+    /**
+     * Создает несколько карт их списка сгенерированных DTO
+     * Используется генератором тестовых карт
+     *
+     * @param data данные для создания карт
+     * @return список созданных карт
+     */
     public List<CardModel> createCards(List<GeneratedCardDto> data) {
         var entities = data
             .stream()
@@ -62,10 +78,29 @@ public class CardService {
             .toList();
     }
 
+    /**
+     * Возвращает карту по номеру PAN
+     *
+     * @param pan 16-значный номер карты
+     * @return карта
+     * @throws CardNotFoundException если карта не найдена
+     */
     public CardModel getCard(String pan) {
         return cardModelFromEntity(getCardEntity(pan));
     }
 
+    /**
+     * Возвращает список карт с пагинацией и фильтрацией
+     *
+     * @param limit количество карт на странице
+     * @param offset смещение
+     * @param status фильтр по статусу
+     * @param bin фильтр по bin
+     * @param issuerId фильтр по IsuureId
+     * @param startDate начало диапазона дат
+     * @param endDate конец диапазона дат
+     * @return список карт и их общее количество
+     */
     public GetCardsResponse getCards(
         Integer limit,
         Integer offset,
@@ -93,6 +128,13 @@ public class CardService {
         return new GetCardsResponse(total, cards);
     }
 
+    /**
+     * Частично обновляет параметры карты
+     *
+     * @param pan PAN карты
+     * @param data поля обновления карты
+     * @throws CardNotFoundException если карта не найдена
+     */
     public void patchCard(String pan, PatchCardRequest data) {
         var card = getCardEntity(pan);
 
@@ -112,15 +154,33 @@ public class CardService {
         cardRepository.save(card);
     }
 
+    /**
+     * Мягко удаляет карту
+     *
+     * @param pan PAN карты
+     * @throws CardNotFoundException если карта не найдена
+     */
     public void deleteCard(String pan) {
         var card = getCardEntity(pan);
         cardRepository.delete(card);
     }
 
+    /**
+     * Возвращает общее количество карт в базе данных
+     *
+     * @return количество карт
+     */
     public long countCards() {
         return cardRepository.count();
     }
 
+    /**
+     * Резервирует средства на карте, уменьшая доступный баланс
+     *
+     * @param pan PAN карты
+     * @param data данные резервирования
+     * @throws CardNotFoundException если карта не найдена
+     */
     public void reserve(String pan, ReserveRequest data) {
         var card = getCardEntity(pan);
         card.reserve(data.amount());

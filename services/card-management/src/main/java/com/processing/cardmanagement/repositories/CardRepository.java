@@ -14,12 +14,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Репозиторий для работы с банковскими картами
+ */
 @Repository
 public interface CardRepository
     extends JpaRepository<CardEntity, UUID> {
 
+    /**
+     * Находит карту по номеру PAN
+     *
+     * @param pan 16-значный PAN карты
+     * @return карта
+     */
     Optional<CardEntity> findByPan(String pan);
 
+    /**
+     * Возвращает список карт с фильтрацией и пагинацией
+     * Параметры фильтрации опциональны, если передается null - фильтр по этому полю не применяется
+     * @return список карт
+     */
     @Query(value = """
         SELECT card
         FROM CardEntity card
@@ -39,6 +53,10 @@ public interface CardRepository
         Pageable pageable
     );
 
+    /**
+     * Возвращает количество карт с применением фильтров
+     * @return количество карт
+     */
     @Query(value = """
         SELECT COUNT(card)
         FROM CardEntity card

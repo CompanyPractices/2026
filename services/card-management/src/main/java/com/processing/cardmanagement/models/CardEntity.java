@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.models;
 
+import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.persistence.*;
@@ -15,6 +16,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
+/**
+ * JPA сущность банковской карты
+ */
 @Entity
 @Getter
 @Setter
@@ -92,6 +96,11 @@ public class CardEntity {
         setExpiryDate(LocalDate.now().plusYears(3));
     }
 
+    /**
+     * Возвращает дату истечения срока действия карты
+     *
+     * @return дата истечения срока действия
+     */
     public LocalDate getExpiryDate() {
         if (expiryDate == null && strExpiryDate != null) {
             expiryDate = LocalDate.parse(strExpiryDate, formatter);
@@ -100,11 +109,22 @@ public class CardEntity {
         return expiryDate;
     }
 
+    /**
+     * Устанавливает дату истечения срока действия карты
+     *
+     * @return дата истечения срока действия
+     */
     public void setExpiryDate(LocalDate expiryDate) {
         this.expiryDate = expiryDate;
         this.strExpiryDate = expiryDate.format(formatter);
     }
 
+    /**
+     * Резервирует средства на карте, уменьшая доступный баланс
+     *
+     * @param amount сумма для резервирования в копейках
+     * @throws InsufficientFundsException если доступный баланс меньше суммы
+     */
     public void reserve(long amount) {
         if (this.availableBalance < amount) {
             throw new InsufficientFundsException();

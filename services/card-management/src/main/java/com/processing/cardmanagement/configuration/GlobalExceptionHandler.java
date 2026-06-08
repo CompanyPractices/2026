@@ -12,6 +12,10 @@ import com.processing.common.dto.ErrorResponse;
 
 import java.time.LocalDateTime;
 
+/**
+ * Глобальный обработчик исключений
+ * Преобразует исключения в HTTP ответы с соответствующими статус-кодами
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

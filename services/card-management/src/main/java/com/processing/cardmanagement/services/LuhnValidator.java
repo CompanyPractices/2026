@@ -5,6 +5,9 @@ import com.processing.common.dto.annotations.Pan;
 
 import java.util.Random;
 
+/**
+ * Реализация {@link PanGenerator} на основе алгоритма Луна
+ */
 public class LuhnValidator implements PanGenerator {
 
     private final Random random = new Random();

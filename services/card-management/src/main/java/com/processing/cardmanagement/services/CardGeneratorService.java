@@ -11,6 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Сервис для генерации тестовых банкогвских карт
+ * Карты равномерно распределяются по переданным BIN-префиксам
+ */
 @Service
 @RequiredArgsConstructor
 public class CardGeneratorService {
@@ -24,6 +28,15 @@ public class CardGeneratorService {
         "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
     );
 
+    /**
+     * Генерирует указанное количество тестовых карт и сохраняет их в базе данных
+     * Карты равномерно распределяются по BIN-ам
+     * Распределение статусов: ACTIVE - 95%, INACTIVE - 3%, BLOCKED - 2%
+     *
+     * @param count количество карт для генерации
+     * @param bins список BIN-префиксов для распределения карт
+     * @return список созданных карт
+     */
     public List<CardModel> generate(int count, List<String> bins) {
         List<GeneratedCardDto> cards = new ArrayList<>();
 
