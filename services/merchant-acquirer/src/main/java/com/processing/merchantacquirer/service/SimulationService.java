@@ -1,18 +1,11 @@
 package com.processing.merchantacquirer.service;
 
-import com.processing.merchantacquirer.client.GatewayClient;
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
-import com.processing.merchantacquirer.client.dto.CardsRequest;
-import com.processing.merchantacquirer.client.dto.CardsResponse;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
-import com.processing.merchantacquirer.domain.entity.ScenarioType;
 import com.processing.merchantacquirer.domain.entity.Terminal;
-import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactory;
 import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
-import com.processing.merchantacquirer.domain.model.AuthorizationResponse;
 import com.processing.merchantacquirer.controller.dto.*;
-import com.processing.merchantacquirer.repository.MerchantRepository;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 @Slf4j
 @Service

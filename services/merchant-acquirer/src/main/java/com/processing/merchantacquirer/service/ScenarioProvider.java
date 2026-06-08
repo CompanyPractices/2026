@@ -12,7 +12,6 @@ public class ScenarioProvider {
     private final ScenarioProperties scenarioProperties;
 
     public Scenario getScenario(ScenarioType type){
-        Scenario scenario = scenarioProperties.scenarios().get(type);
-        return scenario;
+        return scenarioProperties.scenarios().get(type);
     }
 }
