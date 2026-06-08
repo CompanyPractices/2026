@@ -114,8 +114,7 @@ public class CardService {
 
     public void deleteCard(String pan) {
         var card = getCardEntity(pan);
-        card.delete();
-        cardRepository.save(card);
+        cardRepository.delete(card);
     }
 
     public long countCards() {

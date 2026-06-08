@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
@@ -22,6 +23,7 @@ import java.util.UUID;
     @Index(name = "idx_cards_created_at", columnList = "created_at")
 })
 @NoArgsConstructor
+@SQLDelete(sql = "UPDATE users SET status = 'DELETED' WHERE id = ?")
 @SQLRestriction("status <> 'DELETED'")
 public class CardEntity {
 
@@ -81,6 +83,7 @@ public class CardEntity {
         this.bin = bin;
         this.cardholderName = cardholderName;
         this.currencyCode = currencyCode;
+        this.status = status;
         this.dailyLimit = dailyLimit;
         this.monthlyLimit = monthlyLimit;
         this.availableBalance = initialBalance;
@@ -99,10 +102,6 @@ public class CardEntity {
     public void setExpiryDate(LocalDate expiryDate) {
         this.expiryDate = expiryDate;
         this.strExpiryDate = expiryDate.format(formatter);
-    }
-
-    public void delete() {
-        setStatus(CardStatus.DELETED);
     }
 
     public void reserve(long amount) {
