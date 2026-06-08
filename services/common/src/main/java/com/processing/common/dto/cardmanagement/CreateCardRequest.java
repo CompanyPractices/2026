@@ -6,7 +6,6 @@ import com.processing.common.dto.annotations.ExactSize;
 import com.processing.common.dto.annotations.NotNegative;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 @Schema(description = "Request to create a new card")
@@ -31,17 +30,14 @@ public record CreateCardRequest(
     @Schema(description = "Currency code", example = "643")
     String currencyCode,
 
-    @NotNull
     @NotNegative
     @Schema(description = "Daily limit in kopecks", example = "15000000")
-    Integer dailyLimit,
+    long dailyLimit,
 
-    @NotNull
     @NotNegative
     @Schema(description = "Monthly limit in kopecks", example = "300000000")
-    Integer monthlyLimit,
+    long monthlyLimit,
 
-    @NotNull
     @Schema(description = "Initial balance in kopecks", example = "1000000000")
-    Integer initialBalance
+    long initialBalance
 ) {}

@@ -3,13 +3,20 @@ import { getStatusIcon } from '../utils/statusIcon.ts';
 import {Transaction} from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
+import useTransactions from "../hooks/useTransactions.ts"
 
-type TransactionTableProps = {
-    transactions: Transaction[]
-}
-
-export function TransactionTable({ transactions } : TransactionTableProps ){
+export function TransactionTable(){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+    const {transactions, error, loading} = useTransactions();
+    if (error){
+        return <div>Ошибка загрузки транзакций: {error}</div>
+    }
+    if (loading){
+        return <div>Загрузка транзакций...</div>
+    }
+    if (!transactions){
+        return <div>Транзакций не найдено</div>
+    }
 
     return (
         <div className="font-mono w-full">
