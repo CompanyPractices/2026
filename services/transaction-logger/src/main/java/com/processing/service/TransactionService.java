@@ -12,6 +12,7 @@ import com.processing.mapper.TransactionMapper;
 import com.processing.model.Transaction;
 import com.processing.model.Transaction_;
 import com.processing.repository.TransactionRepository;
+import com.processing.specification.OffsetBasedPageRequest;
 import com.processing.specification.TransactionFilter;
 import com.processing.specification.TransactionSpecification;
 import com.processing.websocket.WebSocketManager;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -47,6 +49,9 @@ public class TransactionService {
         try {
             savedTransaction = transactionRepository.saveAndFlush(transactionMapper.toEntity(request));
         } catch (DataIntegrityViolationException exception) {
+            log.warn("Data integrity violation while storing transaction: id={}",
+                    request.id(),
+                    exception);
             return transactionRepository.findById(request.id())
                     .map(transaction -> existingTransactionResult(transaction, request))
                     .orElseThrow(() -> exception);
@@ -64,7 +69,11 @@ public class TransactionService {
 
     private TransactionStoreResult existingTransactionResult(Transaction transaction, TransactionRequest request) {
         if (!transactionMapper.matches(transaction, request)) {
-            throw new TransactionConflictException(request.id());
+            TransactionConflictException exception = new TransactionConflictException(request.id());
+            log.warn("Transaction conflict: existing transaction does not match request, id={}",
+                    request.id(),
+                    exception);
+            throw exception;
         }
 
         TransactionResponse response = transactionMapper.toResponse(transaction);
@@ -72,11 +81,15 @@ public class TransactionService {
     }
 
     public TransactionSearchResponse search(TransactionFilter filter) {
-        Pageable pageable = PageRequest.of(filter.getOffset() / filter.getLimit(), filter.getLimit());
+        Pageable pageable = new OffsetBasedPageRequest(filter.getOffset(), filter.getLimit());
         Page<Transaction> page = transactionRepository.findAll(TransactionSpecification.filter(filter), pageable);
-        return new TransactionSearchResponse(page.getTotalElements(), page.getContent());
+        List<TransactionResponse> responses = page.getContent().stream()
+                .map(transactionMapper::toResponse)
+                .toList();
+        return new TransactionSearchResponse(page.getTotalElements(), responses);
     }
 
+    @Transactional(readOnly = true)
     public DashboardStatsResponse getStats() {
         long total = transactionRepository.count();
         long approved = transactionRepository.countByStatus(TransactionStatus.APPROVED);
@@ -96,8 +109,10 @@ public class TransactionService {
         );
     }
 
-    public List<Transaction> getRecent(int limit) {
+    public List<TransactionResponse> getRecent(int limit) {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, Transaction_.CREATED_AT));
-        return transactionRepository.findAll(pageable).getContent();
+        return transactionRepository.findAll(pageable).getContent().stream()
+                .map(transactionMapper::toResponse)
+                .toList();
     }
 }
