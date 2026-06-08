@@ -1,7 +1,7 @@
 package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
-import com.processing.cardmanagement.models.*;
+import com.processing.cardmanagement.models.CardEntity;
 import com.processing.cardmanagement.options.CardServiceOptions;
 import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.common.dto.cardmanagement.*;
@@ -141,6 +141,7 @@ public class CardService {
             entity.getCardholderName(),
             entity.getStrExpiryDate(),
             entity.getStatus().name(),
+            entity.getCurrencyCode(),
             entity.getDailyLimit(),
             entity.getMonthlyLimit(),
             entity.getAvailableBalance(),
