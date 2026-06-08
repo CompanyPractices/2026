@@ -53,12 +53,12 @@ class AuthServiceTest {
                 "1234567890123456",
                 "123456",
                 "John Golt",
-                LocalDate.now().plusMonths(6).toString(),
+                LocalDate.now().plusMonths(6),
                 CardStatus.ACTIVE,
                 "810",
-                100000,
-                500000,
-                10000,
+                100000L,
+                500000L,
+                10000L,
                 "I001",
                 LocalDate.now());
     }
@@ -99,7 +99,7 @@ class AuthServiceTest {
     void authorizeDeclineWhenCardExpired() throws Exception {
         CardResponse expiredCard = new CardResponse(
                 activeCardResponse.getId(),
-                activeCardResponse.getPun(),
+                activeCardResponse.getPan(),
                 activeCardResponse.getBin(),
                 activeCardResponse.getCardholderName(),
                 activeCardResponse.getExpiryDate(),
@@ -124,7 +124,7 @@ class AuthServiceTest {
     void authorizeDeclineWhenCardBlocked() throws Exception {
         CardResponse blockedCard = new CardResponse(
                 activeCardResponse.getId(),
-                activeCardResponse.getPun(),
+                activeCardResponse.getPan(),
                 activeCardResponse.getBin(),
                 activeCardResponse.getCardholderName(),
                 activeCardResponse.getExpiryDate(),
@@ -148,7 +148,7 @@ class AuthServiceTest {
     void authorizeDeclineWhenCardInactive() throws Exception {
         CardResponse inactiveCard = new CardResponse(
                 activeCardResponse.getId(),
-                activeCardResponse.getPun(),
+                activeCardResponse.getPan(),
                 activeCardResponse.getBin(),
                 activeCardResponse.getCardholderName(),
                 activeCardResponse.getExpiryDate(),
@@ -172,7 +172,7 @@ class AuthServiceTest {
     void authorizeDeclineWhenCardStatusUnknown() throws Exception {
         CardResponse unknownStatusCard = new CardResponse(
                 activeCardResponse.getId(),
-                activeCardResponse.getPun(),
+                activeCardResponse.getPan(),
                 activeCardResponse.getBin(),
                 activeCardResponse.getCardholderName(),
                 activeCardResponse.getExpiryDate(),
@@ -193,10 +193,10 @@ class AuthServiceTest {
     void authorize_shouldDecline_whenExpiryDateInPastEvenIfCardActive() throws Exception {
         CardResponse activeButExpiredCard = new CardResponse(
                 activeCardResponse.getId(),
-                activeCardResponse.getPun(),
+                activeCardResponse.getPan(),
                 activeCardResponse.getBin(),
                 activeCardResponse.getCardholderName(),
-                LocalDate.now().minusDays(1).toString(),
+                LocalDate.now().minusDays(1),
                 CardStatus.ACTIVE, activeCardResponse.getCurrencyCode(),
                 activeCardResponse.getDailyLimit(),
                 activeCardResponse.getMonthlyLimit(),
@@ -217,14 +217,14 @@ class AuthServiceTest {
     void authorizeDeclineWhenInsufficientFunds() throws Exception {
         CardResponse lowBalanceCard = new CardResponse(
                 activeCardResponse.getId(),
-                activeCardResponse.getPun(),
+                activeCardResponse.getPan(),
                 activeCardResponse.getBin(),
                 activeCardResponse.getCardholderName(),
                 activeCardResponse.getExpiryDate(),
                 CardStatus.ACTIVE, activeCardResponse.getCurrencyCode(),
                 activeCardResponse.getDailyLimit(),
                 activeCardResponse.getMonthlyLimit(),
-                1000,
+                1000L,
                 activeCardResponse.getIssuerId(),
                 activeCardResponse.getCreatedAt());
         AuthService spyService = spy(authService);
