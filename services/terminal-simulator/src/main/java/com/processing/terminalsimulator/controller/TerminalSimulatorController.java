@@ -2,6 +2,7 @@ package com.processing.terminalsimulator.controller;
 
 import com.processing.terminalsimulator.dto.RunRequest;
 import com.processing.terminalsimulator.dto.RunResponse;
+import com.processing.terminalsimulator.model.Scenario;
 import com.processing.terminalsimulator.service.TerminalSimulatorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class TerminalSimulatorController {
 
     @PostMapping("/run")
     public ResponseEntity<RunResponse> run(@Valid @RequestBody RunRequest request) {
-        RunResponse response = simulatorService.run(request.count(), request.scenario());
+        RunResponse response = simulatorService.run(request.count(), Scenario.valueOf(request.scenario()));
         return ResponseEntity.ok(response);
     }
 }
