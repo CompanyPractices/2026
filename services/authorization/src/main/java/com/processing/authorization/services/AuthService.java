@@ -176,12 +176,13 @@ public class AuthService {
                 .collect(Collectors.joining());
     }
 
-    private String maskDataForLog(String data) {
-        var fullLength = data.length();
-        var partialLength = fullLength / 4 * 3;
-        var restLength = fullLength - partialLength;
-        String mask = "*".repeat(partialLength);
-        String partialData = data.substring(fullLength - restLength);
-        return mask + partialData;
+    public String maskDataForLog(String data) {
+        if (data.length() < 4) {
+            return "*".repeat(data.length());
+        }
+
+        var visibleLength = data.length() / 4;
+        var maskLength = data.length() - visibleLength;
+        return "*".repeat(maskLength) + data.substring(maskLength);
     }
 }

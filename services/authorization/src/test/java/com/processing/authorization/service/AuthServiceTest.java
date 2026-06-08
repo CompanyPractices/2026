@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -274,5 +276,74 @@ class AuthServiceTest {
 
         assertThat(code).hasSize(6);
         assertThat(code).matches("[0-9A-Z]{6}");
+    }
+
+    @Test
+    void maskDataForLog_ShouldMaskFirstThreeQuartersOfString() {
+        String input = "12345678";
+        String result = authService.maskDataForLog(input);
+
+        assertEquals("******78", result);
+        assertEquals(8, result.length());
+    }
+
+    @Test
+    void maskDataForLog_ShouldHandleShortStringLengthLessThan4() {
+        String input = "123";
+        String result = authService.maskDataForLog(input);
+
+        assertEquals("***", result);
+        assertEquals(3, result.length());
+    }
+
+    @Test
+    void maskDataForLog_ShouldHandleShortStringLen4() {
+        String input = "1234";
+        String result = authService.maskDataForLog(input);
+
+        assertEquals("***4", result);
+        assertEquals(4, result.length());
+    }
+
+    @Test
+    void maskDataForLog_ShouldHandleSingleCharacter() {
+        String input = "a";
+        String result = authService.maskDataForLog(input);
+
+        assertEquals("*", result);
+        assertEquals(1, result.length());
+    }
+
+    @Test
+    void maskDataForLog_ShouldHandleEmptyString() {
+        String input = "";
+        String result = authService.maskDataForLog(input);
+
+        assertEquals("", result);
+        assertEquals(0, result.length());
+
+    }
+
+    @Test
+    void maskDataForLog_ShouldPreserveOriginalLength() {
+        String input1 = "12345678";
+        String result1 = authService.maskDataForLog(input1);
+        String input2 = "";
+        String result2 = authService.maskDataForLog(input2);
+        String input3 = "1234";
+        String result3 = authService.maskDataForLog(input3);
+
+        assertEquals(input1.length(), result1.length());
+        assertEquals(input2.length(), result2.length());
+        assertEquals(input3.length(), result3.length());
+    }
+
+    @Test
+    void maskDataForLog_WithNullInput_ShouldThrowException() {
+        String input = null;
+
+        assertThrows(NullPointerException.class, () -> {
+            authService.maskDataForLog(input);
+        });
     }
 }
