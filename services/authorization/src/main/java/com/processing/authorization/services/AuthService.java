@@ -63,7 +63,7 @@ public class AuthService {
             };
         }
 
-        if (LocalDate.parse(cardResponse.getExpiryDate()).isBefore(LocalDate.now())) {
+        if (cardResponse.getExpiryDate().isBefore(LocalDate.now())) {
             return AuthorizationResponse.declined(request, "CARD_EXPIRED", "54");
         }
 

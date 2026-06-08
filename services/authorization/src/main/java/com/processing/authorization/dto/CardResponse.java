@@ -13,23 +13,23 @@ import java.util.UUID;
 public class CardResponse {
     private UUID id;
 
-    private String pun;
+    private String pan;
 
     private String bin;
 
     private String cardholderName;
 
-    private String expiryDate;
+    private LocalDate expiryDate;
 
     private CardStatus status;
 
     private String currencyCode;
 
-    private Integer dailyLimit;
+    private Long dailyLimit;
 
-    private Integer monthlyLimit;
+    private Long monthlyLimit;
 
-    private Integer availableBalance;
+    private Long availableBalance;
 
     private String issuerId;
 
