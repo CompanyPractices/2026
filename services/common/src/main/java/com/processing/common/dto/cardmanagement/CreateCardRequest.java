@@ -6,7 +6,6 @@ import com.processing.common.dto.annotations.ExactSize;
 import com.processing.common.dto.annotations.NotNegative;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 @Schema(description = "Request to create a new card")
