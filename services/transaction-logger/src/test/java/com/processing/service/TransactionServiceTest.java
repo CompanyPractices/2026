@@ -1,9 +1,9 @@
 package com.processing.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.dto.TransactionRequest;
-import com.processing.dto.TransactionStoredResponse;
-import com.processing.enums.TransactionStatus;
+import com.processing.common.dto.transactionlogger.TransactionRequest;
+import com.processing.common.dto.transactionlogger.TransactionStoredResponse;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.exception.TransactionConflictException;
 import com.processing.mapper.TransactionMapper;
 import com.processing.model.Transaction;

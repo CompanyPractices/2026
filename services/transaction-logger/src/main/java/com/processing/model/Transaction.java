@@ -1,6 +1,6 @@
 package com.processing.model;
 
-import com.processing.enums.TransactionStatus;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

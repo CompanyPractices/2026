@@ -1,8 +1,8 @@
 package com.processing.mapper;
 
-import com.processing.dto.TransactionRequest;
-import com.processing.dto.TransactionResponse;
-import com.processing.dto.TransactionStoredResponse;
+import com.processing.common.dto.transactionlogger.TransactionRequest;
+import com.processing.common.dto.transactionlogger.TransactionResponse;
+import com.processing.common.dto.transactionlogger.TransactionStoredResponse;
 import com.processing.model.Transaction;
 import org.springframework.stereotype.Component;
 

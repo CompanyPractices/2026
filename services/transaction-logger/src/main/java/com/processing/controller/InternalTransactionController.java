@@ -1,9 +1,9 @@
 package com.processing.controller;
 
 import com.processing.common.dto.ErrorResponse;
-import com.processing.dto.TransactionRequest;
-import com.processing.dto.TransactionResponse;
-import com.processing.dto.TransactionStoredResponse;
+import com.processing.common.dto.transactionlogger.TransactionRequest;
+import com.processing.common.dto.transactionlogger.TransactionResponse;
+import com.processing.common.dto.transactionlogger.TransactionStoredResponse;
 import com.processing.service.TransactionStoreResult;
 import com.processing.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;

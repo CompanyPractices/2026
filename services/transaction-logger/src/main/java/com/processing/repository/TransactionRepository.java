@@ -1,6 +1,6 @@
 package com.processing.repository;
 
-import com.processing.enums.TransactionStatus;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.model.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

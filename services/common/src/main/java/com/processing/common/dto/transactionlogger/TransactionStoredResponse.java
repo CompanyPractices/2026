@@ -1,4 +1,4 @@
-package com.processing.dto;
+package com.processing.common.dto.transactionlogger;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

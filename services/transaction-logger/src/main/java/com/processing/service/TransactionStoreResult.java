@@ -1,7 +1,7 @@
 package com.processing.service;
 
-import com.processing.dto.TransactionResponse;
-import com.processing.dto.TransactionStoredResponse;
+import com.processing.common.dto.transactionlogger.TransactionResponse;
+import com.processing.common.dto.transactionlogger.TransactionStoredResponse;
 
 public record TransactionStoreResult(
         TransactionResponse existingTransaction,

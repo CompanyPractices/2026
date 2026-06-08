@@ -1,7 +1,7 @@
 package com.processing.controller;
 
 import com.processing.dto.DashboardStatsResponse;
-import com.processing.dto.TransactionResponse;
+import com.processing.common.dto.transactionlogger.TransactionResponse;
 import com.processing.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

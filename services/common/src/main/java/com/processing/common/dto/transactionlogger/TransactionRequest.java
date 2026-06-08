@@ -1,6 +1,5 @@
-package com.processing.dto;
+package com.processing.common.dto.transactionlogger;
 
-import com.processing.enums.TransactionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

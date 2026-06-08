@@ -1,7 +1,7 @@
 package com.processing.exception;
 
 import com.processing.common.dto.ErrorResponse;
-import com.processing.dto.TransactionRequest;
+import com.processing.common.dto.transactionlogger.TransactionRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
