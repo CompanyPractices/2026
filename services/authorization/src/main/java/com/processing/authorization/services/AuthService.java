@@ -40,10 +40,11 @@ public class AuthService {
         try {
             cardResponse = getCard(request.getPan());
         } catch (Exception e) {
-            log.debug("getting card from card managment service failed for pan: {}", maskDataForLog(request.getPan()), e);
+            log.debug("getting card from card managment service failed for pan: {}", maskDataForLog(request.getPan()),
+                    e);
             if (e.getCause() instanceof CardNotFoundException) {
                 return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
-            } else if (e.getCause() instanceof  ServiceUnavaliableException) {
+            } else if (e.getCause() instanceof ServiceUnavaliableException) {
                 return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
             }
 
@@ -177,7 +178,7 @@ public class AuthService {
 
     private String maskDataForLog(String data) {
         var fullLength = data.length();
-        var partialLength = fullLength/4*3;
+        var partialLength = fullLength / 4 * 3;
         var restLength = fullLength - partialLength;
         String mask = "*".repeat(partialLength);
         String partialData = data.substring(fullLength - restLength);
