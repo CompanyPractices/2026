@@ -1,11 +1,11 @@
 package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.options.CardGeneratorOptions;
+import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import com.processing.common.dto.cardmanagement.GeneratedCardDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import com.processing.common.dto.cardmanagement.CardModel;
 
 import java.util.ArrayList;
 import java.util.List;
