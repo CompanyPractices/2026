@@ -2,7 +2,7 @@ package com.processing.common.dto.cardmanagement;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Schema(description = "Card data transfer object")
@@ -28,5 +28,5 @@ public record CardModel(
     @Schema(description = "Issuer ID", example = "ZZZZZZ")
     String issuerId,
     @Schema(description = "Card creation date")
-    LocalDate createdAt
+    LocalDateTime createdAt
 ) {}
