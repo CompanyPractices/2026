@@ -31,17 +31,14 @@ public record CreateCardRequest(
     @Schema(description = "Currency code", example = "643")
     String currencyCode,
 
-    @NotNull
     @NotNegative
     @Schema(description = "Daily limit in kopecks", example = "15000000")
-    Integer dailyLimit,
+    long dailyLimit,
 
-    @NotNull
     @NotNegative
     @Schema(description = "Monthly limit in kopecks", example = "300000000")
-    Integer monthlyLimit,
+    long monthlyLimit,
 
-    @NotNull
     @Schema(description = "Initial balance in kopecks", example = "1000000000")
-    Integer initialBalance
+    long initialBalance
 ) {}

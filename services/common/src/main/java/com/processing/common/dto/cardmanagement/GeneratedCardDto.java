@@ -11,11 +11,11 @@ public record GeneratedCardDto(
     @Schema(description = "Currency code", example = "643")
     String currencyCode,
     @Schema(description = "Daily limit in kopecks", example = "15000000")
-    int dailyLimit,
+    long dailyLimit,
     @Schema(description = "Monthly limit in kopecks", example = "300000000")
-    int monthlyLimit,
+    long monthlyLimit,
     @Schema(description = "Available balance in kopecks", example = "1000000000")
-    int balance,
+    long balance,
     @Schema(description = "Card status", example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "BLOCKED", "EXPIRED", "DELETED"})
     CardStatus status
 ) {}

@@ -13,14 +13,14 @@ public record PatchCardRequest(
     @Nullable
     @NotNegative
     @Schema(description = "Daily limit in kopecks", example = "15000000")
-    Integer dailyLimit,
+    Long dailyLimit,
 
     @Nullable
     @NotNegative
     @Schema(description = "Monthly limit in kopecks", example = "300000000")
-    Integer monthlyLimit,
+    Long monthlyLimit,
 
     @Nullable
     @Schema(description = "Available balance in kopecks", example = "1000000000")
-    Integer availableBalance
+    Long availableBalance
 ) {}

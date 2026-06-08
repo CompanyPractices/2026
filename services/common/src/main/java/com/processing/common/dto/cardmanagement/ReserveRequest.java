@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Positive;
 @Schema(description = "Request to reserve funds on a card")
 public record ReserveRequest(
 
-    @NotNull
     @Positive
     @Schema(description = "Amount to reserve in kopecks", example = "150000")
     long amount,
