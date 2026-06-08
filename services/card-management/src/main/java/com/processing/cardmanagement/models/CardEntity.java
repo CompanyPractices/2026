@@ -11,6 +11,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
@@ -63,7 +64,7 @@ public class CardEntity {
     @Column(length = 10, nullable = false)
     private String issuerId;
 
-    private LocalDate createdAt = LocalDate.now();
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @Transient
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMyy");
