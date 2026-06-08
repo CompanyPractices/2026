@@ -5,12 +5,14 @@ import com.processing.authorization.dto.AuthorizationResponse;
 import com.processing.authorization.dto.CardResponse;
 import com.processing.authorization.enums.AuthorizationRequestStatus;
 import com.processing.authorization.enums.CardStatus;
+import com.processing.authorization.exceptions.ServiceUnavaliableException;
 import com.processing.authorization.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -85,7 +87,11 @@ class AuthServiceTest {
     @Test
     void authorizeReturnServiceUnavailableWhenGetCardThrowsException() throws Exception {
         AuthService spyService = spy(authService);
-        doThrow(new RuntimeException("Card manager is unavailable")).when(spyService).getCard(anyString());
+        ServiceUnavaliableException cause = new ServiceUnavaliableException("Card Management service unavaliable");
+        WebClientResponseException exception = new WebClientResponseException(
+                500, "Internal service error", null, null, null);
+        exception.initCause(cause);
+        doThrow(exception).when(spyService).getCard(anyString());
 
         AuthorizationResponse response = spyService.authorize(correctRequest);
 
