@@ -47,7 +47,6 @@ public class AuthService {
                 return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
             }
 
-            System.err.println(e);
             return AuthorizationResponse.declined(request, "UNKNOWN_REASON", "05");
         }
 
@@ -80,7 +79,6 @@ public class AuthService {
         try {
             reserve(request.getAmount(), rrn, request.getPan());
         } catch (Exception e) {
-            System.err.println(e);
             log.debug("reserving failed for card {}", cardResponse.getId(), e);
             return AuthorizationResponse.declined(request, "RESERVATION_FAILED", "96");
         }
@@ -93,7 +91,6 @@ public class AuthService {
         String fullUrl = cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
         String getCardhUrl = fullUrl + "/api/cards";
         String url = getCardhUrl + "/" + pan;
-        System.out.println("pan: " + pan);
 
         log.debug("Getting card info for pan {}", pan);
 
