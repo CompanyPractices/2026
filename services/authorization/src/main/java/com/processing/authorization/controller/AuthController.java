@@ -15,6 +15,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,9 +51,13 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = AuthorizationResponse.class)))
     })
     public ResponseEntity<AuthorizationResponse> authorize(@Valid @RequestBody AuthorizationRequest request) {
+        LocalDateTime requestInputTime = LocalDateTime.now();
         AuthorizationResponse response = authService.authorize(request);
-        boolean isApproved = response.getStatus().equals(AuthorizationRequestStatus.APPROVED);
 
+        long processingTimeMs = Duration.between(requestInputTime, LocalDateTime.now()).toMillis();
+        response.setProcessingTimeMs(processingTimeMs);
+
+        boolean isApproved = response.getStatus().equals(AuthorizationRequestStatus.APPROVED);
         HttpStatus httpStatus;
         if (isApproved) {
             httpStatus = HttpStatus.OK;
