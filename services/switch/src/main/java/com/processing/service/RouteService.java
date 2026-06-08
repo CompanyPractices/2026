@@ -7,6 +7,7 @@ import com.processing.model.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -46,7 +47,9 @@ public class RouteService {
         Transaction transaction = buildTransaction(routedRequest, response);
         boolean logged = loggerClient.log(transaction);
         if (!logged && TransactionStatus.APPROVED.name().equals(response.status())) {
-            LOG.error("Logger unavailable for TX {} — APPROVED without audit trail", request.stan());
+            LOG.error("Logger unavailable for TX {} — rolling back reservation", request.stan());
+            authorizationClient.reverse(routedRequest, response.rrn());
+            return AuthorizationResponse.systemError(request.stan());
         }
 
         long elapsed = System.currentTimeMillis() - startMs;

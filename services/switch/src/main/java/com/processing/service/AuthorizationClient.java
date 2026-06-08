@@ -22,34 +22,47 @@ public class AuthorizationClient {
     }
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
-        if (switchProperties.authorizationStubEnabled()) {
-            return stubApprove(request);
+        int maxAttempts = switchProperties.retry().maxAttempts();
+        Exception lastException = null;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                AuthorizationResponse response = restClient.post()
+                        .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
+                        .body(request)
+                        .retrieve()
+                        .body(AuthorizationResponse.class);
+                if (response != null) {
+                    return response;
+                }
+                throw new IllegalStateException("Empty response from Authorization");
+            } catch (Exception e) {
+                lastException = e;
+                LOG.warn("Authorization attempt {}/{} failed for STAN={}: {}",
+                        attempt, maxAttempts, request.stan(), e.getMessage());
+            }
         }
 
-        // POST /api/internal/authorize
+        LOG.error("Authorization service unavailable for STAN={} after {} attempts: {}",
+                request.stan(), maxAttempts, lastException != null ? lastException.getMessage() : "unknown");
+        return AuthorizationResponse.authUnavailable(request.stan());
+    }
+
+    public void reverse(AuthorizationRequest original, String rrn) {
+        AuthorizationRequest reversal = original.forReversal(rrn);
         try {
-            AuthorizationResponse response = restClient.post()
+            restClient.post()
                     .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
-                    .body(request)
+                    .body(reversal)
                     .retrieve()
-                    .body(AuthorizationResponse.class);
-            if (response != null) {
-                return response;
-            }
-            throw new IllegalStateException("Empty response from Authorization");
+                    .toBodilessEntity();
+            LOG.info("Reversal sent for STAN={} rrn={}", original.stan(), rrn);
         } catch (Exception e) {
-            LOG.error("Authorization service unavailable for STAN={}: {}", request.stan(), e.getMessage());
-            // retry 3 попытки, затем DECLINED responseCode=05
-            return AuthorizationResponse.authUnavailable(request.stan());
+            LOG.error("Reversal failed for STAN={} rrn={}: {}", original.stan(), rrn, e.getMessage());
         }
     }
 
     public String checkHealth() {
-        if (switchProperties.authorizationStubEnabled()) {
-            return "ok";
-        }
-
-        // GET /health
         try {
             restClient.get()
                     .uri(switchProperties.authorizationUrl() + "/health")
@@ -60,10 +73,5 @@ public class AuthorizationClient {
             LOG.warn("Authorization health check failed: {}", e.getMessage());
             return "down";
         }
-    }
-
-    private AuthorizationResponse stubApprove(AuthorizationRequest request) {
-        LOG.debug("Authorization stub: STAN={} issuerId={}", request.stan(), request.issuerId());
-        return AuthorizationResponse.stubApproved(request.stan());
     }
 }
