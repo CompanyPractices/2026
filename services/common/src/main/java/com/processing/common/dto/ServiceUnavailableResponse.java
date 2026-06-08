@@ -1,4 +1,4 @@
-package com.processing.gateway.dto;
+package com.processing.common.dto;
 
 public record ServiceUnavailableResponse(
         String error,

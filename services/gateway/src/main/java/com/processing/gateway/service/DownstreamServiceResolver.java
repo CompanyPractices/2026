@@ -1,28 +1,69 @@
 package com.processing.gateway.service;
 
+import com.processing.gateway.properties.GatewayRouteProperties;
+import org.springframework.http.server.PathContainer;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPatternParser;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
 public class DownstreamServiceResolver {
+
+    private static final String SERVICE_NAME_METADATA_KEY = "serviceName";
+    private static final String PATH_PREDICATE_PREFIX = "Path=";
+
+    private final List<RouteMapping> mappings;
+
+    public DownstreamServiceResolver(GatewayRouteProperties properties) {
+        PathPatternParser parser = new PathPatternParser();
+
+        this.mappings = properties.getRoutes().stream()
+                .flatMap(route -> toRouteMapping(route, parser).stream())
+                .toList();
+    }
+
     public Optional<String> resolve(String path) {
-        if ("/api/transactions".equals(path)) {
-            return Optional.of("switch");
-        }
-        if (path.startsWith("/api/cards/") || "/api/cards".equals(path)) {
-            return Optional.of("cardManagement");
-        }
-        if ("/api/transactions/search".equals(path) || path.startsWith("/api/dashboard/")) {
-            return Optional.of("logger");
-        }
-        if (path.startsWith("/api/simulator/terminal/")) {
-            return Optional.of("terminalSimulator");
-        }
-        if (path.startsWith("/api/simulator/merchant/")) {
-            return Optional.of("merchantSimulator");
+        PathContainer parsedPath = PathContainer.parsePath(path);
+
+        return mappings.stream()
+                .filter(mapping -> mapping.patterns().stream()
+                        .anyMatch(pattern -> pattern.matches(parsedPath)))
+                .map(RouteMapping::serviceName)
+                .findFirst();
+    }
+
+    private Optional<RouteMapping> toRouteMapping(GatewayRouteProperties.RouteDefinition route,
+                                                  PathPatternParser parser) {
+        String serviceName = route.getMetadata().get(SERVICE_NAME_METADATA_KEY);
+        if (serviceName == null || serviceName.isBlank()) {
+            return Optional.empty();
         }
 
-        return Optional.empty();
+        List<PathPattern> patterns = route.getPredicates().stream()
+                .filter(predicate -> predicate.startsWith(PATH_PREDICATE_PREFIX))
+                .flatMap(predicate -> parsePathPatterns(predicate, parser).stream())
+                .toList();
+
+        if (patterns.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new RouteMapping(serviceName, patterns));
+    }
+
+    private List<PathPattern> parsePathPatterns(String predicate, PathPatternParser parser) {
+        String rawPatterns = predicate.substring(PATH_PREDICATE_PREFIX.length());
+
+        return List.of(rawPatterns.split(",")).stream()
+                .map(String::trim)
+                .filter(pattern -> !pattern.isBlank())
+                .map(parser::parse)
+                .toList();
+    }
+
+    private record RouteMapping(String serviceName, List<PathPattern> patterns) {
     }
 }

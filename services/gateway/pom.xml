@@ -35,6 +35,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>com.processing</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Web (REST API) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

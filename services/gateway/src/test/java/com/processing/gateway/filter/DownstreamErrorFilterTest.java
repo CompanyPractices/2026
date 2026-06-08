@@ -1,6 +1,7 @@
 package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.gateway.properties.GatewayRouteProperties;
 import com.processing.gateway.service.DownstreamServiceResolver;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.client.ResourceAccessException;
 
 import java.net.ConnectException;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,7 +20,7 @@ class DownstreamErrorFilterTest {
 
     private final DownstreamErrorFilter filter = new DownstreamErrorFilter(
             new ObjectMapper(),
-            new DownstreamServiceResolver()
+            new DownstreamServiceResolver(routeProperties())
     );
 
     @Test
@@ -81,5 +84,25 @@ class DownstreamErrorFilterTest {
         }))
                 .isInstanceOf(ResourceAccessException.class)
                 .hasMessage("Connection refused");
+    }
+
+    private GatewayRouteProperties routeProperties() {
+        GatewayRouteProperties properties = new GatewayRouteProperties();
+        properties.setRoutes(List.of(
+                route("switch", "Path=/api/transactions"),
+                route("cardManagement", "Path=/api/cards/**"),
+                route("logger", "Path=/api/transactions/search"),
+                route("logger", "Path=/api/dashboard/**"),
+                route("terminalSimulator", "Path=/api/simulator/terminal/**"),
+                route("merchantSimulator", "Path=/api/simulator/merchant/**")
+        ));
+        return properties;
+    }
+
+    private GatewayRouteProperties.RouteDefinition route(String serviceName, String pathPredicate) {
+        GatewayRouteProperties.RouteDefinition route = new GatewayRouteProperties.RouteDefinition();
+        route.setMetadata(Map.of("serviceName", serviceName));
+        route.setPredicates(List.of(pathPredicate));
+        return route;
     }
 }
