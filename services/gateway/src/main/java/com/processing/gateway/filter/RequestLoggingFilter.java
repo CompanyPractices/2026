@@ -24,7 +24,7 @@ import java.util.UUID;
 public class RequestLoggingFilter extends OncePerRequestFilter {
     private final ObjectMapper mapper;
 
-    private final static String ID_HEADER_NAME = "X-Request-Id";
+    private static final String ID_HEADER_NAME = "X-Request-Id";
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -61,8 +61,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                 log.info(mappedLog);
             } catch (JsonProcessingException e) {
                 log.error("Exception occurred while mapping log message", e);
-            }
-            finally {
+            } finally {
                 MDC.remove("requestId");
             }
         }
