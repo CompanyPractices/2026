@@ -1,6 +1,5 @@
 package com.processing.cardmanagement.models;
 
-import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.persistence.*;
