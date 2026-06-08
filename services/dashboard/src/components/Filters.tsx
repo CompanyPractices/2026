@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Filter } from "../types";
+import { Filter, FilterStatus } from "../types";
 
 const IssuersId = ['ISS001', 'ISS002', 'ISS003', 'ISS004', 'ISS005', 'ISS006', 'ISS007', 'ISS008', 'ISS009', 'ISS010']
 const Mcc = ['5411', '5812', '5541', '5912', '5732', '5651', '4111', '4511', '7011', '7832', '5942', '4829', '5999']
@@ -25,7 +25,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
             <select value={filter.status ?? ''}
                     onChange={(e) => setFilter({
                         ...filter,
-                        status: e.target.value || undefined
+                        status: (e.target.value as FilterStatus) || undefined
                     })}
                     id="status">
                 <option value="">Выберите статус</option>
