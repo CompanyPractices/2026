@@ -69,7 +69,7 @@ public final class CardServiceTest {
         ArgumentCaptor.forClass(Card.class);
 
     @Mock
-    private CardRepository cardRepository;
+    private CardJpaRepository cardRepository;
 
     @Mock
     private CardEventNotifier eventNotifier;
