@@ -4,7 +4,7 @@ import { DashboardStats } from "../types/index.ts";
 
 function useStats() {
     const [transactionStats, setTransactionStats] = useState<DashboardStats | null>(null);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         fetchApi<DashboardStats>("/api/dashboard/stats")

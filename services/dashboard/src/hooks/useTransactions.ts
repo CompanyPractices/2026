@@ -27,13 +27,13 @@ function useTransactions() {
             requestParams.append('status', filter.status);
         }
         if (filter.dateFrom){
-            requestParams.append('dateFrom', filter.dateFrom);
+            requestParams.append('dateFrom', filter.dateFrom.slice(0, 10));
         }
         if (filter.dateTo){
             requestParams.append('dateTo', filter.dateTo);
         }
         if (filter.bin){
-            requestParams.append('pan', filter.bin);
+            requestParams.append('issuerId', filter.bin);
         }
         if (filter.mcc){
             requestParams.append('mcc', filter.mcc);
