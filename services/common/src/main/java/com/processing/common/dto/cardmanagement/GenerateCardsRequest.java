@@ -1,5 +1,6 @@
 package com.processing.common.dto.cardmanagement;
 
+import com.processing.common.dto.annotations.Bin;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -14,5 +15,5 @@ public record GenerateCardsRequest(
 
     @NotEmpty
     @Schema(description = "List of BINs to distribute cards")
-    List<String> bins
+    List<@Bin String> bins
 ) {}
