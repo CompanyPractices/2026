@@ -19,34 +19,40 @@ export function TransactionTable(){
 
             <div className="rounded-3xl overflow-hidden border-2 border-emerald-600 min-w-[50%] max-w-[75%] shadow-lg mb-5">
                 <table className="table-auto w-full">
-                    <tr className=" border-b-2 border-emerald-600 text-center text-semibold">
-                        <th className="px-10 py-5"> Время </th>
-                        <th className="px-10 py-5"> PAN </th>
-                        <th className="px-10 py-5"> Сумма </th>
-                        <th className="px-10 py-5"> Мерчант </th>
-                        <th className="px-10 py-5"> Статус </th>
-                    </tr>
-                    {transactions.map((transaction) => {
-                        const statusIconData = getStatusIcon(transaction.status);
+                    <thead>
+                        <tr className=" border-b-2 border-emerald-600 text-center text-semibold">
+                            <th className="px-10 py-5"> Время </th>
+                            <th className="px-10 py-5"> PAN </th>
+                            <th className="px-10 py-5"> Сумма </th>
+                            <th className="px-10 py-5"> Мерчант </th>
+                            <th className="px-10 py-5"> Статус </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {transactions.map((transaction) => {
+                            const statusIconData = getStatusIcon(transaction.status);
 
-                        return(
-                            <tr key={transaction.id}
-                                className=" text-center">
-                                <td className="px-10 py-2"> {formatTime(transaction.createdAt)} </td>
-                                <td className="px-10 py-2"> {hidePan(transaction.pan)} </td>
-                                <td className="px-10 py-2 text-right"> {convertPenniesToRubles(transaction.amount)} </td>
-                                <td className="px-10 py-2 text-left"> {transaction.merchantId} </td>
-                                <td className="px-10 py-2">
-                                    <div className="flex justify-center" >
-                                        <statusIconData.icon
-                                            className={statusIconData.color}
-                                            size={statusIconData.size}
-                                            aria-hidden="true"
-                                        />
-                                        <span className="sr-only" >{statusIconData.label}</span>
-                                    </div>
-                                </td>
-                            </tr>)})}
+                            return (
+                                <tr key={transaction.id}
+                                    className=" text-center">
+                                    <td className="px-10 py-2"> {formatTime(transaction.createdAt)} </td>
+                                    <td className="px-10 py-2"> {hidePan(transaction.pan)} </td>
+                                    <td className="px-10 py-2 text-right"> {convertPenniesToRubles(transaction.amount)} </td>
+                                    <td className="px-10 py-2 text-left"> {transaction.merchantId} </td>
+                                    <td className="px-10 py-2">
+                                        <div className="flex justify-center">
+                                            <statusIconData.icon
+                                                className={statusIconData.color}
+                                                size={statusIconData.size}
+                                                aria-hidden="true"
+                                            />
+                                            <span className="sr-only">{statusIconData.label}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
                 </table>
             </div>
        </div>
