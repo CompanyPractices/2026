@@ -10,5 +10,18 @@ public record SwitchProperties(
         Map<String, String> binRouting,
         String authorizationUrl,
         String loggerUrl,
-        boolean authorizationStubEnabled
-) {}
+        RetryProperties retry
+) {
+    public record RetryProperties(
+            int maxAttempts,
+            int loggerReadTimeoutMs
+    ) {
+        public static RetryProperties defaults() {
+            return new RetryProperties(3, 2000);
+        }
+    }
+
+    public RetryProperties retryOrDefaults() {
+        return retry != null ? retry : RetryProperties.defaults();
+    }
+}

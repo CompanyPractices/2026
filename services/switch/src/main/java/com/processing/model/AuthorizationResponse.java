@@ -22,8 +22,9 @@ public record AuthorizationResponse(
                 "Authorization service unavailable", 0);
     }
 
-    public static AuthorizationResponse stubApproved(String stan) {
+    public static AuthorizationResponse systemError(String stan) {
         return new AuthorizationResponse(
-                "0110", stan, "012345678901", "TEST01", "00", "APPROVED", null, 42);
+                "0110", stan, null, null, "96", "DECLINED",
+                "System error (logger unavailable)", 0);
     }
 }

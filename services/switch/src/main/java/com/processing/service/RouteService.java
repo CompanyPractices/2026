@@ -45,20 +45,25 @@ public class RouteService {
 
         Transaction transaction = buildTransaction(routedRequest, response);
         boolean logged = loggerClient.log(transaction);
+
+        AuthorizationResponse clientResponse = response;
         if (!logged && TransactionStatus.APPROVED.name().equals(response.status())) {
-            log.error("Logger unavailable for TX {} — APPROVED without audit trail", request.stan());
+            log.error("Logger unavailable for TX {} — rolling back reservation", request.stan());
+            authorizationClient.reverse(routedRequest);
+            clientResponse = AuthorizationResponse.systemError(request.stan());
         }
 
         long elapsed = System.currentTimeMillis() - startMs;
         log.info("TX {} | BIN={} → {} | Status={} | {}ms",
-                request.stan(), bin, issuerId, response.status(), elapsed);
+                request.stan(), bin, issuerId, clientResponse.status(), elapsed);
 
-        return response;
+        return clientResponse;
     }
 
     private Transaction buildTransaction(
             AuthorizationRequest request,
             AuthorizationResponse response) {
+        long processingTimeMs = response.processingTimeMs() != null ? response.processingTimeMs() : 0L;
         return new Transaction(
                 UUID.randomUUID(),
                 request.mti(),
@@ -77,7 +82,7 @@ public class RouteService {
                 toTransactionStatus(response.status()),
                 response.declineReason(),
                 response.authCode(),
-                response.processingTimeMs() != null ? response.processingTimeMs() : 0,
+                processingTimeMs,
                 toInstant(request.transmissionDateTime()),
                 Instant.now()
         );
