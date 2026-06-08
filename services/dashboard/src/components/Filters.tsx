@@ -18,6 +18,11 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
         onSearch(filter)
     }
 
+    function reset(){
+        setFilter({})
+        onSearch({})
+    }
+
     return (
         <form onSubmit={filterSubmit}>
             <div>Фильтр по таблице</div>
@@ -78,6 +83,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                    type="date"/>
 
             <button type="submit">Найти</button>
+            <button type="button" onClick={reset}>Сбросить</button>
         </form>
     )
 }
