@@ -1,7 +1,5 @@
-const base_url = import.meta.env.VITE_API_URL;
-
 function fetchApi<T>(route: string): Promise<T> {
-    return fetch(base_url + route)
+    return fetch(route)
         .then((response) => {
             if (!response.ok) {
                 throw new Error(`Error: HTTP ${response.status}: ${response.statusText}`);
