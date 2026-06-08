@@ -7,6 +7,7 @@ import com.processing.authorization.dto.ReserveRequest;
 import com.processing.authorization.enums.CardStatus;
 import com.processing.authorization.exceptions.CardNotFoundException;
 import com.processing.authorization.exceptions.ReserveCardException;
+import com.processing.authorization.exceptions.ServiceUnavaliableException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -37,12 +39,16 @@ public class AuthService {
         CardResponse cardResponse;
         try {
             cardResponse = getCard(request.getPan());
-        } catch (CardNotFoundException e) {
-            log.debug("Card not found for pan: {}", request.getPan());
-            return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
         } catch (Exception e) {
             log.debug("getting card from card managment service failed for pan: {}", request.getPan(), e);
-            return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
+            if (e.getCause() instanceof CardNotFoundException) {
+                return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
+            } else if (e.getCause() instanceof  ServiceUnavaliableException) {
+                return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
+            }
+
+            System.err.println(e);
+            return AuthorizationResponse.declined(request, "UNKNOWN_REASON", "05");
         }
 
         CardStatus currCardStatus = cardResponse.getStatus();
@@ -74,6 +80,7 @@ public class AuthService {
         try {
             reserve(request.getAmount(), rrn, request.getPan());
         } catch (Exception e) {
+            System.err.println(e);
             log.debug("reserving failed for card {}", cardResponse.getId(), e);
             return AuthorizationResponse.declined(request, "RESERVATION_FAILED", "96");
         }
@@ -83,16 +90,31 @@ public class AuthService {
     }
 
     public CardResponse getCard(String pan) throws Exception {
-        String url = cmsUrl + "/api/cards/" + pan;
+        String fullUrl = cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
+        String getCardhUrl = fullUrl + "/api/cards";
+        String url = getCardhUrl + "/" + pan;
+        System.out.println("pan: " + pan);
+
         log.debug("Getting card info for pan {}", pan);
 
         CardResponse response = webClient.get()
                 .uri(url)
                 .retrieve()
+                .onStatus(status -> status == HttpStatus.NOT_FOUND, clientResponse -> {
+                    log.debug("Card not found: " + pan);
+                    return Mono.error(new CardNotFoundException("Card not found: " + pan));
+                })
+                .onStatus(status -> status == HttpStatus.SERVICE_UNAVAILABLE, clientResponse -> {
+                    log.debug("Card Management service unavaliable: ", clientResponse.statusCode());
+                    return Mono
+                            .error(new ServiceUnavaliableException(
+                                    "Card Management service unavaliable: " + clientResponse.statusCode()));
+                })
                 .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
                     log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
                     return Mono
-                            .error(new CardNotFoundException("Failed to get card. Status: " + clientResponse.statusCode()));
+                            .error(new CardNotFoundException(
+                                    "Failed to get card. Status: " + clientResponse.statusCode()));
                 })
                 .bodyToMono(CardResponse.class)
                 .block();
