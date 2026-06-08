@@ -6,9 +6,16 @@ switch:
   version: 1.0.0
   authorization-url: ${AUTH_URL:http://localhost:8083}
   logger-url: ${LOGGER_URL:http://localhost:8088}
+  http:
+    connect-timeout-ms: 3000
+    auth-read-timeout-ms: 5000
+    logger-read-timeout-ms: 2000
   retry:
     max-attempts: 3
-  logger-read-timeout-ms: 2000
+    backoff-ms:
+      - 1000
+      - 2000
+      - 4000
   bin-routing:
     "400000": ISS001
     "400001": ISS002

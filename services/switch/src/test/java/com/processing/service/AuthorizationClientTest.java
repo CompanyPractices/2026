@@ -3,6 +3,7 @@ package com.processing.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.SwitchTestData;
+import com.processing.config.RetryFactory;
 import com.processing.config.SwitchProperties;
 import com.processing.exception.AuthorizationException;
 import com.processing.model.AuthorizationResponse;
@@ -31,7 +32,10 @@ class AuthorizationClientTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
         mockServer = MockRestServiceServer.bindTo(builder).build();
-        client = new AuthorizationClient(SwitchTestData.defaultProperties(), builder.build());
+        client = new AuthorizationClient(
+                SwitchTestData.defaultProperties(),
+                builder.build(),
+                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
@@ -63,10 +67,11 @@ class AuthorizationClientTest {
                 SwitchTestData.BIN_ROUTING,
                 "http://127.0.0.1:1",
                 "http://127.0.0.1:1",
-                new SwitchProperties.RetryProperties(3),
-                2000
+                SwitchTestData.defaultHttp(),
+                SwitchTestData.defaultRetry()
         );
-        AuthorizationClient unreachableClient = new AuthorizationClient(properties, RestClient.create());
+        AuthorizationClient unreachableClient = new AuthorizationClient(
+                properties, RestClient.create(), RetryFactory.authorizationRetry(properties));
 
         assertThrows(AuthorizationException.class, () ->
                 unreachableClient.authorize(SwitchTestData.sampleRequest().withIssuerId("ISS001")));

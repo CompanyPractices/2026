@@ -1,6 +1,7 @@
 package com.processing.controller;
 
 import com.processing.SwitchTestData;
+import com.processing.config.RetryFactory;
 import com.processing.config.SwitchProperties;
 import com.processing.service.AuthorizationClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +27,8 @@ class HealthControllerTest {
                 .expect(requestTo("http://localhost:8083/health"))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess());
-        AuthorizationClient authorizationClient = new AuthorizationClient(properties, builder.build());
+        AuthorizationClient authorizationClient = new AuthorizationClient(
+                properties, builder.build(), RetryFactory.authorizationRetry(properties));
         controller = new HealthController(properties, authorizationClient);
     }
 

@@ -1,6 +1,7 @@
 package com.processing.support;
 
 import com.processing.SwitchTestData;
+import com.processing.config.RetryFactory;
 import com.processing.model.Transaction;
 import com.processing.service.LoggerClient;
 
@@ -11,7 +12,10 @@ public class TrackingLoggerClient extends LoggerClient {
     private final boolean succeed;
 
     public TrackingLoggerClient(boolean succeed) {
-        super(SwitchTestData.defaultProperties(), null);
+        super(
+                SwitchTestData.defaultProperties(),
+                null,
+                RetryFactory.loggerRetry(SwitchTestData.defaultProperties()));
         this.succeed = succeed;
     }
 

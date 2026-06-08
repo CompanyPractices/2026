@@ -4,8 +4,10 @@ import com.processing.config.SwitchProperties;
 import com.processing.exception.AuthorizationException;
 import com.processing.model.AuthorizationRequest;
 import com.processing.model.AuthorizationResponse;
+import io.github.resilience4j.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -16,35 +18,37 @@ public class AuthorizationClient {
 
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
+    private final Retry authorizationRetry;
 
-    public AuthorizationClient(SwitchProperties switchProperties, RestClient restClient) {
+    public AuthorizationClient(
+            SwitchProperties switchProperties,
+            RestClient restClient,
+            @Qualifier("authorizationRetry") Retry authorizationRetry) {
         this.switchProperties = switchProperties;
         this.restClient = restClient;
+        this.authorizationRetry = authorizationRetry;
     }
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         int maxAttempts = switchProperties.retry().maxAttempts();
-        String lastError = null;
-
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                AuthorizationResponse response = restClient.post()
-                        .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
-                        .body(request)
-                        .retrieve()
-                        .body(AuthorizationResponse.class);
-                if (response != null) {
-                    return response;
-                }
-                lastError = "Empty response from Authorization";
-            } catch (Exception e) {
-                lastError = e.getMessage();
-                LOG.warn("Authorization attempt {}/{} failed for STAN={}: {}",
-                        attempt, maxAttempts, request.stan(), e.getMessage());
-            }
+        try {
+            return Retry.decorateCallable(authorizationRetry, () -> callAuthorize(request)).call();
+        } catch (Exception e) {
+            String lastError = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            throw new AuthorizationException(request.stan(), maxAttempts, lastError);
         }
+    }
 
-        throw new AuthorizationException(request.stan(), maxAttempts, lastError);
+    private AuthorizationResponse callAuthorize(AuthorizationRequest request) {
+        AuthorizationResponse response = restClient.post()
+                .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
+                .body(request)
+                .retrieve()
+                .body(AuthorizationResponse.class);
+        if (response != null) {
+            return response;
+        }
+        throw new IllegalStateException("Empty response from Authorization");
     }
 
     public void reverse(AuthorizationRequest original, String rrn) {
@@ -57,7 +61,7 @@ public class AuthorizationClient {
                     .toBodilessEntity();
             LOG.info("Reversal sent for STAN={} rrn={}", original.stan(), rrn);
         } catch (Exception e) {
-            LOG.error("Reversal failed for STAN={} rrn={}: {}", original.stan(), rrn, e.getMessage());
+            LOG.error("Reversal failed for STAN={} rrn={}", original.stan(), rrn, e);
         }
     }
 
@@ -69,7 +73,7 @@ public class AuthorizationClient {
                     .toBodilessEntity();
             return "ok";
         } catch (Exception e) {
-            LOG.warn("Authorization health check failed: {}", e.getMessage());
+            LOG.warn("Authorization health check failed", e);
             return "down";
         }
     }

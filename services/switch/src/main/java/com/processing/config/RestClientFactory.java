@@ -7,23 +7,22 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 @Configuration
-public class RestClientConfig {
-
-    private static final int CONNECT_TIMEOUT_MS = 3000;
-    private static final int AUTH_READ_TIMEOUT_MS = 5000;
+public class RestClientFactory {
 
     @Bean
-    public RestClient restClient() {
+    public RestClient restClient(SwitchProperties switchProperties) {
+        SwitchProperties.HttpProperties http = switchProperties.http();
         return RestClient.builder()
-                .requestFactory(requestFactory(CONNECT_TIMEOUT_MS, AUTH_READ_TIMEOUT_MS))
+                .requestFactory(requestFactory(http.connectTimeoutMs(), http.authReadTimeoutMs()))
                 .build();
     }
 
     @Bean
     @Qualifier("loggerRestClient")
     public RestClient loggerRestClient(SwitchProperties switchProperties) {
+        SwitchProperties.HttpProperties http = switchProperties.http();
         return RestClient.builder()
-                .requestFactory(requestFactory(CONNECT_TIMEOUT_MS, switchProperties.loggerReadTimeoutMs()))
+                .requestFactory(requestFactory(http.connectTimeoutMs(), http.loggerReadTimeoutMs()))
                 .build();
     }
 

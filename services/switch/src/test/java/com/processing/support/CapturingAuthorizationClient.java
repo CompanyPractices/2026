@@ -1,6 +1,7 @@
 package com.processing.support;
 
 import com.processing.SwitchTestData;
+import com.processing.config.RetryFactory;
 import com.processing.model.AuthorizationRequest;
 import com.processing.model.AuthorizationResponse;
 import com.processing.service.AuthorizationClient;
@@ -14,12 +15,18 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
     private AuthorizationResponse responseToReturn;
 
     public CapturingAuthorizationClient() {
-        super(SwitchTestData.defaultProperties(), null);
+        super(
+                SwitchTestData.defaultProperties(),
+                null,
+                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
         this.responseToReturn = approvedResponse("000001");
     }
 
     public CapturingAuthorizationClient(AuthorizationResponse responseToReturn) {
-        super(SwitchTestData.defaultProperties(), null);
+        super(
+                SwitchTestData.defaultProperties(),
+                null,
+                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
         this.responseToReturn = responseToReturn;
     }
 

@@ -4,6 +4,7 @@ package com.processing.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -13,8 +14,17 @@ public record SwitchProperties(
         Map<String, String> binRouting,
         String authorizationUrl,
         String loggerUrl,
-        RetryProperties retry,
-        int loggerReadTimeoutMs
+        HttpProperties http,
+        RetryProperties retry
 ) {
-    public record RetryProperties(int maxAttempts) {}
+    public record HttpProperties(
+            int connectTimeoutMs,
+            int authReadTimeoutMs,
+            int loggerReadTimeoutMs
+    ) {}
+
+    public record RetryProperties(
+            int maxAttempts,
+            List<Long> backoffMs
+    ) {}
 }

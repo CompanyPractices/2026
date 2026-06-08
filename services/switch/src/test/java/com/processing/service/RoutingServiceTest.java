@@ -46,8 +46,8 @@ class RoutingServiceTest {
                 java.util.Map.of("499999", "ISS999"),
                 "http://auth",
                 "http://logger",
-                new SwitchProperties.RetryProperties(3),
-                2000
+                SwitchTestData.defaultHttp(),
+                SwitchTestData.defaultRetry()
         );
         RoutingService customRouting = new RoutingService(custom);
 
