@@ -2,7 +2,7 @@ import LineChart from "./components/LineChart.tsx";
 import {Header} from "./components/Header.tsx";
 import PieChart from "./components/PieChart.tsx";
 import {TransactionTable} from "./components/TransactionTable.tsx";
-import {MOCK_DASHBOARD_STATS, MOCK_TRANSACTIONS} from "./mockData.ts";
+import {MOCK_DASHBOARD_STATS} from "./mockData.ts";
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
               <PieChart />
           </div>
           <div className="col-span-4 m-4 place-content-center">
-              <TransactionTable transactions={MOCK_TRANSACTIONS}/>
+              <TransactionTable/>
           </div>
       </main>
 
