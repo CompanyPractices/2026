@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
-public class DefaultWebSocketManager implements WebSocketManager{
+public class DefaultWebSocketManager implements WebSocketManager {
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
 
     @Override
@@ -22,7 +22,7 @@ public class DefaultWebSocketManager implements WebSocketManager{
     @Override
     public void removeSession(WebSocketSession session) {
         sessions.remove(session);
-        log.info("WebSocket disconnected: {}, total: {}, session.getId()", session.getId(), sessions.size());
+        log.info("WebSocket disconnected: {}, total: {}", session.getId(), sessions.size());
     }
 
     @Override

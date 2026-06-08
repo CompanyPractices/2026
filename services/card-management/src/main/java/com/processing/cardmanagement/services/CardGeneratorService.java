@@ -1,6 +1,5 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.models.CardEntity;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import com.processing.common.dto.cardmanagement.GeneratedCardDto;

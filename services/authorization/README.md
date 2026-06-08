@@ -44,7 +44,7 @@
 
 #### `GET /api/cards/{pan}`
 
-get card 
+get card
 
 #### `POST /api/internal/authorize`
 
@@ -158,7 +158,7 @@ docker compose up -d {service-name}
 │   ├── java.com.processing/
 │   │   ├── controllers/    # HTTP-handlers / controllers
 │   │   ├── dto/          # Модели данных / DTO
-│   │   ├── enums/   
+│   │   ├── enums/
 │   └── test/               # Тесты
 ├── Dockerfile
 ├── README.md

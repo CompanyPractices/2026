@@ -66,8 +66,9 @@ public class AuthService {
 
         // TODO check month limit when add table limit_usage
 
-        if (request.getAmount() > cardResponse.getAvailableBalance())
+        if (request.getAmount() > cardResponse.getAvailableBalance()) {
             return AuthorizationResponse.declined(request, "INSUFFICIENT_FUNDS", "51");
+        }
 
         String rrn = generateRRN();
         try {

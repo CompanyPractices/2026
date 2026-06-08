@@ -10,8 +10,8 @@ logging:
     org.springframework.cloud.gateway.server.mvc: TRACE
     org.springframework.http.client: TRACE
     org.springframework.web.client: DEBUG
-#  pattern:
-#    console: %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} %X{requestId} - %msg%n"
 
 #---
 # Actuator

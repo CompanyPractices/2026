@@ -79,25 +79,38 @@ public class TerminalSimulatorService {
         String processingCode = "000000";
         String transmissionDateTime = randomDateTime(partOfDay);
         String terminalId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));
-        String terminalType = String.valueOf(TerminalType.values()[(int)(Math.random()*3)]);
+        String terminalType = String.valueOf(TerminalType.values()[(int) (Math.random() * 3)]);
         String merchantId = "MERCH1234567890";
         String mcc = new String[]{"5411", "5812", "5814", "5732", "5399", "4814",
                 "7994", "3501"}[ThreadLocalRandom.current().nextInt(8)];
         String acquirerId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));
         String issuerId = "";
         Card card = getRandomCard(ACTIVE);
-        long amount = 1000 + (long)(Math.random() * 2_000_000);
+        long amount = 1000 + (long) (Math.random() * 2_000_000);
 
         switch (scenario) {
             case "normal" -> {
-                amount = 10_000 + (long)(Math.random() * 490_000);
+                amount = 10_000 + (long) (Math.random() * 490_000);
                 mcc = "5411";
             }
-            case "high_value" -> amount = 10_000_000 + (long) (Math.random() * 40_000_000);
-            case "daily_limit" -> amount = card.dailyLimit() - 1;
-            case "blocked" -> card = getRandomCard(BLOCKED);
-            case "no_money" -> amount = card.availableBalance() + (int)(Math.random()*100000);
-            case "more_day_limit" -> amount = card.dailyLimit() + (int)(Math.random()*10000);
+            case "high_value" -> {
+                long randomAmount = (long) (Math.random() * 40_000_000);
+                amount = 10_000_000 + randomAmount;
+            }
+            case "daily_limit" -> {
+                amount = card.dailyLimit() - 1;
+            }
+            case "blocked" -> {
+                card = getRandomCard(BLOCKED);
+            }
+            case "no_money" -> {
+                double randomValue = Math.random() * 100_000;
+                amount = card.availableBalance() + (int) randomValue;
+            }
+            case "more_day_limit" -> {
+                double randomValue = Math.random() * 10_000;
+                amount = card.dailyLimit() + (int) randomValue;
+            }
         }
 
         String pan = card.pan();
@@ -120,8 +133,7 @@ public class TerminalSimulatorService {
 
             if ("APPROVED".equals(authResp.status())) {
                 approved.incrementAndGet();
-            }
-            else if ("DECLINED".equals(authResp.status())) {
+            } else if ("DECLINED".equals(authResp.status())) {
                 declined.incrementAndGet();
             }
         }
@@ -144,32 +156,33 @@ public class TerminalSimulatorService {
         cards = newCards;
 
         List<AuthorizationResponse> authResps = new ArrayList<>();
-        AtomicInteger approved = new AtomicInteger(0), declined = new AtomicInteger(0);
+        AtomicInteger approved = new AtomicInteger(0);
+        AtomicInteger declined = new AtomicInteger(0);
 
         switch (scenario) {
             case "mixed" -> {
-                generateTransactionHandler(0, (int)(count * 0.7), approved, declined, "normal", authResps, "day");
-                generateTransactionHandler((int)(count * 0.7), (int)(count * 0.7 + count * 0.15), approved, declined,
+                generateTransactionHandler(0, (int) (count * 0.7), approved, declined, "normal", authResps, "day");
+                generateTransactionHandler((int) (count * 0.7), (int) (count * 0.7 + count * 0.15), approved, declined,
                         "high_value", authResps, "day");
-                generateTransactionHandler((int)(count * 0.7 + count * 0.15), (int)(count * 0.7 + count * 0.15 + count * 0.1),
+                generateTransactionHandler((int) (count * 0.7 + count * 0.15), (int) (count * 0.7 + count * 0.15 + count * 0.1),
                         approved, declined, "daily_limit", authResps, "day");
-                generateTransactionHandler((int)(count * 0.7 + count * 0.15 + count * 0.1), count, approved, declined,
+                generateTransactionHandler((int) (count * 0.7 + count * 0.15 + count * 0.1), count, approved, declined,
                         "blocked", authResps, "day");
             }
-            case "declines_test"-> {
-                generateTransactionHandler(0, (int)(count * 0.2), approved, declined, "invalid_pan", authResps,
+            case "declines_test" -> {
+                generateTransactionHandler(0, (int) (count * 0.2), approved, declined, "invalid_pan", authResps,
                         "day");
-                generateTransactionHandler((int)(count * 0.2), (int)(count * 0.4), approved, declined, "blocked", authResps,
+                generateTransactionHandler((int) (count * 0.2), (int) (count * 0.4), approved, declined, "blocked", authResps,
                         "day");
-                generateTransactionHandler((int)(count * 0.4), (int)(count * 0.6), approved, declined, "no_money", authResps,
+                generateTransactionHandler((int) (count * 0.4), (int) (count * 0.6), approved, declined, "no_money", authResps,
                         "day");
-                generateTransactionHandler((int)(count * 0.6), (int)(count * 0.8), approved, declined, "more_day_limit",
+                generateTransactionHandler((int) (count * 0.6), (int) (count * 0.8), approved, declined, "more_day_limit",
                         authResps, "day");
-                generateTransactionHandler((int)(count * 0.8), count, approved, declined, "normal", authResps, "day");
+                generateTransactionHandler((int) (count * 0.8), count, approved, declined, "normal", authResps, "day");
             }
             case "night_time" -> {
-                generateTransactionHandler(0, count/2, approved, declined, "normal", authResps, "night");
-                generateTransactionHandler(count/2, count, approved, declined, "high_value", authResps, "night");
+                generateTransactionHandler(0, count / 2, approved, declined, "normal", authResps, "night");
+                generateTransactionHandler(count / 2, count, approved, declined, "high_value", authResps, "night");
             }
             case "normal", "high_value" -> generateTransactionHandler(0, count, approved, declined, scenario, authResps, "day");
         }
