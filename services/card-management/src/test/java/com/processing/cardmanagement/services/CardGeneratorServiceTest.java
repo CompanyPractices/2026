@@ -57,9 +57,9 @@ public class CardGeneratorServiceTest {
             List<GeneratedCardDto> dtos = inv.getArgument(0);
             return dtos.stream().map(dto -> new CardModel(
                     UUID.randomUUID(),
-                    "4000001234567893",
+                    faker.numerify("################"),
                     dto.bin(),
-                    dto.cardholderName(),
+                    faker.name().fullName().toUpperCase(),
                     "0629",
                     dto.status().name(),
                     "643",
@@ -85,9 +85,9 @@ public class CardGeneratorServiceTest {
             List<GeneratedCardDto> dtos = inv.getArgument(0);
             return dtos.stream().map(dto -> new CardModel(
                     UUID.randomUUID(),
-                    "4000001234567893",
+                    faker.numerify("################"),
                     dto.bin(),
-                    dto.cardholderName(),
+                    faker.name().fullName().toUpperCase(),
                     "0629",
                     dto.status().name(),
                     "643",
