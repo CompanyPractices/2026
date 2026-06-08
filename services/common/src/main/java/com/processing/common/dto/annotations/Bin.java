@@ -1,17 +1,15 @@
 package com.processing.common.dto.annotations;
 
-import com.processing.common.dto.annotations.validators.BinValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
+import jakarta.validation.constraints.Pattern;
 
 import java.lang.annotation.*;
 
-/**
- * Validates BIN number
- */
+@Pattern(regexp = "^\\d{6}$")
 @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = BinValidator.class)
+@Constraint(validatedBy = {})
 @Documented
 public @interface Bin {
 
