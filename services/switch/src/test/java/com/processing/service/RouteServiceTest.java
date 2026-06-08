@@ -1,7 +1,7 @@
 package com.processing.service;
 
 import com.processing.SwitchTestData;
-import com.processing.enums.TransactionStatus;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.model.AuthorizationRequest;
 import com.processing.model.AuthorizationResponse;
 import com.processing.support.CapturingAuthorizationClient;
