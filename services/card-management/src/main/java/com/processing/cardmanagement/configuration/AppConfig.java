@@ -1,14 +1,9 @@
 package com.processing.cardmanagement.configuration;
 
-import com.processing.cardmanagement.events.domain.CardServiceEventListener;
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
-import com.processing.cardmanagement.options.CardServiceConfigurationProperties;
-import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationProperties;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.cardmanagement.repositories.JavaPersistenceAdapter;
-import com.processing.cardmanagement.services.CardService;
-import com.processing.cardmanagement.services.CardServiceImpl;
 import com.processing.cardmanagement.services.LuhnValidator;
 import com.processing.cardmanagement.services.PanGenerator;
 import org.springframework.context.annotation.Bean;
@@ -28,22 +23,5 @@ public class AppConfig {
         CardJpaRepository jpaCardRepository
     ) {
         return new JavaPersistenceAdapter(persistenceMapper, jpaCardRepository);
-    }
-
-    @Bean
-    public CardService cardService(
-        CardRepository cardRepository,
-        CardServiceConfigurationProperties serviceConfigurationProperties,
-        CardServiceDefaultsConfigurationProperties defaultsConfigurationProperties,
-        PanGenerator panGenerator,
-        CardServiceEventListener cardServiceEventListener
-    ) {
-        return new CardServiceImpl(
-            cardRepository,
-            serviceConfigurationProperties.toCardServiceSettings(),
-            defaultsConfigurationProperties.toCardServiceDefaults(),
-            panGenerator,
-            cardServiceEventListener
-        );
     }
 }

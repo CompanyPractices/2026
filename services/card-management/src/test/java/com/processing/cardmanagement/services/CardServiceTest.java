@@ -3,8 +3,8 @@ package com.processing.cardmanagement.services;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.cardmanagement.models.CardEntity;
-import com.processing.cardmanagement.options.CardServiceOptions;
-import com.processing.cardmanagement.repositories.CardRepository;
+import com.processing.cardmanagement.options.CardServiceConfigurationProperties;
+import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.common.dto.cardmanagement.*;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +34,7 @@ public final class CardServiceTest {
 
     private final Faker faker = new Faker(Locale.ENGLISH);
 
-    private final CardServiceOptions options = new CardServiceOptions("TESTISSUER");
+    private final CardServiceConfigurationProperties options = new CardServiceConfigurationProperties("TESTISSUER");
 
     private final PanGenerator panGenerator = new PanGenerator() {
         @Override
@@ -52,7 +52,7 @@ public final class CardServiceTest {
         ArgumentCaptor.forClass(CardEntity.class);
 
     @Mock
-    private CardRepository cardRepository;
+    private CardJpaRepository cardRepository;
 
     private CardService cardService;
 
