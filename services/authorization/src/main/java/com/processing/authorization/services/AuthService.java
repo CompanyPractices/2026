@@ -42,7 +42,7 @@ public class AuthService {
             log.debug("Card not found for pan: {}", request.getPan());
             return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
         } catch (Exception e) {
-            log.debug("getting card from card managment service failed for pan: {}", request.getPan(), e);
+            log.debug("getting card from card management service failed for pan: {}", request.getPan(), e);
             return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
         }
 
@@ -59,7 +59,7 @@ public class AuthService {
             };
         }
 
-        if (LocalDate.parse(cardResponse.getExpiryDate()).isBefore(LocalDate.now())) {
+        if (cardResponse.getExpiryDate().isBefore(LocalDate.now())) {
             return AuthorizationResponse.declined(request, "CARD_EXPIRED", "54");
         }
 

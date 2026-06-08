@@ -54,12 +54,12 @@ class AuthServiceTest {
                 "1234567890123456",
                 "123456",
                 "John Golt",
-                LocalDate.now().plusMonths(6).toString(),
+                LocalDate.now().plusMonths(6),
                 CardStatus.ACTIVE,
                 "810",
-                100000,
-                500000,
-                10000,
+                100000L,
+                500000L,
+                10000L,
                 "I001",
                 LocalDate.now());
     }
@@ -197,7 +197,7 @@ class AuthServiceTest {
                 activeCardResponse.getPun(),
                 activeCardResponse.getBin(),
                 activeCardResponse.getCardholderName(),
-                LocalDate.now().minusDays(1).toString(),
+                LocalDate.now().minusDays(1),
                 CardStatus.ACTIVE, activeCardResponse.getCurrencyCode(),
                 activeCardResponse.getDailyLimit(),
                 activeCardResponse.getMonthlyLimit(),
@@ -225,7 +225,7 @@ class AuthServiceTest {
                 CardStatus.ACTIVE, activeCardResponse.getCurrencyCode(),
                 activeCardResponse.getDailyLimit(),
                 activeCardResponse.getMonthlyLimit(),
-                1000,
+                1000L,
                 activeCardResponse.getIssuerId(),
                 activeCardResponse.getCreatedAt());
         AuthService spyService = spy(authService);
