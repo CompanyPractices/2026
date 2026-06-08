@@ -2,18 +2,20 @@ package com.processing.cardmanagement.configuration;
 
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
-import com.processing.common.dto.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.processing.common.dto.ErrorResponse;
 
 import java.time.LocalDateTime;
 
-@Slf4j
+/**
+ * Глобальный обработчик исключений
+ * Преобразует исключения в HTTP ответы с соответствующими статус-кодами
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -22,7 +24,6 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleCardNotFoundException(
         CardNotFoundException ex
     ) {
-        log.warn(ex.getMessage());
         return errorResponseFromException(ex);
     }
 
@@ -31,7 +32,6 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleConstraintViolationException(
         ConstraintViolationException ex
     ) {
-        log.warn(ex.getMessage());
         return errorResponseFromException(ex);
     }
 
@@ -40,7 +40,6 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleMethodArgumentNotValidException(
         MethodArgumentNotValidException ex
     ) {
-        log.warn(ex.getMessage());
         return errorResponseFromException(ex);
     }
 
@@ -49,7 +48,6 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleIllegalArgumentException(
         IllegalArgumentException ex
     ) {
-        log.warn(ex.getMessage());
         return errorResponseFromException(ex);
     }
 
@@ -58,7 +56,6 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleIllegalStateException(
         IllegalStateException ex
     ) {
-        log.warn(ex.getMessage());
         return errorResponseFromException(ex);
     }
 
@@ -67,7 +64,6 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleInsufficientFundsException(
         InsufficientFundsException ex
     ) {
-        log.warn(ex.getMessage());
         return errorResponseFromException(ex);
     }
 
@@ -76,7 +72,6 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleException(
         Exception ex
     ) {
-        log.error(ex.getMessage());
         return errorResponseFromException(ex);
     }
 
