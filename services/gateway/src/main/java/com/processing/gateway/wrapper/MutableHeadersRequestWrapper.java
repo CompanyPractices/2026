@@ -33,9 +33,9 @@ public class MutableHeadersRequestWrapper extends HttpServletRequestWrapper {
 
     @Override
     public Enumeration<String> getHeaders(String name) {
-        if (mutableHeaders.containsKey(name))
+        if (mutableHeaders.containsKey(name)) {
             return Collections.enumeration(List.of(mutableHeaders.get(name)));
-
+        }
         return super.getHeaders(name);
     }
 }
