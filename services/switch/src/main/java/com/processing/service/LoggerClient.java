@@ -11,7 +11,7 @@ import org.springframework.web.client.RestClient;
 @Service
 public class LoggerClient {
 
-    private static final Logger log = LoggerFactory.getLogger(LoggerClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LoggerClient.class);
 
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
@@ -29,11 +29,11 @@ public class LoggerClient {
                     .body(transaction)
                     .retrieve()
                     .body(LogResponse.class);
-            log.info("Logger stored TX {} id={}", transaction.stan(),
+            LOG.info("Logger stored TX {} id={}", transaction.stan(),
                     response != null ? response.id() : transaction.id());
             return true;
         } catch (Exception e) {
-            log.warn("Logger unavailable for TX {}: {}", transaction.stan(), e.getMessage());
+            LOG.warn("Logger unavailable for TX {}: {}", transaction.stan(), e.getMessage());
             // retry 3 раза, reversal mti=0400, DECLINED responseCode=96
             return false;
         }

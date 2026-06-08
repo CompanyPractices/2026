@@ -82,6 +82,27 @@ class TransactionMapperTest {
         assertThat(response.status()).isEqualTo("stored");
     }
 
+    @Test
+    void matchesReturnsTrueWhenTransactionMatchesRequest() {
+        TransactionRequest request = transactionRequest();
+        Transaction transaction = transaction();
+
+        boolean matches = mapper.matches(transaction, request);
+
+        assertThat(matches).isTrue();
+    }
+
+    @Test
+    void matchesReturnsFalseWhenTransactionDiffersFromRequest() {
+        TransactionRequest request = transactionRequest();
+        Transaction transaction = transaction();
+        transaction.setAmount(200000L);
+
+        boolean matches = mapper.matches(transaction, request);
+
+        assertThat(matches).isFalse();
+    }
+
     private static TransactionRequest transactionRequest() {
         return new TransactionRequest(
                 UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),

@@ -14,7 +14,7 @@ import java.util.UUID;
 @Service
 public class RouteService {
 
-    private static final Logger log = LoggerFactory.getLogger(RouteService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RouteService.class);
 
     private final RoutingService routingService;
     private final AuthorizationClient authorizationClient;
@@ -36,7 +36,7 @@ public class RouteService {
 
         String issuerId = routingService.getIssuerIdByPan(pan);
         if (issuerId == null) {
-            log.warn("TX {} | BIN={} → unknown BIN | DECLINED", request.stan(), bin);
+            LOG.warn("TX {} | BIN={} → unknown BIN | DECLINED", request.stan(), bin);
             return AuthorizationResponse.unknownBin(request.stan());
         }
 
@@ -46,11 +46,11 @@ public class RouteService {
         Transaction transaction = buildTransaction(routedRequest, response);
         boolean logged = loggerClient.log(transaction);
         if (!logged && TransactionStatus.APPROVED.name().equals(response.status())) {
-            log.error("Logger unavailable for TX {} — APPROVED without audit trail", request.stan());
+            LOG.error("Logger unavailable for TX {} — APPROVED without audit trail", request.stan());
         }
 
         long elapsed = System.currentTimeMillis() - startMs;
-        log.info("TX {} | BIN={} → {} | Status={} | {}ms",
+        LOG.info("TX {} | BIN={} → {} | Status={} | {}ms",
                 request.stan(), bin, issuerId, response.status(), elapsed);
 
         return response;

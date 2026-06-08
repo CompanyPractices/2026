@@ -29,16 +29,89 @@
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
     </properties>
 
-    <!-- Модули (добавляются по мере создания сервисов) -->
-    <modules>
-        <module>common</module>
-        <module>merchant-acquirer</module>
-        <module>terminal-simulator</module>
-        <module>switch</module>
-        <module>authorization</module>
-        <module>transaction-logger</module>
-        <module>card-management</module>
-    </modules>
+    <profiles>
+        <!-- Профиль для сборки всех модулей (по умолчанию) -->
+        <profile>
+            <id>all</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>common</module>
+                <module>gateway</module>
+                <module>card-management</module>
+                <module>switch</module>
+                <module>authorization</module>
+                <module>terminal-simulator</module>
+                <module>merchant-acquirer</module>
+                <module>transaction-logger</module>
+            </modules>
+        </profile>
+
+        <!-- Индивидуальные профили для каждого сервиса -->
+        <profile>
+            <id>common</id>
+            <modules>
+                <module>common</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>gateway</id>
+            <modules>
+                <module>common</module>
+                <module>gateway</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>card-management</id>
+            <modules>
+                <module>common</module>
+                <module>card-management</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>switch</id>
+            <modules>
+                <module>common</module>
+                <module>switch</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>authorization</id>
+            <modules>
+                <module>common</module>
+                <module>authorization</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>terminal-simulator</id>
+            <modules>
+                <module>common</module>
+                <module>terminal-simulator</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>merchant-acquirer</id>
+            <modules>
+                <module>common</module>
+                <module>merchant-acquirer</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>transaction-logger</id>
+            <modules>
+                <module>common</module>
+                <module>transaction-logger</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <!-- Управление версиями НЕ-Spring-Boot зависимостей -->
     <dependencyManagement>
@@ -81,8 +154,28 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${checkstyle.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>10.12.4</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>checkstyle-validation</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>true</failsOnError>
+                        <failOnViolation>true</failOnViolation>
+                        <violationSeverity>warning</violationSeverity>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -101,5 +194,11 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
 </project>
