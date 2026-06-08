@@ -16,15 +16,6 @@ public record GeneratedCardDto(
     long monthlyLimit,
     @Schema(description = "Available balance in kopecks", example = "1000000000")
     long balance,
-    @Schema(
-        description = "Card model status",
-        example = "ACTIVE",
-        allowableValues = {
-            "ACTIVE",
-            "INACTIVE",
-            "BLOCKED",
-            "EXPIRED"
-        }
-    )
-    CardModelStatus status
+    @Schema(description = "Card status", example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "BLOCKED", "EXPIRED", "DELETED"})
+    CardStatus status
 ) {}
