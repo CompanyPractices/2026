@@ -61,7 +61,7 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().acquirerId()).isEqualTo(request.acquirerId());
         assertThat(logger.lastTransaction().rrn()).isEqualTo("012345678901");
         assertThat(logger.lastTransaction().authCode()).isEqualTo("TEST01");
-        assertThat(logger.lastTransaction().processingTimeMs()).isEqualTo(42L);
+        assertThat(logger.lastTransaction().processingTimeMs()).isEqualTo(42);
         assertThat(logger.lastTransaction().id()).isNotNull();
         assertThat(logger.lastTransaction().createdAt()).isNotNull();
         assertThat(logger.lastTransaction().transmissionDateTime()).isNotNull();

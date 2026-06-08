@@ -12,7 +12,7 @@ import org.springframework.web.client.RestClientResponseException;
 @Service
 public class AuthorizationClient {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthorizationClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AuthorizationClient.class);
 
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
@@ -40,14 +40,14 @@ public class AuthorizationClient {
                 if (body != null) {
                     return body;
                 }
-                log.warn("Authorization HTTP error for STAN={} (attempt {}/{}): {}",
+                LOG.warn("Authorization HTTP error for STAN={} (attempt {}/{}): {}",
                         request.stan(), attempt, maxAttempts, e.getMessage());
             } catch (Exception e) {
-                log.warn("Authorization unavailable for STAN={} (attempt {}/{}): {}",
+                LOG.warn("Authorization unavailable for STAN={} (attempt {}/{}): {}",
                         request.stan(), attempt, maxAttempts, e.getMessage());
             }
         }
-        log.error("Authorization service unavailable for STAN={} after {} attempts",
+        LOG.error("Authorization service unavailable for STAN={} after {} attempts",
                 request.stan(), maxAttempts);
         return AuthorizationResponse.authUnavailable(request.stan());
     }
@@ -76,18 +76,18 @@ public class AuthorizationClient {
                         .body(reversal)
                         .retrieve()
                         .toBodilessEntity();
-                log.info("Reversal sent for STAN={} (attempt {})", original.stan(), attempt);
+                LOG.info("Reversal sent for STAN={} (attempt {})", original.stan(), attempt);
                 return;
             } catch (RestClientResponseException e) {
-                log.warn("Reversal HTTP error for STAN={} (attempt {}/{}): {}",
+                LOG.warn("Reversal HTTP error for STAN={} (attempt {}/{}): {}",
                         original.stan(), attempt, maxAttempts, e.getMessage());
                 return;
             } catch (Exception e) {
-                log.warn("Reversal failed for STAN={} (attempt {}/{}): {}",
+                LOG.warn("Reversal failed for STAN={} (attempt {}/{}): {}",
                         original.stan(), attempt, maxAttempts, e.getMessage());
             }
         }
-        log.error("Reversal failed for STAN={} after {} attempts", original.stan(), maxAttempts);
+        LOG.error("Reversal failed for STAN={} after {} attempts", original.stan(), maxAttempts);
     }
 
     public String checkHealth() {
@@ -98,7 +98,7 @@ public class AuthorizationClient {
                     .toBodilessEntity();
             return "ok";
         } catch (Exception e) {
-            log.warn("Authorization health check failed: {}", e.getMessage());
+            LOG.warn("Authorization health check failed: {}", e.getMessage());
             return "down";
         }
     }

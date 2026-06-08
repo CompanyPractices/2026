@@ -14,7 +14,7 @@ import java.util.UUID;
 @Service
 public class RouteService {
 
-    private static final Logger log = LoggerFactory.getLogger(RouteService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RouteService.class);
 
     private final RoutingService routingService;
     private final AuthorizationClient authorizationClient;
@@ -36,7 +36,7 @@ public class RouteService {
 
         String issuerId = routingService.getIssuerIdByPan(pan);
         if (issuerId == null) {
-            log.warn("TX {} | BIN={} → unknown BIN | DECLINED", request.stan(), bin);
+            LOG.warn("TX {} | BIN={} → unknown BIN | DECLINED", request.stan(), bin);
             return AuthorizationResponse.unknownBin(request.stan());
         }
 
@@ -48,13 +48,13 @@ public class RouteService {
 
         AuthorizationResponse clientResponse = response;
         if (!logged && TransactionStatus.APPROVED.name().equals(response.status())) {
-            log.error("Logger unavailable for TX {} — rolling back reservation", request.stan());
+            LOG.error("Logger unavailable for TX {} — rolling back reservation", request.stan());
             authorizationClient.reverse(routedRequest);
             clientResponse = AuthorizationResponse.systemError(request.stan());
         }
 
         long elapsed = System.currentTimeMillis() - startMs;
-        log.info("TX {} | BIN={} → {} | Status={} | {}ms",
+        LOG.info("TX {} | BIN={} → {} | Status={} | {}ms",
                 request.stan(), bin, issuerId, clientResponse.status(), elapsed);
 
         return clientResponse;
@@ -63,7 +63,7 @@ public class RouteService {
     private Transaction buildTransaction(
             AuthorizationRequest request,
             AuthorizationResponse response) {
-        long processingTimeMs = response.processingTimeMs() != null ? response.processingTimeMs() : 0L;
+        int processingTimeMs = response.processingTimeMs() != null ? response.processingTimeMs() : 0;
         return new Transaction(
                 UUID.randomUUID(),
                 request.mti(),
