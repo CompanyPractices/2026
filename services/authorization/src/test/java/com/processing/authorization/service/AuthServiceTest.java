@@ -3,17 +3,21 @@ package com.processing.authorization.service;
 import com.processing.authorization.dto.AuthorizationRequest;
 import com.processing.authorization.dto.AuthorizationResponse;
 import com.processing.authorization.dto.CardResponse;
+import com.processing.authorization.entities.LimitUsage;
 import com.processing.authorization.enums.AuthorizationRequestStatus;
 import com.processing.authorization.enums.CardStatus;
+import com.processing.authorization.repositories.LimitUsageRepository;
 import com.processing.authorization.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,19 +30,23 @@ class AuthServiceTest {
     private AuthService authService;
 
     private AuthorizationRequest correctRequest;
+
     private CardResponse activeCardResponse;
+
+    @Mock
+    private LimitUsageRepository limitUsageRepository;
 
     @BeforeEach
     void setUp() {
         WebClient webClient = WebClient.create();
-        authService = new AuthService(webClient);
+        authService = new AuthService(webClient, limitUsageRepository);
 
         correctRequest = new AuthorizationRequest(
                 "0100",
                 "123456",
                 "1234567890123456",
                 "000000",
-                5000,
+                5000L,
                 "810",
                 LocalDateTime.now(),
                 "T0000001",
@@ -68,7 +76,11 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doNothing().when(spyService).reserve(anyInt(), anyString(), anyString());
+        doNothing().when(spyService).reserve(anyLong(), anyString(), anyString());
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(0L);
 
         AuthorizationResponse response = spyService.authorize(correctRequest);
 
@@ -92,7 +104,7 @@ class AuthServiceTest {
         assertThat(response.getStatus()).isEqualTo(AuthorizationRequestStatus.DECLINED);
         assertThat(response.getResponseCode()).isEqualTo("96");
         assertThat(response.getDeclineReason()).isEqualTo("SERVICE_UNAVAILABLE");
-        verify(spyService, never()).reserve(anyInt(), anyString(), anyString());
+        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
     }
 
     @Test
@@ -117,7 +129,7 @@ class AuthServiceTest {
 
         assertThat(response.getResponseCode()).isEqualTo("54");
         assertThat(response.getDeclineReason()).isEqualTo("CARD_EXPIRED");
-        verify(spyService, never()).reserve(anyInt(), anyString(), anyString());
+        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
     }
 
     @Test
@@ -210,7 +222,7 @@ class AuthServiceTest {
 
         assertThat(response.getResponseCode()).isEqualTo("54");
         assertThat(response.getDeclineReason()).isEqualTo("CARD_EXPIRED");
-        verify(spyService, never()).reserve(anyInt(), anyString(), anyString());
+        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
     }
 
     @Test
@@ -234,14 +246,14 @@ class AuthServiceTest {
 
         assertThat(response.getResponseCode()).isEqualTo("51");
         assertThat(response.getDeclineReason()).isEqualTo("INSUFFICIENT_FUNDS");
-        verify(spyService, never()).reserve(anyInt(), anyString(), anyString());
+        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
     }
 
     @Test
     void authorizeDeclineWhenReserveThrowsException() throws Exception {
         AuthService spyService = spy(authService);
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doThrow(new Exception("Reserve failed")).when(spyService).reserve(anyInt(), anyString(), anyString());
+        doThrow(new Exception("Reserve failed")).when(spyService).reserve(anyLong(), anyString(), anyString());
 
         AuthorizationResponse response = spyService.authorize(correctRequest);
 
@@ -268,5 +280,68 @@ class AuthServiceTest {
 
         assertThat(code).hasSize(6);
         assertThat(code).matches("[0-9A-Z]{6}");
+    }
+
+    @Test
+    void authorizeApprovedWhenDailyLimitNotReached() throws Exception {
+        AuthService spyService = spy(authService);
+
+        doReturn(activeCardResponse).when(spyService).getCard(anyString());
+        doNothing().when(spyService).reserve(anyLong(), anyString(), anyString());
+
+        LimitUsage usage = new LimitUsage();
+        usage.setDailyAmount(50000L);
+        usage.setMonthlyAmount(200000L);
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+                .thenReturn(Optional.of(usage));
+        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(200000L);
+
+        AuthorizationResponse response = spyService.authorize(correctRequest);
+
+        assertThat(response.getStatus()).isEqualTo(AuthorizationRequestStatus.APPROVED);
+        assertThat(response.getResponseCode()).isEqualTo("00");
+        assertThat(response.getRrn()).isNotNull();
+        assertThat(response.getAuthCode()).isNotNull();
+        assertThat(response.getDeclineReason()).isNull();
+    }
+
+    @Test
+    void authorizeDeclineWhenDailyLimitReached() throws Exception {
+        AuthService spyService = spy(authService);
+
+        doReturn(activeCardResponse).when(spyService).getCard(anyString());
+
+        LimitUsage usage = new LimitUsage();
+        usage.setDailyAmount(96000L);
+        usage.setMonthlyAmount(200000L);
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+                .thenReturn(Optional.of(usage));
+
+        AuthorizationResponse response = spyService.authorize(correctRequest);
+
+        assertThat(response.getStatus()).isEqualTo(AuthorizationRequestStatus.DECLINED);
+        assertThat(response.getResponseCode()).isEqualTo("61");
+        assertThat(response.getDeclineReason()).isEqualTo("EXCEEDS_AMOUNT_LIMIT");
+        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    void authorizeDeclineWhenMonthlyLimitReached() throws Exception {
+        AuthService spyService = spy(authService);
+
+        doReturn(activeCardResponse).when(spyService).getCard(anyString());
+
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(496000L);
+
+        AuthorizationResponse response = spyService.authorize(correctRequest);
+
+        assertThat(response.getStatus()).isEqualTo(AuthorizationRequestStatus.DECLINED);
+        assertThat(response.getResponseCode()).isEqualTo("61");
+        assertThat(response.getDeclineReason()).isEqualTo("EXCEEDS_AMOUNT_LIMIT");
+        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
     }
 }

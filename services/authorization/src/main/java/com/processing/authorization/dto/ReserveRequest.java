@@ -13,7 +13,7 @@ import lombok.Setter;
 public class ReserveRequest {
     @NotNull
     @Positive
-    private Integer amount;
+    private Long amount;
 
     @NotBlank
     private String rrn;

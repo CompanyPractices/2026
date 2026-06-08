@@ -4,10 +4,12 @@ import com.processing.authorization.dto.AuthorizationRequest;
 import com.processing.authorization.dto.AuthorizationResponse;
 import com.processing.authorization.dto.CardResponse;
 import com.processing.authorization.dto.ReserveRequest;
+import com.processing.authorization.entities.LimitUsage;
 import com.processing.authorization.enums.CardStatus;
 import com.processing.authorization.exceptions.CardNotFoundException;
 import com.processing.authorization.exceptions.ReserveCardException;
 
+import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -20,6 +22,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.util.Calendar;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -29,6 +32,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService {
     private final WebClient webClient;
+
+    private final LimitUsageRepository limitUsageRepository;
 
     @Value("${card-management.url}")
     private String cmsUrl;
@@ -62,9 +67,23 @@ public class AuthService {
             return AuthorizationResponse.declined(request, "CARD_EXPIRED", "54");
         }
 
-        // TODO check daily limit when add table limit_usage
+        Optional<LimitUsage> currLimitUsage =  limitUsageRepository
+                .findByPanAndUsageDate(request.getPan(), LocalDate.now());
 
-        // TODO check month limit when add table limit_usage
+        if (currLimitUsage.isPresent()) {
+            LimitUsage usage = currLimitUsage.get();
+            if (usage.getDailyAmount() + request.getAmount() > cardResponse.getDailyLimit()) {
+                return AuthorizationResponse.declined(request,  "EXCEEDS_AMOUNT_LIMIT", "61");
+            }
+        } else if (request.getAmount() > cardResponse.getDailyLimit()) {
+            return AuthorizationResponse.declined(request, "EXCEEDS_AMOUNT_LIMIT", "61");
+        }
+
+        Long monthlyLimitUsage = limitUsageRepository
+                .sumMonthlyAmountByPanAndMonth(request.getPan(), LocalDate.now().withDayOfMonth(1), LocalDate.now());
+        if (monthlyLimitUsage + request.getAmount() > cardResponse.getMonthlyLimit()) {
+            return AuthorizationResponse.declined(request, "EXCEEDS_AMOUNT_LIMIT", "61");
+        }
 
         if (request.getAmount() > cardResponse.getAvailableBalance()) {
             return AuthorizationResponse.declined(request, "INSUFFICIENT_FUNDS", "51");
@@ -73,6 +92,19 @@ public class AuthService {
         String rrn = generateRRN();
         try {
             reserve(request.getAmount(), rrn, request.getPan());
+            if (currLimitUsage.isPresent()) {
+                LimitUsage usage = currLimitUsage.get();
+                usage.setMonthlyAmount(usage.getMonthlyAmount() + request.getAmount());
+                usage.setDailyAmount(usage.getDailyAmount() + request.getAmount());
+                limitUsageRepository.save(usage);
+            } else {
+                LimitUsage usage = new LimitUsage();
+                usage.setPan(request.getPan());
+                usage.setUsageDate(LocalDate.now());
+                usage.setDailyAmount(request.getAmount());
+                usage.setMonthlyAmount(monthlyLimitUsage + request.getAmount());
+                limitUsageRepository.save(usage);
+            }
         } catch (Exception e) {
             log.debug("reserving failed for card {}", cardResponse.getId(), e);
             return AuthorizationResponse.declined(request, "RESERVATION_FAILED", "96");
@@ -99,7 +131,7 @@ public class AuthService {
         return response;
     }
 
-    public void reserve(Integer amount, String rrn, String pan) throws Exception {
+    public void reserve(Long amount, String rrn, String pan) throws Exception {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

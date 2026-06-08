@@ -49,7 +49,7 @@ class AuthControllerTest {
                 "123456",
                 "1234567890123456",
                 "000000",
-                5000,
+                5000L,
                 "810",
                 LocalDateTime.now(),
                 "T0000001",
