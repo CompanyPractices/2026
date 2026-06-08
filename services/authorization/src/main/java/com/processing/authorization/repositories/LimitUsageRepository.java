@@ -10,5 +10,5 @@ import java.util.UUID;
 
 @Repository
 public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
-    Optional<LimitUsage> findByCardIdAndUsageDate(UUID cardId, LocalDate usageDate);
+    Optional<LimitUsage> findByPanAndUsageDate(String pan, LocalDate usageDate);
 }

@@ -22,9 +22,8 @@ public class LimitUsage {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne
-    @JoinColumn(name = "card_id", nullable = false)
-    private CardResponse card;
+    @Column(nullable = false, length = 16)
+    private String pan;
 
     @Column(name = "usage_date", nullable = false)
     private LocalDate usageDate;
