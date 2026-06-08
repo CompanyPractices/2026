@@ -7,6 +7,7 @@ import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import com.processing.common.dto.cardmanagement.CreateCardRequest;
+import com.processing.common.dto.cardmanagement.PatchCardRequest;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,12 +79,12 @@ public final class CardServiceTest {
             faker.number().digits(6),
             faker.name().fullName().toUpperCase(Locale.ROOT),
             faker.number().digits(3),
-            faker.number().numberBetween(0, 10000000),
-            faker.number().numberBetween(0, 30000000),
-            faker.number().numberBetween(0, 10000000)
+            faker.number().numberBetween(0L, 10000000L),
+            faker.number().numberBetween(0L, 30000000L),
+            faker.number().numberBetween(0L, 10000000L)
         );
 
-        cardService.createCard(request);
+        var model = cardService.createCard(request);
         verify(cardRepository, times(1)).save(cardCaptor.capture());
         var entity = cardCaptor.getValue();
 
@@ -96,6 +97,9 @@ public final class CardServiceTest {
         assertEquals(request.dailyLimit(), entity.getDailyLimit());
         assertEquals(request.monthlyLimit(), entity.getMonthlyLimit());
         assertEquals(request.initialBalance(), entity.getAvailableBalance());
+
+        entity.setId(model.id());
+        validateCardModel(entity, model);
     }
 
     @Test
@@ -103,10 +107,9 @@ public final class CardServiceTest {
         var pan = testCardNumber;
 
         var entity = createTestCardEntity(pan);
-        when(cardRepository.findByPan(anyString())).thenReturn(Optional.of(entity));
+        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(entity));
 
         var found = cardService.getCard(pan);
-        verify(cardRepository, times(1)).findByPan(anyString());
         validateCardModel(entity, found);
 
         when(cardRepository.findByPan(anyString())).thenReturn(Optional.empty());
@@ -115,6 +118,8 @@ public final class CardServiceTest {
 
     @Test
     void testGetCards() {
+        var entity = createTestCardEntity(testCardNumber);
+
         int limit = faker.number().numberBetween(1, 100);
         int offset = faker.number().numberBetween(0, 100);
         CardStatus status = CardStatus.ACTIVE;
@@ -122,8 +127,6 @@ public final class CardServiceTest {
         String issuerId = faker.regexify("[A-Z0-9]{1,10}");
         LocalDateTime startDate = LocalDateTime.now().minusDays(1);
         LocalDateTime endDate = LocalDateTime.now();
-
-        var entity = createTestCardEntity(testCardNumber);
 
         when(cardRepository.findCards(
             status,
@@ -145,6 +148,25 @@ public final class CardServiceTest {
         var result = cardService.getCards(limit, offset, status, bin, issuerId, startDate, endDate);
         validateCardModel(entity, result.cards().getFirst());
         assertEquals(1, result.total());
+    }
+
+    @Test
+    void testPatchCard() {
+        var pan = testCardNumber;
+        var request = new PatchCardRequest(
+            CardStatus.EXPIRED,
+            faker.number().numberBetween(0L, 10000000L),
+            faker.number().numberBetween(0L, 30000000L),
+            faker.number().numberBetween(0L, 10000000L)
+        );
+        var entity = createTestCardEntity(pan);
+        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(entity));
+        cardService.patchCard(pan, request);
+
+        assertEquals(request.status(), entity.getStatus());
+        assertEquals(request.dailyLimit(), entity.getDailyLimit());
+        assertEquals(request.monthlyLimit(), entity.getMonthlyLimit());
+        assertEquals(request.availableBalance(), entity.getAvailableBalance());
     }
 
     private CardEntity createTestCardEntity(String pan) {
