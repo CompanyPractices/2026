@@ -29,7 +29,7 @@ public class AuthorizationRequest {
 
     @NotNull
     @PositiveOrZero
-    private Integer amount;
+    private Long amount;
 
  @NotBlank
  @Size(min = 3, max = 3)
