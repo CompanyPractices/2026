@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.cardmanagement.services.CardGeneratorService;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.GenerateCardsRequest;
+import net.datafaker.Faker;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -23,6 +24,8 @@ import java.util.UUID;
 @WebMvcTest(CardGeneratorController.class)
 public class CardGeneratorControllerTest {
 
+    private final Faker faker = new Faker();
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -34,14 +37,14 @@ public class CardGeneratorControllerTest {
 
     @Test
     void generateShouldReturn201WhenValidRequest() throws Exception {
-        List<String> bins = List.of("400000", "401000");
+        List<String> bins = List.of("400000", "400001");
         GenerateCardsRequest request = new GenerateCardsRequest(2, bins);
 
         CardModel card1 = new CardModel(
                 UUID.randomUUID(),
-                "4000001234567893",
+                faker.numerify("################"),
                 "400000",
-                "IVAN IVANOV",
+                faker.name().fullName().toUpperCase(),
                 "0629",
                 "ACTIVE",
                 "643",
@@ -54,9 +57,9 @@ public class CardGeneratorControllerTest {
 
         CardModel card2 = new CardModel(
                 UUID.randomUUID(),
-                "4000001234567893",
+                faker.numerify("################"),
                 "400001",
-                "IVAN IVANOV",
+                faker.name().fullName().toUpperCase(),
                 "0629",
                 "ACTIVE",
                 "643",
