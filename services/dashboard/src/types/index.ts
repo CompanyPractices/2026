@@ -44,7 +44,7 @@ export type Filter = {
     status?: FilterStatus
     dateFrom?: string
     dateTo?: string
-    bin?: string
+    issuerId?: string
     mcc?: string
 }
 

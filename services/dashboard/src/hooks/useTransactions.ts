@@ -30,10 +30,10 @@ function useTransactions() {
             requestParams.append('dateFrom', filter.dateFrom.slice(0, 10));
         }
         if (filter.dateTo){
-            requestParams.append('dateTo', filter.dateTo);
+            requestParams.append('dateTo', filter.dateTo.slice(0, 10));
         }
-        if (filter.bin){
-            requestParams.append('issuerId', filter.bin);
+        if (filter.issuerId){
+            requestParams.append('issuerId', filter.issuerId);
         }
         if (filter.mcc){
             requestParams.append('mcc', filter.mcc);
