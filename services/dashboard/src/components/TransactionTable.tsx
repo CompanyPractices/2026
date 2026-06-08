@@ -4,27 +4,35 @@ import {Transaction} from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
 import useTransactions from "../hooks/useTransactions.ts"
+import {Filters} from "./Filters.tsx";
+import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
 
 export function TransactionTable(){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-    const {transactions, error, loading} = useTransactions();
-    if (error){
-        return <div>Ошибка загрузки транзакций: {error}</div>
-    }
-    if (loading){
-        return <div>Загрузка транзакций...</div>
-    }
-    if (!transactions){
-        return <div>Транзакций не найдено</div>
-    }
+    const {transactions, error, loading, searchTransactions} = useTransactions();
 
     return (
         <div className="font-mono w-full">
+            <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={searchTransactions}/>
+
             <h2 className="text-2xl font-bold mb-4 text-center drop-shadow-lg">
                 Последние 20 транзакций
             </h2>
 
-            <div className="rounded-3xl border-2 border-emerald-600 shadow-lg mb-5">
+            {error &&
+                <div>Ошибка загрузки транзакций: {error}</div>
+            }
+
+            {loading &&
+                <div>Загрузка транзакций...</div>
+            }
+
+            {!transactions &&
+                <div>Транзакций не найдено</div>
+            }
+
+            {!loading && !error && (transactions && transactions.length > 0) &&
+                <div className="rounded-3xl border-2 border-emerald-600 shadow-lg mb-5">
 
                 <div className="overflow-x-auto">
 
@@ -69,7 +77,7 @@ export function TransactionTable(){
                     </table>
                 </div>
             </div>
-
+            }
             {selectedTx && (
                 <TransactionModal
                     transaction={selectedTx}

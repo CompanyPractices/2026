@@ -2,8 +2,6 @@ import LineChart from "./components/LineChart.tsx";
 import { Header } from "./components/Header.tsx";
 import PieChart from "./components/PieChart.tsx";
 import { TransactionTable } from "./components/TransactionTable.tsx";
-import {Filters} from "./components/Filters.tsx";
-import {ISSUERS_NAMES, MCC_NAMES} from "./mockData.ts";
 
 function App() {
     return (
@@ -17,7 +15,6 @@ function App() {
                     <PieChart />
                 </div>
                 <div className="col-span-4 m-4 place-content-center">
-                    <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={}/>
                     <TransactionTable />
                 </div>
             </main>
