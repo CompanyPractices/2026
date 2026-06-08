@@ -10,15 +10,14 @@ import com.processing.authorization.exceptions.ReserveCardException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Random;
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
 
     @Value("${card-management.url}")
     private String cmsUrl;
@@ -67,8 +66,9 @@ public class AuthService {
 
         // TODO check month limit when add table limit_usage
 
-        if (request.getAmount() > cardResponse.getAvailableBalance())
+        if (request.getAmount() > cardResponse.getAvailableBalance()) {
             return AuthorizationResponse.declined(request, "INSUFFICIENT_FUNDS", "51");
+        }
 
         String rrn = generateRRN();
         try {
@@ -85,30 +85,39 @@ public class AuthService {
     public CardResponse getCard(String pan) throws Exception {
         String url = cmsUrl + "/api/cards/" + pan;
         log.debug("Getting card info for pan {}", pan);
-        ResponseEntity<CardResponse> response = restTemplate.getForEntity(url, CardResponse.class);
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            log.debug("Failed to get card. Status: {}", response.getStatusCode());
-            throw new RuntimeException("Failed to get card. Status: " + response.getStatusCode());
-        }
-        return response.getBody();
+
+        CardResponse response = webClient.get()
+                .uri(url)
+                .retrieve()
+                .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
+                    log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
+                    return Mono
+                            .error(new CardNotFoundException("Failed to get card. Status: " + clientResponse.statusCode()));
+                })
+                .bodyToMono(CardResponse.class)
+                .block();
+        return response;
     }
 
     public void reserve(Integer amount, String rrn, String pan) throws Exception {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<ReserveRequest> requestEntity = new HttpEntity<>(reserveRequest, headers);
         String url = cmsUrl + "/api/cards/" + pan + "/reserve";
         log.debug("Reserving amount {} for card {} with rrn {}", amount, pan, rrn);
-        ResponseEntity<String> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                String.class);
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            log.debug("Reserve failed. Status: {}", response.getStatusCode());
-            throw new ReserveCardException("Failed to reserve. Status: " + response.getStatusCode());
-        }
+        String response = webClient.post()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(reserveRequest)
+                .retrieve()
+                .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
+                    log.debug("Reserve failed. Status: {}", clientResponse.statusCode());
+                    return Mono.error(
+                            new ReserveCardException("Failed to reserve. Status: " + clientResponse.statusCode()));
+                })
+                .bodyToMono(String.class)
+                .block();
+
         log.debug("Reserve successful for card {}", pan);
     }
 

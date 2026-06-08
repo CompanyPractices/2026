@@ -11,51 +11,51 @@ import lombok.AllArgsConstructor;
 @Setter
 @AllArgsConstructor
 public class AuthorizationRequest {
-    @NotBlank
-    @Size(min=4, max = 4)
+ @NotBlank
+ @Size(min = 4, max = 4)
     private String mti;
 
-    @NotBlank
-    @Size(min=6, max = 6)
+ @NotBlank
+ @Size(min = 6, max = 6)
     private String stan;
 
-    @NotBlank
-    @Size(min=16, max=16)
+ @NotBlank
+ @Size(min = 16, max = 16)
     private String pan;
 
-    @NotBlank
-    @Size(min=6, max=6)
+ @NotBlank
+ @Size(min = 6, max = 6)
     private String processingCode;
 
     @NotNull
-    @Positive
+    @PositiveOrZero
     private Integer amount;
 
-    @NotBlank
-    @Size(min=3, max=3)
+ @NotBlank
+ @Size(min = 3, max = 3)
     private String currencyCode;
 
-    @NotNull
+ @NotNull
     private LocalDateTime transmissionDateTime;
 
-    @NotBlank
-    @Size(min=8, max=8)
+ @NotBlank
+ @Size(min = 8, max = 8)
     private String terminalId;
 
-    @NotNull
+ @NotNull
     private TerminalType terminalType;
 
-    @NotBlank
-    @Size(min=15, max=15)
+ @NotBlank
+ @Size(min = 15, max = 15)
     private String merchantId;
 
-    @NotBlank
-    @Size(min=4, max=4)
+ @NotBlank
+ @Size(min = 4, max = 4)
     private String mcc;
 
-    @NotBlank
+ @NotBlank
     private String acquirerId;
 
-    @NotBlank
+ @NotBlank
     private String issuerId;
 }

@@ -59,6 +59,7 @@
         <profile>
             <id>gateway</id>
             <modules>
+                <module>common</module>
                 <module>gateway</module>
             </modules>
         </profile>
@@ -66,14 +67,15 @@
         <profile>
             <id>card-management</id>
             <modules>
-                <module>card-management</module>
                 <module>common</module>
+                <module>card-management</module>
             </modules>
         </profile>
 
         <profile>
             <id>switch</id>
             <modules>
+                <module>common</module>
                 <module>switch</module>
             </modules>
         </profile>
@@ -81,6 +83,7 @@
         <profile>
             <id>authorization</id>
             <modules>
+                <module>common</module>
                 <module>authorization</module>
             </modules>
         </profile>
@@ -88,24 +91,24 @@
         <profile>
             <id>terminal-simulator</id>
             <modules>
-                <module>terminal-simulator</module>
                 <module>common</module>
+                <module>terminal-simulator</module>
             </modules>
         </profile>
 
         <profile>
             <id>merchant-acquirer</id>
             <modules>
-                <module>merchant-acquirer</module>
                 <module>common</module>
+                <module>merchant-acquirer</module>
             </modules>
         </profile>
 
         <profile>
             <id>transaction-logger</id>
             <modules>
-                <module>transaction-logger</module>
                 <module>common</module>
+                <module>transaction-logger</module>
             </modules>
         </profile>
     </profiles>
@@ -151,8 +154,28 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${checkstyle.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>10.12.4</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>checkstyle-validation</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>true</failsOnError>
+                        <failOnViolation>true</failOnViolation>
+                        <violationSeverity>warning</violationSeverity>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -171,5 +194,11 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
 </project>

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(ExternalServiceException.class)
-    public ResponseEntity<ErrorResponse> handleExceptionFromAnotherService (ExternalServiceException ex) {
+    public ResponseEntity<ErrorResponse> handleExceptionFromAnotherService(ExternalServiceException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_GATEWAY)
                 .body(new ErrorResponse(
@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException ex){
+    public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(
@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleNotValid(MethodArgumentNotValidException ex){
+    public ResponseEntity<ErrorResponse> handleNotValid(MethodArgumentNotValidException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(

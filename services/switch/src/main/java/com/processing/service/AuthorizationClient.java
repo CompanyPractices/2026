@@ -11,7 +11,7 @@ import org.springframework.web.client.RestClient;
 @Service
 public class AuthorizationClient {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthorizationClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AuthorizationClient.class);
 
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
@@ -38,7 +38,7 @@ public class AuthorizationClient {
             }
             throw new IllegalStateException("Empty response from Authorization");
         } catch (Exception e) {
-            log.error("Authorization service unavailable for STAN={}: {}", request.stan(), e.getMessage());
+            LOG.error("Authorization service unavailable for STAN={}: {}", request.stan(), e.getMessage());
             // retry 3 попытки, затем DECLINED responseCode=05
             return AuthorizationResponse.authUnavailable(request.stan());
         }
@@ -57,13 +57,13 @@ public class AuthorizationClient {
                     .toBodilessEntity();
             return "ok";
         } catch (Exception e) {
-            log.warn("Authorization health check failed: {}", e.getMessage());
+            LOG.warn("Authorization health check failed: {}", e.getMessage());
             return "down";
         }
     }
 
     private AuthorizationResponse stubApprove(AuthorizationRequest request) {
-        log.debug("Authorization stub: STAN={} issuerId={}", request.stan(), request.issuerId());
+        LOG.debug("Authorization stub: STAN={} issuerId={}", request.stan(), request.issuerId());
         return AuthorizationResponse.stubApproved(request.stan());
     }
 }

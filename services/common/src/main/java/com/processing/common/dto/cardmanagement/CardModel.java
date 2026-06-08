@@ -17,7 +17,15 @@ public record CardModel(
     String cardholderName,
     @Schema(description = "Expiry date in MMYY format", example = "0629")
     String expiryDate,
-    @Schema(description = "Card status", example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "BLOCKED", "EXPIRED", "DELETED"})
+    @Schema(
+        description = "Card status",
+        example = "ACTIVE",
+        allowableValues = {"ACTIVE",
+        "INACTIVE",
+        "BLOCKED",
+        "EXPIRED",
+        "DELETED"}
+    )
     String status,
     @Schema(description = "Daily limit in kopecks", example = "15000000")
     long dailyLimit,

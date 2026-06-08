@@ -24,7 +24,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/cards")
@@ -89,7 +88,15 @@ public class CardController {
         Integer offset,
 
         @Nullable
-        @Schema(description = "Card status", example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "BLOCKED", "EXPIRED", "DELETED"})
+        @Schema(
+            description = "Card status",
+            example = "ACTIVE",
+            allowableValues = {"ACTIVE",
+            "INACTIVE",
+            "BLOCKED",
+            "EXPIRED",
+            "DELETED"}
+        )
         @RequestParam(required = false)
         CardStatus status,
 

@@ -1,0 +1,41 @@
+package com.processing.gateway.wrapper;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+
+import java.util.*;
+
+public class MutableHeadersRequestWrapper extends HttpServletRequestWrapper {
+    private final Map<String, String> mutableHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+    public MutableHeadersRequestWrapper(HttpServletRequest request) {
+        super(request);
+    }
+
+    public void setHeader(String name, String value) {
+        mutableHeaders.put(name, value);
+    }
+
+    @Override
+    public String getHeader(String name) {
+        String value = mutableHeaders.get(name);
+
+        return value != null ? value : super.getHeader(name);
+    }
+
+    @Override
+    public Enumeration<String> getHeaderNames() {
+        Set<String> headerNames = mutableHeaders.keySet();
+        headerNames.addAll(Collections.list(super.getHeaderNames()));
+
+        return Collections.enumeration(headerNames);
+    }
+
+    @Override
+    public Enumeration<String> getHeaders(String name) {
+        if (mutableHeaders.containsKey(name))
+            return Collections.enumeration(List.of(mutableHeaders.get(name)));
+
+        return super.getHeaders(name);
+    }
+}

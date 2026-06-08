@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,15 +24,14 @@ import static org.mockito.Mockito.*;
 class AuthServiceTest {
 
     private AuthService authService;
-    private final RestTemplate objectMapper = new RestTemplate();
 
     private AuthorizationRequest correctRequest;
     private CardResponse activeCardResponse;
 
     @BeforeEach
     void setUp() {
-        RestTemplate restTemplate = new RestTemplate();
-        authService = new AuthService(restTemplate);
+        WebClient webClient = WebClient.create();
+        authService = new AuthService(webClient);
 
         correctRequest = new AuthorizationRequest(
                 "0100",
