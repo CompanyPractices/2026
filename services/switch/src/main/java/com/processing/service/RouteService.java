@@ -1,6 +1,9 @@
 package com.processing.service;
 
 import com.processing.enums.TransactionStatus;
+import com.processing.exception.AuthorizationException;
+import com.processing.exception.LoggerException;
+import com.processing.exception.UnknownBinException;
 import com.processing.model.AuthorizationRequest;
 import com.processing.model.AuthorizationResponse;
 import com.processing.model.Transaction;
@@ -35,17 +38,34 @@ public class RouteService {
         String pan = request.pan();
         String bin = pan != null && pan.length() >= 6 ? pan.substring(0, 6) : "??????";
 
-        String issuerId = routingService.getIssuerIdByPan(pan);
-        if (issuerId == null) {
+        String issuerId;
+        try {
+            issuerId = routingService.getIssuerIdByPan(pan);
+        } catch (UnknownBinException e) {
             LOG.warn("TX {} | BIN={} → unknown BIN | DECLINED", request.stan(), bin);
             return AuthorizationResponse.unknownBin(request.stan());
         }
 
         AuthorizationRequest routedRequest = request.withIssuerId(issuerId);
-        AuthorizationResponse response = authorizationClient.authorize(routedRequest);
+
+        AuthorizationResponse response;
+        try {
+            response = authorizationClient.authorize(routedRequest);
+        } catch (AuthorizationException e) {
+            LOG.error("{}", e.getMessage());
+            return AuthorizationResponse.authUnavailable(request.stan());
+        }
 
         Transaction transaction = buildTransaction(routedRequest, response);
-        boolean logged = loggerClient.log(transaction);
+
+        boolean logged;
+        try {
+            logged = loggerClient.log(transaction);
+        } catch (LoggerException e) {
+            LOG.error("{}", e.getMessage());
+            logged = false;
+        }
+
         if (!logged && TransactionStatus.APPROVED.name().equals(response.status())) {
             LOG.error("Logger unavailable for TX {} — rolling back reservation", request.stan());
             authorizationClient.reverse(routedRequest, response.rrn());

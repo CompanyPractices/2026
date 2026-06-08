@@ -1,6 +1,7 @@
 package com.processing.service;
 
 import com.processing.config.SwitchProperties;
+import com.processing.exception.AuthorizationException;
 import com.processing.model.AuthorizationRequest;
 import com.processing.model.AuthorizationResponse;
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ public class AuthorizationClient {
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         int maxAttempts = switchProperties.retry().maxAttempts();
-        Exception lastException = null;
+        String lastError = null;
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
@@ -35,17 +36,15 @@ public class AuthorizationClient {
                 if (response != null) {
                     return response;
                 }
-                throw new IllegalStateException("Empty response from Authorization");
+                lastError = "Empty response from Authorization";
             } catch (Exception e) {
-                lastException = e;
+                lastError = e.getMessage();
                 LOG.warn("Authorization attempt {}/{} failed for STAN={}: {}",
                         attempt, maxAttempts, request.stan(), e.getMessage());
             }
         }
 
-        LOG.error("Authorization service unavailable for STAN={} after {} attempts: {}",
-                request.stan(), maxAttempts, lastException != null ? lastException.getMessage() : "unknown");
-        return AuthorizationResponse.authUnavailable(request.stan());
+        throw new AuthorizationException(request.stan(), maxAttempts, lastError);
     }
 
     public void reverse(AuthorizationRequest original, String rrn) {

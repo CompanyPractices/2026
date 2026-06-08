@@ -3,8 +3,8 @@ package com.processing.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.SwitchTestData;
-import com.processing.config.SwitchProperties;
 import com.processing.enums.TransactionStatus;
+import com.processing.exception.LoggerException;
 import com.processing.model.LogResponse;
 import com.processing.model.Transaction;
 import org.junit.jupiter.api.AfterEach;
@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
@@ -56,14 +57,15 @@ class LoggerClientTest {
     }
 
     @Test
-    void log_whenLoggerFailsAllRetries_returnsFalse() {
+    void log_whenLoggerFailsAllRetries_throwsLoggerException() {
         for (int i = 0; i < 3; i++) {
             mockServer.expect(requestTo("http://localhost:8088/api/internal/log"))
                     .andExpect(method(HttpMethod.POST))
                     .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
         }
 
-        assertThat(client.log(sampleTransaction(UUID.randomUUID()))).isFalse();
+        assertThrows(LoggerException.class, () ->
+                client.log(sampleTransaction(UUID.randomUUID())));
     }
 
     @Test

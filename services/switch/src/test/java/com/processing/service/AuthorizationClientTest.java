@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.SwitchTestData;
 import com.processing.config.SwitchProperties;
-import com.processing.model.AuthorizationRequest;
+import com.processing.exception.AuthorizationException;
 import com.processing.model.AuthorizationResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +15,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -56,7 +57,7 @@ class AuthorizationClientTest {
     }
 
     @Test
-    void authorize_whenAuthUnreachableAfterRetries_returnsDeclined05() {
+    void authorize_whenAuthUnreachableAfterRetries_throwsAuthorizationException() {
         SwitchProperties properties = new SwitchProperties(
                 "1.0.0",
                 SwitchTestData.BIN_ROUTING,
@@ -67,15 +68,12 @@ class AuthorizationClientTest {
         );
         AuthorizationClient unreachableClient = new AuthorizationClient(properties, RestClient.create());
 
-        AuthorizationResponse response = unreachableClient.authorize(
-                SwitchTestData.sampleRequest().withIssuerId("ISS001"));
-
-        assertThat(response.responseCode()).isEqualTo("05");
-        assertThat(response.status()).isEqualTo("DECLINED");
+        assertThrows(AuthorizationException.class, () ->
+                unreachableClient.authorize(SwitchTestData.sampleRequest().withIssuerId("ISS001")));
     }
 
     @Test
-    void reverse_sendsMti0400WithRrn() throws Exception {
+    void reverse_sendsMti0400WithRrn() {
         mockServer.expect(requestTo("http://localhost:8083/api/internal/authorize"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(jsonPath("$.mti").value("0400"))
