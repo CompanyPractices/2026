@@ -28,7 +28,7 @@ public class AuthorizationRequest {
     private String processingCode;
 
     @NotNull
-    @Positive
+    @PositiveOrZero 
     private Integer amount;
 
     @NotBlank
