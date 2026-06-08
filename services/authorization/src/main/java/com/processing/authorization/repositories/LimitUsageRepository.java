@@ -1,4 +1,14 @@
 package com.processing.authorization.repositories;
 
-public class LimitUsageRepository {
+import com.processing.authorization.entities.LimitUsage;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDate;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
+    Optional<LimitUsage> findByCardIdAndUsageDate(UUID cardId, LocalDate usageDate);
 }
