@@ -25,16 +25,17 @@ public class MutableHeadersRequestWrapper extends HttpServletRequestWrapper {
 
     @Override
     public Enumeration<String> getHeaderNames() {
-        Set<String> headerNames = mutableHeaders.keySet();
-        headerNames.addAll(Collections.list(super.getHeaderNames()));
+        Set<String> headerNames = new HashSet<>(Collections.list(super.getHeaderNames()));
+        headerNames.addAll(mutableHeaders.keySet());
 
         return Collections.enumeration(headerNames);
     }
 
     @Override
     public Enumeration<String> getHeaders(String name) {
-        if (mutableHeaders.containsKey(name))
+        if (mutableHeaders.containsKey(name)) {
             return Collections.enumeration(List.of(mutableHeaders.get(name)));
+        }
 
         return super.getHeaders(name);
     }
