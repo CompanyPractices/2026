@@ -22,6 +22,7 @@ management:
         include:
           - health
           - info
+  endpoint:
     health:
       show-details: always
 
@@ -32,6 +33,8 @@ spring:
         routes:
           - id: switch
             uri: ${SWITCH_URL:http://localhost:8082}
+            metadata:
+              serviceName: switch
             predicates:
               - Path=/api/transactions
               - Method=POST
@@ -39,31 +42,36 @@ spring:
               - RewritePath=/api/transactions, /api/internal/route
           - id: logger
             uri: ${LOGGER_URL:http://localhost:8088}
+            metadata:
+              serviceName: logger
             predicates:
               - Path=/api/transactions/search
           - id: dashboard
             uri: ${LOGGER_URL:http://localhost:8088}
+            metadata:
+              serviceName: logger
             predicates:
               - Path=/api/dashboard/**
           - id: terminal
             uri: ${TERMINAL_SIM_URL:http://localhost:8085}
+            metadata:
+              serviceName: terminalSimulator
             predicates:
               - Path=/api/simulator/terminal/**
           - id: merchant
             uri: ${MERCHANT_SIM_URL:http://localhost:8086}
+            metadata:
+              serviceName: merchantSimulator
             predicates:
               - Path=/api/simulator/merchant/**
           - id: cards
             uri: ${CARD_MGMT_URL:http://localhost:8081}
+            metadata:
+              serviceName: cardManagement
             predicates:
               - Path=/api/cards/**
   mvc:
     log-request-details: true
-  endpoint:
-    health:
-      show-details: always
-
-
 
 # Gateway
 gateway:

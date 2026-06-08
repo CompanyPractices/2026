@@ -2,8 +2,8 @@ package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.gateway.dto.AuthorizationRequest;
-import com.processing.gateway.dto.ErrorResponse;
+import com.processing.common.dto.ErrorResponse;
+import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.gateway.validation.TransactionRequestValidator;
 import com.processing.gateway.validation.TransactionValidationException;
 import jakarta.servlet.FilterChain;
@@ -32,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 1)
+@Order(Ordered.HIGHEST_PRECEDENCE + 2)
 @RequiredArgsConstructor
 public class TransactionValidationFilter extends OncePerRequestFilter {
 
@@ -79,7 +79,9 @@ public class TransactionValidationFilter extends OncePerRequestFilter {
         objectMapper.writeValue(response.getWriter(), new ErrorResponse(
                 "VALIDATION_ERROR",
                 message,
-                Instant.now().toString()
+                Instant.now().toString(),
+                null,
+                null
         ));
     }
 
