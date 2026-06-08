@@ -6,39 +6,34 @@ import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactory;
 import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class TransactionBuilder {
-    private final AuthorizationRequestFactory authorizationRequestFactory;
-    private final Random random;
+  private final AuthorizationRequestFactory authorizationRequestFactory;
+  private final Random random;
 
-    public List<AuthorizationRequest> build(int count,
-                                            List<CardDataResponse> cardDataResponses,
-                                            List<Merchant> merchants,
-                                            Terminal terminal,
-                                            Scenario scenario){
-        List<AuthorizationRequest> requests = new ArrayList<>(count);
+  public List<AuthorizationRequest> build(
+      int count,
+      List<CardDataResponse> cardDataResponses,
+      List<Merchant> merchants,
+      Terminal terminal,
+      Scenario scenario) {
+    List<AuthorizationRequest> requests = new ArrayList<>(count);
 
-        for(int i = 0 ; i < count; i++){
-            CardDataResponse card = cardDataResponses.get(i % cardDataResponses.size());
-            Merchant merchant = merchants.get(random.nextInt(merchants.size()));
-            int amount = random.nextInt(scenario.getCountLower(), scenario.getCountUpper());
+    for (int i = 0; i < count; i++) {
+      CardDataResponse card = cardDataResponses.get(i % cardDataResponses.size());
+      Merchant merchant = merchants.get(random.nextInt(merchants.size()));
+      int amount = random.nextInt(scenario.getCountLower(), scenario.getCountUpper());
 
-            requests.add(authorizationRequestFactory.build(
-                    card.pan(),
-                    amount,
-                    terminal,
-                    merchant
-            ));
-        }
-
-        return requests;
+      requests.add(authorizationRequestFactory.build(card.pan(), amount, terminal, merchant));
     }
+
+    return requests;
+  }
 }

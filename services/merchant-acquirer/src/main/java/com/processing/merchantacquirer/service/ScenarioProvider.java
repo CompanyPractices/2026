@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ScenarioProvider {
-    private final ScenarioProperties scenarioProperties;
+  private final ScenarioProperties scenarioProperties;
 
-    public Scenario getScenario(ScenarioType type){
-        return scenarioProperties.scenarios().get(type);
-    }
+  public Scenario getScenario(ScenarioType type) {
+    return scenarioProperties.scenarios().get(type);
+  }
 }

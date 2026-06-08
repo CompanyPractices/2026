@@ -14,40 +14,33 @@ import org.springframework.web.client.RestTemplate;
 @Component
 @RequiredArgsConstructor
 public class GatewayClient {
-    private final RestTemplate restTemplate = new RestTemplate();
-    public final String gatewayUrl = "http://gateway:8080";
+  private final RestTemplate restTemplate = new RestTemplate();
+  public final String gatewayUrl = "http://gateway:8080";
 
-    public CardsResponse getCards(CardsRequest request) {
-        String url = gatewayUrl + "/api/cards";
-        if (request.limit() > 0) {
-            url += "?limit=" + request.limit();
-        }
-        try {
-            return restTemplate.getForEntity(url, CardsResponse.class).getBody();
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
-            throw ExternalServiceException.fromResponse(ex);
-        } catch (Exception ex) {
-            throw new ExternalServiceException(
-                    "Card management",
-                    ex.getMessage(),
-                    "0"
-            );
-        }
+  public CardsResponse getCards(CardsRequest request) {
+    String url = gatewayUrl + "/api/cards";
+    if (request.limit() > 0) {
+      url += "?limit=" + request.limit();
     }
-
-    public AuthorizationResponse processAuthorize(AuthorizationRequest authorizationRequest) {
-        String url = gatewayUrl + "/api/transactions";
-        try {
-            return restTemplate.postForEntity(url, authorizationRequest, AuthorizationResponse.class).getBody();
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
-            throw ExternalServiceException.fromResponse(ex);
-        } catch (Exception ex) {
-            throw new ExternalServiceException(
-                    "API Gateway",
-                    ex.getMessage(),
-                    "0"
-            );
-        }
-
+    try {
+      return restTemplate.getForEntity(url, CardsResponse.class).getBody();
+    } catch (HttpClientErrorException | HttpServerErrorException ex) {
+      throw ExternalServiceException.fromResponse(ex);
+    } catch (Exception ex) {
+      throw new ExternalServiceException("Card management", ex.getMessage(), "0");
     }
+  }
+
+  public AuthorizationResponse processAuthorize(AuthorizationRequest authorizationRequest) {
+    String url = gatewayUrl + "/api/transactions";
+    try {
+      return restTemplate
+          .postForEntity(url, authorizationRequest, AuthorizationResponse.class)
+          .getBody();
+    } catch (HttpClientErrorException | HttpServerErrorException ex) {
+      throw ExternalServiceException.fromResponse(ex);
+    } catch (Exception ex) {
+      throw new ExternalServiceException("API Gateway", ex.getMessage(), "0");
+    }
+  }
 }

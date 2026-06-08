@@ -1,14 +1,13 @@
 package com.processing.merchantacquirer.config;
 
+import java.util.Random;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Random;
-
 @Configuration
 public class SimulationConfig {
-    @Bean
-    public Random random() {
-        return new Random();
-    }
+  @Bean
+  public Random random() {
+    return new Random();
+  }
 }
