@@ -1,7 +1,6 @@
 package com.processing.cardmanagement.controllers;
 
-import com.processing.cardmanagement.mappers.CardRestMapper;
-import com.processing.cardmanagement.services.CardUseCase;
+import com.processing.cardmanagement.services.CardService;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.annotations.Bin;
 import com.processing.common.dto.annotations.NotNegative;
@@ -18,7 +17,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -30,11 +28,13 @@ import java.time.LocalDateTime;
 @RequestMapping("/api/cards")
 @Validated
 @Tag(name = "Cards", description = "Card management endpoints")
-@RequiredArgsConstructor
 public class CardController {
 
-    private final CardUseCase cardService;
-    private final CardRestMapper restMapper;
+    private final CardService cardService;
+
+    public CardController(CardService cardService) {
+        this.cardService = cardService;
+    }
 
     @Operation(summary = "Create a new card")
     @ApiResponses({
@@ -45,17 +45,9 @@ public class CardController {
     })
     @PostMapping
     public ResponseEntity<CardModel> createCard(@Valid @RequestBody CreateCardRequest data) {
-        var card = cardService.createCard(
-            data.bin(),
-            data.cardholderName(),
-            data.currencyCode(),
-            data.dailyLimit(),
-            data.monthlyLimit(),
-            data.initialBalance()
-        );
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(restMapper.toDto(card));
+            .body(cardService.createCard(data));
     }
 
     @Operation(summary = "Get card by PAN")
@@ -69,7 +61,7 @@ public class CardController {
     })
     @GetMapping("/{pan}")
     public ResponseEntity<CardModel> getCard(@PathVariable @Pan String pan) {
-        return ResponseEntity.ok(restMapper.toDto(cardService.getCard(pan)));
+        return ResponseEntity.ok(cardService.getCard(pan));
     }
 
     @Operation(summary = "Get list of cards with pagination and filters")
@@ -99,10 +91,10 @@ public class CardController {
             description = "Card status",
             example = "ACTIVE",
             allowableValues = {"ACTIVE",
-                "INACTIVE",
-                "BLOCKED",
-                "EXPIRED",
-                "DELETED"}
+            "INACTIVE",
+            "BLOCKED",
+            "EXPIRED",
+            "DELETED"}
         )
         @RequestParam(required = false)
         CardStatus status,
@@ -130,7 +122,8 @@ public class CardController {
         @RequestParam(required = false)
         LocalDateTime endDate
     ) {
-        var cards = cardService.getCards(
+        return ResponseEntity.ok(
+            cardService.getCards(
                 limit,
                 offset,
                 status,
@@ -138,23 +131,6 @@ public class CardController {
                 issuerId,
                 startDate,
                 endDate
-            )
-            .stream()
-            .map(restMapper::toDto)
-            .toList();
-
-        var total = cardService.countCards(
-            status,
-            bin,
-            issuerId,
-            startDate,
-            endDate
-        );
-
-        return ResponseEntity.ok(
-            new GetCardsResponse(
-                total,
-                cards
             )
         );
     }
@@ -172,13 +148,7 @@ public class CardController {
         @PathVariable @Pan String pan,
         @Valid @RequestBody PatchCardRequest data
     ) {
-        cardService.patchCard(
-            pan,
-            data.status(),
-            data.dailyLimit(),
-            data.monthlyLimit(),
-            data.availableBalance()
-        );
+        cardService.patchCard(pan, data);
         return ResponseEntity.noContent().build();
     }
 
@@ -211,10 +181,7 @@ public class CardController {
         @PathVariable @Pan String pan,
         @Valid @RequestBody ReserveRequest data
     ) {
-        cardService.reserve(
-            pan,
-            data.amount()
-        );
+        cardService.reserve(pan, data);
         return ResponseEntity.ok().build();
     }
 }
