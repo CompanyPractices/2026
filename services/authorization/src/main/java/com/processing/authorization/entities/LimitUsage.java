@@ -19,7 +19,7 @@ import java.time.LocalDate;
 @Data
 public class LimitUsage {
     @Id
-    @GeneratedValue(strategy=GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne
