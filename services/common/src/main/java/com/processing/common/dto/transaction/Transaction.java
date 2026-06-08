@@ -1,7 +1,4 @@
-package com.processing.model;
-
-
-import com.processing.enums.TransactionStatus;
+package com.processing.common.dto.transaction;
 
 
 import java.time.Instant;

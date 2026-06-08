@@ -1,28 +1,36 @@
 package com.processing.service;
 
-import com.processing.enums.TransactionStatus;
+
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.transaction.Transaction;
+import com.processing.common.dto.transaction.TransactionStatus;
 import com.processing.exception.AuthorizationException;
 import com.processing.exception.LoggerException;
 import com.processing.exception.UnknownBinException;
-import com.processing.model.AuthorizationRequest;
-import com.processing.model.AuthorizationResponse;
-import com.processing.model.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.UUID;
+
 
 @Service
 public class RouteService {
 
+
     private static final Logger LOG = LoggerFactory.getLogger(RouteService.class);
+
 
     private final RoutingService routingService;
     private final AuthorizationClient authorizationClient;
     private final LoggerClient loggerClient;
+
 
     public RouteService(
             RoutingService routingService,
@@ -33,10 +41,12 @@ public class RouteService {
         this.loggerClient = loggerClient;
     }
 
+
     public AuthorizationResponse route(AuthorizationRequest request) {
         long startMs = System.currentTimeMillis();
         String pan = request.pan();
         String bin = pan != null && pan.length() >= 6 ? pan.substring(0, 6) : "??????";
+
 
         String issuerId;
         try {
@@ -46,7 +56,9 @@ public class RouteService {
             return AuthorizationResponse.unknownBin(request.stan());
         }
 
+
         AuthorizationRequest routedRequest = request.withIssuerId(issuerId);
+
 
         AuthorizationResponse response;
         try {
@@ -56,7 +68,9 @@ public class RouteService {
             return AuthorizationResponse.authUnavailable(request.stan());
         }
 
+
         Transaction transaction = buildTransaction(routedRequest, response);
+
 
         boolean logged;
         try {
@@ -66,18 +80,22 @@ public class RouteService {
             logged = false;
         }
 
+
         if (!logged && TransactionStatus.APPROVED.name().equals(response.status())) {
             LOG.error("Logger unavailable for TX {} — rolling back reservation", request.stan());
             authorizationClient.reverse(routedRequest, response.rrn());
             return AuthorizationResponse.systemError(request.stan());
         }
 
+
         long elapsed = System.currentTimeMillis() - startMs;
         LOG.info("TX {} | BIN={} → {} | Status={} | {}ms",
                 request.stan(), bin, issuerId, response.status(), elapsed);
 
+
         return response;
     }
+
 
     private Transaction buildTransaction(
             AuthorizationRequest request,
@@ -89,7 +107,7 @@ public class RouteService {
                 response.rrn(),
                 request.pan(),
                 request.processingCode(),
-                request.amount(),
+                request.amount() != null ? request.amount().longValue() : null,
                 request.currencyCode(),
                 request.terminalId(),
                 request.merchantId(),
@@ -106,14 +124,20 @@ public class RouteService {
         );
     }
 
+
     private static TransactionStatus toTransactionStatus(String status) {
         return TransactionStatus.valueOf(status);
     }
 
-    private static Instant toInstant(java.time.LocalDateTime dateTime) {
-        if (dateTime == null) {
+
+    private static Instant toInstant(String dateTime) {
+        if (dateTime == null || dateTime.isBlank()) {
             return Instant.now();
         }
-        return dateTime.atZone(ZoneOffset.UTC).toInstant();
+        try {
+            return Instant.parse(dateTime);
+        } catch (DateTimeParseException e) {
+            return LocalDateTime.parse(dateTime).atZone(ZoneOffset.UTC).toInstant();
+        }
     }
 }

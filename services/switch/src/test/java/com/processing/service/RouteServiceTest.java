@@ -1,21 +1,30 @@
 package com.processing.service;
 
 
+
+
 import com.processing.SwitchTestData;
-import com.processing.enums.TransactionStatus;
-import com.processing.model.AuthorizationRequest;
-import com.processing.model.AuthorizationResponse;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.transaction.TransactionStatus;
 import com.processing.support.CapturingAuthorizationClient;
 import com.processing.support.TrackingLoggerClient;
 import org.junit.jupiter.api.Test;
 
+
 import static org.assertj.core.api.Assertions.assertThat;
+
+
 
 
 class RouteServiceTest {
 
 
+
+
     private final RoutingService routingService = new RoutingService(SwitchTestData.defaultProperties());
+
+
 
 
     @Test
@@ -27,19 +36,27 @@ class RouteServiceTest {
                 logger);
 
 
+
+
         AuthorizationRequest request = new AuthorizationRequest(
-                "0100", "000002", "9999991234560001", "000000", 150_000L, "643",
+                "0100", "000002", "9999991234560001", "000000", 150_000, "643",
                 SwitchTestData.sampleRequest().transmissionDateTime(),
                 "TERM001", null, "MERCH12345678901", "5411", "ACQ001", null, null);
 
 
+
+
         AuthorizationResponse response = routeService.route(request);
+
+
 
 
         assertThat(response.responseCode()).isEqualTo("14");
         assertThat(response.status()).isEqualTo("DECLINED");
         assertThat(logger.wasCalled()).isFalse();
     }
+
+
 
 
     @Test
@@ -49,8 +66,12 @@ class RouteServiceTest {
         RouteService routeService = new RouteService(routingService, authorizationClient, logger);
 
 
+
+
         AuthorizationRequest request = SwitchTestData.sampleRequest();
         AuthorizationResponse response = routeService.route(request);
+
+
 
 
         assertThat(response.status()).isEqualTo("APPROVED");
@@ -64,6 +85,8 @@ class RouteServiceTest {
     }
 
 
+
+
     @Test
     void route_loggerFailureAfterApproved_triggersRollbackAndReturns96() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
@@ -71,7 +94,11 @@ class RouteServiceTest {
         RouteService routeService = new RouteService(routingService, authorizationClient, logger);
 
 
+
+
         AuthorizationResponse response = routeService.route(SwitchTestData.sampleRequest());
+
+
 
 
         assertThat(response.status()).isEqualTo("DECLINED");
@@ -80,6 +107,8 @@ class RouteServiceTest {
         assertThat(authorizationClient.reverseCalled()).isTrue();
         assertThat(authorizationClient.lastReverseRrn()).isEqualTo("012345678901");
     }
+
+
 
 
     @Test
@@ -92,7 +121,11 @@ class RouteServiceTest {
         RouteService routeService = new RouteService(routingService, authorizationClient, logger);
 
 
+
+
         AuthorizationResponse response = routeService.route(SwitchTestData.sampleRequest());
+
+
 
 
         assertThat(response.responseCode()).isEqualTo("51");

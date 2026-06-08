@@ -1,14 +1,15 @@
 package com.processing.service;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.SwitchTestData;
 import com.processing.config.RetryFactory;
 import com.processing.config.SwitchProperties;
-import com.processing.enums.TransactionStatus;
+import com.processing.common.dto.transaction.LogResponse;
+import com.processing.common.dto.transaction.Transaction;
+import com.processing.common.dto.transaction.TransactionStatus;
 import com.processing.exception.LoggerException;
-import com.processing.model.LogResponse;
-import com.processing.model.Transaction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,9 +19,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
+
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,11 +32,14 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+
 class LoggerClientTest {
+
 
     private MockRestServiceServer mockServer;
     private LoggerClient client;
     private ObjectMapper objectMapper;
+
 
     @BeforeEach
     void setUp() {
@@ -46,21 +52,25 @@ class LoggerClientTest {
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
+
     @AfterEach
     void verifyServer() {
         mockServer.verify();
     }
 
+
     @Test
     void log_whenLoggerReturnsSuccess_returnsTrue() throws Exception {
         UUID id = UUID.randomUUID();
-        LogResponse logResponse = new LogResponse(id.toString(), "stored");
+        LogResponse logResponse = new LogResponse(id, "stored");
         mockServer.expect(requestTo("http://localhost:8088/api/internal/log"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess(objectMapper.writeValueAsString(logResponse), MediaType.APPLICATION_JSON));
 
+
         assertThat(client.log(sampleTransaction(id))).isTrue();
     }
+
 
     @Test
     void log_whenLoggerFailsAllRetries_throwsLoggerException() {
@@ -70,14 +80,17 @@ class LoggerClientTest {
                     .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
         }
 
+
         assertThrows(LoggerException.class, () ->
                 client.log(sampleTransaction(UUID.randomUUID())));
     }
 
+
     @Test
     void log_whenSecondAttemptSucceeds_returnsTrue() throws Exception {
         UUID id = UUID.randomUUID();
-        LogResponse logResponse = new LogResponse(id.toString(), "stored");
+        LogResponse logResponse = new LogResponse(id, "stored");
+
 
         mockServer.expect(requestTo("http://localhost:8088/api/internal/log"))
                 .andExpect(method(HttpMethod.POST))
@@ -86,8 +99,10 @@ class LoggerClientTest {
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess(objectMapper.writeValueAsString(logResponse), MediaType.APPLICATION_JSON));
 
+
         assertThat(client.log(sampleTransaction(id))).isTrue();
     }
+
 
     @Test
     void log_whenMaxAttemptsExceedsBackoffList_usesLastBackoffValue() {
@@ -104,16 +119,19 @@ class LoggerClientTest {
         LoggerClient extendedClient = new LoggerClient(
                 properties, builder.build(), RetryFactory.loggerRetry(properties));
 
+
         for (int i = 0; i < 5; i++) {
             server.expect(requestTo("http://localhost:8088/api/internal/log"))
                     .andExpect(method(HttpMethod.POST))
                     .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
         }
 
+
         assertThrows(LoggerException.class, () ->
                 extendedClient.log(sampleTransaction(UUID.randomUUID())));
         server.verify();
     }
+
 
     private static Transaction sampleTransaction(UUID id) {
         return new Transaction(

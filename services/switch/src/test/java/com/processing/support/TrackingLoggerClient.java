@@ -1,15 +1,19 @@
 package com.processing.support;
 
+
 import com.processing.SwitchTestData;
 import com.processing.config.RetryFactory;
-import com.processing.model.Transaction;
+import com.processing.common.dto.transaction.Transaction;
 import com.processing.service.LoggerClient;
 
+
 public class TrackingLoggerClient extends LoggerClient {
+
 
     private boolean called;
     private Transaction lastTransaction;
     private final boolean succeed;
+
 
     public TrackingLoggerClient(boolean succeed) {
         super(
@@ -19,6 +23,7 @@ public class TrackingLoggerClient extends LoggerClient {
         this.succeed = succeed;
     }
 
+
     @Override
     public boolean log(Transaction transaction) {
         called = true;
@@ -26,9 +31,11 @@ public class TrackingLoggerClient extends LoggerClient {
         return succeed;
     }
 
+
     public boolean wasCalled() {
         return called;
     }
+
 
     public Transaction lastTransaction() {
         return lastTransaction;

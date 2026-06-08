@@ -1,26 +1,30 @@
 package com.processing.support;
 
+
 import com.processing.SwitchTestData;
 import com.processing.config.RetryFactory;
-import com.processing.model.AuthorizationRequest;
-import com.processing.model.AuthorizationResponse;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.service.AuthorizationClient;
+
 
 public class CapturingAuthorizationClient extends AuthorizationClient {
 
+
     private AuthorizationRequest lastRequest;
-    private AuthorizationRequest lastReverseOriginal;
     private String lastReverseRrn;
     private boolean reverseCalled;
-    private AuthorizationResponse responseToReturn;
+    private final AuthorizationResponse responseToReturn;
+
 
     public CapturingAuthorizationClient() {
         super(
                 SwitchTestData.defaultProperties(),
                 null,
                 RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
-        this.responseToReturn = approvedResponse("000001");
+        this.responseToReturn = approvedResponse();
     }
+
 
     public CapturingAuthorizationClient(AuthorizationResponse responseToReturn) {
         super(
@@ -29,6 +33,7 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
                 RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
         this.responseToReturn = responseToReturn;
     }
+
 
     @Override
     public AuthorizationResponse authorize(AuthorizationRequest request) {
@@ -44,31 +49,31 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
                 responseToReturn.processingTimeMs());
     }
 
+
     @Override
     public void reverse(AuthorizationRequest original, String rrn) {
         reverseCalled = true;
-        lastReverseOriginal = original;
         lastReverseRrn = rrn;
     }
+
 
     public AuthorizationRequest lastRequest() {
         return lastRequest;
     }
 
+
     public boolean reverseCalled() {
         return reverseCalled;
     }
 
-    public AuthorizationRequest lastReverseOriginal() {
-        return lastReverseOriginal;
-    }
 
     public String lastReverseRrn() {
         return lastReverseRrn;
     }
 
-    private static AuthorizationResponse approvedResponse(String stan) {
+
+    private static AuthorizationResponse approvedResponse() {
         return new AuthorizationResponse(
-                "0110", stan, "012345678901", "TEST01", "00", "APPROVED", null, 42);
+                "0110", "000001", "012345678901", "TEST01", "00", "APPROVED", null, 42);
     }
 }

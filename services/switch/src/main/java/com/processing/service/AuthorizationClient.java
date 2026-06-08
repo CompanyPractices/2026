@@ -1,9 +1,10 @@
 package com.processing.service;
 
+
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.config.SwitchProperties;
 import com.processing.exception.AuthorizationException;
-import com.processing.model.AuthorizationRequest;
-import com.processing.model.AuthorizationResponse;
 import io.github.resilience4j.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,14 +12,18 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+
 @Service
 public class AuthorizationClient {
 
+
     private static final Logger LOG = LoggerFactory.getLogger(AuthorizationClient.class);
+
 
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
     private final Retry authorizationRetry;
+
 
     public AuthorizationClient(
             SwitchProperties switchProperties,
@@ -29,6 +34,7 @@ public class AuthorizationClient {
         this.authorizationRetry = authorizationRetry;
     }
 
+
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         int maxAttempts = switchProperties.retry().maxAttempts();
         try {
@@ -38,6 +44,7 @@ public class AuthorizationClient {
             throw new AuthorizationException(request.stan(), maxAttempts, lastError);
         }
     }
+
 
     private AuthorizationResponse callAuthorize(AuthorizationRequest request) {
         AuthorizationResponse response = restClient.post()
@@ -50,6 +57,7 @@ public class AuthorizationClient {
         }
         throw new IllegalStateException("Empty response from Authorization");
     }
+
 
     public void reverse(AuthorizationRequest original, String rrn) {
         AuthorizationRequest reversal = original.forReversal(rrn);
@@ -64,6 +72,7 @@ public class AuthorizationClient {
             LOG.error("Reversal failed for STAN={} rrn={}", original.stan(), rrn, e);
         }
     }
+
 
     public String checkHealth() {
         try {
