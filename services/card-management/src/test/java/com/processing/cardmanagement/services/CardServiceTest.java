@@ -339,4 +339,8 @@ public final class CardServiceTest {
         assertEquals(entity.getCurrencyCode(), model.currencyCode());
         assertEquals(entity.getDailyLimit(), model.dailyLimit());
     }
+
+    private String generatePan() {
+        return faker.regexify("[0-9]{16}");
+    }
 }
