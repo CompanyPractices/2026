@@ -70,6 +70,7 @@ public class OpenApiFilter extends OncePerRequestFilter {
             response.getOutputStream().flush();
         } catch (Exception e) {
             log.error("Exception thrown while preparing OpenApi doc", e);
+            response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
         }
     }
 }
