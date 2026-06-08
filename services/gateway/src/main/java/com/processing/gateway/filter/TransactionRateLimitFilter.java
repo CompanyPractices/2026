@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.Map;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @RequiredArgsConstructor
 public class TransactionRateLimitFilter extends OncePerRequestFilter {
 

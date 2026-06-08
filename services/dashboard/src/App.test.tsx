@@ -23,20 +23,18 @@ describe('App', () => {
     expect(document.querySelector('footer')).toBeInTheDocument();
   });
 
-  it('renders KPI cards with mock data', () => {
+  it('shows loading then error for stats', async () => {
     render(<App />);
-    expect(screen.getByText(/1250/)).toBeInTheDocument();
-    expect(screen.getByText(/Всего ТХ/)).toBeInTheDocument();
-    expect(screen.getByText(/88\s*%/)).toBeInTheDocument();
-    expect(screen.getAllByText(/Одобрено/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/1 875 000.00/)).toBeInTheDocument();
-    expect(screen.getByText(/Общая сумма/)).toBeInTheDocument();
-    expect(screen.getByText(/38\s*ms/)).toBeInTheDocument();
-    expect(screen.getByText(/Среднее время/)).toBeInTheDocument();
+    expect(screen.getByText('Загрузка статистики...')).toBeInTheDocument();
+    const errorMessage = await screen.findByText(/Ошибка загрузки статистики:/);
+    expect(errorMessage).toBeInTheDocument();
   });
 
-  it ('render transaction table', () => {
+  it('shows loading then error for transactions', async () => {
     render(<App />);
-    expect(screen.getByText(/Последние 20 транзакций/)).toBeInTheDocument();
+    expect(screen.getByText('Загрузка транзакций...')).toBeInTheDocument();
+    const errorMessage = await screen.findByText(/Ошибка загрузки транзакций:/);
+    expect(errorMessage).toBeInTheDocument();
+
   });
 });

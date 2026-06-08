@@ -3,6 +3,8 @@ package com.processing.exception;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.dto.TransactionRequest;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -66,7 +68,9 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleDataIntegrityViolationReturnsConflict() {
-        ResponseEntity<ErrorResponse> response = handler.handleDataIntegrityViolation();
+        ResponseEntity<ErrorResponse> response = handler.handleDataIntegrityViolation(
+                new DataIntegrityViolationException("duplicate transaction")
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isNotNull();
@@ -75,7 +79,9 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleDatabaseAccessReturnsServiceUnavailable() {
-        ResponseEntity<ErrorResponse> response = handler.handleDatabaseAccess();
+        ResponseEntity<ErrorResponse> response = handler.handleDatabaseAccess(
+                new DataAccessResourceFailureException("database unavailable")
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
         assertThat(response.getBody()).isNotNull();
@@ -85,7 +91,9 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleInternalErrorReturnsInternalServerError() {
-        ResponseEntity<ErrorResponse> response = handler.handleInternalError();
+        ResponseEntity<ErrorResponse> response = handler.handleInternalError(
+                new RuntimeException("unexpected error")
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody()).isNotNull();

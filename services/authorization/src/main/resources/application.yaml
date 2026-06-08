@@ -6,8 +6,8 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 card-management:
-  url: http://localhost:8081
-services-to-health-check: cardManager:8081
+  url: ${CARD_MGMT_URL:http://localhost:8081}
+services-to-health-check: ${CARD_MGMT_URL:http://localhost:8081}
 management:
   endpoints:
     web:
