@@ -19,25 +19,28 @@ import java.time.LocalDate;
 @Data
 public class LimitUsage {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy=GenerationType.UUID)
+    UUID id;
 
-    @ManyToOne
-    @JoinColumn(name = "card_id", nullable = false)
-    private CardResponse card;
+    @Column(name = "card_id", nullable = false)
+    UUID cardId;
 
     @Column(name = "usage_date", nullable = false)
-    private LocalDate usageDate;
+    LocalDate usageDate;
 
     @Column(name = "daily_amount", nullable = false)
     @ColumnDefault("0")
-    private Long dailyAmount;
+    Long dailyAmount;
 
     @Column(name = "monthly_amount", nullable = false)
     @ColumnDefault("0")
-    private Long monthlyAmount;
+    Long monthlyAmount;
 
     @Column(name = "updated_at")
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }
