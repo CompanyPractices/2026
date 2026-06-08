@@ -80,7 +80,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<ErrorResponse> handleDatabaseAccess() {
+    public ResponseEntity<ErrorResponse> handleDatabaseAccess(DataAccessException exception) {
+        log.error("Transaction logger database access error", exception);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse(
                 "Database operation failed",
                 "Transaction logger database is unavailable",

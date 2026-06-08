@@ -3,6 +3,7 @@ package com.processing.exception;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.dto.TransactionRequest;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -75,7 +76,9 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleDatabaseAccessReturnsServiceUnavailable() {
-        ResponseEntity<ErrorResponse> response = handler.handleDatabaseAccess();
+        ResponseEntity<ErrorResponse> response = handler.handleDatabaseAccess(
+                new DataAccessResourceFailureException("database unavailable")
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
         assertThat(response.getBody()).isNotNull();

@@ -49,6 +49,9 @@ public class TransactionService {
         try {
             savedTransaction = transactionRepository.saveAndFlush(transactionMapper.toEntity(request));
         } catch (DataIntegrityViolationException exception) {
+            log.warn("Data integrity violation while storing transaction: id={}, message={}",
+                    request.id(),
+                    exception.getMessage());
             return transactionRepository.findById(request.id())
                     .map(transaction -> existingTransactionResult(transaction, request))
                     .orElseThrow(() -> exception);
@@ -66,6 +69,7 @@ public class TransactionService {
 
     private TransactionStoreResult existingTransactionResult(Transaction transaction, TransactionRequest request) {
         if (!transactionMapper.matches(transaction, request)) {
+            log.warn("Transaction conflict: existing transaction does not match request, id={}", request.id());
             throw new TransactionConflictException(request.id());
         }
 
