@@ -4,6 +4,7 @@ import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.models.CardEntity;
 import com.processing.cardmanagement.options.CardServiceOptions;
 import com.processing.cardmanagement.repositories.CardRepository;
+import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import com.processing.common.dto.cardmanagement.CreateCardRequest;
 import net.datafaker.Faker;
@@ -13,9 +14,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -104,18 +107,44 @@ public final class CardServiceTest {
 
         var found = cardService.getCard(pan);
         verify(cardRepository, times(1)).findByPan(anyString());
-
-        assertEquals(entity.getId(), found.id());
-        assertEquals(entity.getPan(), found.pan());
-        assertEquals(entity.getBin(), found.bin());
-        assertEquals(entity.getCardholderName(), found.cardholderName());
-        assertEquals(entity.getStrExpiryDate(), found.expiryDate());
-        assertEquals(entity.getStatus().name(), found.status());
-        assertEquals(entity.getCurrencyCode(), found.currencyCode());
-        assertEquals(entity.getDailyLimit(), found.dailyLimit());
+        validateCardModel(entity, found);
 
         when(cardRepository.findByPan(anyString())).thenReturn(Optional.empty());
         assertThrows(CardNotFoundException.class, () -> cardService.getCard(testCardNumber));
+    }
+
+    @Test
+    void testGetCards() {
+        int limit = faker.number().numberBetween(1, 100);
+        int offset = faker.number().numberBetween(0, 100);
+        CardStatus status = CardStatus.ACTIVE;
+        String bin = faker.number().digits(6);
+        String issuerId = faker.regexify("[A-Z0-9]{1,10}");
+        LocalDateTime startDate = LocalDateTime.now().minusDays(1);
+        LocalDateTime endDate = LocalDateTime.now();
+
+        var entity = createTestCardEntity(testCardNumber);
+
+        when(cardRepository.findCards(
+            status,
+            bin,
+            issuerId,
+            startDate,
+            endDate,
+            PageRequest.of(offset, limit)
+        )).thenReturn(List.of(entity));
+
+        when(cardRepository.countCards(
+            status,
+            bin,
+            issuerId,
+            startDate,
+            endDate
+        )).thenReturn(1);
+
+        var result = cardService.getCards(limit, offset, status, bin, issuerId, startDate, endDate);
+        validateCardModel(entity, result.cards().getFirst());
+        assertEquals(1, result.total());
     }
 
     private CardEntity createTestCardEntity(String pan) {
@@ -128,5 +157,16 @@ public final class CardServiceTest {
         entity.setIssuerId(options.issuerId());
         entity.setCreatedAt(LocalDateTime.now());
         return entity;
+    }
+
+    private void validateCardModel(CardEntity entity, CardModel model) {
+        assertEquals(entity.getId(), model.id());
+        assertEquals(entity.getPan(), model.pan());
+        assertEquals(entity.getBin(), model.bin());
+        assertEquals(entity.getCardholderName(), model.cardholderName());
+        assertEquals(entity.getStrExpiryDate(), model.expiryDate());
+        assertEquals(entity.getStatus().name(), model.status());
+        assertEquals(entity.getCurrencyCode(), model.currencyCode());
+        assertEquals(entity.getDailyLimit(), model.dailyLimit());
     }
 }
