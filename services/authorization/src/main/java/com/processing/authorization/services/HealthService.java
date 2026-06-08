@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
 record Response(String service, String status) {
 }
@@ -21,7 +21,7 @@ record Response(String service, String status) {
 public class HealthService {
     @Value("${services-to-health-check}")
     private List<String> toHealthCheck;
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
 
     public Map<String, String> healthCheckAllServices() {
         Map<String, String> result = new HashMap<>();
@@ -39,20 +39,27 @@ public class HealthService {
             String healthUrl = fullUrl + "/health";
             log.debug("Checking health of {}", healthUrl);
 
-            ResponseEntity<Map> response = restTemplate.getForEntity(healthUrl, Map.class);
+            Map<String, Object> body = webClient.get()
+                    .uri(healthUrl)
+                    .retrieve()
+                    .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
+                        log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
+                        return Mono
+                                .error(new RuntimeException(
+                                        "Failed to get card. Status: " + clientResponse.statusCode()));
+                    })
+                    .bodyToMono(Map.class)
+                    .block();
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                Map<String, Object> body = response.getBody();
-                if (body == null) {
-                    return new Response(serviceUrl, "unknown");
-                }
-                Object statusObj = body.get("status");
-                Object serviceObj = body.get("service");
-                String status = statusObj instanceof String ? (String) statusObj : "unknown";
-                String service = serviceObj instanceof String ? (String) serviceObj : serviceUrl;
-                return new Response(service, status);
+            if (body == null) {
+                return new Response(serviceUrl, "unknown");
             }
-            return new Response(serviceUrl, "unhealthy");
+
+            Object statusObj = body.get("status");
+            Object serviceObj = body.get("service");
+            String status = statusObj instanceof String ? (String) statusObj : "unknown";
+            String service = serviceObj instanceof String ? (String) serviceObj : serviceUrl;
+            return new Response(service, status);
         } catch (Exception e) {
             log.debug("Health check failed for {}", serviceUrl, e);
             return new Response(serviceUrl, "down");

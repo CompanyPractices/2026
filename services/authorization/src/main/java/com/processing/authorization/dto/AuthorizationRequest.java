@@ -27,8 +27,8 @@ public class AuthorizationRequest {
  @Size(min = 6, max = 6)
     private String processingCode;
 
- @NotNull
- @Positive
+    @NotNull
+    @PositiveOrZero 
     private Integer amount;
 
  @NotBlank
