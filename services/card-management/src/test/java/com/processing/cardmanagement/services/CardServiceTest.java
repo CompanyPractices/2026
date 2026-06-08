@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -326,5 +327,16 @@ public final class CardServiceTest {
 
     private String generatePan() {
         return faker.regexify("[0-9]{16}");
+    }
+
+    private void validateCardModel(CardEntity entity, CardModel model) {
+        assertEquals(entity.getId(), model.id());
+        assertEquals(entity.getPan(), model.pan());
+        assertEquals(entity.getBin(), model.bin());
+        assertEquals(entity.getCardholderName(), model.cardholderName());
+        assertEquals(entity.getStrExpiryDate(), model.expiryDate());
+        assertEquals(entity.getStatus().name(), model.status());
+        assertEquals(entity.getCurrencyCode(), model.currencyCode());
+        assertEquals(entity.getDailyLimit(), model.dailyLimit());
     }
 }
