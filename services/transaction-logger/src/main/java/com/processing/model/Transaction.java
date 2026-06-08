@@ -9,7 +9,12 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "transactions", indexes = {
+        @Index(name = "idx_transactions_status", columnList = "status"),
+        @Index(name = "idx_transactions_created_at", columnList = "created_at"),
+        @Index(name = "idx_transactions_pan", columnList = "pan"),
+        @Index(name = "idx_transactions_merchant", columnList = "merchant_id")
+})
 @Getter
 @Setter
 public class Transaction {
@@ -38,7 +43,7 @@ public class Transaction {
     private String mcc;
     @Column(nullable = false, length = 10)
     private String acquirerId;
-    @Column(nullable = false, length = 10)
+    @Column(length = 10)
     private String issuerId;
     private Long acquiringFee;
     @Enumerated(EnumType.STRING)
