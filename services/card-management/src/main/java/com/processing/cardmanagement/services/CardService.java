@@ -1,13 +1,14 @@
 package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
-import com.processing.cardmanagement.models.CardEntity;
-import com.processing.cardmanagement.options.CardServiceOptions;
+import com.processing.cardmanagement.models.Card;
+import com.processing.cardmanagement.models.CardDraft;
+import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardRepository;
-import com.processing.common.dto.cardmanagement.*;
+import com.processing.common.dto.cardmanagement.CardStatus;
+import com.processing.common.dto.cardmanagement.ReserveRequest;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,138 +16,123 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
-public class CardService {
+public class CardService implements CardUseCase {
+
+    private static final long DEFAULT_OFFSET = 0;
+    private static final long DEFAULT_LIMIT = 50;
 
     private final CardRepository cardRepository;
-    private final CardServiceOptions options;
+    private final CardServiceSettings settings;
     private final PanGenerator panGenerator;
 
-    public CardModel createCard(CreateCardRequest data) {
-        var entity = cardRepository.save(
-            new CardEntity(
-                panGenerator.generatePan(data.bin()),
-                data.bin(),
-                data.cardholderName(),
-                data.currencyCode(),
-                CardStatus.ACTIVE,
-                data.dailyLimit(),
-                data.monthlyLimit(),
-                data.initialBalance(),
-                options.issuerId()
-            )
+    public Card createCard(
+        String bin,
+        String cardholderName,
+        String currencyCode,
+        long dailyLimit,
+        long monthlyLimit,
+        long initialBalance
+    ) {
+        var draft = new CardDraft(
+            bin,
+            cardholderName,
+            CardStatus.ACTIVE,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            initialBalance,
+            settings.issuerId()
         );
-        return cardModelFromEntity(entity);
+
+        return cardRepository.save(Card.fromDraft(
+            panGenerator.generatePan(draft.bin()), draft)
+        );
     }
 
-    public List<CardModel> createCards(List<GeneratedCardDto> data) {
+    public List<Card> createGeneratedCards(List<CardDraft> data) {
         var entities = data
             .stream()
-            .map(dto -> new CardEntity(
-                panGenerator.generatePan(dto.bin()),
-                dto.bin(),
-                dto.cardholderName(),
-                dto.currencyCode(),
-                dto.status(),
-                dto.dailyLimit(),
-                dto.monthlyLimit(),
-                dto.balance(),
-                options.issuerId()
-            ))
-            .toList();
-
-        return cardRepository
-            .saveAll(entities)
-            .stream()
-            .map(this::cardModelFromEntity)
-            .toList();
-    }
-
-    public CardModel getCard(String pan) {
-        return cardModelFromEntity(getCardEntity(pan));
-    }
-
-    public GetCardsResponse getCards(
-        Integer limit,
-        Integer offset,
-        CardStatus status,
-        String bin,
-        String issuerId,
-        LocalDateTime startDate,
-        LocalDateTime endDate
-    ) {
-        var cards = cardRepository
-            .findCards(
-                status,
-                bin,
-                issuerId,
-                startDate,
-                endDate,
-                PageRequest.of(offset, limit)
+            .map(draft -> Card.fromDraft(
+                panGenerator.generatePan(draft.bin()), draft)
             )
-            .stream()
-            .map(this::cardModelFromEntity)
             .toList();
 
-        int total = cardRepository.countCards(status, bin, issuerId, startDate, endDate);
-
-        return new GetCardsResponse(total, cards);
+        return cardRepository.saveAll(entities);
     }
 
-    public void patchCard(String pan, PatchCardRequest data) {
-        var card = getCardEntity(pan);
-
-        if (data.status() != null) {
-            card.setStatus(data.status());
-        }
-        if (data.dailyLimit() != null) {
-            card.setDailyLimit(data.dailyLimit());
-        }
-        if (data.monthlyLimit() != null) {
-            card.setMonthlyLimit(data.monthlyLimit());
-        }
-        if (data.availableBalance() != null) {
-            card.setAvailableBalance(data.availableBalance());
-        }
-
-        cardRepository.save(card);
-    }
-
-    public void deleteCard(String pan) {
-        var card = getCardEntity(pan);
-        cardRepository.delete(card);
-    }
-
-    public long countCards() {
-        return cardRepository.count();
-    }
-
-    public void reserve(String pan, ReserveRequest data) {
-        var card = getCardEntity(pan);
-        card.reserve(data.amount());
-        cardRepository.save(card);
-    }
-
-    private CardEntity getCardEntity(String pan) {
+    public Card getCard(String pan) {
         return cardRepository
             .findByPan(pan)
             .orElseThrow(CardNotFoundException::new);
     }
 
-    private CardModel cardModelFromEntity(CardEntity entity) {
-        return new CardModel(
-            entity.getId(),
-            entity.getPan(),
-            entity.getBin(),
-            entity.getCardholderName(),
-            entity.getStrExpiryDate(),
-            entity.getStatus().name(),
-            entity.getCurrencyCode(),
-            entity.getDailyLimit(),
-            entity.getMonthlyLimit(),
-            entity.getAvailableBalance(),
-            entity.getIssuerId(),
-            entity.getCreatedAt()
+    public List<Card> getCards(
+        @Nullable Integer limit,
+        @Nullable Integer offset,
+        @Nullable CardStatus status,
+        @Nullable String bin,
+        @Nullable String issuerId,
+        @Nullable LocalDateTime startDate,
+        @Nullable LocalDateTime endDate
+    ) {
+        return cardRepository.findCards(
+            limit != null ? limit : DEFAULT_LIMIT,
+            offset != null ? offset : DEFAULT_OFFSET,
+            status,
+            bin,
+            issuerId,
+            startDate,
+            endDate
         );
+    }
+
+    public void patchCard(
+        String pan,
+        @Nullable CardStatus status,
+        @Nullable Long dailyLimit,
+        @Nullable Long monthlyLimit,
+        @Nullable Long availableBalance
+    ) {
+        var card = getCard(pan);
+        card.updateData(
+            status != null ? status : card.getStatus(),
+            dailyLimit != null ? dailyLimit : card.getDailyLimit(),
+            monthlyLimit != null ? monthlyLimit : card.getMonthlyLimit(),
+            availableBalance != null ? availableBalance : card.getAvailableBalance()
+        );
+
+        cardRepository.save(card);
+    }
+
+    public void deleteCard(String pan) {
+        var card = getCard(pan);
+        card.delete();
+        cardRepository.save(card);
+    }
+
+    public long countCards() {
+        return cardRepository.countCards();
+    }
+
+    public long countCards(
+        @Nullable CardStatus status,
+        @Nullable String bin,
+        @Nullable String issuerId,
+        @Nullable LocalDateTime startDate,
+        @Nullable LocalDateTime endDate
+    ) {
+        return cardRepository.countCards(
+            status,
+            bin,
+            issuerId,
+            startDate,
+            endDate
+        );
+    }
+
+    public void reserve(String pan, ReserveRequest data) {
+        var card = getCard(pan);
+        card.reserve(data.amount());
+        cardRepository.save(card);
     }
 }

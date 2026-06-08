@@ -8,11 +8,16 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @ConfigurationProperties(prefix = "app.card-service")
-public record CardServiceOptions(
+public record CardServiceConfigurationProperties(
     @NotBlank
     @Size(min = 1, max = 10)
     @Pattern(
         regexp = "^[A-Z0-9]+$"
     )
     String issuerId
-) {}
+) {
+
+    public CardServiceSettings toSettings() {
+        return new CardServiceSettings(this.issuerId);
+    }
+}

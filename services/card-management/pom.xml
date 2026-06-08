@@ -17,6 +17,11 @@
     <name>card-management</name>
     <description>Card Management System for СМП processing simulator</description>
 
+    <properties>
+        <mapstruct.version>1.6.3</mapstruct.version>
+        <datafaker.version>2.5.4</datafaker.version>
+    </properties>
+
     <dependencies>
         <!-- Common Module -->
         <dependency>
@@ -77,8 +82,16 @@
         <dependency>
             <groupId>net.datafaker</groupId>
             <artifactId>datafaker</artifactId>
-            <version>2.5.4</version>
+            <version>${datafaker.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- Mappers -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
