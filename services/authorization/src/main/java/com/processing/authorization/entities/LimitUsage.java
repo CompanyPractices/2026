@@ -1,6 +1,5 @@
 package com.processing.authorization.entities;
 
-import com.processing.authorization.dto.CardResponse;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;

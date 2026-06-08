@@ -13,7 +13,7 @@ import java.util.UUID;
 public class CardResponse {
     private UUID id;
 
-    private String pun;
+    private String pan;
 
     private String bin;
 
