@@ -11,12 +11,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Table(name = "Merchants")
 public class Merchant {
-    @Id
-    private String id;
-    private String name;
-    private String mcc;
-    private String category;
-    private String acquirerId;
-    private int acquiringFee;
-    private Long averageCheck;
+  @Id private String id;
+  private String name;
+  private String mcc;
+  private String category;
+  private String acquirerId;
+  private int acquiringFee;
+  private Long averageCheck;
 }

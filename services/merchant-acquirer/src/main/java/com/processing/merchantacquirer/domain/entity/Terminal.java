@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class Terminal {
-    private String id;
-    private String type;
+  private String id;
+  private String type;
 }

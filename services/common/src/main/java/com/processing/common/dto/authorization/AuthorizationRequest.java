@@ -1,7 +1,9 @@
 package com.processing.common.dto.authorization;
 
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
+
 
 @Builder
 public record AuthorizationRequest(
@@ -28,6 +30,22 @@ public record AuthorizationRequest(
         @Schema(description = "Merchant category code", example = "5045")
         String mcc,
         @Schema(description = "Acquirer ID", example = "ACQ002")
-        String acquirerId
+        String acquirerId,
+        @Schema(description = "Issuer ID, set by Switch after BIN routing")
+        String issuerId,
+        @Schema(description = "RRN for reversal requests (mti=0400)")
+        String rrn
 ) {
+        public AuthorizationRequest withIssuerId(String issuerId) {
+                return new AuthorizationRequest(
+                        mti, stan, pan, processingCode, amount, currencyCode,
+                        transmissionDateTime, terminalId, terminalType, merchantId, mcc, acquirerId, issuerId, rrn);
+        }
+
+
+        public AuthorizationRequest forReversal(String rrn) {
+                return new AuthorizationRequest(
+                        "0400", stan, pan, processingCode, amount, currencyCode,
+                        transmissionDateTime, terminalId, terminalType, merchantId, mcc, acquirerId, issuerId, rrn);
+        }
 }

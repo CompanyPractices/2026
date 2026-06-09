@@ -1,7 +1,6 @@
 package com.processing.gateway.validation;
 
-import com.processing.gateway.dto.AuthorizationRequest;
-import com.processing.gateway.dto.TerminalType;
+import com.processing.common.dto.authorization.AuthorizationRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -28,10 +27,12 @@ class TransactionRequestValidatorTest {
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
-                TerminalType.POS,
+                "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(request))
@@ -50,10 +51,12 @@ class TransactionRequestValidatorTest {
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
-                TerminalType.POS,
+                "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(request))
@@ -72,10 +75,12 @@ class TransactionRequestValidatorTest {
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
-                TerminalType.POS,
+                "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(request))
@@ -93,10 +98,12 @@ class TransactionRequestValidatorTest {
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
-                TerminalType.POS,
+                "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
     }
 
@@ -114,7 +121,9 @@ class TransactionRequestValidatorTest {
                 null,
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
 
         assertThatCode(() -> validator.validate(request))
