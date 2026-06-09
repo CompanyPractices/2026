@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public final class CardServiceTest {
+public final class CardUseCaseTest {
 
     private final String panGeneratorCardNumber = "1234 5678 9101 1123".replace(" ", "");
 
