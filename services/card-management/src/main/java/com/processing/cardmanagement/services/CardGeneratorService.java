@@ -5,6 +5,7 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import com.processing.common.dto.cardmanagement.GeneratedCardDto;
 import lombok.RequiredArgsConstructor;
+import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,11 +23,8 @@ public class CardGeneratorService {
     private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
 
+    private final Faker faker = new Faker();
     private final Random random = new Random();
-
-    private static final List<String> NAMES = List.of(
-        "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
-    );
 
     /**
      * Генерирует указанное количество тестовых карт и сохраняет их в базе данных
@@ -43,7 +41,7 @@ public class CardGeneratorService {
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
 
-            String cardholderName = NAMES.get(random.nextInt(NAMES.size()));
+            String cardholderName = faker.name().fullName().toUpperCase();
             int balance = random.nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
             int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
             int monthlyLimit = dailyLimit * 30;
