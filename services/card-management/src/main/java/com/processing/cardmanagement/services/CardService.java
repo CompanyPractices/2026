@@ -41,16 +41,20 @@ public class CardService implements CardUseCase {
         );
 
         return cardRepository.save(Card.fromDraft(
-            panGenerator.generatePan(draft.bin()), draft)
-        );
+            panGenerator.generatePan(draft.bin()),
+            settings.cardYtl(),
+            draft
+        ));
     }
 
     public List<Card> createGeneratedCards(List<CardDraft> data) {
         var entities = data
             .stream()
             .map(draft -> Card.fromDraft(
-                panGenerator.generatePan(draft.bin()), draft)
-            )
+                panGenerator.generatePan(draft.bin()),
+                settings.cardYtl(),
+                draft
+            ))
             .toList();
 
         return cardRepository.saveAll(entities);
