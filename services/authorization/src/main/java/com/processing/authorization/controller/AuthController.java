@@ -130,19 +130,19 @@ public class AuthController {
                 LocalDateTime requestInputTime = LocalDateTime.now();
                 AuthorizationResponse response = authService.authorize(request, requestInputTime);
 
-                boolean isApproved = response.status().equals(AuthorizationResponse.STATUS_APPROVED);
-                HttpStatus httpStatus;
-                if (isApproved) {
-                        httpStatus = HttpStatus.OK;
-                } else {
-                        httpStatus = switch (response.declineReason()) {
-                                case "CARD_NOT_FOUND" -> HttpStatus.NOT_FOUND;
-                                case "SERVICE_UNAVAILABLE", "RESERVATION_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
-                                case "INSUFFICIENT_FUNDS" -> HttpStatus.UNPROCESSABLE_ENTITY;
-                                case "CARD_EXPIRED", "CARD_BLOCKED", "CARD_INACTIVE" -> HttpStatus.FORBIDDEN;
-                                default -> HttpStatus.BAD_REQUEST;
-                        };
-                }
-                return ResponseEntity.status(httpStatus).body(response);
+        boolean isApproved = response.status().equals(AuthorizationResponse.STATUS_APPROVED);
+        HttpStatus httpStatus;
+        if (isApproved) {
+            httpStatus = HttpStatus.OK;
+        } else {
+            httpStatus = switch (response.declineReason()) {
+                case "CARD_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+                case "SERVICE_UNAVAILABLE", "RESERVATION_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
+                case "INSUFFICIENT_FUNDS" -> HttpStatus.UNPROCESSABLE_ENTITY;
+                case "CARD_EXPIRED", "CARD_BLOCKED", "CARD_INACTIVE" -> HttpStatus.FORBIDDEN;
+                default -> HttpStatus.BAD_REQUEST;
+            };
         }
+        return ResponseEntity.status(httpStatus).body(response);
+    }
 }
