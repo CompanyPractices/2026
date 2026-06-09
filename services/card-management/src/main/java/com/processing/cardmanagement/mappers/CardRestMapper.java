@@ -7,7 +7,7 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring", uses = CardDateMapper.class)
 public interface CardRestMapper {
 
-    CardModel toModel(Card card);
+    CardModel toDto(Card card);
 
     Card toDomain(CardModel model);
 }
