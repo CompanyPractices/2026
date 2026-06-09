@@ -11,16 +11,16 @@ function App() {
 
   return (
     <div className="bg-zinc-200 min-h-screen flex flex-col items-center justify-items-stretch">
-      <Header stats={stats} loading={loading} error={error}/>
+      <Header stats={stats} loading={loading} error={error} isConnected={isConnected}/>
       <main className="w-2/3 flex-grow grid grid-cols-4 gap-4">
-          <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-xl place-content-center">
+          <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
               <LineChart />
           </div>
-          <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-xl place-content-center">
+          <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
               <PieChart />
           </div>
           <div className="col-span-4 m-4 place-content-center">
-              <TransactionTable liveTransactions={liveTransactions} isConnected={isConnected} />
+              <TransactionTable liveTransactions={liveTransactions} />
           </div>
       </main>
 

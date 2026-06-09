@@ -7,10 +7,9 @@ import useTransactions from "../hooks/useTransactions.ts";
 
 type TransactionTableProps = {
     liveTransactions: Transaction[],
-    isConnected: boolean,
 };
 
-export function TransactionTable({ liveTransactions, isConnected }: TransactionTableProps){
+export function TransactionTable({ liveTransactions }: TransactionTableProps){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
     const { transactions: initialTransactions, loading, error } = useTransactions();
 
@@ -51,19 +50,9 @@ export function TransactionTable({ liveTransactions, isConnected }: TransactionT
 
     return (
         <div className="font-mono w-full">
-            <div className="flex items-center justify-center gap-3 mb-4">
-                <h2 className="text-2xl font-bold drop-shadow-lg">
-                    Последние 20 транзакций
-                </h2>
-                <span
-                    className={`w-3 h-3 rounded-full ${
-                        isConnected
-                            ? 'bg-emerald-500 animate-pulse'
-                            : 'bg-red-500 animate-pulse'
-                    }`}
-                    title={isConnected ? 'Подключено' : 'Нет соединения'}
-                />
-            </div>
+            <h2 className="text-2xl font-bold mb-4 text-center drop-shadow-lg">
+                Последние 20 транзакций
+            </h2>
 
             <div className="rounded-3xl overflow-hidden border-2 border-emerald-600 shadow-lg mb-5">
 
