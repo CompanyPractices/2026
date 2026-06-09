@@ -7,6 +7,22 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.UUID;
 
+/**
+ * Модель банковской карты
+ *
+ * @param id               уникальный идентификатор
+ * @param pan              уникальный номер карты
+ * @param bin              BIN номер карты
+ * @param cardholderName   имя держателя карты
+ * @param expiryDate       срок хранения карты
+ * @param status           статус карты
+ * @param currencyCode     код валюты
+ * @param dailyLimit       дневной лимит карты
+ * @param monthlyLimit     месячный лимит карты
+ * @param availableBalance доступный баланс
+ * @param issuerId         номер банка эмитента
+ * @param createdAt        дата создания
+ */
 public record Card(
     UUID id,
     String pan,
@@ -51,6 +67,12 @@ public record Card(
         );
     }
 
+    /**
+     * Создает копию карты с зарезервированным количеством средств
+     *
+     * @param amount размер резервирования
+     * @return карта с измененным балансом
+     */
     public Card withReserved(long amount) {
         if (this.availableBalance < amount) {
             throw new InsufficientFundsException();
@@ -72,6 +94,11 @@ public record Card(
         );
     }
 
+    /**
+     * Ставит карте статус "Удалено"
+     *
+     * @return удаленная карта
+     */
     public Card deleted() {
         if (this.status == CardStatus.DELETED) {
             throw new IllegalStateException("Card already deleted");
@@ -93,6 +120,16 @@ public record Card(
         );
     }
 
+    /**
+     * Изменяет некоторые параметры у карты
+     *
+     * @param status           новый статус
+     * @param dailyLimit       новый дневной лимит
+     * @param monthlyLimit     новый месячный лимит
+     * @param availableBalance новый баланс
+     * @return измененная карта
+     * @throws IllegalArgumentException отрицательный лимит или дневной лимит > месячного
+     */
     public Card withData(
         CardStatus status,
         Long dailyLimit,
@@ -122,6 +159,15 @@ public record Card(
         );
     }
 
+    /**
+     * Создает заполненную карту из черновика
+     *
+     * @param pan      номер карты
+     * @param issuerId номер банка эмитента
+     * @param cardYtl  срок действия карты (в годах)
+     * @param draft    частично заполненная карта
+     * @return созданная карта
+     */
     public static Card fromDraft(
         String pan,
         String issuerId,
