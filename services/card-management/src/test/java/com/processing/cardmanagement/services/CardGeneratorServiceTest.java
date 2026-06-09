@@ -40,10 +40,7 @@ public class CardGeneratorServiceTest {
 
     @BeforeEach
     void setUp() {
-        cardGeneratorService = new CardGeneratorService(
-            cardService,
-            generatorOptions
-        );
+        cardGeneratorService = new CardGeneratorService(cardService, generatorOptions);
     }
 
     @Test

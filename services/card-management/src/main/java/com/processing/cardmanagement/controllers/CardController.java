@@ -98,11 +98,13 @@ public class CardController {
         @Schema(
             description = "Card status",
             example = "ACTIVE",
-            allowableValues = {"ACTIVE",
+            allowableValues = {
+                "ACTIVE",
                 "INACTIVE",
                 "BLOCKED",
                 "EXPIRED",
-                "DELETED"}
+                "DELETED"
+            }
         )
         @RequestParam(required = false)
         CardStatus status,

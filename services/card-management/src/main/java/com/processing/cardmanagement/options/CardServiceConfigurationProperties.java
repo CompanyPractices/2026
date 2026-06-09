@@ -7,6 +7,10 @@ import jakarta.validation.constraints.Size;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+/**
+ * Конфигурация сервиса управления картами
+ * Загружается из application.properties с префиксом app.card-service
+ */
 @Validated
 @ConfigurationProperties(prefix = "app.card-service")
 public record CardServiceConfigurationProperties(
