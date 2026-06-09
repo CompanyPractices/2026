@@ -1,13 +1,11 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.CardGeneratedEvent;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import lombok.RequiredArgsConstructor;
-import net.datafaker.Faker;
-import org.springframework.context.ApplicationEventPublisher;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,16 +16,19 @@ import java.util.Random;
  * Сервис для генерации тестовых банковских карт
  * Карты равномерно распределяются по переданным BIN-префиксам
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CardGeneratorService {
 
     private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
-    private final ApplicationEventPublisher eventPublisher;
 
-    private final Faker faker = new Faker();
     private final Random random = new Random();
+
+    private static final List<String> NAMES = List.of(
+        "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
+    );
 
     /**
      * Генерирует указанное количество тестовых карт и сохраняет их в базе данных
@@ -39,31 +40,30 @@ public class CardGeneratorService {
      * @return список созданных карт
      */
     public List<Card> generate(int count, List<String> bins) {
+        log.info("Generating {} cards for bins: {}", count, bins);
         List<CardDraft> cards = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
 
-            String cardholderName = faker.name().fullName().toUpperCase();
+            String cardholderName = NAMES.get(random.nextInt(NAMES.size()));
             int balance = random.nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
             int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
             int monthlyLimit = dailyLimit * 30;
 
-
             CardDraft card = new CardDraft(
-                    bin,
-                    cardholderName,
-                    generateStatus(),
-                    generatorOptions.currencyCode(),
-                    dailyLimit,
-                    monthlyLimit,
-                    balance
+                bin,
+                cardholderName,
+                generateStatus(),
+                generatorOptions.currencyCode(),
+                dailyLimit,
+                monthlyLimit,
+                balance
             );
-
-            eventPublisher.publishEvent(new CardGeneratedEvent(card.status()));
 
             cards.add(card);
         }
+        log.info("Successfully generated {} cards", count);
         return cardService.createCards(cards);
     }
 
