@@ -11,6 +11,7 @@ import com.processing.authorization.exceptions.CardNotFoundException;
 import com.processing.authorization.exceptions.ReserveCardException;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -41,6 +42,7 @@ public class AuthService {
     @Value("${card-management.url}")
     private String cmsUrl;
 
+    @Transactional
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         CardModel cardResponse;
         try {
@@ -72,7 +74,7 @@ public class AuthService {
         }
 
         Optional<LimitUsage> currLimitUsage =  limitUsageRepository
-                .findByPanAndUsageDate(request.pan(), transmissionDate);
+                .findByPanAndUsageDateForUpdate(request.pan(), transmissionDate);
 
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
