@@ -30,7 +30,9 @@ class TransactionRequestValidatorTest {
                 "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(request))
@@ -52,7 +54,9 @@ class TransactionRequestValidatorTest {
                 "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(request))
@@ -74,7 +78,9 @@ class TransactionRequestValidatorTest {
                 "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(request))
@@ -95,7 +101,9 @@ class TransactionRequestValidatorTest {
                 "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
     }
 
@@ -113,7 +121,9 @@ class TransactionRequestValidatorTest {
                 null,
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null,
+                null
         );
 
         assertThatCode(() -> validator.validate(request))

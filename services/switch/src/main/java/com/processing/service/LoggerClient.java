@@ -1,10 +1,13 @@
 package com.processing.service;
 
+import com.processing.common.dto.transactionlogger.TransactionRequest;
+import com.processing.common.dto.transactionlogger.TransactionStoredResponse;
 import com.processing.config.SwitchProperties;
-import com.processing.model.LogResponse;
-import com.processing.model.Transaction;
+import com.processing.exception.LoggerException;
+import io.github.resilience4j.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -15,27 +18,38 @@ public class LoggerClient {
 
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
+    private final Retry loggerRetry;
 
-    public LoggerClient(SwitchProperties switchProperties, RestClient restClient) {
+    public LoggerClient(
+            SwitchProperties switchProperties,
+            @Qualifier("loggerRestClient") RestClient restClient,
+            @Qualifier("loggerRetry") Retry loggerRetry) {
         this.switchProperties = switchProperties;
         this.restClient = restClient;
+        this.loggerRetry = loggerRetry;
     }
 
-    public boolean log(Transaction transaction) {
-        // POST /api/internal/log
+    public boolean log(TransactionRequest transaction) {
+        int maxAttempts = switchProperties.retry().maxAttempts();
         try {
-            LogResponse response = restClient.post()
-                    .uri(switchProperties.loggerUrl() + "/api/internal/log")
-                    .body(transaction)
-                    .retrieve()
-                    .body(LogResponse.class);
-            LOG.info("Logger stored TX {} id={}", transaction.stan(),
-                    response != null ? response.id() : transaction.id());
+            Retry.decorateCallable(loggerRetry, () -> sendToLogger(transaction)).call();
             return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new LoggerException(transaction.stan(), transaction.id(), maxAttempts);
         } catch (Exception e) {
-            LOG.warn("Logger unavailable for TX {}: {}", transaction.stan(), e.getMessage());
-            // retry 3 раза, reversal mti=0400, DECLINED responseCode=96
-            return false;
+            throw new LoggerException(transaction.stan(), transaction.id(), maxAttempts);
         }
+    }
+
+    private TransactionStoredResponse sendToLogger(TransactionRequest transaction) {
+        TransactionStoredResponse response = restClient.post()
+                .uri(switchProperties.loggerUrl() + "/api/internal/log")
+                .body(transaction)
+                .retrieve()
+                .body(TransactionStoredResponse.class);
+        LOG.info("Logger stored TX {} id={}", transaction.stan(),
+                response != null ? response.id() : transaction.id());
+        return response;
     }
 }
