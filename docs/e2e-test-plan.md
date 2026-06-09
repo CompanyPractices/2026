@@ -1,29 +1,26 @@
-# План интеграционного тестирования — СМП
+# План e2e тестирования — СМП
 
->**Тип:** End-to-End интеграционные тест-кейсы
+>**Тип:** End-to-End тест-кейсы
 
 >**Фреймворк:** TestNG 
 
 >**Предусловие:** все 8 сервисов + PostgreSQL запущены
 
->**Базовый URL Gateway:** `http://localhost:8080` 
-
->**PostgreSQL:** `localhost:5432` (user/password из `.env`)
+>**PostgreSQL:** `localhost:5432`
 ---
 
 ## Общие положения
 ### Стек технологий
 
-| Категория | Технология | Maven-координата | Описание |
-|-----------|-----------|------------------|----------|
-| **Фреймворк тестов** | TestNG 7.10.2 | `org.testng:testng:7.10.2` | `@Test`, `@BeforeClass`, `@AfterClass`, `dependsOnMethods`, `priority` |
-| **HTTP-клиент** | REST Assured 5.4.0 | `io.rest-assured:rest-assured:5.4.0` | Fluent API для отправки HTTP-запросов и проверки ответов |
-| **Альтернативный HTTP-клиент** | `java.net.http.HttpClient` | JDK 21 (stdlib) | Встроенный HTTP-клиент, доступен без доп. зависимостей |
-| **JSON-парсинг** | Jackson Databind 2.17.2 | `com.fasterxml.jackson.core:jackson-databind:2.17.2` | Десериализация JSON-ответов в `JsonNode` / POJO |
-| **Jackson Java Time** | Jackson JSR310 2.17.2 | `com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2` | Поддержка `Instant`, `LocalDateTime` в Jackson |
-| **Assertions** | TestNG Assert + Hamcrest | `org.testng.Assert`, `org.hamcrest:hamcrest` | `assertEquals`, `assertTrue`, Hamcrest matchers для REST Assured |
-| **JDBC-соединение** | `java.sql.DriverManager` | JDK 21 (stdlib) | `DriverManager.getConnection(url, user, password)` → `PreparedStatement` → `ResultSet` |
-| **PostgreSQL JDBC** | PostgreSQL Driver 42.x | `org.postgresql:postgresql` (версия из Spring Boot BOM) | Драйвер для подключения к `jdbc:postgresql://localhost:5432/postgres` |
+| Категория             | Технология | Maven-координата | Описание                                                                               |
+|-----------------------|-----------|------------------|----------------------------------------------------------------------------------------|
+| **Фреймворк тестов**  | TestNG 7.10.2 | `org.testng:testng:7.10.2` | `@Test`, `@BeforeClass`, `@AfterClass`, `dependsOnMethods`, `priority`                 |
+| **HTTP-клиент**       | REST Assured 5.4.0 | `io.rest-assured:rest-assured:5.4.0` | API для отправки HTTP-запросов и проверки ответов                               |
+| **JSON-парсинг**      | Jackson Databind 2.17.2 | `com.fasterxml.jackson.core:jackson-databind:2.17.2` | Десериализация JSON-ответов в `JsonNode` / POJO                                        |
+| **Jackson Java Time** | Jackson JSR310 2.17.2 | `com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2` | Поддержка `Instant`, `LocalDateTime` в Jackson                                         |
+| **Assertions**        | TestNG Assert | `org.testng.Assert` | `assertEquals`, `assertTrue`, `softAssert`, `assertAll`                                |
+| **JDBC-соединение**   | `java.sql.DriverManager` | JDK 21 (stdlib) | `DriverManager.getConnection(url, user, password)` → `PreparedStatement` → `ResultSet` |
+| **PostgreSQL JDBC**   | PostgreSQL Driver 42.x | `org.postgresql:postgresql` (версия из Spring Boot BOM) | Драйвер для подключения к `jdbc:postgresql://localhost:5432/postgres`                  |
 
 ### Схема верификации в каждом тесте
 
@@ -162,23 +159,26 @@
 
 **Цель:** Проверить, что GET /api/cards/{pan} возвращает корректные данные карты или HTTP 404 для несуществующей.
 
-**Предусловие:** Карта создана в TC-02.
-
 **Шаги и assertions:**
 
-1. **HTTP GET** `http://localhost:8080/api/cards/{pan}` (PAN из TC-02)
-   - **HTTP assert:** `statusCode == 200`
-   - **Body assert:** `$.pan == "{expected_pan}"`, `$.id == "{expected_id}"`, `$.status == "ACTIVE"`, `$.availableBalance == 100000000`
+1. **HTTP POST** `http://localhost:8080/api/cards` — создать карту
+   - Body: `{ "bin": "400000", "cardholderName": "TEST USER", "currencyCode": "643", "dailyLimit": 15000000, "monthlyLimit": 300000000, "initialBalance": 100000000 }`
+   - **HTTP assert:** `statusCode == 201`
+   - Сохранить `pan`, `id` из ответа
 
-2. **DB assert** — `SELECT * FROM cards WHERE pan = '{pan}'`:
+2. **HTTP GET** `http://localhost:8080/api/cards/{pan}` (PAN из шага 1)
+   - **HTTP assert:** `statusCode == 200`
+   - **Body assert:** `$.pan == "{pan}"`, `$.id == "{id}"`, `$.status == "ACTIVE"`, `$.availableBalance == 100000000`
+
+3. **DB assert** — `SELECT * FROM cards WHERE pan = '{pan}'`:
    - Запись существует
    - `available_balance == response.availableBalance`
    - `status == response.status`
 
-3. **HTTP GET** `http://localhost:8080/api/cards/0000000000000000`
+4. **HTTP GET** `http://localhost:8080/api/cards/0000000000000000`
    - **HTTP assert:** `statusCode == 404`
 
-4. **DB assert** — `SELECT COUNT(*) FROM cards WHERE pan = '0000000000000000'`:
+5. **DB assert** — `SELECT COUNT(*) FROM cards WHERE pan = '0000000000000000'`:
    - `count == 0`
 
 ---
@@ -223,9 +223,9 @@
 
 **Цель:** Проверить полный E2E-цикл транзакции: Gateway → Switch → Authorization → CMS → Logger. Верифицировать состояние БД на каждом шаге.
 
-**Предусловие:** Карты сгенерированы (TC-03).
-
 **Шаги и assertions:**
+
+0. **Подготовка:** Создать карту через `POST /api/cards` с `initialBalance: 100000000`. Сохранить `pan`.
 
 1. **HTTP GET** `http://localhost:8080/api/cards/{pan}` — получить текущий баланс
    - **HTTP assert:** `statusCode == 200`
@@ -287,12 +287,12 @@
 
 **Цель:** Проверить отказ по причине недостатка средств (INSUFFICIENT_FUNDS). Баланс в БД не изменился.
 
-**Предусловие:** ACTIVE карта с известным балансом.
-
 **Шаги и assertions:**
 
+0. **Подготовка:** Создать карту через `POST /api/cards` с `initialBalance: 1000`. Сохранить `pan`.
+
 1. **DB assert** — `SELECT available_balance FROM cards WHERE pan = '{pan}'`:
-   - Сохранить `balanceBefore`
+   - Сохранить `balanceBefore` (= 1000)
 
 2. **HTTP POST** `http://localhost:8080/api/transactions`
    - Body: валидный запрос, но `amount` > `balanceBefore`
@@ -464,9 +464,9 @@
 
 **Цель:** Проверить, что Gateway корректно проксирует запросы `/api/transactions/search` и `/api/dashboard/**`.
 
-**Предусловие:** В системе есть транзакции (после TC-06).
-
 **Шаги и assertions:**
+
+0. **Подготовка:** Создать карту через `POST /api/cards`. Отправить `POST /api/transactions` для создания хотя бы одной транзакции.
 
 1. **HTTP GET** `http://localhost:8080/api/transactions/search?limit=5`
    - **HTTP assert:** `statusCode == 200`
@@ -497,9 +497,9 @@
 
 **Цель:** Проверить, что Switch маршрутизирует транзакции в корректный issuerId на основе BIN.
 
-**Предусловие:** Карты сгенерированы по всем 5 BIN (TC-03).
-
 **Шаги и assertions:**
+
+0. **Подготовка:** Сгенерировать карты через `POST /api/cards/generate` с `bins: ["400000","400001","400002","400003","400004"]`, `count: 50`.
 
 Для каждого BIN из `["400000", "400001", "400002", "400003", "400004"]`:
 
@@ -560,9 +560,9 @@
 
 **Цель:** Проверить, что симулятор терминала генерирует транзакции в сценарии "normal" и результаты отражаются в БД.
 
-**Предусловие:** Карты сгенерированы (TC-03).
-
 **Шаги и assertions:**
+
+0. **Подготовка:** Сгенерировать карты через `POST /api/cards/generate` с `bins: ["400000","400001","400002","400003","400004"]`, `count: 50`.
 
 1. **DB assert** — `SELECT COUNT(*) FROM transactions`:
    - Сохранить `countBefore`
@@ -659,9 +659,9 @@
 
 **Цель:** Проверить поиск транзакций с фильтрами, пагинацией и AND-логикой. Верифицировать соответствие HTTP-результатов данным в БД.
 
-**Предусловие:** В системе есть транзакции (после TC-06, TC-16, TC-17).
-
 **Шаги и assertions:**
+
+0. **Подготовка:** Создать карту через `POST /api/cards`. Отправить `POST /api/transactions` для создания хотя бы 3 транзакций (2 APPROVED, 1 DECLINED). Сохранить `pan`.
 
 1. **HTTP GET** `http://localhost:8080/api/transactions/search?limit=10&offset=0`
    - **HTTP assert:** `statusCode == 200`
@@ -712,9 +712,9 @@
 
 **Цель:** Проверить, что статистика Dashboard непротиворечива и соответствует данным в БД.
 
-**Предусловие:** В системе есть транзакции (после TC-06, TC-16, TC-17, TC-18).
-
 **Шаги и assertions:**
+
+0. **Подготовка:** Создать карту через `POST /api/cards`. Отправить `POST /api/transactions` для создания нескольких транзакций с разными суммами (APPROVED + DECLINED).
 
 1. **HTTP GET** `http://localhost:8080/api/dashboard/stats`
    - **HTTP assert:** `statusCode == 200`
@@ -794,3 +794,26 @@
 | Merchant Simulator (grocery) | TC-18 | ✅ totalSubmitted=20 | ✅ transactions MCC, acquiring_fee |
 | Поиск + фильтры + пагинация | TC-19 | ✅ filter results, pagination | ✅ COUNT match, AND-logic |
 | Dashboard статистика | TC-20 | ✅ consistency checks | ✅ SUM, COUNT, AVG match |
+
+---
+
+## Структура проекта E2E-тестов
+
+```text
+services/e2e-tests/
+├── src/
+│   ├── main/java/com/processing/e2e/
+│   ├── test/java/com/processing/e2e/
+│   │   ├── E2EBaseTest.java         # Базовый класс (URL-ы, DB, HTTP)
+│   │   └── tests/
+│   │       ├── HealthCheckTest.java 
+│   │       └── ...                   
+│   │   └── utility/
+│   │       ├── HttpUtils.java       # HTTP-хелперы (REST Assured)
+│   │       └── DBUtils.java         # JDBC-хелперы
+│   └── test/resources/
+│       └── testng.xml                # TestNG suite
+├── Dockerfile
+├── pom.xml
+└── README.md
+```

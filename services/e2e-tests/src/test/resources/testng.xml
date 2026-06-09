@@ -4,7 +4,7 @@
 
     <test name="Health Check">
         <classes>
-            <class name="com.processing.tests.HealthCheckTest"/>
+            <class name="com.processing.e2e.tests.HealthCheckTest"/>
         </classes>
     </test>
 </suite>
