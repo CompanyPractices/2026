@@ -34,7 +34,7 @@ public class CardGeneratorService {
      * Распределение статусов: ACTIVE - 95%, INACTIVE - 3%, BLOCKED - 2%
      *
      * @param count количество карт для генерации
-     * @param bins список BIN-префиксов для распределения карт
+     * @param bins  список BIN-префиксов для распределения карт
      * @return список созданных карт
      */
     public List<CardModel> generate(int count, List<String> bins) {
