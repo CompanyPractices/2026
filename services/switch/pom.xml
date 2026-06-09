@@ -17,6 +17,12 @@
     <description>Microservice for СМП processing simulator</description>
 
     <dependencies>
+        <!-- Common module -->
+        <dependency>
+            <groupId>com.processing</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
         <!-- Web (REST API) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

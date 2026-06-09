@@ -1,8 +1,8 @@
 package com.processing.service;
 
+import com.processing.common.dto.transactionlogger.TransactionRequest;
+import com.processing.common.dto.transactionlogger.TransactionStoredResponse;
 import com.processing.config.SwitchProperties;
-import com.processing.model.LogResponse;
-import com.processing.model.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,14 +21,14 @@ public class LoggerClient {
         this.restClient = restClient;
     }
 
-    public boolean log(Transaction transaction) {
+    public boolean log(TransactionRequest transaction) {
         // POST /api/internal/log
         try {
-            LogResponse response = restClient.post()
+            TransactionStoredResponse response = restClient.post()
                     .uri(switchProperties.loggerUrl() + "/api/internal/log")
                     .body(transaction)
                     .retrieve()
-                    .body(LogResponse.class);
+                    .body(TransactionStoredResponse.class);
             LOG.info("Logger stored TX {} id={}", transaction.stan(),
                     response != null ? response.id() : transaction.id());
             return true;
