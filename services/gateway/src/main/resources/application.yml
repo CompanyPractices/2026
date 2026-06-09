@@ -149,6 +149,9 @@ gateway:
     transactions-per-second: ${TRANSACTIONS_RATE_LIMIT:100}
   open-api:
     url: ${GATEWAY_PUBLIC_URL:http://localhost:${GATEWAY_PORT:8080}}
+  health:
+    connection-timeout: 5
+    request-timeout: 3
 
 #---
 # Swagger
