@@ -1,13 +1,26 @@
 server:
   port: ${PORT:8083}
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:smp_db}
+    username: ${POSTGRES_USER:smp_user}
+    password: ${POSTGRES_PASSWORD:smp_password}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
 logging:
   level:
     com.processing: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
 card-management:
   url: ${CARD_MGMT_URL:http://localhost:8081}
 services-to-health-check: ${CARD_MGMT_URL:http://localhost:8081}
+
 management:
   endpoints:
     web:
