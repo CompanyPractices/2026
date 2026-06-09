@@ -1,9 +1,9 @@
-package com.processing.controller;
+package com.processing.transactionlogger.controller;
 
-import com.processing.dto.DashboardStatsResponse;
-import com.processing.dto.TransactionResponse;
-import com.processing.enums.TransactionStatus;
-import com.processing.service.TransactionService;
+import com.processing.common.dto.transactionlogger.TransactionResponse;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
+import com.processing.transactionlogger.dto.DashboardStatsResponse;
+import com.processing.transactionlogger.service.TransactionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

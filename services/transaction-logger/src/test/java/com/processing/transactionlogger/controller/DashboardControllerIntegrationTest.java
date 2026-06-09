@@ -1,16 +1,12 @@
-package com.processing.controller;
+package com.processing.transactionlogger.controller;
 
-import com.processing.dto.DashboardStatsResponse;
-import com.processing.service.TransactionService;
+import com.processing.transactionlogger.dto.DashboardStatsResponse;
+import com.processing.transactionlogger.service.TransactionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 
 import java.util.List;
 

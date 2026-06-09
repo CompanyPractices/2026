@@ -1,7 +1,7 @@
-package com.processing.controller;
+package com.processing.transactionlogger.controller;
 
-import com.processing.dto.TransactionSearchResponse;
-import com.processing.service.TransactionService;
+import com.processing.transactionlogger.dto.TransactionSearchResponse;
+import com.processing.transactionlogger.service.TransactionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

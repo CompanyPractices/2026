@@ -1,11 +1,11 @@
-package com.processing.service;
+package com.processing.transactionlogger.service;
 
-import com.processing.dto.TransactionResponse;
-import com.processing.dto.TransactionSearchResponse;
-import com.processing.enums.TransactionStatus;
-import com.processing.model.Transaction;
-import com.processing.repository.TransactionRepository;
-import com.processing.specification.TransactionFilter;
+import com.processing.common.dto.transactionlogger.TransactionResponse;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
+import com.processing.transactionlogger.dto.TransactionSearchResponse;
+import com.processing.transactionlogger.model.Transaction;
+import com.processing.transactionlogger.repository.TransactionRepository;
+import com.processing.transactionlogger.specification.TransactionFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

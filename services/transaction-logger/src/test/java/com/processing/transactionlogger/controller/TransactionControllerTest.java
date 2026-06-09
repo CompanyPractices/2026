@@ -1,8 +1,8 @@
-package com.processing.controller;
+package com.processing.transactionlogger.controller;
 
-import com.processing.dto.TransactionSearchResponse;
-import com.processing.service.TransactionService;
-import com.processing.specification.TransactionFilter;
+import com.processing.transactionlogger.dto.TransactionSearchResponse;
+import com.processing.transactionlogger.service.TransactionService;
+import com.processing.transactionlogger.specification.TransactionFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
