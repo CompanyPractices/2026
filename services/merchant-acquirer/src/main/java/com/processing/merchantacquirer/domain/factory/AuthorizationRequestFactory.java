@@ -3,7 +3,8 @@ package com.processing.merchantacquirer.domain.factory;
 import com.processing.merchantacquirer.domain.StanGenerator;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Terminal;
-import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -14,7 +15,7 @@ public class AuthorizationRequestFactory {
   private final StanGenerator stanGenerator;
 
   public AuthorizationRequest build(
-      String pan, Integer amount, Terminal terminal, Merchant merchant) {
+          String pan, Integer amount, Terminal terminal, Merchant merchant) {
     LocalDateTime time = LocalDateTime.now();
 
     return AuthorizationRequest.builder()
