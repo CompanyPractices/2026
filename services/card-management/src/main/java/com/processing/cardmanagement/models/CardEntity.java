@@ -2,7 +2,10 @@ package com.processing.cardmanagement.models;
 
 import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -36,7 +39,6 @@ public class CardEntity {
     @Column(nullable = false)
     private String cardholderName;
 
-    @Setter(AccessLevel.NONE)
     @Column(nullable = false, length = 4)
     private String expiryDate;
 
