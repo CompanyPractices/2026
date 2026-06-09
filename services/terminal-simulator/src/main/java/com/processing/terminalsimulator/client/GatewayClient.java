@@ -6,7 +6,6 @@ import com.processing.terminalsimulator.model.CardStatus;
 import com.processing.terminalsimulator.dto.AuthorizationRequest;
 import com.processing.terminalsimulator.dto.AuthorizationResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
