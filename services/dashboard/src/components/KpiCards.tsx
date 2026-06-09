@@ -1,11 +1,17 @@
-import {DashboardStats} from "../types";
 import {convertPenniesToRubles} from "../utils/format.ts";
 
-type KpiCardsProps = {
-    stats: DashboardStats;
+export type KpiCardsStats = {
+    totalTransactions: number,
+    approvalRate: number,
+    totalAmount: number,
+    avgProcessingTimeMs: number,
 };
 
-export function KpiCards( { stats } : KpiCardsProps) {
+type KpiCardsProps = {
+    stats: KpiCardsStats,
+}
+
+export function KpiCards( {stats }: KpiCardsProps ) {
     const kpiCards = [
         { label: 'Всего ТХ', value: stats.totalTransactions },
         { label: 'Одобрено', value: stats.approvalRate, unit: '%' },

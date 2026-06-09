@@ -1,8 +1,12 @@
-import {KpiCards} from "./KpiCards.tsx";
-import useStats from "../hooks/useStats.ts"
+import {KpiCards, KpiCardsStats} from "./KpiCards.tsx";
 
-export function Header() {
-    const {transactionStats, error, loading} = useStats();
+type HeaderProps = {
+    stats: KpiCardsStats,
+    loading: boolean,
+    error: string | null,
+};
+
+export function Header({ stats, loading, error }: HeaderProps) {
     if (error){
         return <header className="flex flex-col items-center font-mono m-5">
             <h1 className="text-5xl font-semibold drop-shadow-lg">Dashboard</h1>
@@ -15,7 +19,7 @@ export function Header() {
             <div>Загрузка статистики...</div>
         </header>;
     }
-    if (!transactionStats){
+    if (!stats){
         return <header className="flex flex-col items-center font-mono m-5">
             <h1 className="text-5xl font-semibold drop-shadow-lg">Dashboard</h1>
             <div>Данные отсутствуют</div>
@@ -23,6 +27,6 @@ export function Header() {
     }
     return <header className="flex flex-col items-center font-mono m-5">
         <h1 className="text-5xl font-semibold drop-shadow-lg">Dashboard</h1>
-        <KpiCards stats={transactionStats} />
+        <KpiCards stats={stats} />
     </header>;
 }
