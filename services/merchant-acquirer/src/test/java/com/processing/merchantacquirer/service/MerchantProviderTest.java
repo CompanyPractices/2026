@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.repository.MerchantRepository;
+
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -72,7 +74,7 @@ public class MerchantProviderTest {
             "5411",
             "grocery",
             "ACQ003",
-            0.015,
+            new BigDecimal("0.015"),
             145000L);
     Merchant merchant2 = new Merchant(
             "MERCH00000000007",
@@ -80,7 +82,7 @@ public class MerchantProviderTest {
             "5499",
             "grocery",
             "ACQ003",
-            0.015,
+            new BigDecimal("0.015"),
             145000L);
     List<Merchant> expectedMerchants = List.of(merchant1, merchant2);
 
@@ -103,7 +105,7 @@ public class MerchantProviderTest {
             "5411",
             "grocery",
             "ACQ003",
-            0.015,
+            new BigDecimal("0.015"),
             145000L);
     Merchant merchant2 = new Merchant(
             "MERCH00000000007",
@@ -111,7 +113,7 @@ public class MerchantProviderTest {
             "5499",
             "grocery",
             "ACQ003",
-            0.015,
+            new BigDecimal("0.015"),
             145000L);
 
     when(merchantRepository.findAll()).thenReturn(List.of(merchant1, merchant2));
