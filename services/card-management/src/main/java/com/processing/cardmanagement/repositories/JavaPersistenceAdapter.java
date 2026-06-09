@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Адаптер для работы с CardRepository через JPA-реализацию
+ */
 @RequiredArgsConstructor
 public final class JavaPersistenceAdapter implements CardRepository {
 

@@ -5,7 +5,10 @@ import com.processing.cardmanagement.models.CardEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = CardDateMapper.class)
+/**
+ * MapStruct Маппер для доменной сущности Card и JPA-сущности CardEntity
+ */
+@Mapper(componentModel = "spring", uses = CardExpiryDateMapper.class)
 public interface CardPersistenceMapper {
 
     CardEntity toEntity(Card card);
