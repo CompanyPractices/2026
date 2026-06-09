@@ -110,7 +110,7 @@ public class HealthService {
             String service = serviceObj instanceof String ? (String) serviceObj : serviceUrl;
             return new Response(service, status);
         } catch (Exception e) {
-            log.debug("Health check failed for {}", serviceUrl, e);
+            log.error("Health check failed for {}", serviceUrl, e);
             return new Response(serviceUrl, "down");
         }
     }

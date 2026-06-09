@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDate;
 import java.util.Calendar;
@@ -84,18 +85,16 @@ public class AuthService {
         CardResponse cardResponse;
         try {
             cardResponse = getCard(request.getPan());
+        } catch (CardNotFoundException e) {
+            log.error("card not found for pan: {}", maskPAN(request.getPan()), e);
+            return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
+        } catch (ServiceUnavailableException | WebClientResponseException e) {
+            log.error("service unavailable for pan: {}", maskPAN(request.getPan()), e);
+            return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
         } catch (Exception e) {
-            log.debug("getting card from card managment service failed for pan: {}", maskPAN(request.getPan()),
-                    e);
-            if (e.getCause() instanceof CardNotFoundException) {
-                return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
-            } else if (e.getCause() instanceof ServiceUnavailableException) {
-                return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
-            }
-
+            log.error("getting card from card management service failed for pan: {}", maskPAN(request.getPan()), e);
             return AuthorizationResponse.declined(request, "UNKNOWN_REASON", "05");
         }
-
         CardStatus currCardStatus = cardResponse.getStatus();
         if (currCardStatus == null) {
             return AuthorizationResponse.declined(request, "UNKNOWN_REASON", "05");
@@ -125,7 +124,7 @@ public class AuthService {
         try {
             reserve(request.getAmount(), rrn, request.getPan());
         } catch (Exception e) {
-            log.debug("reserving failed for card {}", cardResponse.getId(), e);
+            log.error("reserving failed for card {}", cardResponse.getId(), e);
             return AuthorizationResponse.declined(request, "RESERVATION_FAILED", "96");
         }
 
