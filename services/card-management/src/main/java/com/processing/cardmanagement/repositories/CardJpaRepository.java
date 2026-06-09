@@ -9,9 +9,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * JPA-репозиторий для хранения карт
- */
 @Repository
 public interface CardJpaRepository
     extends JpaRepository<CardEntity, UUID>,

@@ -12,9 +12,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
-/**
- * Адаптер для работы с CardRepository через JPA-реализацию
- */
 @RequiredArgsConstructor
 public class JavaPersistenceAdapter implements CardRepository {
 
