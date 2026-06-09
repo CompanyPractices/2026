@@ -5,23 +5,20 @@ import com.processing.merchantacquirer.client.dto.CardsResponse;
 import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
 import com.processing.merchantacquirer.domain.model.AuthorizationResponse;
 import com.processing.merchantacquirer.exception.ExternalServiceException;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Component
 public class GatewayClient {
   private final RestClient restClient;
 
-  public GatewayClient(RestClient.Builder builder, @Value("${gateway.url}") String gatewayUrl){
-    this.restClient = builder.baseUrl(gatewayUrl).build();
+  public GatewayClient(RestClient.Builder builder, @Value("${gateway.url}") String gatewayUrl) {
+      this.restClient = builder.baseUrl(gatewayUrl).build();
   }
 
   public CardsResponse getCards(CardsRequest request) {
@@ -30,16 +27,16 @@ public class GatewayClient {
       return restClient.get()
               .uri(uriBuilder -> {
                 uriBuilder.path("/api/cards");
-                if(request.limit() > 0){
-                  uriBuilder.queryParam("limit", request.limit());
+                if (request.limit() > 0) {
+                    uriBuilder.queryParam("limit", request.limit());
                 }
-                if(request.offset() > 0){
-                  uriBuilder.queryParam("offset", request.offset());
+                if (request.offset() > 0) {
+                    uriBuilder.queryParam("offset", request.offset());
                 }
-                if(request.status() != null){
+                if (request.status() != null) {
                   uriBuilder.queryParam("status", request.status());
                 }
-                if(request.bin() != null){
+                if (request.bin() != null) {
                   uriBuilder.queryParam("bin", request.status());
                 }
                 return uriBuilder.build();

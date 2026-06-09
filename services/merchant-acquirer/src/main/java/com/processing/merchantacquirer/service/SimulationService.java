@@ -58,4 +58,13 @@ public class SimulationService {
         (int) Duration.between(startTime, endTime).toMillis(),
         stats.responses());
   }
+
+  public List<Merchant> getAllMerchants() {
+    return merchantProvider.getAll();
+  }
+
+  public Long countMerchants() {
+    return merchantProvider.count();
+  }
+
 }
