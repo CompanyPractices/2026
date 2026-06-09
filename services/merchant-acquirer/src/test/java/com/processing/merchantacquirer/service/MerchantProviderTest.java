@@ -38,9 +38,7 @@ public class MerchantProviderTest {
     IllegalArgumentException exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-              merchantProvider.getMerchant(mccCodes, scenario);
-            });
+            () -> merchantProvider.getMerchant(mccCodes, scenario));
 
     assertTrue(exception.getMessage().contains("Merchants with given mcc ([0000]) not found"));
 
