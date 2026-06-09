@@ -15,7 +15,7 @@ public final class CardDateMapper {
         return date != null ? date.format(EXPIRY_DATE_FORMATTER) : null;
     }
 
-    public YearMonth asLocalDate(String dateStr) {
+    public YearMonth asYearMonth(String dateStr) {
         if (dateStr == null || dateStr.isBlank()) {
             return null;
         }
