@@ -7,18 +7,16 @@ import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class CardGeneratorServiceTest {
@@ -28,19 +26,19 @@ public class CardGeneratorServiceTest {
     @Mock
     private CardService cardService;
 
-    @Mock
-    private CardGeneratorOptions generatorOptions;
+    private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
+            1_000_000,
+            50_000_000,
+            5_000_000,
+            30_000_000,
+            "643"
+    );
 
-    @InjectMocks
     private CardGeneratorService cardGeneratorService;
 
     @BeforeEach
     void setUp() {
-        when(generatorOptions.minBalance()).thenReturn(1_000_000);
-        when(generatorOptions.maxBalance()).thenReturn(50_000_000);
-        when(generatorOptions.minDailyLimit()).thenReturn(5_000_000);
-        when(generatorOptions.maxDailyLimit()).thenReturn(30_000_000);
-        when(generatorOptions.currencyCode()).thenReturn("643");
+        cardGeneratorService = new CardGeneratorService(cardService, generatorOptions);
     }
 
     @Test
