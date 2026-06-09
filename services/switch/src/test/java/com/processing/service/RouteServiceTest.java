@@ -6,7 +6,7 @@ package com.processing.service;
 import com.processing.SwitchTestData;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
-import com.processing.common.dto.transaction.TransactionStatus;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.support.CapturingAuthorizationClient;
 import com.processing.support.TrackingLoggerClient;
 import org.junit.jupiter.api.Test;

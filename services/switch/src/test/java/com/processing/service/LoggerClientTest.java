@@ -6,9 +6,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.SwitchTestData;
 import com.processing.config.RetryFactory;
 import com.processing.config.SwitchProperties;
-import com.processing.common.dto.transaction.LogResponse;
-import com.processing.common.dto.transaction.Transaction;
-import com.processing.common.dto.transaction.TransactionStatus;
+import com.processing.common.dto.transactionlogger.TransactionRequest;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
+import com.processing.common.dto.transactionlogger.TransactionStoredResponse;
 import com.processing.exception.LoggerException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,10 +62,10 @@ class LoggerClientTest {
     @Test
     void log_whenLoggerReturnsSuccess_returnsTrue() throws Exception {
         UUID id = UUID.randomUUID();
-        LogResponse logResponse = new LogResponse(id, "stored");
+        TransactionStoredResponse storedResponse = new TransactionStoredResponse(id, "stored");
         mockServer.expect(requestTo("http://localhost:8088/api/internal/log"))
                 .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess(objectMapper.writeValueAsString(logResponse), MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess(objectMapper.writeValueAsString(storedResponse), MediaType.APPLICATION_JSON));
 
 
         assertThat(client.log(sampleTransaction(id))).isTrue();
@@ -89,7 +89,7 @@ class LoggerClientTest {
     @Test
     void log_whenSecondAttemptSucceeds_returnsTrue() throws Exception {
         UUID id = UUID.randomUUID();
-        LogResponse logResponse = new LogResponse(id, "stored");
+        TransactionStoredResponse storedResponse = new TransactionStoredResponse(id, "stored");
 
 
         mockServer.expect(requestTo("http://localhost:8088/api/internal/log"))
@@ -97,7 +97,7 @@ class LoggerClientTest {
                 .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
         mockServer.expect(requestTo("http://localhost:8088/api/internal/log"))
                 .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess(objectMapper.writeValueAsString(logResponse), MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess(objectMapper.writeValueAsString(storedResponse), MediaType.APPLICATION_JSON));
 
 
         assertThat(client.log(sampleTransaction(id))).isTrue();
@@ -133,8 +133,8 @@ class LoggerClientTest {
     }
 
 
-    private static Transaction sampleTransaction(UUID id) {
-        return new Transaction(
+    private static TransactionRequest sampleTransaction(UUID id) {
+        return new TransactionRequest(
                 id,
                 "0100",
                 "000001",
