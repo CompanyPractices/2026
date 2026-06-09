@@ -25,11 +25,10 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public final class CardUseCaseTest {
+public final class CardServiceTest {
 
     private final String panGeneratorCardNumber = "1234 5678 9101 1123".replace(" ", "");
 
@@ -67,11 +66,11 @@ public final class CardUseCaseTest {
     @Mock
     private CardRepository cardRepository;
 
-    private CardUseCase cardUseCase;
+    private CardService cardService;
 
     @BeforeEach
     void setUp() {
-        cardUseCase = new CardService(
+        cardService = new CardServiceImpl(
             cardRepository,
             settings,
             defaults,
@@ -91,7 +90,7 @@ public final class CardUseCaseTest {
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var response = cardUseCase.createCard(
+        var response = cardService.createCard(
             bin,
             cardholderName,
             currencyCode,
@@ -118,11 +117,11 @@ public final class CardUseCaseTest {
         var card = createTestCard(pan);
         when(cardRepository.findByPan(pan)).thenReturn(Optional.of(card));
 
-        var found = cardUseCase.getCard(pan);
+        var found = cardService.getCard(pan);
         assertEquals(card, found);
 
         when(cardRepository.findByPan(anyString())).thenReturn(Optional.empty());
-        assertThrows(CardNotFoundException.class, () -> cardUseCase.getCard(pan));
+        assertThrows(CardNotFoundException.class, () -> cardService.getCard(pan));
     }
 
     @Test
@@ -147,7 +146,7 @@ public final class CardUseCaseTest {
             endDate
         )).thenReturn(List.of(testCard));
 
-        var cards = cardUseCase.getCards(limit, offset, status, bin, issuerId, startDate, endDate);
+        var cards = cardService.getCards(limit, offset, status, bin, issuerId, startDate, endDate);
         assertEquals(testCard, cards.getFirst());
     }
 
@@ -164,7 +163,7 @@ public final class CardUseCaseTest {
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var card = cardUseCase.patchCard(
+        var card = cardService.patchCard(
             pan,
             status,
             dailyLimit,
@@ -186,8 +185,10 @@ public final class CardUseCaseTest {
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var card = cardUseCase.deleteCard(pan);
-        assertEquals(CardStatus.DELETED, card.status());
+        cardService.deleteCard(pan);
+        verify(cardRepository, times(1)).save(cardCaptor.capture());
+        var deletedCard = cardCaptor.getValue();
+        assertEquals(CardStatus.DELETED, deletedCard.status());
     }
 
     @Test
@@ -207,7 +208,7 @@ public final class CardUseCaseTest {
             endDate
         )).thenReturn(amount);
 
-        var count = cardUseCase.countCards(
+        var count = cardService.countCards(
             status,
             bin,
             issuerId,
@@ -221,7 +222,7 @@ public final class CardUseCaseTest {
     void testCountCards() {
         var returnValue = 1L;
         when(cardRepository.countCards()).thenReturn(returnValue);
-        assertEquals(returnValue, cardUseCase.countCards());
+        assertEquals(returnValue, cardService.countCards());
     }
 
     @Test
@@ -234,10 +235,10 @@ public final class CardUseCaseTest {
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var card = cardUseCase.reserve(pan, reserveAmount);
+        var card = cardService.reserve(pan, reserveAmount);
         assertEquals(prevBalance - reserveAmount, card.availableBalance());
         assertThrows(InsufficientFundsException.class, () ->
-            cardUseCase.reserve(
+            cardService.reserve(
                 pan,
                 Long.MAX_VALUE
             )
