@@ -3,6 +3,7 @@ package com.processing.common.dto.cardmanagement;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.UUID;
 
 @Schema(description = "Card data transfer object")
@@ -15,16 +16,16 @@ public record CardModel(
     String bin,
     @Schema(description = "Cardholder name", example = "IVAN IVANOV")
     String cardholderName,
-    @Schema(description = "Expiry date in MMYY format", example = "0629")
-    String expiryDate,
+    @Schema(description = "Expiry date in MMyy format", example = "0629")
+    YearMonth expiryDate,
     @Schema(
         description = "Card status",
         example = "ACTIVE",
         allowableValues = {"ACTIVE",
-        "INACTIVE",
-        "BLOCKED",
-        "EXPIRED",
-        "DELETED"}
+            "INACTIVE",
+            "BLOCKED",
+            "EXPIRED",
+            "DELETED"}
     )
     CardStatus status,
     @Schema(description = "Currency code", example = "643")

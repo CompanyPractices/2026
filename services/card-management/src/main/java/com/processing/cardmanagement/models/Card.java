@@ -132,9 +132,9 @@ public record Card(
      */
     public Card withData(
         CardStatus status,
-        Long dailyLimit,
-        Long monthlyLimit,
-        Long availableBalance
+        long dailyLimit,
+        long monthlyLimit,
+        long availableBalance
     ) {
         if (dailyLimit < 0 || monthlyLimit < 0) {
             throw new IllegalArgumentException("Limit can not contain negative values");
