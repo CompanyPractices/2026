@@ -9,22 +9,9 @@ import jakarta.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Методы для управления банковскими картами
- */
+
 public interface CardService {
 
-    /**
-     * Создает новую карту с авотматически сгенерированным PAN
-     *
-     * @param bin            BIN карты
-     * @param cardholderName имя держателя карты
-     * @param currencyCode   код валюты
-     * @param dailyLimit     дневной лимит карты
-     * @param monthlyLimit   месячиный лимит карты
-     * @param initialBalance изначальный баланс
-     * @return созданная карта
-     */
     Card createCard(
         String bin,
         String cardholderName,
@@ -34,22 +21,8 @@ public interface CardService {
         long initialBalance
     );
 
-    /**
-     * Создает несколько карт их списка сгенерированных DTO
-     * Используется генератором тестовых карт
-     *
-     * @param data данные для создания карт
-     * @return список созданных карт
-     */
     List<Card> createCards(List<CardDraft> data);
 
-    /**
-     * Возвращает карту по номеру PAN
-     *
-     * @param pan 16-значный номер карты
-     * @return карта
-     * @throws CardNotFoundException если карта не найдена
-     */
     Card getCard(String pan);
 
     /**

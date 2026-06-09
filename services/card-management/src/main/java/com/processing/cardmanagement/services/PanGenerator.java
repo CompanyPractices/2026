@@ -6,7 +6,7 @@ package com.processing.cardmanagement.services;
 public interface PanGenerator {
 
     /**
-     * Проверяет корректность номера карты
+     * Проверяет корректность номера карты по алгоритму Луна
      * @param pan номер карты из 16 цифр
      * @return {@code true} если PAN валиден, иначе {@code false}
      */
