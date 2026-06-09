@@ -5,12 +5,19 @@ type UseWebSocketOptions = {
     url?: string;
     maxRetries?: number;
     retryDelayMs?: number;
+    maxRetryDelayMs?: number;
+}
+
+function calculateBackoffDelay(retryCount: number, retryDelayMs: number, maxRetryDelayMs: number): number {
+    const delay = retryDelayMs * Math.pow(2, retryCount - 1);
+    return Math.min(delay, maxRetryDelayMs);
 }
 
 export function useWebSocket({
-      url = 'ws://localhost:3000/ws/transactions',
+      url = 'ws://localhost:8088/ws/transactions',
       maxRetries = 5,
-      retryDelayMs = 3000
+      retryDelayMs = 2000,
+      maxRetryDelayMs = 30000
   }: UseWebSocketOptions = {}){
     const [liveTransactions, setLiveTransactions] = useState<Transaction[]>([]);
     const [isConnected, setIsConnected] = useState(false);
@@ -65,7 +72,8 @@ export function useWebSocket({
                 if (event.code !== 1000 && retryCountRef.current < maxRetries) {
                     retryCountRef.current++;
                     console.log(`Попытка переподключения ${retryCountRef.current}/${maxRetries}...`);
-                    reconnectTimeoutRef.current = setTimeout(connect, retryDelayMs);
+                    const delay = calculateBackoffDelay(retryCountRef.current, retryDelayMs, maxRetryDelayMs);
+                    reconnectTimeoutRef.current = setTimeout(connect, delay);
                 } else if (retryCountRef.current >= maxRetries) {
                     console.warn('Превышен лимит попыток переподключения');
                 }
@@ -81,11 +89,15 @@ export function useWebSocket({
             if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
             }
-            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            if (
+                wsRef.current &&
+                wsRef.current.readyState !== WebSocket.CLOSING &&
+                wsRef.current.readyState !== WebSocket.CLOSED
+            ) {
                 wsRef.current.close(1000, 'Component unmounted');
             }
         };
-    }, [url, maxRetries, retryDelayMs]);
+    }, [url, maxRetries, retryDelayMs, maxRetryDelayMs]);
 
     return { liveTransactions, isConnected };
 }

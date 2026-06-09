@@ -37,10 +37,10 @@ describe('useWebSocket', () => {
     });
 
     it('should connect to WebSocket on mount', () => {
-        renderHook(() => useWebSocket({ url: 'ws://localhost:3000/ws/transactions' }));
+        renderHook(() => useWebSocket({ url: 'ws://localhost:8088/ws/transactions' }));
 
         expect(MockWebSocket.instances.length).toBe(1);
-        expect(MockWebSocket.instances[0].url).toBe('ws://localhost:3000/ws/transactions');
+        expect(MockWebSocket.instances[0].url).toBe('ws://localhost:8088/ws/transactions');
     });
 
     it('should update isConnected when connection opens', () => {
