@@ -45,6 +45,7 @@
                 <module>terminal-simulator</module>
                 <module>merchant-acquirer</module>
                 <module>transaction-logger</module>
+                <module>e2e-tests</module>
             </modules>
         </profile>
 
@@ -109,6 +110,13 @@
             <modules>
                 <module>common</module>
                 <module>transaction-logger</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>e2e-tests</id>
+            <modules>
+                <module>e2e-tests</module>
             </modules>
         </profile>
     </profiles>
