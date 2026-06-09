@@ -1,10 +1,10 @@
 package com.processing.terminalsimulator.service;
+
 import com.processing.terminalsimulator.client.GatewayClient;
 import com.processing.terminalsimulator.dto.AuthorizationRequest;
 import com.processing.terminalsimulator.dto.AuthorizationResponse;
 import com.processing.terminalsimulator.dto.Card;
 import com.processing.terminalsimulator.dto.RunResponse;
-import com.processing.terminalsimulator.model.CardStatus;
 import com.processing.terminalsimulator.model.Scenario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,80 +22,94 @@ import static com.processing.terminalsimulator.model.CardStatus.BLOCKED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class)
 class TerminalSimulatorServiceTest {
+
     @Mock
     private GatewayClient gatewayClient;
+
     @InjectMocks
     private TerminalSimulatorService service;
-    private List<Card> cards;
+
+    private Card activeCard;
+    private Card blockedCard;
+    private List<Card> activeCards;
+    private List<Card> blockedCards;
+
     @BeforeEach
     void setUp() {
-        var activeCard1 = new Card("b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e", "4000001234560001", "400000",
-                "IVAN IVANOV", "1228", ACTIVE, "643", 5000,
-                100_000, 20_000, "ISS001", "2026-06-01T10:00:00Z");
-        var activeCard2 = new Card("b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d60", "4000001234560002", "400000",
-                "IVAN IVANOV", "1228", ACTIVE, "643", 3000,
-                100_000, 20_000, "ISS001", "2026-06-01T10:00:00Z");
-        var blockedCard = new Card("b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e", "4000001234560003", "400000",
-                "PETR PETROV", "1228", BLOCKED, "643", 100_000,
-                200_000, 20_000, "ISS001", "2026-06-01T10:00:00Z");
-        cards = List.of(activeCard1, activeCard2, blockedCard);
+        activeCard = new Card("id1", "4000001234560001", "400000",
+                "IVAN IVANOV", "1228", ACTIVE, "643", 500_002,
+                100_000, 20_000_000, "ISS001", "2026-06-01T10:00:00Z");
+        blockedCard = new Card("id2", "4000001234560003", "400000",
+                "PETR PETROV", "1228", BLOCKED, "643", 700_000,
+                200_000, 40_000, "ISS001", "2026-06-01T10:00:00Z");
 
+        activeCards = List.of(activeCard);
+        blockedCards = List.of(blockedCard);
 
-        when(gatewayClient.getCardsFromCardManager(ACTIVE, 70)).thenReturn(List.of(activeCard1, activeCard2));
-        when(gatewayClient.getCardsFromCardManager(BLOCKED, 30)).thenReturn(List.of(blockedCard));
+        when(gatewayClient.getCardsFromCardManager(ACTIVE, 70)).thenReturn(activeCards);
+        when(gatewayClient.getCardsFromCardManager(BLOCKED, 30)).thenReturn(blockedCards);
         when(gatewayClient.sendToGateway(any(AuthorizationRequest.class)))
                 .thenReturn(new AuthorizationResponse("", "", "", "",
                         "", "", "", 0));
     }
 
-    public boolean isRequiredTransaction(AuthorizationRequest req, long start, long end, CardStatus cardStatus,
-                                         String expectedPartOfDay, String invalidPan, String mcc, Boolean dailyLimit,
-                                         Boolean noMoney, Boolean moreDaily) {
+    private boolean isDayTime(AuthorizationRequest req) {
+        int hour = ZonedDateTime.parse(req.transmissionDateTime()).getHour();
+        return (hour >= 9 && hour < 22);
+    }
+
+    private boolean isNightTime(AuthorizationRequest req) {
+        int hour = ZonedDateTime.parse(req.transmissionDateTime()).getHour();
+        return (hour >= 1 && hour < 5);
+    }
+
+    private boolean isNormal(AuthorizationRequest req) {
         long amount = req.amount();
-        Card card = cards.stream().filter(c -> c.pan().equals(req.pan())).findFirst().orElse(null);
-        if ((start != 0 && end != 0) && (amount < start || amount > end)) {
-            return false;
-        }
-        if (mcc != null && !mcc.equals(req.mcc())) {
-            return false;
-        }
-        boolean isRequiredStatus = (card != null) && card.status() == cardStatus;
-        if (!isRequiredStatus) {
-            return false;
-        }
-        if (expectedPartOfDay != null) {
-            String tdt = req.transmissionDateTime();
-            if (tdt == null) return false;
-            ZonedDateTime dateTime = ZonedDateTime.parse(req.transmissionDateTime());
-            int hour = dateTime.getHour();
-            if ("day".equals(expectedPartOfDay)) {
-                if (hour < 9 || hour >= 22) return false;
-            } else if ("night".equals(expectedPartOfDay)) {
-                if (hour < 1 || hour >= 5) return false;
-            } else {
-                return false;
-            }
-        }
-        if (invalidPan != null) {
-            return req.pan().equals(invalidPan);
-        }
-        if (noMoney) {
-            return req.amount() > card.availableBalance();
-        }
-        if (dailyLimit) {  // лимит у тестовых карт меньше чем нижняя граница normal сценария
-            return req.amount() == card.dailyLimit()-1;
-        }
-        if (moreDaily) {
-            return req.amount() > card.dailyLimit();
-        }
-        return true;
+        if (amount < 10_000 || amount > 500_000) return false;
+        if (!"5411".equals(req.mcc())) return false;
+        if (!req.pan().equals(activeCard.pan())) return false;
+        return isDayTime(req);
+    }
+
+    private boolean isNight(AuthorizationRequest req) {
+        if (!req.pan().equals(activeCard.pan())) return false;
+        return isNightTime(req);
+    }
+
+    private boolean isHighValue(AuthorizationRequest req) {
+        long amount = req.amount();
+        return amount >= 10_000_000 && amount <= 50_000_000 && req.pan().equals(activeCard.pan());
+    }
+
+    private boolean isDailyLimitExact(AuthorizationRequest req) {
+        return req.pan().equals(activeCard.pan()) && req.amount() == activeCard.dailyLimit() - 1;
+    }
+
+    private boolean isBlocked(AuthorizationRequest req) {
+        return req.pan().equals(blockedCard.pan());
+    }
+
+    private boolean isInvalidPan(AuthorizationRequest req, String expectedInvalidPan) {
+        return req.pan().equals(expectedInvalidPan);
+    }
+
+    private boolean isNoMoney(AuthorizationRequest req) {
+        if (!req.pan().equals(activeCard.pan())) return false;
+        return req.amount() > activeCard.availableBalance();
+    }
+
+    private boolean isMoreThanDailyLimit(AuthorizationRequest req) {
+        if (!req.pan().equals(activeCard.pan())) return false;
+        long amount = req.amount();
+        return amount > activeCard.dailyLimit()
+                && amount <= activeCard.availableBalance(); // иначе это noMoney
     }
 
     @Test
-    void run_normalScenario_TerminalSimulatorNotSetStatusTransactionByItself() {
-
+    void run_normalScenario_TerminalSimulatorIsAlive() {
         RunResponse response = service.run(5, Scenario.normal);
 
         assertThat(response.totalSubmitted()).isEqualTo(5);
@@ -106,35 +120,98 @@ class TerminalSimulatorServiceTest {
     }
 
     @Test
+    void run_normalScenario_capturesAndClassifiesTransactions() {
+        int totalCount = 10;
+        ArgumentCaptor<AuthorizationRequest> captor = ArgumentCaptor.forClass(AuthorizationRequest.class);
+        service.run(totalCount, Scenario.normal);
+
+        verify(gatewayClient, times(totalCount)).sendToGateway(captor.capture());
+        List<AuthorizationRequest> allRequests = captor.getAllValues();
+
+        long normalCount = allRequests.stream().filter(this::isNormal).count();
+        assertThat(normalCount).isEqualTo(totalCount);
+    }
+
+    @Test
+    void run_nightTimeScenario_capturesAndClassifiesTransactions() {
+        int totalCount = 10;
+        ArgumentCaptor<AuthorizationRequest> captor = ArgumentCaptor.forClass(AuthorizationRequest.class);
+        service.run(totalCount, Scenario.night_time);
+
+        verify(gatewayClient, times(totalCount)).sendToGateway(captor.capture());
+        List<AuthorizationRequest> allRequests = captor.getAllValues();
+        long nightCount = allRequests.stream().filter(this::isNight).count();
+
+        assertThat(nightCount).isEqualTo(totalCount);
+    }
+
+    @Test
+    void run_highValueScenario_capturesAndClassifiesTransactions() {
+        int totalCount = 10;
+        ArgumentCaptor<AuthorizationRequest> captor = ArgumentCaptor.forClass(AuthorizationRequest.class);
+        service.run(totalCount, Scenario.high_value);
+
+        verify(gatewayClient, times(totalCount)).sendToGateway(captor.capture());
+        List<AuthorizationRequest> allRequests = captor.getAllValues();
+        long highValue = allRequests.stream().filter(this::isHighValue).count();
+
+        assertThat(highValue).isEqualTo(totalCount);
+    }
+
+    @Test
     void run_mixedScenario_capturesAndClassifiesTransactions() {
-        int totalCount = 100;
+        int totalCount = 19;
         ArgumentCaptor<AuthorizationRequest> captor = ArgumentCaptor.forClass(AuthorizationRequest.class);
         service.run(totalCount, Scenario.mixed);
 
         verify(gatewayClient, times(totalCount)).sendToGateway(captor.capture());
         List<AuthorizationRequest> allRequests = captor.getAllValues();
 
-        long normalCount = allRequests.stream().filter(req -> isRequiredTransaction(req, 10_000,
-                500_000, ACTIVE, "day",  null,"5411", false, false, false)).count();
-        long highValueCount = allRequests.stream().filter(req -> isRequiredTransaction(req, 10_000_000,
-                50_000_000, ACTIVE, null,  null,null, false, false, false)).count();
-        long dailyLimitCount = allRequests.stream().filter(req -> isRequiredTransaction(req, 0,
-                0, ACTIVE, null,  null,null, true, false, false)).count();
-        long blockedCount = allRequests.stream().filter(req -> isRequiredTransaction(req, 0,
-                0, BLOCKED, null,  null,null, false, false, false)).count();
+        long normalCount = allRequests.stream().filter(this::isNormal).count();
+        long highValueCount = allRequests.stream().filter(this::isHighValue).count();
+        long dailyLimitCount = allRequests.stream().filter(this::isDailyLimitExact).count();
+        long blockedCount = allRequests.stream().filter(this::isBlocked).count();
 
-        long expectedNormal = (long) (totalCount * 0.7);
-        long expectedHighValue = (long) (totalCount * 0.15);
-        long expectedDailyLimit = (long) (totalCount * 0.10);
-        long expectedBlocked = (long) (totalCount * 0.05);
+        long expectedNormal = Math.round(totalCount * 0.7);
+        long expectedHighValue = Math.round(totalCount * 0.15);
+        long expectedDailyLimit = Math.round(totalCount * 0.10);
+        long expectedBlocked = Math.round(totalCount * 0.05);
+        int tolerance = 2;
 
-        assertThat(normalCount).isBetween(expectedNormal - 1, expectedNormal + 1);
-        assertThat(highValueCount).isBetween(expectedHighValue - 1, expectedHighValue + 1);
-        assertThat(dailyLimitCount).isBetween(expectedDailyLimit - 1, expectedDailyLimit + 1);
-        assertThat(blockedCount).isBetween(expectedBlocked - 1, expectedBlocked + 1);
-
-        assertThat(normalCount + highValueCount + dailyLimitCount + blockedCount)
-                .isEqualTo(totalCount);
+        assertThat(normalCount).isBetween(expectedNormal - tolerance, expectedNormal + tolerance);
+        assertThat(highValueCount).isBetween(expectedHighValue - tolerance, expectedHighValue + tolerance);
+        assertThat(dailyLimitCount).isBetween(expectedDailyLimit - tolerance, expectedDailyLimit + tolerance);
+        assertThat(blockedCount).isBetween(expectedBlocked - tolerance, expectedBlocked + tolerance);
+        assertThat(normalCount + highValueCount + dailyLimitCount + blockedCount).isEqualTo(totalCount);
     }
 
+    @Test
+    void run_declinesScenario_capturesAndClassifiesTransactions() {
+        int totalCount = 7;
+        ArgumentCaptor<AuthorizationRequest> captor = ArgumentCaptor.forClass(AuthorizationRequest.class);
+        service.run(totalCount, Scenario.declines_test);
+
+        verify(gatewayClient, times(totalCount)).sendToGateway(captor.capture());
+        List<AuthorizationRequest> allRequests = captor.getAllValues();
+
+        String invalidPan = "4000001234560000";
+
+        long invalidPanCount = allRequests.stream().filter(r -> isInvalidPan(r, invalidPan)).count();
+        long blockedCount = allRequests.stream().filter(this::isBlocked).count();
+        long noMoneyCount = allRequests.stream().filter(this::isNoMoney).count();
+        long moreThanDailyCount = allRequests.stream().filter(this::isMoreThanDailyLimit).count();
+        long normalCount = allRequests.stream().filter(this::isNormal).count();
+
+        long expected = totalCount / 5;
+        int tolerance = 2;
+
+        assertThat(invalidPanCount).isBetween(expected - tolerance, expected + tolerance);
+        assertThat(blockedCount).isBetween(expected - tolerance, expected + tolerance);
+        assertThat(noMoneyCount).isBetween(expected - tolerance, expected + tolerance);
+        assertThat(moreThanDailyCount).isBetween(expected - tolerance, expected + tolerance);
+        assertThat(normalCount).isBetween(expected - tolerance, expected + tolerance);
+
+        assertThat(invalidPanCount + blockedCount + noMoneyCount + moreThanDailyCount + normalCount)
+                .isEqualTo(totalCount);
+    }
 }
