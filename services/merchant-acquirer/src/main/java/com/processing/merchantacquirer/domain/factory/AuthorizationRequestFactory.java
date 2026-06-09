@@ -5,7 +5,6 @@ import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
