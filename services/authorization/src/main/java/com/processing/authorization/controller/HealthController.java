@@ -66,7 +66,10 @@ public class HealthController {
      * @see HealthResponse
      */
     @GetMapping("/health")
-    @Operation(summary = "Health check endpoint", description = "Returns the health status of the authorization service and all its dependencies")
+    @Operation(
+        summary = "Health check endpoint",
+        description = "Returns the health status of the authorization service and all its dependencies"
+        )
     @ApiResponses(value = {
         @ApiResponse(
                 responseCode = "200",
