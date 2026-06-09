@@ -22,9 +22,36 @@ management:
         include:
           - health
           - info
+          - metrics
+          - prometheus
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: gateway
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]":
+          - 0.5
+          - 0.95
+          - 0.99
+      slo:
+        "[http.server.requests]":
+          - 50ms
+          - 100ms
+          - 250ms
+          - 500ms
+          - 1s
+          - 2s
 
 spring:
   cloud:
@@ -70,6 +97,43 @@ spring:
               serviceName: cardManagement
             predicates:
               - Path=/api/cards/**
+
+        # OpenApi endpoints
+          - id: switch-docs
+            uri: ${SWITCH_URL:http://localhost:8082}
+            predicates:
+              - Path=/switch-docs
+              - Method=GET
+            filters:
+              - RewritePath=/switch-docs, /v3/api-docs
+          - id: logger-docs
+            uri: ${LOGGER_URL:http://localhost:8088}
+            predicates:
+              - Path=/logger-docs
+              - Method=GET
+            filters:
+              - RewritePath=/logger-docs, /v3/api-docs
+          - id: terminal-docs
+            uri: ${TERMINAL_SIM_URL:http://localhost:8085}
+            predicates:
+              - Path=/terminal-docs
+              - Method=GET
+            filters:
+              - RewritePath=/terminal-docs, /v3/api-docs
+          - id: merchant-docs
+            uri: ${MERCHANT_SIM_URL:http://localhost:8086}
+            predicates:
+              - Path=/merchant-docs
+              - Method=GET
+            filters:
+              - RewritePath=/merchant-docs, /v3/api-docs
+          - id: cards-docs
+            uri: ${CARD_MGMT_URL:http://localhost:8081}
+            predicates:
+              - Path=/cards-docs
+              - Method=GET
+            filters:
+              - RewritePath=/cards-docs, /v3/api-docs
   mvc:
     log-request-details: true
 
@@ -83,3 +147,24 @@ gateway:
       cards-url: ${CARD_MGMT_URL:http://localhost:8081}
   rate-limit:
     transactions-per-second: ${TRANSACTIONS_RATE_LIMIT:100}
+  open-api:
+    url: ${GATEWAY_PUBLIC_URL:http://localhost:${GATEWAY_PORT:8080}}
+
+#---
+# Swagger
+springdoc:
+  swagger-ui:
+    path: /docs
+    urls:
+      - name: Gateway
+        url: /v3/api-docs
+      - name: Switch
+        url: /switch-docs
+      - name: Transaction Logger
+        url: /logger-docs
+      - name: Terminal Simulator
+        url: /terminal-docs
+      - name: Merchant Acquirer
+        url: /merchant-docs
+      - name: Card Management
+        url: /cards-docs
