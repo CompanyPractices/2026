@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionBuilder {
   private final AuthorizationRequestFactory authorizationRequestFactory;
-  private final Random random;
+  private final Random random = new Random();
 
   public List<AuthorizationRequest> build(
       int count,
