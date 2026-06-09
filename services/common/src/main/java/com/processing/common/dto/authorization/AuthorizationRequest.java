@@ -32,7 +32,7 @@ public record AuthorizationRequest(
         @NotNull
         @PositiveOrZero
         @Schema(description = "Amount", example = "72472L")
-        long amount,
+        Long amount,
 
         @NotBlank
         @Size(min = 3, max = 3)
