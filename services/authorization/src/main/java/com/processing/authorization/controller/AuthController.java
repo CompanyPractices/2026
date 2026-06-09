@@ -1,8 +1,7 @@
 package com.processing.authorization.controller;
 
-import com.processing.authorization.dto.AuthorizationRequest;
-import com.processing.authorization.dto.AuthorizationResponse;
-import com.processing.authorization.enums.AuthorizationRequestStatus;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.authorization.services.AuthService;
 import jakarta.validation.Valid;
 
@@ -49,13 +48,13 @@ public class AuthController {
     })
     public ResponseEntity<AuthorizationResponse> authorize(@Valid @RequestBody AuthorizationRequest request) {
         AuthorizationResponse response = authService.authorize(request);
-        boolean isApproved = response.getStatus().equals(AuthorizationRequestStatus.APPROVED);
+        boolean isApproved = response.status().equals(AuthorizationResponse.STATUS_APPROVED);
 
         HttpStatus httpStatus;
         if (isApproved) {
             httpStatus = HttpStatus.OK;
         } else {
-            httpStatus = switch (response.getDeclineReason()) {
+            httpStatus = switch (response.declineReason()) {
                 case "CARD_NOT_FOUND" -> HttpStatus.NOT_FOUND;
                 case "SERVICE_UNAVAILABLE", "RESERVATION_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
                 case "INSUFFICIENT_FUNDS" -> HttpStatus.UNPROCESSABLE_ENTITY;
