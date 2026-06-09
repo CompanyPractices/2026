@@ -26,7 +26,7 @@ public record CardModel(
         "EXPIRED",
         "DELETED"}
     )
-    String status,
+    CardStatus status,
     @Schema(description = "Currency code", example = "643")
     String currencyCode,
     @Schema(description = "Daily limit in kopecks", example = "15000000")
