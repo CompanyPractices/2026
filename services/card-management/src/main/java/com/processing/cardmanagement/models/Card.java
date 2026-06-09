@@ -122,7 +122,12 @@ public record Card(
         );
     }
 
-    public static Card fromDraft(String pan, int cardYtl, CardDraft draft) {
+    public static Card fromDraft(
+        String pan,
+        String issuerId,
+        int cardYtl,
+        CardDraft draft
+    ) {
         return new Card(
             UUID.randomUUID(),
             pan,
@@ -134,7 +139,7 @@ public record Card(
             draft.dailyLimit(),
             draft.monthlyLimit(),
             draft.initialBalance(),
-            draft.issuerId()
+            issuerId
         );
     }
 }

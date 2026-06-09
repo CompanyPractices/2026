@@ -19,7 +19,7 @@ public interface CardUseCase {
         long initialBalance
     );
 
-    List<Card> createGeneratedCards(List<CardDraft> data);
+    List<Card> createCards(List<CardDraft> data);
 
     Card getCard(String pan);
 
