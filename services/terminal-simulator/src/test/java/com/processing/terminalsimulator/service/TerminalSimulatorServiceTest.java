@@ -13,6 +13,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -20,10 +22,12 @@ import java.util.List;
 import static com.processing.terminalsimulator.model.CardStatus.ACTIVE;
 import static com.processing.terminalsimulator.model.CardStatus.BLOCKED;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TerminalSimulatorServiceTest {
 
     @Mock
@@ -213,5 +217,70 @@ class TerminalSimulatorServiceTest {
 
         assertThat(invalidPanCount + blockedCount + noMoneyCount + moreThanDailyCount + normalCount)
                 .isEqualTo(totalCount);
+    }
+
+
+    @Test
+    void run_whenNoActiveCards_throwsException() {
+        when(gatewayClient.getCardsFromCardManager(ACTIVE, 70)).thenReturn(null);
+        assertThatThrownBy(() -> service.run(5, Scenario.normal))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("No ACTIVE cards available");
+    }
+
+    @Test
+    void run_whenNoBlockedCardsAndScenarioRequiresThem_throwsException() {
+        when(gatewayClient.getCardsFromCardManager(BLOCKED, 30)).thenReturn(null);
+        assertThatThrownBy(() -> service.run(5, Scenario.mixed))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("No BLOCKED cards available");
+    }
+
+    @Test
+    void stanCounter_shouldGenerateUniqueAndWrapAround() throws Exception {
+        java.lang.reflect.Field field = TerminalSimulatorService.class.getDeclaredField("stanCounter");
+        field.setAccessible(true);
+        field.set(service, 999999);
+
+        ArgumentCaptor<AuthorizationRequest> captor = ArgumentCaptor.forClass(AuthorizationRequest.class);
+        service.run(2, Scenario.normal);
+
+        verify(gatewayClient, times(2)).sendToGateway(captor.capture());
+        List<AuthorizationRequest> requests = captor.getAllValues();
+
+        assertThat(requests.get(0).stan()).isEqualTo("999999");
+        assertThat(requests.get(1).stan()).isEqualTo("000001");
+    }
+
+    @Test
+    void normalScenario_shouldRespectAmountBoundaries() {
+        int totalCount = 100;
+        ArgumentCaptor<AuthorizationRequest> captor = ArgumentCaptor.forClass(AuthorizationRequest.class);
+        service.run(totalCount, Scenario.normal);
+
+        verify(gatewayClient, times(totalCount)).sendToGateway(captor.capture());
+        List<AuthorizationRequest> allRequests = captor.getAllValues();
+
+        for (AuthorizationRequest req : allRequests) {
+            long amount = req.amount();
+            assertThat(amount).isBetween(10_000L, 500_000L);
+            assertThat(amount).isNotEqualTo(activeCard.dailyLimit() - 1);
+        }
+    }
+
+    @Test
+    void getInvalidPan_shouldFlipLastDigit() throws Exception {
+        java.lang.reflect.Method method = TerminalSimulatorService.class.getDeclaredMethod("getInvalidPan");
+        method.setAccessible(true);
+
+        java.lang.reflect.Field cardsField = TerminalSimulatorService.class.getDeclaredField("cards");
+        cardsField.setAccessible(true);
+        cardsField.set(service, List.of(activeCard, blockedCard));
+
+        String invalidPan = (String) method.invoke(service);
+        String validPan = activeCard.pan();
+        char lastInvalid = invalidPan.charAt(invalidPan.length() - 1);
+        assertThat(lastInvalid).isEqualTo('0');
+        assertThat(invalidPan.substring(0, invalidPan.length() - 1)).isEqualTo(validPan.substring(0, validPan.length() - 1));
     }
 }
