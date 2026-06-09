@@ -24,7 +24,7 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class CardGeneratorService {
 
-    private final CardService cardService;
+    private final CardUseCase cardService;
     private final CardGeneratorOptions generatorOptions;
     private final CardEventNotifier eventNotifier;
 
