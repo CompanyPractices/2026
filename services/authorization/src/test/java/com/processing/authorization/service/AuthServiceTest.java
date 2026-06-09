@@ -20,7 +20,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -279,71 +278,35 @@ class AuthServiceTest {
     }
 
     @Test
-    void maskDataForLog_ShouldMaskFirstThreeQuartersOfString() {
-        String input = "12345678";
-        String result = authService.maskDataForLog(input);
+    void maskPAN_ShouldMaskMiddleEightCharacters() {
+        String input = "4000001234560001";
+        String result = authService.maskPAN(input);
 
-        assertEquals("******78", result);
-        assertEquals(8, result.length());
+        assertEquals("4000********0001", result);
+        assertEquals(16, result.length());
     }
 
     @Test
-    void maskDataForLog_ShouldHandleShortStringLengthLessThan4() {
-        String input = "123";
-        String result = authService.maskDataForLog(input);
+    void maskPAN_ShouldReturnInvalidPanOnShortString() {
+        String input = "4000";
+        String result = authService.maskPAN(input);
 
-        assertEquals("***", result);
-        assertEquals(3, result.length());
+        assertEquals("INVALID_PAN", result);
     }
 
     @Test
-    void maskDataForLog_ShouldHandleShortStringLen4() {
-        String input = "1234";
-        String result = authService.maskDataForLog(input);
-
-        assertEquals("***4", result);
-        assertEquals(4, result.length());
-    }
-
-    @Test
-    void maskDataForLog_ShouldHandleSingleCharacter() {
-        String input = "a";
-        String result = authService.maskDataForLog(input);
-
-        assertEquals("*", result);
-        assertEquals(1, result.length());
-    }
-
-    @Test
-    void maskDataForLog_ShouldHandleEmptyString() {
-        String input = "";
-        String result = authService.maskDataForLog(input);
-
-        assertEquals("", result);
-        assertEquals(0, result.length());
-
-    }
-
-    @Test
-    void maskDataForLog_ShouldPreserveOriginalLength() {
-        String input1 = "12345678";
-        String result1 = authService.maskDataForLog(input1);
-        String input2 = "";
-        String result2 = authService.maskDataForLog(input2);
-        String input3 = "1234";
-        String result3 = authService.maskDataForLog(input3);
-
-        assertEquals(input1.length(), result1.length());
-        assertEquals(input2.length(), result2.length());
-        assertEquals(input3.length(), result3.length());
-    }
-
-    @Test
-    void maskDataForLog_WithNullInput_ShouldThrowException() {
+    void maskPAN_ShouldReturnInvalidPanOnEmptyString() {
         String input = null;
+        String result = authService.maskPAN(input);
 
-        assertThrows(NullPointerException.class, () -> {
-            authService.maskDataForLog(input);
-        });
+        assertEquals("INVALID_PAN", result);
+    }
+
+    @Test
+    void maskPAN_ShouldPreserveOriginalLength() {
+        String input = "4000001234560001";
+        String result = authService.maskPAN(input);
+
+        assertEquals(input.length(), result.length());
     }
 }

@@ -40,7 +40,7 @@ public class AuthService {
         try {
             cardResponse = getCard(request.getPan());
         } catch (Exception e) {
-            log.debug("getting card from card managment service failed for pan: {}", maskDataForLog(request.getPan()),
+            log.debug("getting card from card managment service failed for pan: {}", maskPAN(request.getPan()),
                     e);
             if (e.getCause() instanceof CardNotFoundException) {
                 return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
@@ -93,14 +93,14 @@ public class AuthService {
         String getCardhUrl = fullUrl + "/api/cards";
         String url = getCardhUrl + "/" + pan;
 
-        log.debug("Getting card info for pan {}", maskDataForLog(pan));
+        log.debug("Getting card info for pan {}", maskPAN(pan));
 
         CardResponse response = webClient.get()
                 .uri(url)
                 .retrieve()
                 .onStatus(status -> status == HttpStatus.NOT_FOUND, clientResponse -> {
-                    log.debug("Card not found: " + maskDataForLog(pan));
-                    return Mono.error(new CardNotFoundException("Card not found: " + maskDataForLog(pan)));
+                    log.debug("Card not found: " + maskPAN(pan));
+                    return Mono.error(new CardNotFoundException("Card not found: " + maskPAN(pan)));
                 })
                 .onStatus(status -> status == HttpStatus.SERVICE_UNAVAILABLE, clientResponse -> {
                     log.debug("Card Management service unavaliable: ", clientResponse.statusCode());
@@ -124,7 +124,7 @@ public class AuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         String url = cmsUrl + "/api/cards/" + pan + "/reserve";
-        log.debug("Reserving amount {} for card {} with rrn {}", amount, maskDataForLog(pan), rrn);
+        log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
         String response = webClient.post()
                 .uri(url)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -138,7 +138,7 @@ public class AuthService {
                 .bodyToMono(String.class)
                 .block();
 
-        log.debug("Reserve successful for card {}", maskDataForLog(pan));
+        log.debug("Reserve successful for card {}", maskPAN(pan));
     }
 
     private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
@@ -176,13 +176,12 @@ public class AuthService {
                 .collect(Collectors.joining());
     }
 
-    public String maskDataForLog(String data) {
-        if (data.length() < 4) {
-            return "*".repeat(data.length());
+    public String maskPAN(String pan) {
+        if (pan == null || pan.length() != 16) {
+            log.warn("Invalid PAN provided for masking");
+            return "INVALID_PAN";
         }
 
-        var visibleLength = data.length() / 4;
-        var maskLength = data.length() - visibleLength;
-        return "*".repeat(maskLength) + data.substring(maskLength);
+        return pan.substring(0, 4) + "*".repeat(8) + pan.substring(12);
     }
 }
