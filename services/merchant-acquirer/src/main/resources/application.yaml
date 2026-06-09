@@ -46,6 +46,8 @@ management:
 
 gateway.url: ${GATEWAY_URL:http://gateway:8080}
 
+gateway.url: ${GATEWAY_URL:http://gateway:8080}
+
 # Scenarios
 simulation.scenarios.grocery:
   mcc: ["5411", "5499"]

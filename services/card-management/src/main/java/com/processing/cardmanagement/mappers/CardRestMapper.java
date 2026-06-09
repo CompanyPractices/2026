@@ -5,7 +5,7 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = CardExpiryDateMapper.class)
+@Mapper(componentModel = "spring")
 public interface CardRestMapper {
 
     CardModel toDto(Card card);
