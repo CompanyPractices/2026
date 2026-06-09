@@ -5,7 +5,7 @@ import com.processing.authorization.dto.AuthorizationResponse;
 import com.processing.authorization.dto.CardResponse;
 import com.processing.authorization.enums.AuthorizationRequestStatus;
 import com.processing.authorization.enums.CardStatus;
-import com.processing.authorization.exceptions.ServiceUnavaliableException;
+import com.processing.authorization.exceptions.ServiceUnavailableException;
 import com.processing.authorization.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +88,7 @@ class AuthServiceTest {
     @Test
     void authorizeReturnServiceUnavailableWhenGetCardThrowsException() throws Exception {
         AuthService spyService = spy(authService);
-        ServiceUnavaliableException cause = new ServiceUnavaliableException("Card Management service unavaliable");
+        ServiceUnavailableException cause = new ServiceUnavailableException("Card Management service unavaliable");
         WebClientResponseException exception = new WebClientResponseException(
                 500, "Internal service error", null, null, null);
         exception.initCause(cause);
