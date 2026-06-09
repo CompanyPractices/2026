@@ -27,7 +27,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Optional;
 import java.util.Random;
@@ -120,7 +119,8 @@ public class AuthService {
         }
 
         LocalDate transmissionDate = LocalDateTime.parse(request.transmissionDateTime()).toLocalDate();
-        if (isCardExpired(cardResponse.expiryDate(), transmissionDate)) {
+        LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
+        if (lastValidDay.isBefore(transmissionDate)) {
             return DeclineOutcome.CARD_EXPIRED.build(request, requestInputTime);
         }
 
@@ -389,23 +389,5 @@ public class AuthService {
         }
 
         return pan.substring(0, 4) + "*".repeat(8) + pan.substring(12);
-    }
-
-    private boolean isCardExpired(String expiryDate, LocalDate transmissionDate) {
-        if (expiryDate == null || expiryDate.length() != 4) {
-            return true;
-        }
-
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyy");
-            String day = "01";
-            LocalDate expiryDateParsed = LocalDate.parse(day + expiryDate, formatter);
-            expiryDateParsed = expiryDateParsed.plusMonths(1).minusDays(1);
-
-            return expiryDateParsed.isBefore(transmissionDate);
-        } catch (Exception e) {
-            log.warn("Failed to parse expiry date: {}", expiryDate, e);
-            return true;
-        }
     }
 }

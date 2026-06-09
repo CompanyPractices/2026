@@ -19,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -64,7 +65,7 @@ class AuthServiceTest {
                 "1234567890123456",
                 "123456",
                 "John Golt",
-                "1226",
+                YearMonth.of(2026, 12),
                 CardStatus.ACTIVE,
                 "810",
                 100000L,
@@ -213,7 +214,7 @@ class AuthServiceTest {
 
     @Test
     void authorize_shouldDecline_whenExpiryDateInPastEvenIfCardActive() throws Exception {
-        String expiredDate = "1223";
+        YearMonth expiredDate = YearMonth.of(2023, 12);
 
         CardModel activeButExpiredCard = new CardModel(
                 activeCardResponse.id(),
