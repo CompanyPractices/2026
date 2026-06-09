@@ -9,6 +9,5 @@ public record CardDraft(
     String currencyCode,
     long dailyLimit,
     long monthlyLimit,
-    long initialBalance,
-    String issuerId
+    long initialBalance
 ) {}

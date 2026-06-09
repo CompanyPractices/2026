@@ -36,22 +36,23 @@ public class CardService implements CardUseCase {
             currencyCode,
             dailyLimit,
             monthlyLimit,
-            initialBalance,
-            settings.issuerId()
+            initialBalance
         );
 
         return cardRepository.save(Card.fromDraft(
             panGenerator.generatePan(draft.bin()),
+            settings.issuerId(),
             settings.cardYtl(),
             draft
         ));
     }
 
-    public List<Card> createGeneratedCards(List<CardDraft> data) {
+    public List<Card> createCards(List<CardDraft> data) {
         var entities = data
             .stream()
             .map(draft -> Card.fromDraft(
                 panGenerator.generatePan(draft.bin()),
+                settings.issuerId(),
                 settings.cardYtl(),
                 draft
             ))
