@@ -1,8 +1,6 @@
 package com.processing.common.dto.authorization;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
-
 
 public record AuthorizationResponse(
         @Schema(description = "Response code", example = "0110")
@@ -20,7 +18,7 @@ public record AuthorizationResponse(
         @Schema(description = "Reason for refusal")
         String declineReason,
         @Schema(description = "Processing time", example = "67")
-        Integer processingTimeMs
+        long processingTimeMs
 ) {
         public static AuthorizationResponse unknownBin(String stan) {
                 return new AuthorizationResponse(
@@ -41,4 +39,47 @@ public record AuthorizationResponse(
                         "0110", stan, null, null, "96", "DECLINED",
                         "System error", 0);
         }
+    public static final String STATUS_APPROVED = "APPROVED";
+
+    public static final String STATUS_DECLINED = "DECLINED";
+
+    public static final String CODE_APPROVED = "00";
+
+    public static final String CODE_DECLINED_GENERAL = "05";
+
+    public static final String CODE_CARD_NOT_FOUND = "14";
+
+    public static final String CODE_INSUFFICIENT_FUNDS = "51";
+
+    public static final String CODE_CARD_EXPIRED = "54";
+
+    public static final String CODE_EXCEEDS_LIMIT = "61";
+
+    public static final String CODE_SERVICE_UNAVAILABLE = "96";
+
+    public static AuthorizationResponse approved(AuthorizationRequest request, String rrn, String authCode, long processingTime) {
+        return new AuthorizationResponse(
+            request.mti(),
+            request.stan(),
+            rrn,
+            authCode,
+            CODE_APPROVED,
+            STATUS_APPROVED,
+            null,
+            processingTime
+        );
+    }
+
+    public static AuthorizationResponse declined(AuthorizationRequest request, String reason, String code, long processingTime) {
+        return new AuthorizationResponse(
+            request.mti(),
+            request.stan(),
+            null,
+            null,
+            code,
+            STATUS_DECLINED,
+            reason,
+            processingTime
+        );
+    }
 }

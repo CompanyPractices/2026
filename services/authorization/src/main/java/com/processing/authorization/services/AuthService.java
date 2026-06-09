@@ -1,11 +1,12 @@
 package com.processing.authorization.services;
 
-import com.processing.authorization.dto.AuthorizationRequest;
-import com.processing.authorization.dto.AuthorizationResponse;
-import com.processing.authorization.dto.CardResponse;
+import com.processing.authorization.constants.DeclineOutcome;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.authorization.dto.ReserveRequest;
 import com.processing.authorization.entities.LimitUsage;
-import com.processing.authorization.enums.CardStatus;
+import com.processing.authorization.constants.CardStatus;
 import com.processing.authorization.exceptions.CardNotFoundException;
 import com.processing.authorization.exceptions.ReserveCardException;
 
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Optional;
 import java.util.Random;
@@ -39,86 +42,87 @@ public class AuthService {
     private String cmsUrl;
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
-        CardResponse cardResponse;
+        CardModel cardResponse;
         try {
-            cardResponse = getCard(request.getPan());
+            cardResponse = getCard(request.pan());
         } catch (CardNotFoundException e) {
-            log.debug("Card not found for pan: {}", request.getPan());
-            return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
+            log.debug("Card not found for pan: {}", request.pan());
+            return DeclineOutcome.CARD_NOT_FOUND.build(request);
         } catch (Exception e) {
-            log.debug("getting card from card management service failed for pan: {}", request.getPan(), e);
-            return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
+            log.debug("getting card from card management service failed for pan: {}", request.pan(), e);
+            return DeclineOutcome.SERVICE_UNAVAILABLE.build(request);
         }
 
-        CardStatus currCardStatus = cardResponse.getStatus();
+        String currCardStatus = cardResponse.status();
         if (currCardStatus == null) {
-            return AuthorizationResponse.declined(request, "UNKNOWN_REASON", "05");
+            return DeclineOutcome.UNKNOWN_REASON.build(request);
         }
         if (!currCardStatus.equals(CardStatus.ACTIVE)) {
             return switch (currCardStatus) {
-                case EXPIRED -> AuthorizationResponse.declined(request, "CARD_EXPIRED", "54");
-                case BLOCKED -> AuthorizationResponse.declined(request, "CARD_BLOCKED", "05");
-                case INACTIVE -> AuthorizationResponse.declined(request, "CARD_INACTIVE", "05");
-                default -> AuthorizationResponse.declined(request, "UNKNOWN_REASON", "05");
+                case CardStatus.EXPIRED -> DeclineOutcome.CARD_EXPIRED.build(request);
+                case CardStatus.BLOCKED -> DeclineOutcome.CARD_BLOCKED.build(request);
+                case CardStatus.INACTIVE -> DeclineOutcome.CARD_INACTIVE.build(request);
+                default -> DeclineOutcome.UNKNOWN_REASON.build(request);
             };
         }
 
-        if (cardResponse.getExpiryDate().isBefore(LocalDate.now())) {
-            return AuthorizationResponse.declined(request, "CARD_EXPIRED", "54");
+        LocalDate transmissionDate = LocalDateTime.parse(request.transmissionDateTime()).toLocalDate();
+        if (isCardExpired(cardResponse.expiryDate(), transmissionDate)) {
+            return DeclineOutcome.CARD_EXPIRED.build(request);
         }
 
         Optional<LimitUsage> currLimitUsage =  limitUsageRepository
-                .findByPanAndUsageDate(request.getPan(), LocalDate.now());
+                .findByPanAndUsageDate(request.pan(), transmissionDate);
 
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
-            if (usage.getDailyAmount() + request.getAmount() > cardResponse.getDailyLimit()) {
-                return AuthorizationResponse.declined(request,  "EXCEEDS_AMOUNT_LIMIT", "61");
+            if (usage.getDailyAmount() + request.amount() > cardResponse.dailyLimit()) {
+                return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request);
             }
-        } else if (request.getAmount() > cardResponse.getDailyLimit()) {
-            return AuthorizationResponse.declined(request, "EXCEEDS_AMOUNT_LIMIT", "61");
+        } else if (request.amount() > cardResponse.dailyLimit()) {
+            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request);
         }
 
         Long monthlyLimitUsage = limitUsageRepository
-                .sumMonthlyAmountByPanAndMonth(request.getPan(), LocalDate.now().withDayOfMonth(1), LocalDate.now());
-        if (monthlyLimitUsage + request.getAmount() > cardResponse.getMonthlyLimit()) {
-            return AuthorizationResponse.declined(request, "EXCEEDS_AMOUNT_LIMIT", "61");
+                .sumMonthlyAmountByPanAndMonth(request.pan(), transmissionDate.withDayOfMonth(1), transmissionDate);
+        if (monthlyLimitUsage + request.amount() > cardResponse.monthlyLimit()) {
+            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request);
         }
 
-        if (request.getAmount() > cardResponse.getAvailableBalance()) {
-            return AuthorizationResponse.declined(request, "INSUFFICIENT_FUNDS", "51");
+        if (request.amount() > cardResponse.availableBalance()) {
+            return DeclineOutcome.INSUFFICIENT_FUNDS.build(request);
         }
 
         String rrn = generateRRN();
         try {
-            reserve(request.getAmount(), rrn, request.getPan());
+            reserve(request.amount(), rrn, request.pan());
             if (currLimitUsage.isPresent()) {
                 LimitUsage usage = currLimitUsage.get();
-                usage.setMonthlyAmount(usage.getMonthlyAmount() + request.getAmount());
-                usage.setDailyAmount(usage.getDailyAmount() + request.getAmount());
+                usage.setMonthlyAmount(usage.getMonthlyAmount() + request.amount());
+                usage.setDailyAmount(usage.getDailyAmount() + request.amount());
                 limitUsageRepository.save(usage);
             } else {
                 LimitUsage usage = new LimitUsage();
-                usage.setPan(request.getPan());
-                usage.setUsageDate(LocalDate.now());
-                usage.setDailyAmount(request.getAmount());
-                usage.setMonthlyAmount(monthlyLimitUsage + request.getAmount());
+                usage.setPan(request.pan());
+                usage.setUsageDate(transmissionDate);
+                usage.setDailyAmount(request.amount());
+                usage.setMonthlyAmount(monthlyLimitUsage + request.amount());
                 limitUsageRepository.save(usage);
             }
         } catch (Exception e) {
-            log.debug("reserving failed for card {}", cardResponse.getId(), e);
-            return AuthorizationResponse.declined(request, "RESERVATION_FAILED", "96");
+            log.debug("reserving failed for card {}", cardResponse.id(), e);
+            return DeclineOutcome.RESERVATION_FAILED.build(request);
         }
 
         String authCode = generateAuthCode();
-        return AuthorizationResponse.approved(request, rrn, authCode);
+        return AuthorizationResponse.approved(request, rrn, authCode, 1L); // TODO count response time
     }
 
-    public CardResponse getCard(String pan) throws Exception {
+    public CardModel getCard(String pan) throws Exception {
         String url = cmsUrl + "/api/cards/" + pan;
         log.debug("Getting card info for pan {}", pan);
 
-        CardResponse response = webClient.get()
+        CardModel response = webClient.get()
                 .uri(url)
                 .retrieve()
                 .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
@@ -126,7 +130,7 @@ public class AuthService {
                     return Mono
                             .error(new CardNotFoundException("Failed to get card. Status: " + clientResponse.statusCode()));
                 })
-                .bodyToMono(CardResponse.class)
+                .bodyToMono(CardModel.class)
                 .block();
         return response;
     }
@@ -186,5 +190,23 @@ public class AuthService {
         return new Random().ints(6, 0, 36)
                 .mapToObj(i -> Character.toString(i < 10 ? '0' + i : 'A' + i - 10))
                 .collect(Collectors.joining());
+    }
+
+    private boolean isCardExpired(String expiryDate, LocalDate transmissionDate) {
+        if (expiryDate == null || expiryDate.length() != 4) {
+            return true;
+        }
+
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyy");
+            String day = "01";
+            LocalDate expiryDateParsed = LocalDate.parse(day + expiryDate, formatter);
+            expiryDateParsed = expiryDateParsed.plusMonths(1).minusDays(1);
+
+            return expiryDateParsed.isBefore(transmissionDate);
+        } catch (Exception e) {
+            log.warn("Failed to parse expiry date: {}", expiryDate, e);
+            return true;
+        }
     }
 }
