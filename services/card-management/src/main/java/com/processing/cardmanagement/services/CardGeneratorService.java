@@ -19,7 +19,7 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class CardGeneratorService {
 
-    private final CardUseCase cardService;
+    private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
 
     private final Random random = new Random();
@@ -34,7 +34,7 @@ public class CardGeneratorService {
      * Распределение статусов: ACTIVE - 95%, INACTIVE - 3%, BLOCKED - 2%
      *
      * @param count количество карт для генерации
-     * @param bins список BIN-префиксов для распределения карт
+     * @param bins  список BIN-префиксов для распределения карт
      * @return список созданных карт
      */
     public List<Card> generate(int count, List<String> bins) {

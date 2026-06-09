@@ -3,74 +3,68 @@ package com.processing.cardmanagement.services;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
-import com.processing.cardmanagement.options.CardServiceDefaults;
-import com.processing.cardmanagement.options.CardServiceSettings;
-import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.annotation.Nullable;
-import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Сервис для управления банковскими картами
+ * Методы для управления банковскими картами
  */
-@RequiredArgsConstructor
-public class CardService implements CardUseCase {
+public interface CardService {
 
-    private final CardRepository cardRepository;
-    private final CardServiceSettings settings;
-    private final CardServiceDefaults defaults;
-    private final PanGenerator panGenerator;
-
-    public Card createCard(
+    /**
+     * Создает новую карту с авотматически сгенерированным PAN
+     *
+     * @param bin            BIN карты
+     * @param cardholderName имя держателя карты
+     * @param currencyCode   код валюты
+     * @param dailyLimit     дневной лимит карты
+     * @param monthlyLimit   месячиный лимит карты
+     * @param initialBalance изначальный баланс
+     * @return созданная карта
+     */
+    Card createCard(
         String bin,
         String cardholderName,
         String currencyCode,
         long dailyLimit,
         long monthlyLimit,
         long initialBalance
-    ) {
-        var draft = new CardDraft(
-            bin,
-            cardholderName,
-            CardStatus.ACTIVE,
-            currencyCode,
-            dailyLimit,
-            monthlyLimit,
-            initialBalance
-        );
+    );
 
-        return cardRepository.save(Card.fromDraft(
-            panGenerator.generatePan(draft.bin()),
-            settings.issuerId(),
-            settings.cardYtl(),
-            draft
-        ));
-    }
+    /**
+     * Создает несколько карт их списка сгенерированных DTO
+     * Используется генератором тестовых карт
+     *
+     * @param data данные для создания карт
+     * @return список созданных карт
+     */
+    List<Card> createCards(List<CardDraft> data);
 
-    public List<Card> createCards(List<CardDraft> data) {
-        var entities = data
-            .stream()
-            .map(draft -> Card.fromDraft(
-                panGenerator.generatePan(draft.bin()),
-                settings.issuerId(),
-                settings.cardYtl(),
-                draft
-            ))
-            .toList();
+    /**
+     * Возвращает карту по номеру PAN
+     *
+     * @param pan 16-значный номер карты
+     * @return карта
+     * @throws CardNotFoundException если карта не найдена
+     */
+    Card getCard(String pan);
 
-        return cardRepository.saveAll(entities);
-    }
-
-    public Card getCard(String pan) {
-        return cardRepository
-            .findByPan(pan)
-            .orElseThrow(CardNotFoundException::new);
-    }
-
-    public List<Card> getCards(
+    /**
+     * Возвращает список карт с пагинацией и фильтрацией
+     *
+     * @param limit     количество карт на странице
+     * @param offset    смещение
+     * @param status    фильтр по статусу
+     * @param bin       фильтр по bin
+     * @param issuerId  фильтр по IssuerId
+     * @param startDate начало диапазона дат
+     * @param endDate   конец диапазона дат
+     * @return список карт
+     */
+    List<Card> getCards(
         @Nullable Integer limit,
         @Nullable Integer offset,
         @Nullable CardStatus status,
@@ -78,63 +72,67 @@ public class CardService implements CardUseCase {
         @Nullable String issuerId,
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
-    ) {
-        return cardRepository.findCards(
-            limit != null ? limit : defaults.pageLimit(),
-            offset != null ? offset : defaults.pageOffset(),
-            status,
-            bin,
-            issuerId,
-            startDate,
-            endDate
-        );
-    }
+    );
 
-    public Card patchCard(
+    /**
+     * Частично обновляет параметры карты
+     *
+     * @param pan              PAN карты
+     * @param status           новый статус карты
+     * @param dailyLimit       новый дневной лимит карты
+     * @param monthlyLimit     новый месячный лимит карты
+     * @param availableBalance новый баланс карты
+     * @return измененная карта
+     * @throws CardNotFoundException если карта не найдена
+     */
+    Card patchCard(
         String pan,
         @Nullable CardStatus status,
         @Nullable Long dailyLimit,
         @Nullable Long monthlyLimit,
         @Nullable Long availableBalance
-    ) {
-        var card = getCard(pan);
-        return cardRepository.save(
-            card.withData(
-                status != null ? status : card.status(),
-                dailyLimit != null ? dailyLimit : card.dailyLimit(),
-                monthlyLimit != null ? monthlyLimit : card.monthlyLimit(),
-                availableBalance != null ? availableBalance : card.availableBalance()
-            )
-        );
-    }
+    );
 
-    public Card deleteCard(String pan) {
-        var card = getCard(pan);
-        return cardRepository.save(card.deleted());
-    }
+    /**
+     * Удаляет карту
+     *
+     * @param pan PAN карты
+     * @throws CardNotFoundException если карта не найдена
+     */
+    void deleteCard(String pan);
 
-    public long countCards() {
-        return cardRepository.countCards();
-    }
+    /**
+     * Возвращает общее количество карт в базе данных
+     *
+     * @return количество карт
+     */
+    long countCards();
 
-    public long countCards(
+    /**
+     * Считает количество карт, удовлетворяющее фильтрам
+     *
+     * @param status    фильтр по статусу
+     * @param bin       фильтр по bin
+     * @param issuerId  фильтр по IssuerId
+     * @param startDate начало диапазона дат
+     * @param endDate   конец диапазона дат
+     * @return количество карт
+     */
+    long countCards(
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
-    ) {
-        return cardRepository.countCards(
-            status,
-            bin,
-            issuerId,
-            startDate,
-            endDate
-        );
-    }
+    );
 
-    public Card reserve(String pan, long amount) {
-        var card = getCard(pan);
-        return cardRepository.save(card.withReserved(amount));
-    }
+    /**
+     * Резервирует средства на карте, уменьшая доступный баланс
+     *
+     * @param pan    PAN карты
+     * @param amount размер резервирования
+     * @return измененная карта
+     * @throws CardNotFoundException если карта не найдена
+     */
+    Card reserve(String pan, long amount);
 }

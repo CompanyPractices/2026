@@ -26,7 +26,7 @@ public class CardGeneratorServiceTest {
     private final Faker faker = new Faker();
 
     @Mock
-    private CardUseCase cardService;
+    private CardService cardService;
 
     private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
         1_000_000,
