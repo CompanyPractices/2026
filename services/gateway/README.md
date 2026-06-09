@@ -38,7 +38,7 @@ Gateway Service - точка входа во внешнее REST API. Прини
 Swagger UI доступен по стандартному springdoc-пути:
 
 ```text
-http://localhost:8080/swagger-ui/index.html
+http://localhost:8080/docs
 ```
 
 OpenAPI JSON:
