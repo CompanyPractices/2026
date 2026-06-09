@@ -2,6 +2,7 @@ package com.processing.cardmanagement.options;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -14,10 +15,16 @@ public record CardServiceConfigurationProperties(
     @Pattern(
         regexp = "^[A-Z0-9]+$"
     )
-    String issuerId
+    String issuerId,
+
+    @Positive
+    int cardYtl
 ) {
 
-    public CardServiceSettings toSettings() {
-        return new CardServiceSettings(this.issuerId);
+    public CardServiceSettings toCardServiceSettings() {
+        return new CardServiceSettings(
+            this.issuerId,
+            this.cardYtl
+        );
     }
 }
