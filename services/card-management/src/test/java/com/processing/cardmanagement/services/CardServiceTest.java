@@ -29,11 +29,10 @@ import java.util.function.UnaryOperator;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public final class CardUseCaseTest {
+public final class CardServiceTest {
 
     private final String panGeneratorCardNumber = "1234 5678 9101 1123".replace(" ", "");
 
@@ -138,7 +137,7 @@ public final class CardUseCaseTest {
         assertEquals(card, found);
 
         when(cardRepository.findByPan(anyString())).thenReturn(Optional.empty());
-        assertThrows(CardNotFoundException.class, () -> cardUseCase.getCard(pan));
+        assertThrows(CardNotFoundException.class, () -> cardService.getCard(pan));
     }
 
     @Test
