@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -22,11 +21,14 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class ResponseCachingFilter extends OncePerRequestFilter {
     private static final String CARDS_MGMT_SERVICE_PREFIX = "/api/cards";
+    private static final String CACHE_HEADER_NAME = "X-Cache";
+    private static final String CACHE_HIT = "HIT";
+    private static final String CACHE_MISS = "MISS";
 
     private final Cache cache;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
@@ -40,7 +42,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
 
         if (cachedBody != null) {
             response.setStatus(HttpServletResponse.SC_OK);
-            response.setHeader("X-Cached", "true");
+            response.setHeader(CACHE_HEADER_NAME, CACHE_HIT);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setContentLength(cachedBody.length());
             response.getWriter().write(cachedBody);
@@ -57,8 +59,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
                 cachedBody = new String(wrappedResponse.getContentAsByteArray(), StandardCharsets.UTF_8);
                 cache.put(requestKey, cachedBody);
                 wrappedResponse.copyBodyToResponse();
-            } else {
-                response.setStatus(502);
+                response.setHeader(CACHE_HEADER_NAME, CACHE_MISS);
             }
         } catch (Exception e) {
             log.error("Exception occurred while caching response", e);

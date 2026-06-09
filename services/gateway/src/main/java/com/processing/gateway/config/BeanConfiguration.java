@@ -26,7 +26,7 @@ public class BeanConfiguration {
         var cacheManager = new CaffeineCacheManager("gateway-cache");
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(1000)
-                .expireAfterWrite(2, TimeUnit.MINUTES)
+                .expireAfterWrite(5, TimeUnit.MINUTES)
                 .recordStats());
 
         return cacheManager;
