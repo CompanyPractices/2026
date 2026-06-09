@@ -9,14 +9,14 @@ servers:
   - url: http://localhost:8080
     description: Gateway (единственная точка входа для внешних клиентов)
   - url: http://localhost:8081
-    description: Switch Service
-  - url: http://localhost:8082
-    description: Authorization Service
-  - url: http://localhost:8083
     description: Card Management Service
-  - url: http://localhost:8084
-    description: Terminal Simulator
+  - url: http://localhost:8082
+    description: Switch Service
+  - url: http://localhost:8083
+    description: Authorization Service
   - url: http://localhost:8085
+    description: Terminal Simulator
+  - url: http://localhost:8086
     description: Merchant Simulator
   - url: http://localhost:8088
     description: Transaction Logger
