@@ -1,13 +1,13 @@
 package com.processing.support;
 
 import com.processing.SwitchTestData;
-import com.processing.model.Transaction;
+import com.processing.common.dto.transactionlogger.TransactionRequest;
 import com.processing.service.LoggerClient;
 
 public class TrackingLoggerClient extends LoggerClient {
 
     private boolean called;
-    private Transaction lastTransaction;
+    private TransactionRequest lastTransaction;
     private final boolean succeed;
 
     public TrackingLoggerClient(boolean succeed) {
@@ -16,7 +16,7 @@ public class TrackingLoggerClient extends LoggerClient {
     }
 
     @Override
-    public boolean log(Transaction transaction) {
+    public boolean log(TransactionRequest transaction) {
         called = true;
         lastTransaction = transaction;
         return succeed;
@@ -26,7 +26,7 @@ public class TrackingLoggerClient extends LoggerClient {
         return called;
     }
 
-    public Transaction lastTransaction() {
+    public TransactionRequest lastTransaction() {
         return lastTransaction;
     }
 }
