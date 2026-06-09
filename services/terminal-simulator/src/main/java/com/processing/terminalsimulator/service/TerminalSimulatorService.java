@@ -98,8 +98,12 @@ public class TerminalSimulatorService {
                 long randomAmount = (long) (Math.random() * 40_000_000);
                 amount = 10_000_000 + randomAmount;
             }
-            case "daily_limit" -> amount = card.dailyLimit() - 1;
-            case "blocked" -> card = getRandomCard(BLOCKED);
+            case "daily_limit" -> {
+                amount = card.dailyLimit() - 1;
+            }
+            case "blocked" -> {
+                card = getRandomCard(BLOCKED);
+            }
             case "no_money" -> {
                 double randomValue = Math.random() * 100_000;
                 amount = card.availableBalance() + (int) randomValue;
