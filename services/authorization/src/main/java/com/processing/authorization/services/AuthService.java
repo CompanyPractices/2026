@@ -7,6 +7,8 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.authorization.dto.ReserveRequest;
 import com.processing.authorization.entities.LimitUsage;
 import com.processing.authorization.constants.CardStatus;
+import com.processing.authorization.entities.LimitUsage;
+import com.processing.authorization.enums.CardStatus;
 import com.processing.authorization.exceptions.CardNotFoundException;
 import com.processing.authorization.exceptions.ReserveCardException;
 
@@ -74,7 +76,7 @@ public class AuthService {
         }
 
         Optional<LimitUsage> currLimitUsage =  limitUsageRepository
-                .findByPanAndUsageDateForUpdate(request.pan(), transmissionDate);
+                .findByPanAndUsageDate(request.pan(), transmissionDate);
 
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
