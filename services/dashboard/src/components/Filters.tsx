@@ -1,9 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Filter, FilterStatus } from "../types";
 
-const IssuersId = ['ISS001', 'ISS002', 'ISS003', 'ISS004', 'ISS005', 'ISS006', 'ISS007', 'ISS008', 'ISS009', 'ISS010']
-const Mcc = ['5411', '5812', '5541', '5912', '5732', '5651', '4111', '4511', '7011', '7832', '5942', '4829', '5999']
-
 type FilterProps = {
     issuers: Record<string, string>
     mccNames: Record<string, string>
@@ -52,7 +49,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                         })}
                         id="issuer">
                     <option value="">Выберите эмитента</option>
-                    {IssuersId.map((issuerId) => {
+                    {Object.keys(issuers).map((issuerId) => {
                         return <option key={issuerId} value={issuerId}>{issuers[issuerId] || issuerId}</option>;
                     })}
                 </select>
@@ -67,7 +64,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                         })}
                         id="mcc">
                     <option value="">Выберите MCC</option>
-                    {Mcc.map((mccCode) => {
+                    {Object.keys(mccNames).map((mccCode) => {
                         return <option key={mccCode} value={mccCode}>{mccNames[mccCode] || mccCode}</option>;
                     })}
                 </select>
