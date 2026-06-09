@@ -60,7 +60,7 @@ public class CardGeneratorServiceTest {
                 faker.numerify("################"),
                 dto.bin(),
                 faker.name().fullName().toUpperCase(),
-                "0629",
+                YearMonth.now().plusYears(3),
                 dto.status(),
                 "643",
                 dto.dailyLimit(),
