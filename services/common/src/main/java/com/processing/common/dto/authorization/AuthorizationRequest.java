@@ -64,21 +64,21 @@ public record AuthorizationRequest(
         @NotBlank
         @Schema(description = "Acquirer ID", example = "ACQ002")
         String acquirerId,
+
+        @NotBlank
         @Schema(description = "Issuer ID, set by Switch after BIN routing")
-        String issuerId,
-        @Schema(description = "RRN for reversal requests (mti=0400)")
-        String rrn
+        String issuerId
 ) {
         public AuthorizationRequest withIssuerId(String issuerId) {
                 return new AuthorizationRequest(
                         mti, stan, pan, processingCode, amount, currencyCode,
-                        transmissionDateTime, terminalId, terminalType, merchantId, mcc, acquirerId, issuerId, rrn);
+                        transmissionDateTime, terminalId, terminalType, merchantId, mcc, acquirerId, issuerId);
         }
 
 
         public AuthorizationRequest forReversal(String rrn) {
                 return new AuthorizationRequest(
                         "0400", stan, pan, processingCode, amount, currencyCode,
-                        transmissionDateTime, terminalId, terminalType, merchantId, mcc, acquirerId, issuerId, rrn);
+                        transmissionDateTime, terminalId, terminalType, merchantId, mcc, acquirerId, issuerId);
         }
 }
