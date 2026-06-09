@@ -1,21 +1,25 @@
 package com.processing.cardmanagement.services;
 
+import com.processing.cardmanagement.models.Card;
+import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
 import com.processing.common.dto.cardmanagement.CardStatus;
-import com.processing.common.dto.cardmanagement.GeneratedCardDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import com.processing.common.dto.cardmanagement.CardModel;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Сервис для генерации тестовых банковских карт
+ * Карты равномерно распределяются по переданным BIN-префиксам
+ */
 @Service
 @RequiredArgsConstructor
 public class CardGeneratorService {
 
-    private final CardService cardService;
+    private final CardUseCase cardService;
     private final CardGeneratorOptions generatorOptions;
 
     private final Random random = new Random();
@@ -24,8 +28,17 @@ public class CardGeneratorService {
         "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
     );
 
-    public List<CardModel> generate(int count, List<String> bins) {
-        List<GeneratedCardDto> cards = new ArrayList<>();
+    /**
+     * Генерирует указанное количество тестовых карт и сохраняет их в базе данных
+     * Карты равномерно распределяются по BIN-ам
+     * Распределение статусов: ACTIVE - 95%, INACTIVE - 3%, BLOCKED - 2%
+     *
+     * @param count количество карт для генерации
+     * @param bins список BIN-префиксов для распределения карт
+     * @return список созданных карт
+     */
+    public List<Card> generate(int count, List<String> bins) {
+        List<CardDraft> cards = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
@@ -35,14 +48,14 @@ public class CardGeneratorService {
             int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
             int monthlyLimit = dailyLimit * 30;
 
-            GeneratedCardDto card = new GeneratedCardDto(
+            CardDraft card = new CardDraft(
                 bin,
                 cardholderName,
+                generateStatus(),
                 generatorOptions.currencyCode(),
                 dailyLimit,
                 monthlyLimit,
-                balance,
-                generateStatus()
+                balance
             );
 
             cards.add(card);

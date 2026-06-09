@@ -6,7 +6,7 @@ import java.util.List;
 
 public record GetCardsResponse(
     @Schema(description = "Total number of cards matching filters", example = "100")
-    int total,
+    long total,
 
     @Schema(description = "List of cards")
     List<CardModel> cards) {
