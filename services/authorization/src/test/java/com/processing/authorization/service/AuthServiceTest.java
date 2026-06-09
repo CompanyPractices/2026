@@ -77,7 +77,7 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
         doNothing().when(spyService).reserve(anyLong(), anyString(), anyString());
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+        when(limitUsageRepository.findByPanAndUsageDateForUpdate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
         when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(0L);
@@ -299,7 +299,7 @@ class AuthServiceTest {
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(50000L);
         usage.setMonthlyAmount(200000L);
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+        when(limitUsageRepository.findByPanAndUsageDateForUpdate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
         when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(200000L);
@@ -322,7 +322,7 @@ class AuthServiceTest {
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(96000L);
         usage.setMonthlyAmount(200000L);
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+        when(limitUsageRepository.findByPanAndUsageDateForUpdate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
 
         AuthorizationResponse response = spyService.authorize(correctRequest);
@@ -339,7 +339,7 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
 
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+        when(limitUsageRepository.findByPanAndUsageDateForUpdate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
         when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(496000L);
