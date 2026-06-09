@@ -5,6 +5,7 @@ import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Random;
  * Сервис для генерации тестовых банковских карт
  * Карты равномерно распределяются по переданным BIN-префиксам
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CardGeneratorService {
@@ -38,6 +40,7 @@ public class CardGeneratorService {
      * @return список созданных карт
      */
     public List<Card> generate(int count, List<String> bins) {
+        log.info("Generating {} cards for bins: {}", count, bins);
         List<CardDraft> cards = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
@@ -60,6 +63,7 @@ public class CardGeneratorService {
 
             cards.add(card);
         }
+        log.info("Successfully generated {} cards", count);
         return cardService.createCards(cards);
     }
 
