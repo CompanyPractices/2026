@@ -5,8 +5,11 @@ import org.springframework.stereotype.Component;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Маппер для ExpiryDate у карты
+ */
 @Component
-public final class CardDateMapper {
+public final class CardExpiryDateMapper {
 
     private static final DateTimeFormatter EXPIRY_DATE_FORMATTER =
         DateTimeFormatter.ofPattern("MMyy");
