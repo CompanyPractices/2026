@@ -7,7 +7,7 @@ import com.processing.authorization.dto.ReserveRequest;
 import com.processing.authorization.enums.CardStatus;
 import com.processing.authorization.exceptions.CardNotFoundException;
 import com.processing.authorization.exceptions.ReserveCardException;
-import com.processing.authorization.exceptions.ServiceUnavaliableException;
+import com.processing.authorization.exceptions.ServiceUnavailableException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -89,7 +89,7 @@ public class AuthService {
                     e);
             if (e.getCause() instanceof CardNotFoundException) {
                 return AuthorizationResponse.declined(request, "CARD_NOT_FOUND", "14");
-            } else if (e.getCause() instanceof ServiceUnavaliableException) {
+            } else if (e.getCause() instanceof ServiceUnavailableException) {
                 return AuthorizationResponse.declined(request, "SERVICE_UNAVAILABLE", "96");
             }
 
@@ -144,7 +144,7 @@ public class AuthService {
      * <li><b>404 Not Found</b> - карта не найдена, выбрасывает
      * {@link CardNotFoundException}</li>
      * <li><b>503 Service Unavailable</b> - CMS недоступен, выбрасывает
-     * {@link ServiceUnavaliableException}</li>
+     * {@link ServiceUnavailableException}</li>
      * <li><b>Другие ошибки (не 2xx)</b> - общая ошибка получения карты</li>
      * <li><b>2xx Success</b> - возвращает объект {@link CardResponse} с данными
      * карты</li>
@@ -158,11 +158,11 @@ public class AuthService {
      *                   Конкретный тип исключения можно получить через
      *                   {@link Exception#getCause()}:
      *                   {@link CardNotFoundException} или
-     *                   {@link ServiceUnavaliableException}
+     *                   {@link ServiceUnavailableException}
      *
      * @see CardResponse
      * @see CardNotFoundException
-     * @see ServiceUnavaliableException
+     * @see ServiceUnavailableException
      */
     public CardResponse getCard(String pan) throws Exception {
         String fullUrl = cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
@@ -181,7 +181,7 @@ public class AuthService {
                 .onStatus(status -> status == HttpStatus.SERVICE_UNAVAILABLE, clientResponse -> {
                     log.debug("Card Management service unavaliable: ", clientResponse.statusCode());
                     return Mono
-                            .error(new ServiceUnavaliableException(
+                            .error(new ServiceUnavailableException(
                                     "Card Management service unavaliable: " + clientResponse.statusCode()));
                 })
                 .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {

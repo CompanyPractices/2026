@@ -6,8 +6,8 @@ package com.processing.authorization.exceptions;
  *
  * @see Exception
  */
-public class ServiceUnavaliableException extends Exception {
-    public ServiceUnavaliableException(String message) {
+public class ServiceUnavailableException extends Exception {
+    public ServiceUnavailableException(String message) {
         super(message);
     }
 }
