@@ -2,16 +2,20 @@ package com.processing.cardmanagement.configuration;
 
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
+import com.processing.common.dto.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.processing.common.dto.ErrorResponse;
 
 import java.time.LocalDateTime;
 
+/**
+ * Глобальный обработчик исключений
+ * Преобразует исключения в HTTP ответы с соответствующими статус-кодами
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
