@@ -8,7 +8,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -24,12 +23,25 @@ import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpTimeoutException;
 import java.util.Optional;
 
+/**
+ * Converts downstream connectivity failures into a stable gateway error response
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RequiredArgsConstructor
 public class DownstreamErrorFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
     private final DownstreamServiceResolver serviceResolver;
+
+    /**
+     * Creates a downstream error filter.
+     *
+     * @param objectMapper object mapper used to write JSON responses
+     * @param serviceResolver resolver that maps request paths to downstream service names
+     */
+    public DownstreamErrorFilter(ObjectMapper objectMapper, DownstreamServiceResolver serviceResolver) {
+        this.objectMapper = objectMapper;
+        this.serviceResolver = serviceResolver;
+    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,

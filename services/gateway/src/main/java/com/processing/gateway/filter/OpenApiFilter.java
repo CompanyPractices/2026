@@ -9,7 +9,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
@@ -19,8 +18,10 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Adjusts proxied downstream OpenAPI documents for public gateway urls
+ */
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class OpenApiFilter extends OncePerRequestFilter {
     private static final String DOCS_ROUTE_SUFFIX = "-docs";
@@ -29,6 +30,15 @@ public class OpenApiFilter extends OncePerRequestFilter {
     private static final String TRANSACTIONS_PUBLIC_ROUTE = "/api/transactions";
 
     private final OpenApiProperties openApiProperties;
+
+    /**
+     * Creates an OpenAPI response filter
+     *
+     * @param openApiProperties gateway OpenAPI presentation settings
+     */
+    public OpenApiFilter(OpenApiProperties openApiProperties) {
+        this.openApiProperties = openApiProperties;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

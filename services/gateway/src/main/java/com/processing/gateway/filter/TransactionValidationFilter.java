@@ -14,7 +14,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -31,15 +30,28 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
+/**
+ * Validates transaction authorization requests before they are proxied
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 2)
-@RequiredArgsConstructor
 public class TransactionValidationFilter extends OncePerRequestFilter {
 
     private static final String TRANSACTIONS_PATH = "/api/transactions";
 
     private final ObjectMapper objectMapper;
     private final TransactionRequestValidator validator;
+
+    /**
+     * Creates a transaction validation filter
+     *
+     * @param objectMapper object mapper used to parse and write JSON
+     * @param validator validator for transaction authorization payloads
+     */
+    public TransactionValidationFilter(ObjectMapper objectMapper, TransactionRequestValidator validator) {
+        this.objectMapper = objectMapper;
+        this.validator = validator;
+    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,

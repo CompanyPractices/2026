@@ -13,11 +13,19 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Defines shared infrastructure beans used by the gateway.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class BeanConfiguration {
     private final HealthProperties healthProperties;
 
+    /**
+     * Creates an HTTP client for gateway-to-service calls
+     *
+     * @return configured HTTP client with connection timeout and redirect support
+     */
     @Bean
     public HttpClient httpClient() {
         return HttpClient.newBuilder()

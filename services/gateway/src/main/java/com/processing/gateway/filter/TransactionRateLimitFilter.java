@@ -7,7 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -20,9 +19,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Applies a fixed-window rate limit to transaction authorization requests
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
-@RequiredArgsConstructor
 public class TransactionRateLimitFilter extends OncePerRequestFilter {
 
     private static final String TRANSACTIONS_PATH = "/api/transactions";
@@ -33,6 +34,17 @@ public class TransactionRateLimitFilter extends OncePerRequestFilter {
 
     @Value("${gateway.rate-limit.transactions-per-second:100}")
     private int transactionsPerSecond;
+
+    /**
+     * Creates a transaction rate limiting filter.
+     *
+     * @param rateLimiter rate limiter used for request accounting
+     * @param objectMapper object mapper used to write rate limit responses
+     */
+    public TransactionRateLimitFilter(InMemoryRateLimiter rateLimiter, ObjectMapper objectMapper) {
+        this.rateLimiter = rateLimiter;
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,

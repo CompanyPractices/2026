@@ -3,9 +3,24 @@ package com.processing.gateway.validation;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import org.springframework.stereotype.Component;
 
+/**
+ * Validates transaction authorization requests against the gateway contract
+ */
 @Component
 public class TransactionRequestValidator {
 
+    /**
+     * Creates a transaction request validator
+     */
+    public TransactionRequestValidator() {
+    }
+
+    /**
+     * Validates required fields and field formats of a transaction request
+     *
+     * @param request parsed transaction authorization request
+     * @throws TransactionValidationException when the request violates the contract
+     */
     public void validate(AuthorizationRequest request) {
         if (request == null) {
             throw new TransactionValidationException("Request body is required");

@@ -9,6 +9,9 @@ import org.springframework.web.util.pattern.PathPatternParser;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Resolves downstream service names from configured gateway route path predicates
+ */
 @Component
 public class DownstreamServiceResolver {
 
@@ -17,6 +20,11 @@ public class DownstreamServiceResolver {
 
     private final List<RouteMapping> mappings;
 
+    /**
+     * Creates a resolver from Spring Cloud Gateway MVC route definitions
+     *
+     * @param properties gateway route properties
+     */
     public DownstreamServiceResolver(GatewayRouteProperties properties) {
         PathPatternParser parser = new PathPatternParser();
 
@@ -25,6 +33,12 @@ public class DownstreamServiceResolver {
                 .toList();
     }
 
+    /**
+     * Resolves the downstream service configured for a request path
+     *
+     * @param path request path
+     * @return service name from route metadata, or empty if the path is not mapped
+     */
     public Optional<String> resolve(String path) {
         PathContainer parsedPath = PathContainer.parsePath(path);
 

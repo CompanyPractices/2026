@@ -5,13 +5,27 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 
 import java.util.*;
 
+/**
+ * Request wrapper that allows filters to add or replace request headers
+ */
 public class MutableHeadersRequestWrapper extends HttpServletRequestWrapper {
     private final Map<String, String> mutableHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
+    /**
+     * Creates a wrapper around the original servlet request
+     *
+     * @param request original request
+     */
     public MutableHeadersRequestWrapper(HttpServletRequest request) {
         super(request);
     }
 
+    /**
+     * Adds or replaces a header value visible to downstream filters and handlers
+     *
+     * @param name header name
+     * @param value header value
+     */
     public void setHeader(String name, String value) {
         mutableHeaders.put(name, value);
     }
