@@ -122,13 +122,13 @@ public record Card(
         );
     }
 
-    public static Card fromDraft(String pan, CardDraft draft) {
+    public static Card fromDraft(String pan, int cardYtl, CardDraft draft) {
         return new Card(
             UUID.randomUUID(),
             pan,
             draft.bin(),
             draft.cardholderName(),
-            YearMonth.now().plusYears(3),
+            YearMonth.now().plusYears(cardYtl),
             CardStatus.ACTIVE,
             draft.currencyCode(),
             draft.dailyLimit(),
