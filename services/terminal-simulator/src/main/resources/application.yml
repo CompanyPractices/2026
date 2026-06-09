@@ -3,7 +3,7 @@ server:
 
 gateway:
   url: http://gateway:8080/api/transactions
-  card-management-url: http://card-management:8080/api/cards
+  card-management-url: http://gateway:8080/api/cards
 
 # PostgreSQL (раскомментируй, если нужна БД)
 # spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:processing}
