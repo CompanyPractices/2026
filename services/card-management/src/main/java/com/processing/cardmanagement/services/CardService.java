@@ -86,7 +86,7 @@ public class CardService implements CardUseCase {
         );
     }
 
-    public void patchCard(
+    public Card patchCard(
         String pan,
         @Nullable CardStatus status,
         @Nullable Long dailyLimit,
@@ -94,7 +94,7 @@ public class CardService implements CardUseCase {
         @Nullable Long availableBalance
     ) {
         var card = getCard(pan);
-        cardRepository.save(
+        return cardRepository.save(
             card.withData(
                 status != null ? status : card.status(),
                 dailyLimit != null ? dailyLimit : card.dailyLimit(),
@@ -104,9 +104,9 @@ public class CardService implements CardUseCase {
         );
     }
 
-    public void deleteCard(String pan) {
+    public Card deleteCard(String pan) {
         var card = getCard(pan);
-        cardRepository.save(card.deleted());
+        return cardRepository.save(card.deleted());
     }
 
     public long countCards() {
@@ -129,8 +129,8 @@ public class CardService implements CardUseCase {
         );
     }
 
-    public void reserve(String pan, long amount) {
+    public Card reserve(String pan, long amount) {
         var card = getCard(pan);
-        cardRepository.save(card.withReserved(amount));
+        return cardRepository.save(card.withReserved(amount));
     }
 }
