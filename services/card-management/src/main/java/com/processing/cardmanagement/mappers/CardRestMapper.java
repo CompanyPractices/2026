@@ -5,9 +5,6 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-/**
- * MapStruct Маппер для доменной сущности Card и DTO CardModel
- */
 @Mapper(componentModel = "spring", uses = CardExpiryDateMapper.class)
 public interface CardRestMapper {
 

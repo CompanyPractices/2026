@@ -13,9 +13,6 @@ import lombok.RequiredArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Сервис для управления банковскими картами
- */
 @RequiredArgsConstructor
 public class CardService implements CardUseCase {
 

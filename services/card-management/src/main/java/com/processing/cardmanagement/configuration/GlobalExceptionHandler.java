@@ -12,10 +12,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 
-/**
- * Глобальный обработчик исключений
- * Преобразует исключения в HTTP ответы с соответствующими статус-кодами
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
