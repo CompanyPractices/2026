@@ -3,26 +3,22 @@ package com.processing.cardmanagement.services;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
+import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.common.dto.cardmanagement.CardStatus;
-import com.processing.common.dto.cardmanagement.ReserveRequest;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Service
 @RequiredArgsConstructor
 public class CardService implements CardUseCase {
 
-    private static final long DEFAULT_OFFSET = 0;
-    private static final long DEFAULT_LIMIT = 50;
-
     private final CardRepository cardRepository;
     private final CardServiceSettings settings;
+    private final CardServiceDefaults defaults;
     private final PanGenerator panGenerator;
 
     public Card createCard(
@@ -76,8 +72,8 @@ public class CardService implements CardUseCase {
         @Nullable LocalDateTime endDate
     ) {
         return cardRepository.findCards(
-            limit != null ? limit : DEFAULT_LIMIT,
-            offset != null ? offset : DEFAULT_OFFSET,
+            limit != null ? limit : defaults.pageLimit(),
+            offset != null ? offset : defaults.pageOffset(),
             status,
             bin,
             issuerId,
@@ -94,20 +90,19 @@ public class CardService implements CardUseCase {
         @Nullable Long availableBalance
     ) {
         var card = getCard(pan);
-        card.updateData(
-            status != null ? status : card.getStatus(),
-            dailyLimit != null ? dailyLimit : card.getDailyLimit(),
-            monthlyLimit != null ? monthlyLimit : card.getMonthlyLimit(),
-            availableBalance != null ? availableBalance : card.getAvailableBalance()
+        cardRepository.save(
+            card.withData(
+                status != null ? status : card.status(),
+                dailyLimit != null ? dailyLimit : card.dailyLimit(),
+                monthlyLimit != null ? monthlyLimit : card.monthlyLimit(),
+                availableBalance != null ? availableBalance : card.availableBalance()
+            )
         );
-
-        cardRepository.save(card);
     }
 
     public void deleteCard(String pan) {
         var card = getCard(pan);
-        card.delete();
-        cardRepository.save(card);
+        cardRepository.save(card.deleted());
     }
 
     public long countCards() {
@@ -130,9 +125,8 @@ public class CardService implements CardUseCase {
         );
     }
 
-    public void reserve(String pan, ReserveRequest data) {
+    public void reserve(String pan, long amount) {
         var card = getCard(pan);
-        card.reserve(data.amount());
-        cardRepository.save(card);
+        cardRepository.save(card.withReserved(amount));
     }
 }

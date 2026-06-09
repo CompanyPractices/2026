@@ -2,70 +2,98 @@ package com.processing.cardmanagement.models;
 
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.common.dto.cardmanagement.CardStatus;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.UUID;
 
-@Getter
-@AllArgsConstructor
-@RequiredArgsConstructor
-public final class Card {
-
-    private final UUID id;
-    private final String pan;
-    private final String bin;
-    private final String cardholderName;
-    private final YearMonth expiryDate;
-    private CardStatus status = CardStatus.ACTIVE;
-    private String currencyCode = "643";
-    private long dailyLimit = 15_000_000;
-    private long monthlyLimit = 300_000_000;
-    private long availableBalance = 1_000_000;
-    private final String issuerId;
-    private final LocalDateTime createdAt = LocalDateTime.now();
+public record Card(
+    UUID id,
+    String pan,
+    String bin,
+    String cardholderName,
+    YearMonth expiryDate,
+    CardStatus status,
+    String currencyCode,
+    long dailyLimit,
+    long monthlyLimit,
+    long availableBalance,
+    String issuerId,
+    LocalDateTime createdAt
+) {
 
     public Card(
+        UUID id,
         String pan,
         String bin,
         String cardholderName,
+        YearMonth expiryDate,
+        CardStatus status,
         String currencyCode,
         long dailyLimit,
         long monthlyLimit,
-        long initialBalance,
+        long availableBalance,
         String issuerId
     ) {
-        this.id = UUID.randomUUID();
-        this.pan = pan;
-        this.bin = bin;
-        this.cardholderName = cardholderName;
-        this.expiryDate = YearMonth.now().plusYears(3);
-        this.currencyCode = currencyCode;
-        this.dailyLimit = dailyLimit;
-        this.monthlyLimit = monthlyLimit;
-        this.availableBalance = initialBalance;
-        this.issuerId = issuerId;
+        this(
+            id,
+            pan,
+            bin,
+            cardholderName,
+            expiryDate,
+            status,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            availableBalance,
+            issuerId,
+            LocalDateTime.now()
+        );
     }
 
-    public void reserve(long amount) {
+    public Card withReserved(long amount) {
         if (this.availableBalance < amount) {
             throw new InsufficientFundsException();
         }
-        this.availableBalance -= amount;
+
+        return new Card(
+            id,
+            pan,
+            bin,
+            cardholderName,
+            expiryDate,
+            status,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            availableBalance - amount,
+            issuerId,
+            createdAt
+        );
     }
 
-    public void delete() {
+    public Card deleted() {
         if (this.status == CardStatus.DELETED) {
             throw new IllegalStateException("Card already deleted");
         }
 
-        this.status = CardStatus.DELETED;
+        return new Card(
+            id,
+            pan,
+            bin,
+            cardholderName,
+            expiryDate,
+            CardStatus.DELETED,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            availableBalance,
+            issuerId,
+            createdAt
+        );
     }
 
-    public void updateData(
+    public Card withData(
         CardStatus status,
         Long dailyLimit,
         Long monthlyLimit,
@@ -78,17 +106,30 @@ public final class Card {
             throw new IllegalArgumentException("Daily limit can not be larger than monthly limit");
         }
 
-        this.status = status;
-        this.dailyLimit = dailyLimit;
-        this.monthlyLimit = monthlyLimit;
-        this.availableBalance = availableBalance;
+        return new Card(
+            id,
+            pan,
+            bin,
+            cardholderName,
+            expiryDate,
+            status,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            availableBalance,
+            issuerId,
+            createdAt
+        );
     }
 
     public static Card fromDraft(String pan, CardDraft draft) {
         return new Card(
+            UUID.randomUUID(),
             pan,
             draft.bin(),
             draft.cardholderName(),
+            YearMonth.now().plusYears(3),
+            CardStatus.ACTIVE,
             draft.currencyCode(),
             draft.dailyLimit(),
             draft.monthlyLimit(),
