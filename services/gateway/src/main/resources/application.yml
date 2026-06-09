@@ -97,43 +97,6 @@ spring:
               serviceName: cardManagement
             predicates:
               - Path=/api/cards/**
-
-        # OpenApi endpoints
-          - id: switch-docs
-            uri: ${SWITCH_URL:http://localhost:8082}
-            predicates:
-              - Path=/switch-docs
-              - Method=GET
-            filters:
-              - RewritePath=/switch-docs, /v3/api-docs
-          - id: logger-docs
-            uri: ${LOGGER_URL:http://localhost:8088}
-            predicates:
-              - Path=/logger-docs
-              - Method=GET
-            filters:
-              - RewritePath=/logger-docs, /v3/api-docs
-          - id: terminal-docs
-            uri: ${TERMINAL_SIM_URL:http://localhost:8085}
-            predicates:
-              - Path=/terminal-docs
-              - Method=GET
-            filters:
-              - RewritePath=/terminal-docs, /v3/api-docs
-          - id: merchant-docs
-            uri: ${MERCHANT_SIM_URL:http://localhost:8086}
-            predicates:
-              - Path=/merchant-docs
-              - Method=GET
-            filters:
-              - RewritePath=/merchant-docs, /v3/api-docs
-          - id: cards-docs
-            uri: ${CARD_MGMT_URL:http://localhost:8081}
-            predicates:
-              - Path=/cards-docs
-              - Method=GET
-            filters:
-              - RewritePath=/cards-docs, /v3/api-docs
   mvc:
     log-request-details: true
 
