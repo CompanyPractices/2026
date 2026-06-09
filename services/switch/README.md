@@ -82,7 +82,7 @@ Switch (RouteService)
 
 ## Payload в Logger
 
-Switch отправляет полный объект `Transaction` (все поля из модели Logger):
+Switch отправляет `com.processing.common.dto.transactionlogger.TransactionRequest` (контракт Logger):
 
 `id`, `mti`, `stan`, `rrn`, `pan`, `processingCode`, `amount`, `currencyCode`, `terminalId`, `merchantId`, `mcc`, `acquirerId`, `issuerId`, `acquiringFee`, `status`, `declineReason`, `authCode`, `processingTimeMs`, `transmissionDateTime`, `createdAt`.
 
