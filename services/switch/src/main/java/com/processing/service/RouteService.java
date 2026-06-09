@@ -100,7 +100,7 @@ public class RouteService {
     private Transaction buildTransaction(
             AuthorizationRequest request,
             AuthorizationResponse response) {
-        return new Transaction(
+        return new TransactionRequest(
                 UUID.randomUUID(),
                 request.mti(),
                 request.stan(),
