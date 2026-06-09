@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.Cache;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -70,6 +71,7 @@ class ResponseCachingFilterTest {
 
         request.setRequestURI(uri);
         request.setQueryString(queryString);
+        request.setMethod(HttpMethod.GET.name());
 
         when(cache.get(cacheKey, String.class)).thenReturn(cachedJson);
 
@@ -95,6 +97,7 @@ class ResponseCachingFilterTest {
         String responseBody = "{\"id\": 123, \"status\": \"active\"}";
 
         request.setRequestURI(uri);
+        request.setMethod(HttpMethod.GET.name());
 
         doAnswer(invocation -> {
             HttpServletResponse res = invocation.getArgument(1);
@@ -143,6 +146,7 @@ class ResponseCachingFilterTest {
     void shouldReturn502OnException() throws ServletException, IOException {
         // Arrange
         request.setRequestURI("/api/cards/error");
+        request.setMethod(HttpMethod.GET.name());
 
         doThrow(new RuntimeException("Downstream timeout"))
                 .when(filterChain).doFilter(eq(request), any());
@@ -153,5 +157,21 @@ class ResponseCachingFilterTest {
         // Assert
         assertEquals(502, response.getStatus());
         verify(cache, never()).put(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should skip caching when request method is not GET")
+    void shouldSkipCachingWhenMethodIsNotGet() throws ServletException, IOException {
+        // Arrange
+        request.setRequestURI("/api/cards/update");
+        request.setMethod("POST"); // Setting method to POST
+
+        // Act
+        filter.doFilter(request, response, filterChain);
+
+        // Assert
+        verify(filterChain, times(1)).doFilter(request, response);
+        verifyNoInteractions(cache);
+        assertNull(response.getHeader("X-Cache"));
     }
 }

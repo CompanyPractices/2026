@@ -34,7 +34,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         if (!request.getRequestURI().contains(CARDS_MGMT_SERVICE_PREFIX)
-                || !request.getMethod().equals(HttpMethod.GET.name())) {
+                || !request.getMethod().equalsIgnoreCase(HttpMethod.GET.name())) {
             filterChain.doFilter(request, response);
             return;
         }
