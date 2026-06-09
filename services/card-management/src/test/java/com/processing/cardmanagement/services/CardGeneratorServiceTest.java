@@ -61,7 +61,7 @@ public class CardGeneratorServiceTest {
                 dto.bin(),
                 faker.name().fullName().toUpperCase(),
                 "0629",
-                dto.status().name(),
+                dto.status(),
                 "643",
                 dto.dailyLimit(),
                 dto.monthlyLimit(),
