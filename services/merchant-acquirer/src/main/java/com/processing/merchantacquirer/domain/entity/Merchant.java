@@ -1,14 +1,19 @@
 package com.processing.merchantacquirer.domain.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Entity
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "Merchants")
 public class Merchant {
   @Id private String id;
@@ -16,6 +21,7 @@ public class Merchant {
   private String mcc;
   private String category;
   private String acquirerId;
-  private int acquiringFee;
-  private Long averageCheck;
+  @Column(name = "acquiring_fee", precision = 5, scale = 4)
+  private BigDecimal acquiringFee;
+  private int averageCheck;
 }
