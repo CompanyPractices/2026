@@ -1,11 +1,12 @@
 package com.processing.cardmanagement.services;
 
+import com.processing.cardmanagement.mappers.CardRestMapper;
+import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
+import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardStatus;
-import com.processing.common.dto.cardmanagement.GeneratedCardDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import com.processing.common.dto.cardmanagement.CardModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ public class CardGeneratorService {
 
     private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
+    private final CardRestMapper modelMapper;
 
     private final Random random = new Random();
 
@@ -25,7 +27,7 @@ public class CardGeneratorService {
     );
 
     public List<CardModel> generate(int count, List<String> bins) {
-        List<GeneratedCardDto> cards = new ArrayList<>();
+        List<CardDraft> cards = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
@@ -35,19 +37,22 @@ public class CardGeneratorService {
             int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
             int monthlyLimit = dailyLimit * 30;
 
-            GeneratedCardDto card = new GeneratedCardDto(
+            CardDraft card = new CardDraft(
                 bin,
                 cardholderName,
+                generateStatus(),
                 generatorOptions.currencyCode(),
                 dailyLimit,
                 monthlyLimit,
-                balance,
-                generateStatus()
+                balance
             );
 
             cards.add(card);
         }
-        return cardService.createCards(cards);
+        return cardService.createCards(cards)
+            .stream()
+            .map(modelMapper::toDto)
+            .toList();
     }
 
     private CardStatus generateStatus() {
