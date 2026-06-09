@@ -15,9 +15,6 @@ import com.processing.cardmanagement.services.PanGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Конфигурация Spring бинов приложения
- */
 @Configuration
 public class AppConfig {
 
