@@ -5,6 +5,8 @@ import com.processing.terminalsimulator.dto.CardsManagementResponse;
 import com.processing.terminalsimulator.model.CardStatus;
 import com.processing.terminalsimulator.dto.AuthorizationRequest;
 import com.processing.terminalsimulator.dto.AuthorizationResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -14,9 +16,17 @@ import java.util.List;
 
 @Component
 public class GatewayClient {
-    private final RestTemplate rest = new RestTemplate();
-    private final String gatewayUrl = "http://gateway:8080/api/transactions";
-    private final String cardManagementUrl = "http://card-management:8080/api/cards";
+    private final RestTemplate rest;
+    private final String gatewayUrl;
+    private final String cardManagementUrl;
+
+    public GatewayClient(RestTemplate rest,
+                         @Value("${gateway.url}") String gatewayUrl,
+                         @Value("${gateway.card-management-url}") String cardManagementUrl) {
+        this.rest = rest;
+        this.gatewayUrl = gatewayUrl;
+        this.cardManagementUrl = cardManagementUrl;
+    }
 
     public AuthorizationResponse sendToGateway(AuthorizationRequest tx) {
         ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl, tx, AuthorizationResponse.class);
