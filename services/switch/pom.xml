@@ -5,6 +5,7 @@
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+
     <parent>
         <groupId>com.processing</groupId>
         <artifactId>processing-platform</artifactId>
@@ -12,16 +13,18 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+
     <artifactId>switch</artifactId>
     <name>switch</name>
     <description>Microservice for СМП processing simulator</description>
 
+
     <dependencies>
-        <!-- Common module -->
         <dependency>
             <groupId>com.processing</groupId>
             <artifactId>common</artifactId>
         </dependency>
+
 
         <!-- Web (REST API) -->
         <dependency>
@@ -29,17 +32,20 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+
         <!-- Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+
         <!-- Actuator (health, metrics) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+
 
         <!-- Database (раскомментируй, если нужен PostgreSQL) -->
         <!--
@@ -54,16 +60,19 @@
         </dependency>
         -->
 
+
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
 
+
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+            <version>2.2.0</version>
         </dependency>
+
 
         <!-- Test -->
         <dependency>
@@ -78,6 +87,7 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
     </dependencies>
+
 
     <build>
         <plugins>
