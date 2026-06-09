@@ -4,9 +4,8 @@ import com.processing.authorization.constants.DeclineOutcome;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
-import com.processing.authorization.dto.ReserveRequest;
 import com.processing.authorization.entities.LimitUsage;
-import com.processing.authorization.constants.CardStatus;
+import com.processing.common.dto.cardmanagement.CardStatus;
 import com.processing.authorization.exceptions.CardNotFoundException;
 import com.processing.authorization.exceptions.ReserveCardException;
 import com.processing.authorization.exceptions.ServiceUnavailableException;
@@ -28,7 +27,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Optional;
 import java.util.Random;
