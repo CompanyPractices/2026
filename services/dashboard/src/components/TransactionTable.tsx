@@ -33,7 +33,7 @@ export function TransactionTable(){
     if (error && liveTransactions.length === 0) {
         return (
             <div className="text-center py-8 text-red-500">
-                Ошибка загрузки: {error}
+                Ошибка загрузки транзакций: {error}
             </div>
         );
     }

@@ -8,7 +8,7 @@ type UseWebSocketOptions = {
 }
 
 export function useWebSocket({
-      url = '/ws/transactions',
+      url = 'ws://localhost:3000/ws/transactions',
       maxRetries = 5,
       retryDelayMs = 3000
   }: UseWebSocketOptions = {}){
