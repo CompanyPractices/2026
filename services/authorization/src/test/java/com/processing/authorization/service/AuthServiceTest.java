@@ -5,18 +5,21 @@ import com.processing.authorization.dto.AuthorizationResponse;
 import com.processing.authorization.dto.CardResponse;
 import com.processing.authorization.enums.AuthorizationRequestStatus;
 import com.processing.authorization.enums.CardStatus;
+import com.processing.authorization.exceptions.ServiceUnavailableException;
 import com.processing.authorization.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -85,7 +88,11 @@ class AuthServiceTest {
     @Test
     void authorizeReturnServiceUnavailableWhenGetCardThrowsException() throws Exception {
         AuthService spyService = spy(authService);
-        doThrow(new RuntimeException("Card manager is unavailable")).when(spyService).getCard(anyString());
+        ServiceUnavailableException cause = new ServiceUnavailableException("Card Management service unavaliable");
+        WebClientResponseException exception = new WebClientResponseException(
+                500, "Internal service error", null, null, null);
+        exception.initCause(cause);
+        doThrow(exception).when(spyService).getCard(anyString());
 
         AuthorizationResponse response = spyService.authorize(correctRequest);
 
@@ -268,5 +275,38 @@ class AuthServiceTest {
 
         assertThat(code).hasSize(6);
         assertThat(code).matches("[0-9A-Z]{6}");
+    }
+
+    @Test
+    void maskPAN_ShouldMaskMiddleEightCharacters() {
+        String input = "4000001234560001";
+        String result = authService.maskPAN(input);
+
+        assertEquals("4000********0001", result);
+        assertEquals(16, result.length());
+    }
+
+    @Test
+    void maskPAN_ShouldReturnInvalidPanOnShortString() {
+        String input = "4000";
+        String result = authService.maskPAN(input);
+
+        assertEquals("INVALID_PAN", result);
+    }
+
+    @Test
+    void maskPAN_ShouldReturnInvalidPanOnEmptyString() {
+        String input = null;
+        String result = authService.maskPAN(input);
+
+        assertEquals("INVALID_PAN", result);
+    }
+
+    @Test
+    void maskPAN_ShouldPreserveOriginalLength() {
+        String input = "4000001234560001";
+        String result = authService.maskPAN(input);
+
+        assertEquals(input.length(), result.length());
     }
 }

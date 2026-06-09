@@ -8,6 +8,11 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Репозиторий для таблицы limit_usage
+ *
+ * @see JpaRepository
+ */
 @Repository
 public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
     Optional<LimitUsage> findByPanAndUsageDate(String pan, LocalDate usageDate);

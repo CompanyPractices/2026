@@ -12,9 +12,30 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
+/**
+ * Record для представления ответа health-эндпоинта внешнего сервиса.
+ *
+ * @param service имя сервиса (например, "card-management")
+ * @param status  статус сервиса (например, "ok", "down", "degraded")
+ */
 record Response(String service, String status) {
 }
 
+/**
+ * Сервис для выполнения проверки работоспособности внешних зависимостей.
+ * <p>
+ * Выполняет HTTP-запросы к health-эндпоинтам всех сконфигурированных внешних
+ * сервисов
+ * и собирает их статусы. Использует реактивный WebClient.
+ * </p>
+ * <p>
+ * Список проверяемых сервисов задается через конфигурационный параметр
+ * {@code services-to-health-check}.
+ * </p>
+ *
+ * @author core-auth-team
+ * @see Response
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -23,6 +44,34 @@ public class HealthService {
     private List<String> toHealthCheck;
     private final WebClient webClient;
 
+    /**
+     * Выполняет проверку работоспособности всех сконфигурированных внешних
+     * сервисов.
+     *
+     * <p>
+     * Для каждого URL из списка {@code toHealthCheck} выполняется запрос к
+     * эндпоинту
+     * {@code /health}. Результаты агрегируются в карту, где ключом является имя
+     * сервиса,
+     * а значением - его статус.
+     * </p>
+     *
+     * <p>
+     * В случае ошибки при проверке конкретного сервиса, ему присваивается статус
+     * "down",
+     * но проверка остальных сервисов продолжается.
+     * </p>
+     *
+     * @return {@link Map}, где:
+     *         <ul>
+     *         <li><b>ключ</b> - имя сервиса (из ответа health-эндпоинта или
+     *         URL)</li>
+     *         <li><b>значение</b> - статус сервиса ("ok", "down", "unknown" и
+     *         др.)</li>
+     *         </ul>
+     *
+     * @see #checkHealth(String)
+     */
     public Map<String, String> healthCheckAllServices() {
         Map<String, String> result = new HashMap<>();
         log.debug("Starting to health check depended services");
@@ -61,7 +110,7 @@ public class HealthService {
             String service = serviceObj instanceof String ? (String) serviceObj : serviceUrl;
             return new Response(service, status);
         } catch (Exception e) {
-            log.debug("Health check failed for {}", serviceUrl, e);
+            log.error("Health check failed for {}", serviceUrl, e);
             return new Response(serviceUrl, "down");
         }
     }
