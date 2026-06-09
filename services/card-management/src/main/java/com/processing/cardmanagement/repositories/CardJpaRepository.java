@@ -29,8 +29,8 @@ public interface CardJpaRepository extends JpaRepository<CardEntity, UUID> {
             (:status IS NULL OR card.status = :status) AND
             (:bin IS NULL OR card.bin = :bin) AND
             (:issuerId IS NULL OR card.issuerId = :issuerId) AND
-            (:startDate IS NULL OR card.createdAt >= :startDate) AND
-            (:endDate IS NULL OR card.createdAt <= :endDate)
+            (CAST(:startDate AS localdatetime) IS NULL OR card.createdAt >= :startDate) AND
+            (CAST(:endDate AS localdatetime) IS NULL OR card.createdAt <= :endDate)
         """)
     List<CardEntity> findCards(
         @Nullable @Param("status") CardStatus status,
@@ -48,9 +48,8 @@ public interface CardJpaRepository extends JpaRepository<CardEntity, UUID> {
             (:status IS NULL OR card.status = :status) AND
             (:bin IS NULL OR card.bin = :bin) AND
             (:issuerId IS NULL OR card.issuerId = :issuerId) AND
-            (:startDate IS NULL OR card.createdAt >= :startDate) AND
-            (:endDate IS NULL OR card.createdAt <= :endDate)
-
+            (CAST(:startDate AS localdatetime) IS NULL OR card.createdAt >= :startDate) AND
+            (CAST(:endDate AS localdatetime) IS NULL OR card.createdAt <= :endDate)
         """)
     long countCards(
         @Nullable @Param("status") CardStatus status,
