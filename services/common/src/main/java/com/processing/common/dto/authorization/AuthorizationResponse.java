@@ -27,7 +27,7 @@ public record AuthorizationResponse(
         String declineReason,
 
         @Schema(description = "Processing time", example = "67")
-        long processingTimeMs
+        Integer processingTimeMs
 ) {
     public static final String STATUS_APPROVED = "APPROVED";
 
@@ -80,7 +80,7 @@ public record AuthorizationResponse(
             CODE_APPROVED,
             STATUS_APPROVED,
             null,
-            Duration.between(requestInputTime, LocalDateTime.now()).toMillis()
+            Math.toIntExact(Duration.between(requestInputTime, LocalDateTime.now()).toMillis())
         );
     }
 
@@ -94,7 +94,7 @@ public record AuthorizationResponse(
             code,
             STATUS_DECLINED,
             reason,
-            Duration.between(requestInputTime, LocalDateTime.now()).toMillis()
+            Math.toIntExact(Duration.between(requestInputTime, LocalDateTime.now()).toMillis())
         );
     }
 }
