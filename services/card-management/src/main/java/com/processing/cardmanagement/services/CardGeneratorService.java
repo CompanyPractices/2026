@@ -1,9 +1,8 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.mappers.CardRestMapper;
+import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
-import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,9 +15,8 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class CardGeneratorService {
 
-    private final CardService cardService;
+    private final CardUseCase cardService;
     private final CardGeneratorOptions generatorOptions;
-    private final CardRestMapper modelMapper;
 
     private final Random random = new Random();
 
@@ -26,7 +24,7 @@ public class CardGeneratorService {
         "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
     );
 
-    public List<CardModel> generate(int count, List<String> bins) {
+    public List<Card> generate(int count, List<String> bins) {
         List<CardDraft> cards = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
@@ -49,10 +47,7 @@ public class CardGeneratorService {
 
             cards.add(card);
         }
-        return cardService.createCards(cards)
-            .stream()
-            .map(modelMapper::toDto)
-            .toList();
+        return cardService.createCards(cards);
     }
 
     private CardStatus generateStatus() {
