@@ -3,96 +3,68 @@ package com.processing.cardmanagement.services;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
-import com.processing.cardmanagement.options.CardServiceDefaults;
-import com.processing.cardmanagement.options.CardServiceSettings;
-import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.annotation.Nullable;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Сервис для управления банковскими картами
+ * Методы для управления банковскими картами
  */
-@Slf4j
-@RequiredArgsConstructor
-public class CardService implements CardUseCase {
+public interface CardService {
 
-    private final CardRepository cardRepository;
-    private final CardServiceSettings settings;
-    private final CardServiceDefaults defaults;
-    private final PanGenerator panGenerator;
-
-    public Card createCard(
+    /**
+     * Создает новую карту с авотматически сгенерированным PAN
+     *
+     * @param bin            BIN карты
+     * @param cardholderName имя держателя карты
+     * @param currencyCode   код валюты
+     * @param dailyLimit     дневной лимит карты
+     * @param monthlyLimit   месячиный лимит карты
+     * @param initialBalance изначальный баланс
+     * @return созданная карта
+     */
+    Card createCard(
         String bin,
         String cardholderName,
         String currencyCode,
         long dailyLimit,
         long monthlyLimit,
         long initialBalance
-    ) {
-        log.info(
-            "Creating a new card. Holder: {}, BIN: {}, Currency: {}",
-            cardholderName,
-            bin,
-            currencyCode
-        );
+    );
 
-        var draft = new CardDraft(
-            bin,
-            cardholderName,
-            CardStatus.ACTIVE,
-            currencyCode,
-            dailyLimit,
-            monthlyLimit,
-            initialBalance
-        );
+    /**
+     * Создает несколько карт их списка сгенерированных DTO
+     * Используется генератором тестовых карт
+     *
+     * @param data данные для создания карт
+     * @return список созданных карт
+     */
+    List<Card> createCards(List<CardDraft> data);
 
-        var savedCard = cardRepository.save(Card.fromDraft(
-            panGenerator.generatePan(draft.bin()),
-            settings.issuerId(),
-            settings.cardYtl(),
-            draft
-        ));
+    /**
+     * Возвращает карту по номеру PAN
+     *
+     * @param pan 16-значный номер карты
+     * @return карта
+     * @throws CardNotFoundException если карта не найдена
+     */
+    Card getCard(String pan);
 
-        log.info(
-            "Card successfully created. ID: {}, PAN: {}",
-            savedCard.id(),
-            maskPan(savedCard.pan())
-        );
-
-        return savedCard;
-    }
-
-    public List<Card> createCards(List<CardDraft> data) {
-        log.info("Bulk creating cards. Count: {}", data.size());
-
-        var entities = data
-            .stream()
-            .map(draft -> Card.fromDraft(
-                panGenerator.generatePan(draft.bin()),
-                settings.issuerId(),
-                settings.cardYtl(),
-                draft
-            ))
-            .toList();
-
-        var saved = cardRepository.saveAll(entities);
-        log.info("Bulk creation completed. Successfully saved {} cards", saved.size());
-        return saved;
-    }
-
-    public Card getCard(String pan) {
-        log.debug("Fetching card by PAN: {}", maskPan(pan));
-        return cardRepository
-            .findByPan(pan)
-            .orElseThrow(() -> new CardNotFoundException(maskPan(pan)));
-    }
-
-    public List<Card> getCards(
+    /**
+     * Возвращает список карт с пагинацией и фильтрацией
+     *
+     * @param limit     количество карт на странице
+     * @param offset    смещение
+     * @param status    фильтр по статусу
+     * @param bin       фильтр по bin
+     * @param issuerId  фильтр по IssuerId
+     * @param startDate начало диапазона дат
+     * @param endDate   конец диапазона дат
+     * @return список карт
+     */
+    List<Card> getCards(
         @Nullable Integer limit,
         @Nullable Integer offset,
         @Nullable CardStatus status,
@@ -100,95 +72,67 @@ public class CardService implements CardUseCase {
         @Nullable String issuerId,
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
-    ) {
-        log.debug(
-            "Filtering cards. Status: {}, BIN: {}, Limit: {}",
-            status,
-            bin,
-            limit
-        );
-        return cardRepository.findCards(
-            limit != null ? limit : defaults.pageLimit(),
-            offset != null ? offset : defaults.pageOffset(),
-            status,
-            bin,
-            issuerId,
-            startDate,
-            endDate
-        );
-    }
+    );
 
-    public Card patchCard(
+    /**
+     * Частично обновляет параметры карты
+     *
+     * @param pan              PAN карты
+     * @param status           новый статус карты
+     * @param dailyLimit       новый дневной лимит карты
+     * @param monthlyLimit     новый месячный лимит карты
+     * @param availableBalance новый баланс карты
+     * @return измененная карта
+     * @throws CardNotFoundException если карта не найдена
+     */
+    Card patchCard(
         String pan,
         @Nullable CardStatus status,
         @Nullable Long dailyLimit,
         @Nullable Long monthlyLimit,
         @Nullable Long availableBalance
-    ) {
-        log.info(
-            "Patching card PAN: {}. New status: {}, New daily limit: {}",
-            maskPan(pan),
-            status,
-            dailyLimit
-        );
+    );
 
-        var card = getCard(pan);
-        var saved = cardRepository.save(
-            card.withData(
-                status != null ? status : card.status(),
-                dailyLimit != null ? dailyLimit : card.dailyLimit(),
-                monthlyLimit != null ? monthlyLimit : card.monthlyLimit(),
-                availableBalance != null ? availableBalance : card.availableBalance()
-            )
-        );
-        log.info("Card PAN: {} successfully updated", maskPan(pan));
-        return saved;
-    }
+    /**
+     * Удаляет карту
+     *
+     * @param pan PAN карты
+     * @throws CardNotFoundException если карта не найдена
+     */
+    void deleteCard(String pan);
 
-    public Card deleteCard(String pan) {
-        log.info("Initiating deletion/block for card PAN: {}", maskPan(pan));
+    /**
+     * Возвращает общее количество карт в базе данных
+     *
+     * @return количество карт
+     */
+    long countCards();
 
-        var deleted = cardRepository.save(getCard(pan).deleted());
-        log.info("Card PAN: {} status changed to DELETED", maskPan(pan));
-        return deleted;
-    }
-
-    public long countCards() {
-        log.debug("Initiating counting cards");
-        var cardsAmount = cardRepository.countCards();
-        log.debug("Found {} cards in repository", cardsAmount);
-        return cardsAmount;
-    }
-
-    public long countCards(
+    /**
+     * Считает количество карт, удовлетворяющее фильтрам
+     *
+     * @param status    фильтр по статусу
+     * @param bin       фильтр по bin
+     * @param issuerId  фильтр по IssuerId
+     * @param startDate начало диапазона дат
+     * @param endDate   конец диапазона дат
+     * @return количество карт
+     */
+    long countCards(
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
-    ) {
-        return cardRepository.countCards(
-            status,
-            bin,
-            issuerId,
-            startDate,
-            endDate
-        );
-    }
+    );
 
-    public Card reserve(String pan, long amount) {
-        log.info("Reserving amount: {} for card PAN: {}", amount, maskPan(pan));
-        var reserved = cardRepository.save(getCard(pan).withReserved(amount));
-        log.info(
-            "Successfully reserved {} for card PAN: {}. New balance: {}",
-            amount,
-            maskPan(pan),
-            reserved.availableBalance()
-        );
-        return reserved;
-    }
-
-    private String maskPan(String pan) {
-        return pan.substring(0, 6) + "******" + pan.substring(pan.length() - 4);
-    }
+    /**
+     * Резервирует средства на карте, уменьшая доступный баланс
+     *
+     * @param pan    PAN карты
+     * @param amount размер резервирования
+     * @return измененная карта
+     * @throws CardNotFoundException если карта не найдена
+     */
+    Card reserve(String pan, long amount);
 }
