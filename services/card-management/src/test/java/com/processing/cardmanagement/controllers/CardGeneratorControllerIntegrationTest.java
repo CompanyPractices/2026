@@ -1,7 +1,7 @@
 package com.processing.cardmanagement.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.cardmanagement.repositories.CardRepository;
+import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.common.dto.cardmanagement.GenerateCardsRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -36,16 +35,16 @@ public class CardGeneratorControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private CardRepository cardRepository;
+    private CardJpaRepository cardJpaRepository;
 
     @Container
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-//    @AfterEach
-//    void cleanUp() {
-//        cardRepository.
-//    }
+    @AfterEach
+    void cleanUp() {
+        cardJpaRepository.deleteAll();
+    }
 
     @Test
     void generateShouldSaveCardsToDatabaseAndReturn201() throws Exception {
@@ -60,8 +59,8 @@ public class CardGeneratorControllerIntegrationTest {
                 .andExpect(jsonPath("$.generated").value(10))
                 .andExpect(jsonPath("$.cards", hasSize(10)));
 
-        long dbCount = cardRepository.countCards();
-        assertEquals(2, dbCount);
+        long dbCount = cardJpaRepository.count();
+        assertEquals(10, dbCount);
     }
 
     @Test
