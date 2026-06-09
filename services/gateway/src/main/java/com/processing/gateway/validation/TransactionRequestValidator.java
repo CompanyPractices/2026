@@ -1,6 +1,6 @@
 package com.processing.gateway.validation;
 
-import com.processing.gateway.dto.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationRequest;
 import org.springframework.stereotype.Component;
 
 @Component

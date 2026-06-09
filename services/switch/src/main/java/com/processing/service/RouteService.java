@@ -1,9 +1,9 @@
 package com.processing.service;
 
-import com.processing.enums.TransactionStatus;
+import com.processing.common.dto.transactionlogger.TransactionRequest;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.model.AuthorizationRequest;
 import com.processing.model.AuthorizationResponse;
-import com.processing.model.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -43,7 +43,7 @@ public class RouteService {
         AuthorizationRequest routedRequest = request.withIssuerId(issuerId);
         AuthorizationResponse response = authorizationClient.authorize(routedRequest);
 
-        Transaction transaction = buildTransaction(routedRequest, response);
+        TransactionRequest transaction = buildTransaction(routedRequest, response);
         boolean logged = loggerClient.log(transaction);
         if (!logged && TransactionStatus.APPROVED.name().equals(response.status())) {
             LOG.error("Logger unavailable for TX {} — APPROVED without audit trail", request.stan());
@@ -56,10 +56,10 @@ public class RouteService {
         return response;
     }
 
-    private Transaction buildTransaction(
+    private TransactionRequest buildTransaction(
             AuthorizationRequest request,
             AuthorizationResponse response) {
-        return new Transaction(
+        return new TransactionRequest(
                 UUID.randomUUID(),
                 request.mti(),
                 request.stan(),

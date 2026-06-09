@@ -35,6 +35,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>com.processing</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Web (REST API) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -51,6 +57,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Prometheus metrics export -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
         <!-- OpenAPI / Swagger -->
