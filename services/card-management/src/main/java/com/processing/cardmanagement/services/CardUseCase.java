@@ -33,7 +33,7 @@ public interface CardUseCase {
         @Nullable LocalDateTime endDate
     );
 
-    void patchCard(
+    Card patchCard(
         String pan,
         @Nullable CardStatus status,
         @Nullable Long dailyLimit,
@@ -41,7 +41,7 @@ public interface CardUseCase {
         @Nullable Long availableBalance
     );
 
-    void deleteCard(String pan);
+    Card deleteCard(String pan);
 
     long countCards();
 
@@ -53,5 +53,5 @@ public interface CardUseCase {
         @Nullable LocalDateTime endDate
     );
 
-    void reserve(String pan, long amount);
+    Card reserve(String pan, long amount);
 }

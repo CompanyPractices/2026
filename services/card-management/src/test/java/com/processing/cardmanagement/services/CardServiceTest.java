@@ -17,7 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -69,7 +68,7 @@ public final class CardServiceTest {
         ArgumentCaptor.forClass(Card.class);
 
     @Mock
-    private CardJpaRepository cardRepository;
+    private CardRepository cardRepository;
 
     @Mock
     private CardEventNotifier eventNotifier;
@@ -138,7 +137,7 @@ public final class CardServiceTest {
         assertEquals(card, found);
 
         when(cardRepository.findByPan(anyString())).thenReturn(Optional.empty());
-        assertThrows(CardNotFoundException.class, () -> cardService.getCard(pan));
+        assertThrows(CardNotFoundException.class, () -> cardUseCase.getCard(pan));
     }
 
     @Test
