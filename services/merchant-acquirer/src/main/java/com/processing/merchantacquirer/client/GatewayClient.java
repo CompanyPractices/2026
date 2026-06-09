@@ -5,14 +5,12 @@ import com.processing.merchantacquirer.client.dto.CardsResponse;
 import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
 import com.processing.merchantacquirer.domain.model.AuthorizationResponse;
 import com.processing.merchantacquirer.exception.ExternalServiceException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
-@Slf4j
 @Component
 public class GatewayClient {
   private final RestClient restClient;
@@ -23,7 +21,6 @@ public class GatewayClient {
 
   public CardsResponse getCards(CardsRequest request) {
     try {
-      log.info(restClient.toString());
       return restClient.get()
               .uri(uriBuilder -> {
                 uriBuilder.path("/api/cards");
