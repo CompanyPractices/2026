@@ -89,7 +89,7 @@ public class CardService implements CardUseCase {
         log.debug("Fetching card by PAN: {}", maskPan(pan));
         return cardRepository
             .findByPan(pan)
-            .orElseThrow(CardNotFoundException::new);
+            .orElseThrow(() -> new CardNotFoundException(maskPan(pan)));
     }
 
     public List<Card> getCards(
