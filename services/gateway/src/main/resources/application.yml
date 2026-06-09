@@ -22,9 +22,36 @@ management:
         include:
           - health
           - info
+          - metrics
+          - prometheus
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: gateway
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]":
+          - 0.5
+          - 0.95
+          - 0.99
+      slo:
+        "[http.server.requests]":
+          - 50ms
+          - 100ms
+          - 250ms
+          - 500ms
+          - 1s
+          - 2s
 
 spring:
   cloud:
