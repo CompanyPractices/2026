@@ -27,7 +27,7 @@ export function TransactionTable(){
                 <div>Загрузка транзакций...</div>
             }
 
-            {!loading && !error && (!transactions && transactions.length === 0) &&
+            {!loading && !error && (!transactions || transactions.length === 0) &&
                 <div>Транзакций не найдено</div>
             }
 
