@@ -23,6 +23,7 @@ public class SimulationService {
   public final TransactionBuilder transactionBuilder;
   public final TransactionSender transactionSender;
   public final ScenarioProvider scenarioProvider;
+  public final AcquirerProvider acquirerProvider;
 
   public SimulatorResponse run(SimulatorRequest request) {
     LocalDateTime startTime = LocalDateTime.now();
@@ -67,4 +68,7 @@ public class SimulationService {
     return merchantProvider.count();
   }
 
+  public AcquirerFeeResponse getAcquirerFee(AcquirerFeeRequest request) {
+    return acquirerProvider.getAcquirerFee(request);
+  }
 }

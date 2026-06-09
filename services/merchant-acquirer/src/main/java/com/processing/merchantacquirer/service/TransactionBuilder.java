@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionBuilder {
   private final AuthorizationRequestFactory authorizationRequestFactory;
+  private final AcquirerProvider acquirerProvider;
   private final Random random = new Random();
 
   public List<AuthorizationRequest> build(
@@ -32,7 +33,9 @@ public class TransactionBuilder {
       Merchant merchant = merchants.get(random.nextInt(merchants.size()));
       Integer amount = random.nextInt(scenario.getCountLower(), scenario.getCountUpper());
 
-      requests.add(authorizationRequestFactory.build(card.pan(), amount, terminal, merchant));
+      AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(card.pan(), amount, terminal, merchant);
+      requests.add(authorizationRequest);
+      acquirerProvider.calculateFee(merchant, amount, authorizationRequest.stan(), card.pan());
     }
 
     return requests;
