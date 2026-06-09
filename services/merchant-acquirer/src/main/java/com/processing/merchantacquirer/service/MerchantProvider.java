@@ -28,7 +28,7 @@ public class MerchantProvider {
     return merchantRepository.findAll();
   }
 
-  public Long count() {
+  public long count() {
     return merchantRepository.count();
   }
 }

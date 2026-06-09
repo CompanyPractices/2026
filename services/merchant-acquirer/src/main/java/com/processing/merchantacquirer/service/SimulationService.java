@@ -63,7 +63,7 @@ public class SimulationService {
     return merchantProvider.getAll();
   }
 
-  public Long countMerchants() {
+  public long countMerchants() {
     return merchantProvider.count();
   }
 

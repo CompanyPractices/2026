@@ -8,4 +8,4 @@ public record AuthorizationResponse(
     String responseCode,
     String status,
     String declineReason,
-    Integer processingTimeMs) {}
+    int processingTimeMs) {}

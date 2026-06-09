@@ -23,5 +23,5 @@ public class Merchant {
   private String acquirerId;
   @Column(name = "acquiring_fee", precision = 5, scale = 4)
   private BigDecimal acquiringFee;
-  private Long averageCheck;
+  private int averageCheck;
 }
