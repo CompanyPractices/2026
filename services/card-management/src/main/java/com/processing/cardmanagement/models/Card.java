@@ -180,7 +180,7 @@ public record Card(
             draft.bin(),
             draft.cardholderName(),
             YearMonth.now().plusYears(cardYtl),
-            CardStatus.ACTIVE,
+            draft.status(),
             draft.currencyCode(),
             draft.dailyLimit(),
             draft.monthlyLimit(),
