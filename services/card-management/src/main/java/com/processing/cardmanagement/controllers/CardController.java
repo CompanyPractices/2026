@@ -1,8 +1,7 @@
 package com.processing.cardmanagement.controllers;
 
 import com.processing.cardmanagement.mappers.CardRestMapper;
-import com.processing.cardmanagement.mappers.CardStatusMapper;
-import com.processing.cardmanagement.services.CardService;
+import com.processing.cardmanagement.services.CardUseCase;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.annotations.Bin;
 import com.processing.common.dto.annotations.NotNegative;
@@ -34,9 +33,8 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class CardController {
 
-    private final CardService cardService;
+    private final CardUseCase cardService;
     private final CardRestMapper restMapper;
-    private final CardStatusMapper cardStatusMapper;
 
     @Operation(summary = "Create a new card")
     @ApiResponses({
@@ -100,16 +98,14 @@ public class CardController {
         @Schema(
             description = "Card status",
             example = "ACTIVE",
-            allowableValues = {
-                "ACTIVE",
+            allowableValues = {"ACTIVE",
                 "INACTIVE",
                 "BLOCKED",
                 "EXPIRED",
-                "DELETED"
-            }
+                "DELETED"}
         )
         @RequestParam(required = false)
-        CardModelStatus status,
+        CardStatus status,
 
         @Nullable
         @Bin
@@ -134,11 +130,10 @@ public class CardController {
         @RequestParam(required = false)
         LocalDateTime endDate
     ) {
-        var domainStatus = cardStatusMapper.toCardStatus(status);
         var cards = cardService.getCards(
                 limit,
                 offset,
-                domainStatus,
+                status,
                 bin,
                 issuerId,
                 startDate,
@@ -148,8 +143,8 @@ public class CardController {
             .map(restMapper::toDto)
             .toList();
 
-        var total = cardService.countCardsFiltered(
-            domainStatus,
+        var total = cardService.countCards(
+            status,
             bin,
             issuerId,
             startDate,
@@ -166,31 +161,30 @@ public class CardController {
 
     @Operation(summary = "Partially update a card")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Card update successfully"),
+        @ApiResponse(responseCode = "204", description = "Card update successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid request data",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404", description = "Card not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PatchMapping("/{pan}")
-    public ResponseEntity<CardModel> patchCard(
+    public ResponseEntity<Void> patchCard(
         @PathVariable @Pan String pan,
         @Valid @RequestBody PatchCardRequest data
     ) {
-        return ResponseEntity.ok(
-            restMapper.toDto(cardService.patchCard(
-                pan,
-                cardStatusMapper.toCardStatus(data.status()),
-                data.dailyLimit(),
-                data.monthlyLimit(),
-                data.availableBalance()
-            ))
+        cardService.patchCard(
+            pan,
+            data.status(),
+            data.dailyLimit(),
+            data.monthlyLimit(),
+            data.availableBalance()
         );
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Delete a card (sets status to DELETED)")
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Card deleted successfully"),
+        @ApiResponse(responseCode = "200", description = "Card deleted successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid PAN format",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404", description = "Card not found",
@@ -213,15 +207,14 @@ public class CardController {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{pan}/reserve")
-    public ResponseEntity<CardModel> reserve(
+    public ResponseEntity<Void> reserve(
         @PathVariable @Pan String pan,
         @Valid @RequestBody ReserveRequest data
     ) {
-        return ResponseEntity.ok(
-            restMapper.toDto(cardService.reserve(
-                pan,
-                data.amount()
-            ))
+        cardService.reserve(
+            pan,
+            data.amount()
         );
+        return ResponseEntity.ok().build();
     }
 }
