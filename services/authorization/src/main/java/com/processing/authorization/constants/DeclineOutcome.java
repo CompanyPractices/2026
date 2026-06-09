@@ -3,6 +3,8 @@ package com.processing.authorization.constants;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 
+import java.time.LocalDateTime;
+
 public record DeclineOutcome(String reason, String code) {
     public static final DeclineOutcome CARD_NOT_FOUND = new DeclineOutcome(
             "CARD_NOT_FOUND",
@@ -49,7 +51,7 @@ public record DeclineOutcome(String reason, String code) {
             AuthorizationResponse.CODE_SERVICE_UNAVAILABLE
     );
 
-    public AuthorizationResponse build(AuthorizationRequest request) {
-        return AuthorizationResponse.declined(request, reason, code, 1L); // TODO count response time
+    public AuthorizationResponse build(AuthorizationRequest request, LocalDateTime requestInputTime) {
+        return AuthorizationResponse.declined(request, reason, code, requestInputTime);
     }
 }

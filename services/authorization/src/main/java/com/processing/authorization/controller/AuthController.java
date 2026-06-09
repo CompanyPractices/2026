@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
@@ -59,7 +58,7 @@ public class AuthController {
          * <ol>
          * <li>Фиксирует время начала обработки запроса</li>
          * <li>Делегирует авторизацию сервису
-         * {@link AuthService#authorize(AuthorizationRequest)}</li>
+         * {@link AuthService#authorize(AuthorizationRequest, LocalDateTime)}</li>
          * <li>Вычисляет время обработки запроса в миллисекундах</li>
          * <li>Устанавливает время обработки в ответе</li>
          * <li>Определяет HTTP-статус на основе результата авторизации</li>
@@ -95,10 +94,9 @@ public class AuthController {
          *         </ul>
          *         HTTP-статус зависит от результата.
          *
-         * @see AuthService#authorize(AuthorizationRequest)
+         * @see AuthService#authorize(AuthorizationRequest, LocalDateTime)
          * @see AuthorizationRequest
          * @see AuthorizationResponse
-         * @see AuthorizationRequestStatus
          */
         @PostMapping("/authorize")
         @Operation(summary = "Authorization", description = "Approves or declines card by pan")
@@ -130,17 +128,14 @@ public class AuthController {
         })
         public ResponseEntity<AuthorizationResponse> authorize(@Valid @RequestBody AuthorizationRequest request) {
                 LocalDateTime requestInputTime = LocalDateTime.now();
-                AuthorizationResponse response = authService.authorize(request);
+                AuthorizationResponse response = authService.authorize(request, requestInputTime);
 
-                long processingTimeMs = Duration.between(requestInputTime, LocalDateTime.now()).toMillis();
-                response.setProcessingTimeMs(processingTimeMs);
-
-                boolean isApproved = response.getStatus().equals(AuthorizationRequestStatus.APPROVED);
+                boolean isApproved = response.status().equals(AuthorizationResponse.STATUS_APPROVED);
                 HttpStatus httpStatus;
                 if (isApproved) {
                         httpStatus = HttpStatus.OK;
                 } else {
-                        httpStatus = switch (response.getDeclineReason()) {
+                        httpStatus = switch (response.declineReason()) {
                                 case "CARD_NOT_FOUND" -> HttpStatus.NOT_FOUND;
                                 case "SERVICE_UNAVAILABLE", "RESERVATION_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
                                 case "INSUFFICIENT_FUNDS" -> HttpStatus.UNPROCESSABLE_ENTITY;
