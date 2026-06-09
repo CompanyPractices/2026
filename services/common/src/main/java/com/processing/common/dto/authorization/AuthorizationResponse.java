@@ -1,6 +1,8 @@
 package com.processing.common.dto.authorization;
 
+
 import io.swagger.v3.oas.annotations.media.Schema;
+
 
 public record AuthorizationResponse(
         @Schema(description = "Response code", example = "0110")
@@ -20,4 +22,23 @@ public record AuthorizationResponse(
         @Schema(description = "Processing time", example = "67")
         Integer processingTimeMs
 ) {
+        public static AuthorizationResponse unknownBin(String stan) {
+                return new AuthorizationResponse(
+                        "0110", stan, null, null, "14", "DECLINED",
+                        "Invalid card number (unknown BIN)", 0);
+        }
+
+
+        public static AuthorizationResponse authUnavailable(String stan) {
+                return new AuthorizationResponse(
+                        "0110", stan, null, null, "05", "DECLINED",
+                        "Authorization service unavailable", 0);
+        }
+
+
+        public static AuthorizationResponse systemError(String stan) {
+                return new AuthorizationResponse(
+                        "0110", stan, null, null, "96", "DECLINED",
+                        "System error", 0);
+        }
 }
