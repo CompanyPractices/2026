@@ -1,4 +1,4 @@
-package com.processing;
+package com.processing.transactionlogger;
 
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;

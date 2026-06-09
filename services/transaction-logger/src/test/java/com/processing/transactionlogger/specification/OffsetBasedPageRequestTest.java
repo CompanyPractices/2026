@@ -1,4 +1,4 @@
-package com.processing.specification;
+package com.processing.transactionlogger.specification;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;

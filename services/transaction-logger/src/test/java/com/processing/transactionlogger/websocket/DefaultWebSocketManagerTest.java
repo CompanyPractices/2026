@@ -1,4 +1,4 @@
-package com.processing.websocket;
+package com.processing.transactionlogger.websocket;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
