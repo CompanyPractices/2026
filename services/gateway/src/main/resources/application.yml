@@ -155,16 +155,4 @@ gateway:
 springdoc:
   swagger-ui:
     path: /docs
-    urls:
-      - name: Gateway
-        url: /v3/api-docs
-      - name: Switch
-        url: /switch-docs
-      - name: Transaction Logger
-        url: /logger-docs
-      - name: Terminal Simulator
-        url: /terminal-docs
-      - name: Merchant Acquirer
-        url: /merchant-docs
-      - name: Card Management
-        url: /cards-docs
+    url: /openapi.yaml
