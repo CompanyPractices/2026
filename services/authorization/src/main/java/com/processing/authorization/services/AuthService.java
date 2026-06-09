@@ -1,14 +1,14 @@
 package com.processing.authorization.services;
 
+import com.processing.common.dto.cardmanagement.CardStatus;
 import com.processing.authorization.constants.DeclineOutcome;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
-import com.processing.authorization.dto.ReserveRequest;
 import com.processing.authorization.entities.LimitUsage;
-import com.processing.authorization.constants.CardStatus;
 import com.processing.authorization.exceptions.CardNotFoundException;
 import com.processing.authorization.exceptions.ReserveCardException;
+import com.processing.common.dto.cardmanagement.ReserveRequest;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
 import jakarta.transaction.Transactional;
@@ -55,7 +55,7 @@ public class AuthService {
             return DeclineOutcome.SERVICE_UNAVAILABLE.build(request);
         }
 
-        String currCardStatus = cardResponse.status();
+        CardStatus currCardStatus = cardResponse.status();
         if (currCardStatus == null) {
             return DeclineOutcome.UNKNOWN_REASON.build(request);
         }
@@ -74,7 +74,7 @@ public class AuthService {
         }
 
         Optional<LimitUsage> currLimitUsage =  limitUsageRepository
-                .findByPanAndUsageDateForUpdate(request.pan(), transmissionDate);
+                .findByPanAndUsageDate(request.pan(), transmissionDate);
 
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
