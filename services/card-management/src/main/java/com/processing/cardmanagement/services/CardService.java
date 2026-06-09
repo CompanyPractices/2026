@@ -9,10 +9,15 @@ import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Сервис для управления банковскими картами
+ */
+@Slf4j
 @RequiredArgsConstructor
 public class CardService implements CardUseCase {
 
@@ -29,6 +34,13 @@ public class CardService implements CardUseCase {
         long monthlyLimit,
         long initialBalance
     ) {
+        log.info(
+            "Creating a new card. Holder: {}, BIN: {}, Currency: {}",
+            cardholderName,
+            bin,
+            currencyCode
+        );
+
         var draft = new CardDraft(
             bin,
             cardholderName,
@@ -39,15 +51,25 @@ public class CardService implements CardUseCase {
             initialBalance
         );
 
-        return cardRepository.save(Card.fromDraft(
+        var savedCard = cardRepository.save(Card.fromDraft(
             panGenerator.generatePan(draft.bin()),
             settings.issuerId(),
             settings.cardYtl(),
             draft
         ));
+
+        log.info(
+            "Card successfully created. ID: {}, PAN: {}",
+            savedCard.id(),
+            maskPan(savedCard.pan())
+        );
+
+        return savedCard;
     }
 
     public List<Card> createCards(List<CardDraft> data) {
+        log.info("Bulk creating cards. Count: {}", data.size());
+
         var entities = data
             .stream()
             .map(draft -> Card.fromDraft(
@@ -58,10 +80,13 @@ public class CardService implements CardUseCase {
             ))
             .toList();
 
-        return cardRepository.saveAll(entities);
+        var saved = cardRepository.saveAll(entities);
+        log.info("Bulk creation completed. Successfully saved {} cards", saved.size());
+        return saved;
     }
 
     public Card getCard(String pan) {
+        log.debug("Fetching card by PAN: {}", maskPan(pan));
         return cardRepository
             .findByPan(pan)
             .orElseThrow(CardNotFoundException::new);
@@ -76,6 +101,12 @@ public class CardService implements CardUseCase {
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
     ) {
+        log.debug(
+            "Filtering cards. Status: {}, BIN: {}, Limit: {}",
+            status,
+            bin,
+            limit
+        );
         return cardRepository.findCards(
             limit != null ? limit : defaults.pageLimit(),
             offset != null ? offset : defaults.pageOffset(),
@@ -94,8 +125,15 @@ public class CardService implements CardUseCase {
         @Nullable Long monthlyLimit,
         @Nullable Long availableBalance
     ) {
+        log.info(
+            "Patching card PAN: {}. New status: {}, New daily limit: {}",
+            maskPan(pan),
+            status,
+            dailyLimit
+        );
+
         var card = getCard(pan);
-        return cardRepository.save(
+        var saved = cardRepository.save(
             card.withData(
                 status != null ? status : card.status(),
                 dailyLimit != null ? dailyLimit : card.dailyLimit(),
@@ -103,15 +141,23 @@ public class CardService implements CardUseCase {
                 availableBalance != null ? availableBalance : card.availableBalance()
             )
         );
+        log.info("Card PAN: {} successfully updated", maskPan(pan));
+        return saved;
     }
 
     public Card deleteCard(String pan) {
-        var card = getCard(pan);
-        return cardRepository.save(card.deleted());
+        log.info("Initiating deletion/block for card PAN: {}", maskPan(pan));
+
+        var deleted = cardRepository.save(getCard(pan).deleted());
+        log.info("Card PAN: {} status changed to DELETED", maskPan(pan));
+        return deleted;
     }
 
     public long countCards() {
-        return cardRepository.countCards();
+        log.debug("Initiating counting cards");
+        var cardsAmount = cardRepository.countCards();
+        log.debug("Found {} cards in repository", cardsAmount);
+        return cardsAmount;
     }
 
     public long countCards(
@@ -131,7 +177,18 @@ public class CardService implements CardUseCase {
     }
 
     public Card reserve(String pan, long amount) {
-        var card = getCard(pan);
-        return cardRepository.save(card.withReserved(amount));
+        log.info("Reserving amount: {} for card PAN: {}", amount, maskPan(pan));
+        var reserved = cardRepository.save(getCard(pan).withReserved(amount));
+        log.info(
+            "Successfully reserved {} for card PAN: {}. New balance: {}",
+            amount,
+            maskPan(pan),
+            reserved.availableBalance()
+        );
+        return reserved;
+    }
+
+    private String maskPan(String pan) {
+        return pan.substring(0, 6) + "******" + pan.substring(pan.length() - 4);
     }
 }
