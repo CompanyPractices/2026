@@ -1,6 +1,6 @@
 import LineChart from "./components/LineChart.tsx";
 import { Header } from "./components/Header.tsx";
-import PieChart from "./components/PieChart.tsx";
+import TransactionPieChart from "./components/TransactionPieChart.tsx";
 import { TransactionTable } from "./components/TransactionTable.tsx";
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
                     <LineChart />
                 </div>
                 <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-xl place-content-center">
-                    <PieChart />
+                    <TransactionPieChart />
                 </div>
                 <div className="col-span-4 m-4 place-content-center">
                     <TransactionTable />
