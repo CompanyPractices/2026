@@ -104,12 +104,30 @@ public class AuthController {
         @PostMapping("/authorize")
         @Operation(summary = "Authorization", description = "Approves or declines card by pan")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Authorization success", content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-                        @ApiResponse(responseCode = "400", description = "Incorrect request or unknown error", content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-                        @ApiResponse(responseCode = "403", description = "Card blocked, inactive or expired", content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-                        @ApiResponse(responseCode = "404", description = "Card not found", content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-                        @ApiResponse(responseCode = "422", description = "Insufficient funds ", content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-                        @ApiResponse(responseCode = "503", description = "Card manager unavailable", content = @Content(schema = @Schema(implementation = AuthorizationResponse.class)))
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Authorization success",
+                        content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                @ApiResponse(
+                        responseCode = "400",
+                        description = "Incorrect request or unknown error",
+                        content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                @ApiResponse(
+                        responseCode = "403",
+                        description = "Card blocked, inactive or expired",
+                        content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                @ApiResponse(
+                        responseCode = "404",
+                        description = "Card not found",
+                        content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                @ApiResponse(
+                        responseCode = "422",
+                        description = "Insufficient funds ",
+                        content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                @ApiResponse(
+                        responseCode = "503",
+                        description = "Card manager unavailable",
+                        content = @Content(schema = @Schema(implementation = AuthorizationResponse.class)))
         })
         public ResponseEntity<AuthorizationResponse> authorize(@Valid @RequestBody AuthorizationRequest request) {
                 LocalDateTime requestInputTime = LocalDateTime.now();

@@ -68,8 +68,14 @@ public class HealthController {
     @GetMapping("/health")
     @Operation(summary = "Health check endpoint", description = "Returns the health status of the authorization service and all its dependencies")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "All services are healthy", content = @Content(schema = @Schema(implementation = HealthResponse.class))),
-            @ApiResponse(responseCode = "503", description = "Service is degraded (one or more dependencies are unhealthy)", content = @Content(schema = @Schema(implementation = HealthResponse.class)))
+        @ApiResponse(
+                responseCode = "200",
+                description = "All services are healthy",
+                content = @Content(schema = @Schema(implementation = HealthResponse.class))),
+        @ApiResponse(
+                responseCode = "503",
+                description = "Service is degraded (one or more dependencies are unhealthy)",
+                content = @Content(schema = @Schema(implementation = HealthResponse.class)))
     })
     public ResponseEntity<HealthResponse> health() {
         Map<String, String> checks = healthService.healthCheckAllServices();
