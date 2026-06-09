@@ -78,6 +78,27 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- 1. Интеграция со Spring Boot 3 (управляет версиями и автоконфигурацией) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- 2. Специфичный модуль для запуска именно PostgreSQL -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+
         <!-- Для генерации случайных данных (тесты) -->
         <dependency>
             <groupId>net.datafaker</groupId>
