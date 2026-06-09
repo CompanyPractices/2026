@@ -2,9 +2,9 @@ package com.processing.merchantacquirer.client;
 
 import com.processing.merchantacquirer.client.dto.CardsRequest;
 import com.processing.merchantacquirer.client.dto.CardsResponse;
-import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
-import com.processing.merchantacquirer.domain.model.AuthorizationResponse;
 import com.processing.merchantacquirer.exception.ExternalServiceException;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;

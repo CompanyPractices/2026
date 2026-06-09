@@ -5,9 +5,8 @@ import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactory;
-import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationRequest;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -31,7 +30,7 @@ public class TransactionBuilder {
     for (int i = 0; i < count; i++) {
       CardDataResponse card = cardDataResponses.get(i % cardDataResponses.size());
       Merchant merchant = merchants.get(random.nextInt(merchants.size()));
-      BigDecimal amount = new BigDecimal(random.nextInt(scenario.getCountLower(), scenario.getCountUpper()));
+      Integer amount = random.nextInt(scenario.getCountLower(), scenario.getCountUpper());
 
       requests.add(authorizationRequestFactory.build(card.pan(), amount, terminal, merchant));
     }
