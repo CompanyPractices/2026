@@ -367,7 +367,7 @@ public class GatewayRoutingIntegrationTest {
 
         switchWm.verify(getRequestedFor(urlEqualTo(uri)));
     }
-                                   
+
     // Negative Tests for Routing
 
     @Test
