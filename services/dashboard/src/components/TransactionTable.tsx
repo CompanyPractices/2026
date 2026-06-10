@@ -24,37 +24,32 @@ export function TransactionTable({ liveTransactions }: TransactionTableProps){
 
     const displayedTransactions = uniqueTransactions.slice(0, 20);
 
-    if (loading && liveTransactions.length === 0) {
-        return (
-            <div className="text-center py-8 text-gray-500">
-                Загрузка транзакций...
-            </div>
-        );
-    }
-
-    if (error && liveTransactions.length === 0) {
-        return (
-            <div className="text-center py-8 text-red-500">
-                Ошибка загрузки транзакций: {error}
-            </div>
-        );
-    }
-
-    if (displayedTransactions.length === 0) {
-        return (
-            <div className="text-center py-8 text-gray-500">
-                Ожидание первых транзакций...
-            </div>
-        );
-    }
-
     return (
         <div className="font-mono w-full">
+            <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={searchTransactions}/>
+
             <h2 className="text-2xl font-bold mb-4 text-center drop-shadow-lg">
                 Последние 20 транзакций
             </h2>
 
-            <div className="rounded-3xl overflow-hidden border-2 border-emerald-600 shadow-lg mb-5">
+            {error &&
+                <div className="text-center py-8 text-red-500">
+                    Ошибка загрузки транзакций: {error}
+                </div>
+            }
+
+            {loading &&
+                <div className="text-center py-8 text-gray-500">
+                    Загрузка транзакций...
+                </div>
+            }
+
+            {!loading && !error && displayedTransactions.length === 0 &&
+                <div>Транзакций не найдено</div>
+            }
+
+            {!loading && !error && displayedTransactions.length > 0 &&
+                <div className="rounded-3xl border-2 border-emerald-600 shadow-lg mb-5">
 
                 <div className="overflow-x-auto">
 
@@ -99,7 +94,7 @@ export function TransactionTable({ liveTransactions }: TransactionTableProps){
                     </table>
                 </div>
             </div>
-
+            }
             {selectedTx && (
                 <TransactionModal
                     transaction={selectedTx}

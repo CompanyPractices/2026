@@ -19,8 +19,9 @@
 
 | Метод | Путь                          | Описание                              |
 |-------|-------------------------------|---------------------------------------|
-| GET | `/health`                     | Health-check сервиса                  |
-| POST | `/api/simulator/merchant/run` | Запуск симулятора отправки транзакций |
+| GET   | `/health`                     | Health-check сервиса                  |
+| GET   | `/api/simulator/merchants`    | Получение доступных мерчантов         |
+| POST  | `/api/simulator/merchant/run` | Запуск симулятора отправки транзакций |
 
 ### Подробно
 
@@ -34,6 +35,21 @@
   "dependencies": {
     "{dep1}": "ok"
   }
+}
+```
+
+#### `GET /api/simulator/merchants`
+
+**Ответ 200:**
+```json
+{
+  "id": "MERCH00000000005",
+  "name": "Перекрёсток #042",
+  "mcc": "5411",
+  "category": "grocery",
+  "acquirerId": "ACQ001",
+  "acquiringFee": 0,
+  "averageCheck": 120000
 }
 ```
 
@@ -55,7 +71,27 @@
   "approved": 47,
   "declined": 3,
   "elapsedMs": 2300,
-  "transactions": [ /* массив AuthorizationResponse */ ]
+  "transactions": ["AuthorizationResponse"]
+}
+```
+
+#### `GET /api/simulator/merchant/fee`
+
+**Тело запроса:**
+```json
+{
+  "stan": "string",
+  "pan": "string",
+  "terminalId": "string"
+}
+```
+
+**Ответ 200:**
+```json
+{
+  "stan": "string",
+  "pan": "string",
+  "acquirerFee": "double"
 }
 ```
 
@@ -72,15 +108,15 @@
 
 Все параметры через переменные окружения (файл `.env` в корне проекта):
 
-| Переменная | Значение по умолчанию | Описание |
-|------------|----------------------|----------|
-| `PORT` | `{8080}` | Порт сервиса |
-| `POSTGRES_HOST` | `postgres` | Хост PostgreSQL |
-| `POSTGRES_PORT` | `5432` | Порт PostgreSQL |
-| `POSTGRES_DB` | `smp_db` | Имя базы данных |
-| `POSTGRES_USER` | `smp_user` | Пользователь БД |
+| Переменная          | Значение по умолчанию | Описание |
+|---------------------|----------------------|----------|
+| `PORT`              | `{8080}` | Порт сервиса |
+| `POSTGRES_HOST`     | `postgres` | Хост PostgreSQL |
+| `POSTGRES_PORT`     | `5432` | Порт PostgreSQL |
+| `POSTGRES_DB`       | `smp_db` | Имя базы данных |
+| `POSTGRES_USER`     | `smp_user` | Пользователь БД |
 | `POSTGRES_PASSWORD` | `smp_password` | Пароль БД |
-| `{UPSTREAM}_URL` | `http://localhost:{port}` | URL смежного сервиса |
+| `GATEWAY_URL`       | `http://localhost:{port}` | URL смежного сервиса |
 
 ---
 
@@ -117,10 +153,12 @@ docker compose up -d merchant-aqcuirer
 
 ## Взаимодействие с другими сервисами
 
-| Сервис      | Направление | Протокол | Зачем                                        |
-|-------------|:----------:|----------|----------------------------------------------|
-| API Gateway | → исходящий | HTTP REST | Вызов API Gateway для отправки транзакции    |
-| API Gateway | ← входящий | HTTP REST | API Gateway возвращает результаты транзакций |
+| Сервис      | Направление | Протокол | Зачем                                                     |
+|-------------|:----------:|----------|-----------------------------------------------------------|
+| API Gateway | → исходящий | HTTP REST | Вызов API Gateway для отправки транзакции                 |
+| API Gateway | ← входящий | HTTP REST | API Gateway возвращает результаты транзакций              |
+| API Gateway | ← входящий | HTTP REST | Внутренний сервис обращается за получение комиссии экваера |
+| API Gateway | → исходящий | HTTP REST | Возвращаю комиссию экэваера                               |
 
 ---
 

@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.controllers;
 
+import com.processing.cardmanagement.mappers.CardRestMapper;
 import com.processing.cardmanagement.services.CardGeneratorService;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -27,6 +28,7 @@ import java.util.List;
 @Tag(name = "Cards", description = "Card management endpoints")
 public class CardGeneratorController {
 
+    private final CardRestMapper mapper;
     private final CardGeneratorService generatorService;
 
     @Operation(summary = "Generate test cards")
@@ -38,7 +40,11 @@ public class CardGeneratorController {
     })
     @PostMapping("/generate")
     public ResponseEntity<GenerateCardResponse> generate(@Valid @RequestBody GenerateCardsRequest request) {
-        List<CardModel> result = generatorService.generate(request.count(), request.bins());
+        List<CardModel> result = generatorService
+            .generate(request.count(), request.bins())
+            .stream()
+            .map(mapper::toDto)
+            .toList();
 
         return ResponseEntity.status(201).body(new GenerateCardResponse(result.size(), result));
     }
