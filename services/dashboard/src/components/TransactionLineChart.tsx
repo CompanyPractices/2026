@@ -12,7 +12,7 @@ export default function TransactionLineChart({transactions, isConnected} : LineC
 
     function prepareData(transactions: Transaction[]){
         const txCount: Record<string, number> = {};
-        transactions.filter((tx) => getHours(tx.transmissionDateTime) === 17).map((tr) => {
+        transactions.filter((tx) => getHours(tx.transmissionDateTime) === currentHour).map((tr) => {
             const time = format(tr.transmissionDateTime, 'HH:mm');
             txCount[time] = (txCount[time] || 0) + 1;
         });
@@ -27,7 +27,10 @@ export default function TransactionLineChart({transactions, isConnected} : LineC
             {!isConnected &&
                 <div className="grid place-content-center text-zinc-700 font-mono" >Ожидание транзакций...</div>
             }
-            {isConnected &&
+            {isConnected && txData.length === 0 &&
+                <div className="grid place-content-center text-zinc-700 font-mono" >Нет новых транзакций за последний час</div>
+            }
+            {isConnected && txData.length > 0 &&
                 <LineChart
                     data = {txData}
                 >
