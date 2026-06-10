@@ -2,30 +2,24 @@ package com.processing.gateway.integration;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.jayway.jsonpath.JsonPath;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
-// todo: change to dynamic ports
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "SWITCH_URL=http://localhost:8082",
-                "LOGGER_URL=http://localhost:8088",
-                "TERMINAL_SIM_URL=http://localhost:8085",
-                "MERCHANT_SIM_URL=http://localhost:8086",
-                "CARD_MGMT_URL=http://localhost:8081",
                 "gateway.rate-limit.transactions-per-second=100",
                 "gateway.open-api.url=http://gateway.test"
         }
@@ -33,31 +27,49 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class GatewayRoutingIntegrationTest {
     @RegisterExtension
     static WireMockExtension switchWm = WireMockExtension.newInstance()
-            .options(wireMockConfig().port(8082))
+            .options(wireMockConfig().dynamicPort())
             .build();
 
     @RegisterExtension
     static WireMockExtension loggerWm = WireMockExtension.newInstance()
-            .options(wireMockConfig().port(8088))
+            .options(wireMockConfig().dynamicPort())
             .build();
 
     @RegisterExtension
     static WireMockExtension terminalWm = WireMockExtension.newInstance()
-            .options(wireMockConfig().port(8085))
+            .options(wireMockConfig().dynamicPort())
             .build();
 
     @RegisterExtension
     static WireMockExtension merchantWm = WireMockExtension.newInstance()
-            .options(wireMockConfig().port(8086))
+            .options(wireMockConfig().dynamicPort())
             .build();
 
     @RegisterExtension
     static WireMockExtension cardWm = WireMockExtension.newInstance()
-            .options(wireMockConfig().port(8081))
+            .options(wireMockConfig().dynamicPort())
             .build();
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @DynamicPropertySource
+    static void registerDownstreamUrls(DynamicPropertyRegistry registry) {
+        registry.add("SWITCH_URL", switchWm::baseUrl);
+        registry.add("LOGGER_URL", loggerWm::baseUrl);
+        registry.add("TERMINAL_SIM_URL", terminalWm::baseUrl);
+        registry.add("MERCHANT_SIM_URL", merchantWm::baseUrl);
+        registry.add("CARD_MGMT_URL", cardWm::baseUrl);
+    }
+
+    @BeforeEach
+    void resetWireMock() {
+        switchWm.resetAll();
+        loggerWm.resetAll();
+        terminalWm.resetAll();
+        merchantWm.resetAll();
+        cardWm.resetAll();
+    }
 
     @Test
     void routesTransactionToSwitchWithRewrittenPath() {
@@ -102,8 +114,8 @@ public class GatewayRoutingIntegrationTest {
         assertThat(JsonPath.<String>read(response.getBody(), "$.status"))
                 .isEqualTo("APPROVED");
 
-//        verify(postRequestedFor(urlEqualTo("/api/internal/route"))
-//                .withRequestBody(matchingJsonPath("$.pan", equalTo("4000003458730237"))));
+        switchWm.verify(postRequestedFor(urlEqualTo("/api/internal/route"))
+                .withRequestBody(matchingJsonPath("$.pan", equalTo("4000003458730237"))));
     }
 
     @Test
@@ -122,7 +134,7 @@ public class GatewayRoutingIntegrationTest {
         assertThat(JsonPath.<String>read(response.getBody(), "$.message"))
                 .isEqualTo("Field 'pan' must be exactly 16 digits");
 
-        // verify(0, postRequestedFor(urlEqualTo("/api/internal/route")));
+        switchWm.verify(0, postRequestedFor(urlEqualTo("/api/internal/route")));
     }
 
     @Test
@@ -219,6 +231,114 @@ public class GatewayRoutingIntegrationTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(responseBody);
+    }
+
+    @Test
+    void routesCardRequestsToCardManagementWithoutRewritingPath() {
+        // Arrange
+        String uri = "/api/cards/4000003458730237";
+        cardWm.stubFor(get(urlEqualTo(uri))
+                .willReturn(okJson("""
+                        {
+                          "pan": "4000003458730237",
+                          "status": "ACTIVE"
+                        }
+                        """)));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.getForEntity(uri, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(JsonPath.<String>read(response.getBody(), "$.status"))
+                .isEqualTo("ACTIVE");
+        cardWm.verify(getRequestedFor(urlEqualTo(uri)));
+    }
+
+    @Test
+    void routesTransactionSearchToLoggerAndPreservesQueryParameters() {
+        // Arrange
+        String uri = "/api/transactions/search";
+        loggerWm.stubFor(get(urlPathEqualTo(uri))
+                .withQueryParam("stan", equalTo("000001"))
+                .willReturn(okJson("""
+                        {
+                          "items": [
+                            {
+                              "stan": "000001"
+                            }
+                          ]
+                        }
+                        """)));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.getForEntity(uri + "?stan=000001", String.class);
+
+        // Assert
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(JsonPath.<String>read(response.getBody(), "$.items[0].stan"))
+                .isEqualTo("000001");
+        loggerWm.verify(getRequestedFor(urlPathEqualTo(uri))
+                .withQueryParam("stan", equalTo("000001")));
+    }
+
+    @Test
+    void rewritesDownstreamOpenApiDocsForGatewayConsumers() {
+        // Arrange
+        String uri = "/v3/api-docs";
+        switchWm.stubFor(get(urlEqualTo(uri))
+                .willReturn(okJson("""
+                        {
+                          "openapi": "3.0.1",
+                          "info": {
+                            "title": "Switch",
+                            "version": "1.0.0"
+                          },
+                          "paths": {
+                            "/api/internal/route": {
+                              "post": {
+                                "responses": {
+                                  "200": {
+                                    "description": "OK"
+                                  }
+                                }
+                              }
+                            },
+                            "/internal/health": {
+                              "get": {
+                                "responses": {
+                                  "200": {
+                                    "description": "OK"
+                                  }
+                                }
+                              }
+                            },
+                            "/api/public": {
+                              "get": {
+                                "responses": {
+                                  "200": {
+                                    "description": "OK"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                        """)));
+
+        // Act
+        ResponseEntity<String> response = restTemplate.getForEntity("/switch-docs", String.class);
+
+        //Assert
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(JsonPath.<String>read(response.getBody(), "$.servers[0].url")).isEqualTo("http://gateway.test");
+        assertThat(JsonPath.<Object>read(response.getBody(), "$.paths['/api/transactions']")).isNotNull();
+        assertThat(JsonPath.<Object>read(response.getBody(), "$.paths['/api/public']")).isNotNull();
+        assertThat(response.getBody()).doesNotContain("/api/internal/route", "/internal/health");
+
+        switchWm.verify(getRequestedFor(urlEqualTo(uri)));
     }
 
     private String validTransactionRequest() {
