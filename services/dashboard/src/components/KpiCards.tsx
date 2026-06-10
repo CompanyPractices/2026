@@ -11,7 +11,7 @@ type KpiCardsProps = {
     stats: KpiCardsStats,
 }
 
-export function KpiCards( {stats }: KpiCardsProps ) {
+export function KpiCards( { stats }: KpiCardsProps ) {
     const kpiCards = [
         { label: 'Всего ТХ', value: stats.totalTransactions },
         { label: 'Одобрено', value: stats.approvalRate, unit: '%' },
