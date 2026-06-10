@@ -185,7 +185,7 @@ public class TC_06_TC_14_SwitchTest {
                 .statusCode(200)
                 .body("status", equalTo("APPROVED"))
                 .body("responseCode", equalTo("00"))
-                .body("mti", equalTo("0100")) 
+                .body("mti", equalTo("0100"))
                 .body("stan", equalTo(TC06_STAN))
                 .body("rrn", matchesPattern("\\d{12}"))
                 .body("authCode", matchesPattern("[A-Z0-9]{6}"))
