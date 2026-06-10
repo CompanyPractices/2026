@@ -1,5 +1,7 @@
 package com.processing.gateway.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.common.dto.ServiceUnavailableResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,13 +29,14 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
     private static final String CACHE_MISS = "MISS";
 
     private final Cache cache;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
-        if (!request.getRequestURI().contains(CARDS_MGMT_SERVICE_PREFIX)
+        if (!request.getRequestURI().startsWith(CARDS_MGMT_SERVICE_PREFIX)
                 || !request.getMethod().equalsIgnoreCase(HttpMethod.GET.name())) {
             filterChain.doFilter(request, response);
             return;
@@ -46,7 +49,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
             response.setStatus(HttpServletResponse.SC_OK);
             response.setHeader(CACHE_HEADER_NAME, CACHE_HIT);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.setContentLength(cachedBody.length());
+            response.setContentLength(cachedBody.getBytes(StandardCharsets.UTF_8).length);
             response.getWriter().write(cachedBody);
 
             return;
@@ -60,12 +63,18 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
             if (wrappedResponse.getStatus() == HttpServletResponse.SC_OK) {
                 cachedBody = new String(wrappedResponse.getContentAsByteArray(), StandardCharsets.UTF_8);
                 cache.put(requestKey, cachedBody);
-                wrappedResponse.copyBodyToResponse();
                 response.setHeader(CACHE_HEADER_NAME, CACHE_MISS);
             }
+
+            wrappedResponse.copyBodyToResponse();
         } catch (Exception e) {
             log.error("Exception occurred while caching response", e);
-            response.setStatus(502);
+            response.setStatus(503);
+            objectMapper.writeValue(response.getWriter(), new ServiceUnavailableResponse(
+                    "SERVICE_UNAVAILABLE",
+                    "Card Management Service is temporarily unavailable",
+                    "Card Management Service"
+            ));
         }
     }
 }

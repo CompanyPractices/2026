@@ -1,8 +1,11 @@
 package com.processing.gateway.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.common.dto.ServiceUnavailableResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +36,7 @@ class ResponseCachingFilterTest {
     @Mock
     private FilterChain filterChain;
 
-    @InjectMocks
+    private ObjectMapper objectMapper;
     private ResponseCachingFilter filter;
 
     private MockHttpServletRequest request;
@@ -41,6 +44,8 @@ class ResponseCachingFilterTest {
 
     @BeforeEach
     void setUp() {
+        objectMapper = new ObjectMapper();
+        filter = new ResponseCachingFilter(cache, objectMapper);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
     }
@@ -124,11 +129,14 @@ class ResponseCachingFilterTest {
     void shouldNotCacheWhenStatusIsNot200() throws ServletException, IOException {
         // Arrange
         String uri = "/api/cards/500";
+        String responseBody = "{\"id\": 123, \"status\": \"not-found\"}";
+
         request.setRequestURI(uri);
 
         doAnswer(invocation -> {
             HttpServletResponse res = invocation.getArgument(1);
             res.setStatus(404);
+            res.getWriter().write(responseBody);
             return null;
         }).when(filterChain).doFilter(eq(request), any());
 
@@ -137,6 +145,7 @@ class ResponseCachingFilterTest {
 
         // Assert
         assertEquals(404, response.getStatus());
+        assertEquals(responseBody, response.getContentAsString());
         assertNull(response.getHeader("X-Cache"));
         verify(cache, never()).put(any(), any());
     }
@@ -145,6 +154,13 @@ class ResponseCachingFilterTest {
     @DisplayName("Should return HTTP 502 Bad Gateway when exception occurs")
     void shouldReturn502OnException() throws ServletException, IOException {
         // Arrange
+        String responseBody = objectMapper.writeValueAsString(
+                new ServiceUnavailableResponse(
+                "SERVICE_UNAVAILABLE",
+                "Card Management Service is temporarily unavailable",
+                "Card Management Service"
+        ));
+
         request.setRequestURI("/api/cards/error");
         request.setMethod(HttpMethod.GET.name());
 
@@ -155,7 +171,8 @@ class ResponseCachingFilterTest {
         filter.doFilter(request, response, filterChain);
 
         // Assert
-        assertEquals(502, response.getStatus());
+        assertEquals(503, response.getStatus());
+        assertEquals(responseBody, response.getContentAsString());
         verify(cache, never()).put(any(), any());
     }
 
@@ -164,7 +181,7 @@ class ResponseCachingFilterTest {
     void shouldSkipCachingWhenMethodIsNotGet() throws ServletException, IOException {
         // Arrange
         request.setRequestURI("/api/cards/update");
-        request.setMethod("POST"); // Setting method to POST
+        request.setMethod(HttpMethod.POST.name());
 
         // Act
         filter.doFilter(request, response, filterChain);
