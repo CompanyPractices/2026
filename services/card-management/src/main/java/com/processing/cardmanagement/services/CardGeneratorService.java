@@ -4,6 +4,7 @@ import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
 import com.processing.common.dto.cardmanagement.CardStatus;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class CardGeneratorService {
 
     private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
+    private final MeterRegistry meterRegistry;
 
     private final Faker faker = new Faker();
     private final Random random = new Random();
@@ -47,14 +49,16 @@ public class CardGeneratorService {
             int monthlyLimit = dailyLimit * 30;
 
             CardDraft card = new CardDraft(
-                bin,
-                cardholderName,
-                generateStatus(),
-                generatorOptions.currencyCode(),
-                dailyLimit,
-                monthlyLimit,
-                balance
+                    bin,
+                    cardholderName,
+                    generateStatus(),
+                    generatorOptions.currencyCode(),
+                    dailyLimit,
+                    monthlyLimit,
+                    balance
             );
+
+            meterRegistry.counter("cards.generated", "status", card.status().name()).increment();
 
             cards.add(card);
         }
