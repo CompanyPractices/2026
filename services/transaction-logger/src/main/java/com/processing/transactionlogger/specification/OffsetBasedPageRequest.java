@@ -8,6 +8,11 @@ import org.springframework.data.domain.Sort;
 public class OffsetBasedPageRequest implements Pageable {
     private final int offset;
     private final int limit;
+    private final Sort sort;
+
+    public OffsetBasedPageRequest(int offset, int limit) {
+        this(offset, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
 
     @Override
     public int getPageNumber() {
@@ -26,7 +31,7 @@ public class OffsetBasedPageRequest implements Pageable {
 
     @Override
     public Sort getSort() {
-        return Sort.by(Sort.Direction.DESC, "createdAt");
+        return sort;
     }
 
     @Override
@@ -46,7 +51,7 @@ public class OffsetBasedPageRequest implements Pageable {
 
     @Override
     public Pageable withPage(int pageNumber) {
-        return new OffsetBasedPageRequest(0, limit);
+        return new OffsetBasedPageRequest(pageNumber * limit, limit, sort);
     }
 
     @Override

@@ -37,6 +37,8 @@ public class Transaction {
     private String currencyCode;
     @Column(nullable = false, length = 8)
     private String terminalId;
+    @Column(length = 10)
+    private String terminalType;
     @Column(nullable = false, length = 15)
     private String merchantId;
     @Column(nullable = false, length = 4)

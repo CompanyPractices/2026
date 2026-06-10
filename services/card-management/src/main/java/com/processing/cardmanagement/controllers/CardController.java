@@ -1,7 +1,8 @@
 package com.processing.cardmanagement.controllers;
 
 import com.processing.cardmanagement.mappers.CardRestMapper;
-import com.processing.cardmanagement.services.CardUseCase;
+import com.processing.cardmanagement.mappers.CardStatusMapper;
+import com.processing.cardmanagement.services.CardService;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.annotations.Bin;
 import com.processing.common.dto.annotations.NotNegative;
@@ -33,8 +34,9 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class CardController {
 
-    private final CardUseCase cardService;
+    private final CardService cardService;
     private final CardRestMapper restMapper;
+    private final CardStatusMapper cardStatusMapper;
 
     @Operation(summary = "Create a new card")
     @ApiResponses({
@@ -107,7 +109,7 @@ public class CardController {
             }
         )
         @RequestParam(required = false)
-        CardStatus status,
+        CardModelStatus status,
 
         @Nullable
         @Bin
@@ -132,10 +134,11 @@ public class CardController {
         @RequestParam(required = false)
         LocalDateTime endDate
     ) {
+        var domainStatus = cardStatusMapper.toCardStatus(status);
         var cards = cardService.getCards(
                 limit,
                 offset,
-                status,
+                domainStatus,
                 bin,
                 issuerId,
                 startDate,
@@ -146,7 +149,7 @@ public class CardController {
             .toList();
 
         var total = cardService.countCards(
-            status,
+            domainStatus,
             bin,
             issuerId,
             startDate,
@@ -176,7 +179,7 @@ public class CardController {
     ) {
         cardService.patchCard(
             pan,
-            data.status(),
+            cardStatusMapper.toCardStatus(data.status()),
             data.dailyLimit(),
             data.monthlyLimit(),
             data.availableBalance()

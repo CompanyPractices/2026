@@ -2,9 +2,10 @@ package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
+import com.processing.cardmanagement.models.CardStatus;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
-import com.processing.common.dto.cardmanagement.CardStatus;
 import lombok.RequiredArgsConstructor;
+import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,14 +20,11 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class CardGeneratorService {
 
-    private final CardUseCase cardService;
+    private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
 
+    private final Faker faker = new Faker();
     private final Random random = new Random();
-
-    private static final List<String> NAMES = List.of(
-        "IVAN IVANOV", "PETR PETROV", "ANNA SMIRNOVA", "ELENA VOLKOVA", "DMITRY SOKOLOV"
-    );
 
     /**
      * Генерирует указанное количество тестовых карт и сохраняет их в базе данных
@@ -34,7 +32,7 @@ public class CardGeneratorService {
      * Распределение статусов: ACTIVE - 95%, INACTIVE - 3%, BLOCKED - 2%
      *
      * @param count количество карт для генерации
-     * @param bins список BIN-префиксов для распределения карт
+     * @param bins  список BIN-префиксов для распределения карт
      * @return список созданных карт
      */
     public List<Card> generate(int count, List<String> bins) {
@@ -43,7 +41,7 @@ public class CardGeneratorService {
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
 
-            String cardholderName = NAMES.get(random.nextInt(NAMES.size()));
+            String cardholderName = faker.name().fullName().toUpperCase();
             int balance = random.nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
             int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
             int monthlyLimit = dailyLimit * 30;

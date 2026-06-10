@@ -3,7 +3,6 @@ package com.processing.cardmanagement.services;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
-import com.processing.common.dto.cardmanagement.CardModel;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,7 @@ public class CardGeneratorServiceTest {
     private final Faker faker = new Faker();
 
     @Mock
-    private CardUseCase cardService;
+    private CardService cardService;
 
     private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
         1_000_000,
@@ -55,12 +54,12 @@ public class CardGeneratorServiceTest {
 
         when(cardService.createCards(anyList())).thenAnswer(inv -> {
             List<CardDraft> dtos = inv.getArgument(0);
-            return dtos.stream().map(dto -> new CardModel(
+            return dtos.stream().map(dto -> new Card(
                 UUID.randomUUID(),
                 faker.numerify("################"),
                 dto.bin(),
                 faker.name().fullName().toUpperCase(),
-                "0629",
+                YearMonth.now().plusYears(3),
                 dto.status(),
                 "643",
                 dto.dailyLimit(),

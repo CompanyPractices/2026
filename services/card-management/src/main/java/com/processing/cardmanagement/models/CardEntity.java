@@ -1,20 +1,15 @@
 package com.processing.cardmanagement.models;
 
-import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * JPA сущность банковской карты
- */
 @Entity
 @Getter
 @Setter
@@ -25,7 +20,6 @@ import java.util.UUID;
 })
 @NoArgsConstructor
 @AllArgsConstructor
-@SQLDelete(sql = "UPDATE users SET status = 'DELETED' WHERE id = ?")
 @SQLRestriction("status <> 'DELETED'")
 public class CardEntity {
 
@@ -46,8 +40,7 @@ public class CardEntity {
     private String expiryDate;
 
     @Column(length = 20, nullable = false)
-    @Enumerated(EnumType.STRING)
-    private CardStatus status = CardStatus.ACTIVE;
+    private String status;
 
     @Column(length = 3, nullable = false)
     private String currencyCode;

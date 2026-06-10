@@ -1,6 +1,10 @@
 server:
   port: ${SERVER_PORT:${PORT:8080}}
 
+websocket:
+  allowed-origins: ${DASHBOARD_ORIGIN:https://localhost:3000}
+  ping-interval-ms: 30000
+
 spring:
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:smp_db}
@@ -10,6 +14,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+    open-in-view: false
 
 logging:
   level:
