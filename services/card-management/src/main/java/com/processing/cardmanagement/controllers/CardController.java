@@ -1,7 +1,7 @@
 package com.processing.cardmanagement.controllers;
 
 import com.processing.cardmanagement.mappers.CardRestMapper;
-import com.processing.cardmanagement.services.CardUseCase;
+import com.processing.cardmanagement.services.CardService;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.annotations.Bin;
 import com.processing.common.dto.annotations.NotNegative;
@@ -33,7 +33,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class CardController {
 
-    private final CardUseCase cardService;
+    private final CardService cardService;
     private final CardRestMapper restMapper;
 
     @Operation(summary = "Create a new card")

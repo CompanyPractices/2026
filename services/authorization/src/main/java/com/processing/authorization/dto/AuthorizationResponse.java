@@ -23,32 +23,39 @@ public class AuthorizationResponse {
 
     private String declineReason;
 
-    private Integer processingTimeMs;
+    private Long processingTimeMs;
 
     public static AuthorizationResponse approved(AuthorizationRequest request, String rrn, String authCode) {
         return new AuthorizationResponse(
-            request.getMti(),
-            request.getStan(),
-            rrn,
-            authCode,
-            "00",
-            AuthorizationRequestStatus.APPROVED,
-            null,
-            1 // TODO
-        );
+                request.getMti(),
+                request.getStan(),
+                rrn,
+                authCode,
+                "00",
+                AuthorizationRequestStatus.APPROVED,
+                null);
     }
 
     public static AuthorizationResponse declined(AuthorizationRequest request, String reason, String code) {
         return new AuthorizationResponse(
-            request.getMti(),
-            request.getStan(),
-            null,
-            null,
-            code,
-            AuthorizationRequestStatus.DECLINED,
-            reason,
-            1 // TODO
-        );
+                request.getMti(),
+                request.getStan(),
+                null,
+                null,
+                code,
+                AuthorizationRequestStatus.DECLINED,
+                reason);
+    }
+
+    public AuthorizationResponse(String mti, String stan, String rrn, String authCode, String responceCode,
+            AuthorizationRequestStatus status, String reason) {
+        this.mti = mti;
+        this.stan = stan;
+        this.rrn = rrn;
+        this.authCode = authCode;
+        this.responseCode = responceCode;
+        this.status = status;
+        this.declineReason = reason;
     }
 
 }
