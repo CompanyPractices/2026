@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -53,7 +54,7 @@ public class TransactionServiceSearchTest {
         TransactionSearchResponse result = transactionService.search(emptyFilter());
 
         assertThat(result.transactions()).hasSize(1);
-        assertThat(result.transactions().get(0).id()).isEqualTo(transaction.getId());
+        assertEquals(result.transactions().get(0).id(), transaction.getId());
     }
 
     @Test
@@ -64,7 +65,7 @@ public class TransactionServiceSearchTest {
 
         TransactionSearchResponse result = transactionService.search(emptyFilter());
 
-        assertThat(result.total()).isEqualTo(150);
+        assertEquals(150, result.total());
         assertThat(result.transactions()).hasSize(3);
     }
 
@@ -90,14 +91,14 @@ public class TransactionServiceSearchTest {
 
         DashboardStatsResponse stats = transactionService.getStats();
 
-        assertThat(stats.totalTransactions()).isEqualTo(100L);
-        assertThat(stats.approvedCount()).isEqualTo(80L);
-        assertThat(stats.declinedCount()).isEqualTo(20L);
-        assertThat(stats.approvalRate()).isEqualTo(0.8);
-        assertThat(stats.totalAmount()).isEqualTo(500000L);
-        assertThat(stats.averageAmount()).isEqualTo(5000L);
-        assertThat(stats.avgProcessingTimeMs()).isEqualTo(42.5);
-        assertThat(stats.transactionsPerMinute()).isEqualTo(5.0);
+        assertEquals(100L, stats.totalTransactions());
+        assertEquals(80L, stats.approvedCount());
+        assertEquals(20L, stats.declinedCount());
+        assertEquals(0.8, stats.approvalRate());
+        assertEquals(500000L, stats.totalAmount());
+        assertEquals(5000L, stats.averageAmount());
+        assertEquals(42.5, stats.avgProcessingTimeMs());
+        assertEquals(5.0, stats.transactionsPerMinute());
     }
 
     @Test
@@ -124,7 +125,7 @@ public class TransactionServiceSearchTest {
         List<TransactionResponse> result = transactionService.getRecent(5);
 
         assertThat(result).hasSize(5);
-        assertThat(result.get(0).id()).isEqualTo(transactions.get(0).getId());
+        assertEquals(transactions.get(0).getId(), result.get(0).id());
     }
 
     @Test
