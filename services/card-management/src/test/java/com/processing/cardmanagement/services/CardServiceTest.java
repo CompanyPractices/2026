@@ -265,7 +265,6 @@ public final class CardServiceTest {
         var pan = generatePan();
         var testCard = createTestCard(pan);
         var reserveAmount = faker.number().numberBetween(0L, testCard.availableBalance());
-        var prevBalance = testCard.availableBalance();
         when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
