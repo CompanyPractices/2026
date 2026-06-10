@@ -94,6 +94,7 @@ public class RouteService {
                 request.amount() != null ? request.amount().longValue() : null,
                 request.currencyCode(),
                 request.terminalId(),
+                request.terminalType(),
                 request.merchantId(),
                 request.mcc(),
                 request.acquirerId(),

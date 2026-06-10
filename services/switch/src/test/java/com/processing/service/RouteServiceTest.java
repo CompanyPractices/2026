@@ -39,9 +39,9 @@ class RouteServiceTest {
 
 
         AuthorizationRequest request = new AuthorizationRequest(
-                "0100", "000002", "9999991234560001", "000000", 150_000, "643",
+                "0100", "000002", "9999991234560001", "000000", 150000L, "643",
                 SwitchTestData.sampleRequest().transmissionDateTime(),
-                "TERM001", null, "MERCH12345678901", "5411", "ACQ001", null, null);
+                "TERM001", null, "MERCH12345678901", "5411", "ACQ001", null);
 
 
 

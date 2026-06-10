@@ -2,18 +2,14 @@ package com.processing.cardmanagement.repositories;
 
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.models.Card;
-import com.processing.common.dto.cardmanagement.CardStatus;
+import com.processing.cardmanagement.models.CardStatus;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
-import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Адаптер для работы с CardRepository через JPA-реализацию
- */
 @RequiredArgsConstructor
 public final class JavaPersistenceAdapter implements CardRepository {
 
@@ -37,17 +33,15 @@ public final class JavaPersistenceAdapter implements CardRepository {
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
     ) {
-        int pageNumber = (int) (offset / limit);
-        int pageSize = (int) limit;
-
         return jpaRepository
             .findCards(
-                status,
+                limit,
+                offset,
+                status != null ? status.name() : null,
                 bin,
                 issuerId,
                 startDate,
-                endDate,
-                PageRequest.of(pageNumber, pageSize)
+                endDate
             )
             .stream()
             .map(persistenceMapper::toDomain)
@@ -63,7 +57,7 @@ public final class JavaPersistenceAdapter implements CardRepository {
         @Nullable LocalDateTime endDate
     ) {
         return jpaRepository.countCards(
-            status,
+            status != null ? status.name() : null,
             bin,
             issuerId,
             startDate,

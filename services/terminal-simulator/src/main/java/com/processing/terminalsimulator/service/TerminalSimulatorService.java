@@ -5,6 +5,7 @@ import com.processing.terminalsimulator.dto.AuthorizationResponse;
 import com.processing.terminalsimulator.dto.RunResponse;
 import com.processing.terminalsimulator.dto.AuthorizationRequest;
 import com.processing.terminalsimulator.dto.Card;
+import com.processing.terminalsimulator.model.Scenario;
 import com.processing.terminalsimulator.model.TerminalType;
 import com.processing.terminalsimulator.model.CardStatus;
 import lombok.RequiredArgsConstructor;
@@ -139,7 +140,7 @@ public class TerminalSimulatorService {
         }
     }
 
-    public RunResponse run(int count, String scenario) {
+    public RunResponse run(int count, Scenario scenario) {
         long start = System.currentTimeMillis();
         List<Card> newCards = new ArrayList<>();
         List<Card> activeCards = gatewayClient.getCardsFromCardManager(ACTIVE, 70);
@@ -160,8 +161,9 @@ public class TerminalSimulatorService {
         AtomicInteger declined = new AtomicInteger(0);
 
         switch (scenario) {
-            case "mixed" -> {
-                generateTransactionHandler(0, (int) (count * 0.7), approved, declined, "normal", authResps, "day");
+            case mixed -> {
+                generateTransactionHandler(0, (int) (count * 0.7), approved, declined, "normal", authResps,
+                        "day");
                 generateTransactionHandler((int) (count * 0.7), (int) (count * 0.7 + count * 0.15), approved, declined,
                         "high_value", authResps, "day");
                 generateTransactionHandler((int) (count * 0.7 + count * 0.15), (int) (count * 0.7 + count * 0.15 + count * 0.1),
@@ -169,22 +171,28 @@ public class TerminalSimulatorService {
                 generateTransactionHandler((int) (count * 0.7 + count * 0.15 + count * 0.1), count, approved, declined,
                         "blocked", authResps, "day");
             }
-            case "declines_test" -> {
+            case declines_test -> {
                 generateTransactionHandler(0, (int) (count * 0.2), approved, declined, "invalid_pan", authResps,
                         "day");
-                generateTransactionHandler((int) (count * 0.2), (int) (count * 0.4), approved, declined, "blocked", authResps,
+                generateTransactionHandler((int) (count * 0.2), (int) (count * 0.4), approved, declined, "blocked",
+                        authResps,
                         "day");
-                generateTransactionHandler((int) (count * 0.4), (int) (count * 0.6), approved, declined, "no_money", authResps,
+                generateTransactionHandler((int) (count * 0.4), (int) (count * 0.6), approved, declined, "no_money",
+                        authResps,
                         "day");
-                generateTransactionHandler((int) (count * 0.6), (int) (count * 0.8), approved, declined, "more_day_limit",
-                        authResps, "day");
-                generateTransactionHandler((int) (count * 0.8), count, approved, declined, "normal", authResps, "day");
+                generateTransactionHandler((int) (count * 0.6), (int) (count * 0.8), approved, declined,
+                        "more_day_limit", authResps, "day");
+                generateTransactionHandler((int) (count * 0.8), count, approved, declined, "normal", authResps,
+                        "day");
             }
-            case "night_time" -> {
-                generateTransactionHandler(0, count / 2, approved, declined, "normal", authResps, "night");
-                generateTransactionHandler(count / 2, count, approved, declined, "high_value", authResps, "night");
+            case night_time -> {
+                generateTransactionHandler(0, count / 2, approved, declined, "normal", authResps,
+                        "night");
+                generateTransactionHandler(count / 2, count, approved, declined, "high_value", authResps,
+                        "night");
             }
-            case "normal", "high_value" -> generateTransactionHandler(0, count, approved, declined, scenario, authResps, "day");
+            case normal, high_value -> generateTransactionHandler(0, count, approved, declined, scenario.name(), authResps,
+                    "day");
         }
 
         long elapsed = System.currentTimeMillis() - start;
