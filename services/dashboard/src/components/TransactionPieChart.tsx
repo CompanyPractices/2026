@@ -1,10 +1,9 @@
-import useWebSocket from '../hooks/useWebSocket'
 import { Pie, PieChart, Tooltip, Cell, Legend, ResponsiveContainer } from 'recharts';
 import { Transaction } from '../types/index.ts'
 
 type PieChartProps = {
     transactions: Transaction[];
-    isConnected: Boolean;
+    isConnected: boolean;
 }
 export default function TransactionPieChart({transactions, isConnected}: PieChartProps) {
     const approved = transactions?.filter((s) => s.status === 'APPROVED').length || 0;
