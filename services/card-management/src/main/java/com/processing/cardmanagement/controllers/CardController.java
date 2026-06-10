@@ -148,7 +148,7 @@ public class CardController {
             .map(restMapper::toDto)
             .toList();
 
-        var total = cardService.countCards(
+        var total = cardService.countCardsFiltered(
             domainStatus,
             bin,
             issuerId,

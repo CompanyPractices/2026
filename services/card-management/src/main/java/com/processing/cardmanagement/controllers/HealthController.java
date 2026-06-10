@@ -24,7 +24,7 @@ public class HealthController {
         return ResponseEntity.ok(new HealthResponse(
             "ok",
             "card-management",
-            cardService.countCards()
+            cardService.countCardsFiltered()
         ));
     }
 }
