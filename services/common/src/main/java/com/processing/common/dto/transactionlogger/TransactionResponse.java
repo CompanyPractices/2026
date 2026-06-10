@@ -1,6 +1,7 @@
 package com.processing.common.dto.transactionlogger;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -25,6 +26,8 @@ public record TransactionResponse(
         String currencyCode,
         @Schema(description = "Идентификатор терминала")
         String terminalId,
+        @Schema(description = "Тип терминала")
+        String terminalType,
         @Schema(description = "Идентификатор мерчанта")
         String merchantId,
         @Schema(description = "Код категории мерчанта")
