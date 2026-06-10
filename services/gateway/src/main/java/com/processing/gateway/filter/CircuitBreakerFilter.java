@@ -76,8 +76,14 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
             rethrow(e);
         }
 
-        if (isFailureResponse(response.getStatus())) {
+        int status = response.getStatus();
+        if (status >= HttpStatus.INTERNAL_SERVER_ERROR.value()) {
             circuitBreaker.recordFailure(downstreamService);
+            return;
+
+        } else if (status == HttpStatus.NOT_FOUND.value()
+                || status == HttpStatus.METHOD_NOT_ALLOWED.value()) {
+            circuitBreaker.releaseRequest(downstreamService);
             return;
         }
 
@@ -127,11 +133,5 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
         }
 
         throw new ServletException(exception);
-    }
-
-    private boolean isFailureResponse(int status) {
-        return status >= HttpStatus.INTERNAL_SERVER_ERROR.value()
-                || status == HttpStatus.NOT_FOUND.value()
-                || status == HttpStatus.METHOD_NOT_ALLOWED.value();
     }
 }
