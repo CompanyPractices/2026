@@ -121,6 +121,13 @@ cd services
 mvn test -Pswitch
 ```
 
+E2E (TestNG, нужен `docker compose up -d`):
+
+```bash
+cd services
+mvn test "-Pswitch,integration" -pl switch -am "-Dtest=TC_06_TC_14_SwitchTest"
+```
+
 ### Docker
 
 ```bash
