@@ -4,6 +4,8 @@ import { Transaction } from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
 import useTransactions from "../hooks/useTransactions.ts";
+import {Filters} from "./Filters.tsx";
+import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
 
 type TransactionTableProps = {
     liveTransactions: Transaction[],
@@ -11,7 +13,7 @@ type TransactionTableProps = {
 
 export function TransactionTable({ liveTransactions }: TransactionTableProps){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-    const { transactions: initialTransactions, loading, error } = useTransactions();
+    const { transactions: initialTransactions, loading, error, searchTransactions } = useTransactions();
 
     const allTransactions = [
         ...liveTransactions,
