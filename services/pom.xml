@@ -5,12 +5,14 @@
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+
     <!-- Spring Boot Parent — управляет версиями всех spring-boot-starter-* -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.4.1</version>
     </parent>
+
 
     <!-- Собственные координаты родительского POM -->
     <groupId>com.processing</groupId>
@@ -20,6 +22,7 @@
     <name>processing-platform</name>
     <description>Многомодульный проект СМП процессинга</description>
 
+
     <!-- Общие свойства для всех модулей -->
     <properties>
         <java.version>21</java.version>
@@ -28,6 +31,7 @@
         <checkstyle.version>3.6.0</checkstyle.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
     </properties>
+
 
     <profiles>
         <!-- Профиль для сборки всех модулей (по умолчанию) -->
@@ -49,6 +53,7 @@
             </modules>
         </profile>
 
+
         <!-- Индивидуальные профили для каждого сервиса -->
         <profile>
             <id>common</id>
@@ -56,6 +61,7 @@
                 <module>common</module>
             </modules>
         </profile>
+
 
         <profile>
             <id>gateway</id>
@@ -65,6 +71,7 @@
             </modules>
         </profile>
 
+
         <profile>
             <id>card-management</id>
             <modules>
@@ -73,13 +80,24 @@
             </modules>
         </profile>
 
+
         <profile>
             <id>switch</id>
             <modules>
                 <module>common</module>
+                <module>e2e-tests</module>
                 <module>switch</module>
             </modules>
         </profile>
+
+
+        <profile>
+            <id>e2e-tests</id>
+            <modules>
+                <module>e2e-tests</module>
+            </modules>
+        </profile>
+
 
         <profile>
             <id>authorization</id>
@@ -89,6 +107,7 @@
             </modules>
         </profile>
 
+
         <profile>
             <id>terminal-simulator</id>
             <modules>
@@ -96,6 +115,7 @@
                 <module>terminal-simulator</module>
             </modules>
         </profile>
+
 
         <profile>
             <id>merchant-acquirer</id>
@@ -105,6 +125,7 @@
             </modules>
         </profile>
 
+
         <profile>
             <id>transaction-logger</id>
             <modules>
@@ -112,14 +133,8 @@
                 <module>transaction-logger</module>
             </modules>
         </profile>
-
-        <profile>
-            <id>e2e-tests</id>
-            <modules>
-                <module>e2e-tests</module>
-            </modules>
-        </profile>
     </profiles>
+
 
     <!-- Управление версиями НЕ-Spring-Boot зависимостей -->
     <dependencyManagement>
@@ -139,8 +154,21 @@
                 <artifactId>common</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.processing</groupId>
+                <artifactId>e2e-tests</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.processing</groupId>
+                <artifactId>e2e-tests</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <classifier>tests</classifier>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
 
     <!-- Управление плагинами (дочерние модули подключают без указания версий) -->
     <build>
