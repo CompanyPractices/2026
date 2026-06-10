@@ -87,7 +87,7 @@ Switch отправляет `com.processing.common.dto.transactionlogger.Transac
 `id`, `mti`, `stan`, `rrn`, `pan`, `processingCode`, `amount`, `currencyCode`, `terminalId`, `merchantId`, `mcc`, `acquirerId`, `issuerId`, `acquiringFee`, `status`, `declineReason`, `authCode`, `processingTimeMs`, `transmissionDateTime`, `createdAt`.
 
 - `mti` берётся из исходного запроса (`0100`), не из ответа Authorization.
-- `acquiringFee` — `null` (заполняется Merchant Simulator при необходимости).
+- `acquiringFee` — запрашивается у Merchant Acquirer (`GET /api/simulator/merchant/fee`) до записи в Logger; при недоступности — `null`.
 
 ## Конфигурация
 
@@ -96,6 +96,7 @@ Switch отправляет `com.processing.common.dto.transactionlogger.Transac
 | `PORT` / `SERVER_PORT` | `8082` / `8080` (Docker) | Порт сервиса |
 | `AUTH_URL` | `http://localhost:8083` | URL Authorization Service |
 | `LOGGER_URL` | `http://localhost:8088` | URL Transaction Logger |
+| `MERCHANT_URL` | `http://localhost:8086` | URL Merchant Acquirer (комиссия) |
 
 Параметры в `application.yml`:
 

@@ -14,6 +14,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -28,6 +30,7 @@ import static org.hamcrest.Matchers.oneOf;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class TC_06_TC_14_SwitchTest {
 
@@ -46,8 +49,13 @@ public class TC_06_TC_14_SwitchTest {
     private static final int TC06_AMOUNT = 150_000;
     private static final String TC06_STAN = "000001";
     private static final String TERMINAL_ID = "TERM0001";
+    private static final String TERMINAL_TYPE = "POS";
     private static final String MERCHANT_ID = "MERCH0000000001";
     private static final String TRANSMISSION_DATE_TIME = "2026-06-01T10:30:00";
+    private static final Duration STACK_READY_TIMEOUT = Duration.ofMinutes(3);
+    private static final Duration STACK_READY_POLL_INTERVAL = Duration.ofSeconds(3);
+    private static final List<String> REQUIRED_SERVICES =
+            List.of("switch", "cardManagement", "authorization", "logger");
 
     private Connection connection;
     private String tc06Pan;
@@ -61,16 +69,34 @@ public class TC_06_TC_14_SwitchTest {
     }
 
     private void assertStackIsReady() throws Exception {
-        Response health = given().when().get("/health").then().statusCode(200).extract().response();
-        JsonNode body = MAPPER.readTree(health.asString());
-        assertEquals(body.get("status").asText(), "ok", "Gateway must be ok");
+        Instant deadline = Instant.now().plus(STACK_READY_TIMEOUT);
+        String lastServicesState = null;
 
-        JsonNode services = body.get("services");
-        assertNotNull(services, "Gateway health must expose services map");
-        for (String service : List.of("switch", "cardManagement", "authorization", "logger")) {
-            assertEquals(services.get(service).asText(), "ok",
-                    "Dependency must be ok before integration tests: " + service);
+        while (Instant.now().isBefore(deadline)) {
+            Response health = given().when().get("/health").then().statusCode(200).extract().response();
+            JsonNode body = MAPPER.readTree(health.asString());
+            assertEquals(body.get("status").asText(), "ok", "Gateway must be ok");
+
+            JsonNode services = body.get("services");
+            assertNotNull(services, "Gateway health must expose services map");
+
+            List<String> notReady = new ArrayList<>();
+            for (String service : REQUIRED_SERVICES) {
+                if (!"ok".equals(services.get(service).asText())) {
+                    notReady.add(service + "=" + services.get(service).asText());
+                }
+            }
+            if (notReady.isEmpty()) {
+                return;
+            }
+
+            lastServicesState = String.join(", ", notReady);
+            Thread.sleep(STACK_READY_POLL_INTERVAL.toMillis());
         }
+
+        fail("Stack not ready within " + STACK_READY_TIMEOUT.toSeconds()
+                + "s. Still down: " + lastServicesState
+                + ". Run `docker compose up -d` and wait for all services to become healthy.");
     }
 
     @AfterClass(alwaysRun = true)
@@ -243,11 +269,12 @@ public class TC_06_TC_14_SwitchTest {
                   "currencyCode": "643",
                   "transmissionDateTime": "%s",
                   "terminalId": "%s",
+                  "terminalType": "%s",
                   "merchantId": "%s",
                   "mcc": "5411",
                   "acquirerId": "ACQ001"
                 }
-                """.formatted(stan, pan, amount, TRANSMISSION_DATE_TIME, TERMINAL_ID, MERCHANT_ID);
+                """.formatted(stan, pan, amount, TRANSMISSION_DATE_TIME, TERMINAL_ID, TERMINAL_TYPE, MERCHANT_ID);
     }
 
     private long getCardBalanceFromApi(String pan) throws Exception {

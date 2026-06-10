@@ -46,6 +46,7 @@ class RoutingServiceTest {
                 java.util.Map.of("499999", "ISS999"),
                 "http://auth",
                 "http://logger",
+                "http://merchant",
                 SwitchTestData.defaultHttp(),
                 SwitchTestData.defaultRetry()
         );
