@@ -156,6 +156,13 @@
                 <artifactId>common</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- Обычная jar-зависимость (нужна для switch) -->
+            <dependency>
+                <groupId>com.processing</groupId>
+                <artifactId>e2e-tests</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- test-jar зависимость для тестов -->
             <dependency>
                 <groupId>com.processing</groupId>
                 <artifactId>e2e-tests</artifactId>
