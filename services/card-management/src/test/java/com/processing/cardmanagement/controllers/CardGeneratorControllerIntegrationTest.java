@@ -2,9 +2,11 @@ package com.processing.cardmanagement.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
+import com.processing.cardmanagement.services.LuhnValidator;
 import com.processing.common.dto.cardmanagement.GenerateCardsRequest;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,8 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -29,6 +30,9 @@ public class CardGeneratorControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private LuhnValidator luhnValidator;
 
     @Autowired
     private CardJpaRepository cardJpaRepository;
@@ -47,11 +51,11 @@ public class CardGeneratorControllerIntegrationTest {
 
     @Test
     void generateShouldSaveCardsToDatabaseAndReturn201() throws Exception {
-        int count = 10;
+        int count = 100;
         List<String> bins = List.of("400000", "400001");
         GenerateCardsRequest request = new GenerateCardsRequest(count, bins);
 
-        given()
+        var response = given()
                 .contentType(ContentType.JSON)
                 .body(objectMapper.writeValueAsString(request))
                 .port(port)
@@ -59,11 +63,31 @@ public class CardGeneratorControllerIntegrationTest {
                 .post("/api/cards/generate")
                 .then()
                 .statusCode(201)
-                .body("generated", equalTo(10))
-                .body("cards", hasSize(10));
+                .extract()
+                .jsonPath();
+
+        int generated = response.getInt("generated");
+        assertThat(generated).isEqualTo(100);
+
+        List<String> pans = response.getList("cards.pan", String.class);
+        assertThat(pans).doesNotHaveDuplicates();
+        pans.forEach(pan -> assertThat(pan)
+                .hasSize(16)
+                .satisfies(p -> assertThat(luhnValidator.isValid(pan)).isTrue()));
+
+        assertEquals(generated, pans.size());
+
+        List<String> ids = response.getList("cards.pan", String.class);
+        ids.forEach(Assertions::assertNotNull);
+
+        List<String> statuses = response.getList("cards.status", String.class);
+        statuses.forEach(Assertions::assertNotNull);
+
+        List<String> responseBins = response.getList("cards.bin", String.class);
+        bins.forEach(bin -> assertThat(responseBins).contains(bin));
 
         long dbCount = cardJpaRepository.count();
-        assertEquals(10, dbCount);
+        assertThat(dbCount).isEqualTo(100);
     }
 
     @Test
