@@ -15,6 +15,7 @@ import java.util.List;
 import static com.processing.terminalsimulator.model.CardStatus.ACTIVE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
@@ -22,8 +23,8 @@ class GatewayClientTest {
 
     private GatewayClient gatewayClient;
     private MockRestServiceServer mockServer;
-    private static final String GATEWAY_URL = "http://gateway:8080/api/transactions";
-    private static final String CARD_MGMT_URL = "http://card-management:8080/api/cards";
+    private static final String GATEWAY_URL = "http://localhost:8080";
+    private static final String CARD_MGMT_URL = "http://localhost:8080";
 
     @BeforeEach
     void setUp() {
@@ -47,13 +48,13 @@ class GatewayClientTest {
                 }
                 """;
 
-        mockServer.expect(requestTo(GATEWAY_URL))
+        mockServer.expect(requestTo(GATEWAY_URL + "/api/transactions"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(content().json("{\"stan\":\"000001\"}"))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         AuthorizationResponse response = gatewayClient.sendToGateway(request);
-        assertThat(response.status()).isEqualTo("APPROVED");
+        assertEquals("APPROVED", response.status());
         mockServer.verify();
     }
 
@@ -74,20 +75,20 @@ class GatewayClientTest {
                 }
                 """;
 
-        mockServer.expect(requestTo(CARD_MGMT_URL + "?status=ACTIVE&limit=70"))
+        mockServer.expect(requestTo(CARD_MGMT_URL + "/api/cards?status=ACTIVE&limit=70"))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         List<Card> cards = gatewayClient.getCardsFromCardManager(ACTIVE, 70);
         assertThat(cards).hasSize(1);
-        assertThat(cards.get(0).pan()).isEqualTo("4000001234560001");
+        assertEquals("4000001234560001", cards.get(0).pan());
     }
 
     @Test
     void getCardsFromCardManager_whenResponseEmpty_shouldThrowException() {
         String responseJson = "{\"cards\":[], \"total\":0}";
 
-        mockServer.expect(requestTo(CARD_MGMT_URL + "?status=ACTIVE&limit=70"))
+        mockServer.expect(requestTo(CARD_MGMT_URL + "/api/cards?status=ACTIVE&limit=70"))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         assertThatThrownBy(() -> gatewayClient.getCardsFromCardManager(ACTIVE, 70))

@@ -74,9 +74,17 @@ public class DownstreamErrorFilter extends OncePerRequestFilter {
 
         objectMapper.writeValue(response.getWriter(), new ServiceUnavailableResponse(
                 "SERVICE_UNAVAILABLE",
-                serviceName + " service is temporarily unavailable",
+                capitalize(serviceName) + " service is temporarily unavailable",
                 serviceName
         ));
+    }
+
+    private String capitalize(String serviceName) {
+        if (serviceName == null || serviceName.isBlank()) {
+            return serviceName;
+        }
+
+        return serviceName.substring(0, 1).toUpperCase() + serviceName.substring(1);
     }
 
     private void rethrow(Exception exception) throws ServletException, IOException {

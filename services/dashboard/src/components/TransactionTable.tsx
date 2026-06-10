@@ -1,10 +1,27 @@
-import { hidePan, convertPenniesToRubles, formatTime } from '../utils/format.ts';
+import {hidePan, convertPenniesToRubles, formatTime} from '../utils/format.ts';
 import { getStatusIcon } from '../utils/statusIcon.ts';
 import {Filter, Transaction} from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
+import { ArrowDownToLine } from 'lucide-react';
+import {exportToCsv} from "../utils/exportToCsv.ts";
 import {Filters} from "./Filters.tsx";
 import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
+
+const mapTransactionToCsvRow = (tx: Transaction) => ({
+    'STAN': tx.stan,
+    'RRN': tx.rrn || '—',
+    'PAN': hidePan(tx.pan),
+    'Amount': tx.amount,
+    'Status': tx.status,
+    'Auth code': tx.authCode || '—',
+    'Terminal': `${tx.terminalId}${tx.terminalType ? ` (${tx.terminalType})` : ''}`,
+    'Merchant ID': tx.merchantId,
+    'MCC': tx.mcc,
+    'Acquirer ID': tx.acquirerId,
+    'Issuer ID': tx.issuerId || '—',
+    'Time': formatTime(tx.transmissionDateTime)
+});
 
 type TransactionTableProps = {
     liveTransactions: Transaction[],
@@ -16,13 +33,35 @@ type TransactionTableProps = {
 export function TransactionTable({ liveTransactions, error, loading, search }: TransactionTableProps){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
+    const handleExportCsv = () => {
+        const csvRows = displayedTransactions.map(mapTransactionToCsvRow);
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10);
+        const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+        const filename = `transactions_${dateStr}_${timeStr}.csv`;
+        exportToCsv(filename, csvRows);
+    };
+
     return (
         <div className="font-mono w-full">
             <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={search}/>
 
-            <h2 className="text-2xl font-bold mb-4 text-center drop-shadow-lg">
-                Последние 20 транзакций
-            </h2>
+            <div className="flex items-center justify-center gap-3 m-4">
+                <h2 className="text-2xl font-bold text-center drop-shadow-lg">
+                    Последние 20 транзакций
+                </h2>
+                <button
+                    className="
+                    px-5 py-1  text-lg rounded-3xl bg-emerald-400 font-semibold cursor-pointer
+                    hover:bg-emerald-500 hover:text-zinc-200 transition-colors duration-200
+                    flex items-center gap-1
+                    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-400 disabled:hover:text-white"
+                    onClick={handleExportCsv}
+                    disabled={displayedTransactions.length === 0} >
+                    <ArrowDownToLine size={16} strokeWidth={3} className="inline-block"/>
+                    CSV
+                </button>
+            </div>
 
             {error &&
                 <div className="text-center py-8 text-red-500">
