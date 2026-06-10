@@ -19,7 +19,7 @@ public class HealthController {
     public ResponseEntity<HealthResponse> health() {
         HealthResponse health = healthService.getDownstreamServicesHealth();
 
-        return health.status() == HealthStatus.OK ?
-                ResponseEntity.ok(health) : ResponseEntity.status(503).body(health);
+        return health.status() == HealthStatus.OK
+                ? ResponseEntity.ok(health) : ResponseEntity.status(503).body(health);
     }
 }
