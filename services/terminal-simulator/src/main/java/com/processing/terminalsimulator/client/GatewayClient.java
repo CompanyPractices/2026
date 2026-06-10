@@ -28,12 +28,14 @@ public class GatewayClient {
     }
 
     public AuthorizationResponse sendToGateway(AuthorizationRequest tx) {
-        ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl, tx, AuthorizationResponse.class);
+        ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl + "/api/transactions",
+                tx, AuthorizationResponse.class);
         return response.getBody();
     }
 
     public List<Card> getCardsFromCardManager(CardStatus status, int amount) {
-        String fullUrl = UriComponentsBuilder.fromUriString(cardManagementUrl)
+        String url = cardManagementUrl + "/api/cards";
+        String fullUrl = UriComponentsBuilder.fromUriString(url)
                 .queryParam("status", status)
                 .queryParam("limit", amount != 0 ? amount : null)
                 .build()
