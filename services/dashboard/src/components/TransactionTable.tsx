@@ -14,30 +14,30 @@ const CSV_HEADERS = [
     'STAN',
     'RRN',
     'PAN',
-    'Сумма (руб)',
-    'Статус',
-    'Код авторизации',
-    'Терминал',
-    'ID мерчанта',
+    'Amount (rub)',
+    'Status',
+    'Auth code',
+    'Terminal',
+    'Merchant ID',
     'MCC',
-    'ID эквайера',
-    'ID эмитента',
-    'Время'
+    'Acquirer ID',
+    'Issuer ID',
+    'Time'
 ];
 
 const mapTransactionToCsvRow = (tx: Transaction) => ({
     'STAN': tx.stan,
     'RRN': tx.rrn || '—',
     'PAN': hidePan(tx.pan),
-    'Сумма (руб)': convertPenniesToRublesCsv(tx.amount),
-    'Статус': tx.status,
-    'Код авторизации': tx.authCode || '—',
-    'Терминал': `${tx.terminalId}${tx.terminalType ? ` (${tx.terminalType})` : ''}`,
-    'ID мерчанта': tx.merchantId,
+    'Amount (rub)': convertPenniesToRublesCsv(tx.amount),
+    'Status': tx.status,
+    'Auth code': tx.authCode || '—',
+    'Terminal': `${tx.terminalId}${tx.terminalType ? ` (${tx.terminalType})` : ''}`,
+    'Merchant ID': tx.merchantId,
     'MCC': tx.mcc,
-    'ID эквайера': tx.acquirerId,
-    'ID эмитента': tx.issuerId || '—',
-    'Время': formatTime(tx.transmissionDateTime)
+    'Acquirer ID': tx.acquirerId,
+    'Issuer ID': tx.issuerId || '—',
+    'Time': formatTime(tx.transmissionDateTime)
 });
 
 type TransactionTableProps = {
@@ -61,7 +61,10 @@ export function TransactionTable({ liveTransactions }: TransactionTableProps){
 
     const handleExportCsv = () => {
         const csvRows = displayedTransactions.map(mapTransactionToCsvRow);
-        const filename = `transactions_${new Date().toISOString().slice(0, 10)}.csv`;
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10);
+        const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+        const filename = `transactions_${dateStr}_${timeStr}.csv`;
         exportToCsv(filename, csvRows, CSV_HEADERS);
     };
 
@@ -69,7 +72,7 @@ export function TransactionTable({ liveTransactions }: TransactionTableProps){
         <div className="font-mono w-full">
             <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={searchTransactions}/>
 
-            <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="flex items-center justify-center gap-3 m-4">
                 <h2 className="text-2xl font-bold text-center drop-shadow-lg">
                     Последние 20 транзакций
                 </h2>

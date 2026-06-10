@@ -4,23 +4,23 @@ export const exportToCsv = (filename: string, rows: object[], headers?: string[]
         return;
     }
 
-    const separator = ',';
+    const separator = ';';
     const keys = Object.keys(rows[0] as Record<string, unknown>);
     const columnHeaders = headers ?? keys;
 
     const csvContent =
-        'sep=,\n' +
+        'sep=;\n' +
         columnHeaders.join(separator) + '\n' +
         rows.map(row => {
             return keys.map(k => {
                 const value = (row as Record<string, unknown>)[k];
-                let cell = value === null || value === undefined
-                    ? ''
-                    : String(value).replace(/"/g, '""');
 
-                if (cell.search(/("|,|\n)/g) >= 0) {
-                    cell = `"${cell}"`;
+                let cell = value === null || value === undefined ? '' : String(value).replace(/"/g, '""');
+
+                if (cell !== '') {
+                    cell = `="${cell}"`;
                 }
+
                 return cell;
             }).join(separator);
         }).join('\n');
