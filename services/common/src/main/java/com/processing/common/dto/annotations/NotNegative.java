@@ -1,15 +1,17 @@
 package com.processing.common.dto.annotations;
 
+import com.processing.common.dto.annotations.validators.NotNegativeValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
-import jakarta.validation.constraints.Min;
 
 import java.lang.annotation.*;
 
-@Min(0)
+/**
+ * Checks that number value is not negative
+ */
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {})
+@Constraint(validatedBy = NotNegativeValidator.class)
 @Documented
 public @interface NotNegative {
 

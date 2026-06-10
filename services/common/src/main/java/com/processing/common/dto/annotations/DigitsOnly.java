@@ -1,15 +1,17 @@
 package com.processing.common.dto.annotations;
 
+import com.processing.common.dto.annotations.validators.DigitsOnlyValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
-import jakarta.validation.constraints.Pattern;
 
 import java.lang.annotation.*;
 
-@Pattern(regexp = "^\\d*$")
+/**
+ * Checks if String value can contain only digits
+ */
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {})
+@Constraint(validatedBy = DigitsOnlyValidator.class)
 @Documented
 public @interface DigitsOnly {
 
