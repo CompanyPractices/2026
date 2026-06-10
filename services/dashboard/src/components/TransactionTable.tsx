@@ -3,27 +3,25 @@ import { getStatusIcon } from '../utils/statusIcon.ts';
 import { Transaction } from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
-import {useWebSocket} from "../hooks/useWebSocket.ts";
-import useTransactions from "../hooks/useTransactions.ts"
+import useTransactions from "../hooks/useTransactions.ts";
 import {Filters} from "./Filters.tsx";
 import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
 
-export function TransactionTable(){
+type TransactionTableProps = {
+    liveTransactions: Transaction[],
+};
+
+export function TransactionTable({ liveTransactions }: TransactionTableProps){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
     const { transactions: initialTransactions, loading, error, searchTransactions } = useTransactions();
-    const { liveTransactions } = useWebSocket();
 
     const allTransactions = [
-        ...liveTransactions || [],
+        ...liveTransactions,
         ...(initialTransactions || []),
     ];
 
     const uniqueTransactions = allTransactions.filter((tx, index, self) =>
         index === self.findIndex(t => t.id === tx.id)
-    );
-
-    uniqueTransactions.sort((a, b) =>
-        new Date(b.transmissionDateTime).getTime() - new Date(a.transmissionDateTime).getTime()
     );
 
     const displayedTransactions = uniqueTransactions.slice(0, 20);
