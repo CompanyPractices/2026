@@ -3,18 +3,18 @@ package com.processing.e2e;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.processing.e2e.ulility.HttpUtils;
+import com.processing.e2e.utility.HttpUtils;
 import io.restassured.RestAssured;
 import org.testng.annotations.BeforeClass;
 
 public abstract class E2EBaseTest {
-    protected static final String GATEWAY_URL       = "";
-    protected static final String CARD_MGMT_URL     = "";
-    protected static final String SWITCH_URL        = "";
-    protected static final String AUTH_URL          = "";
-    protected static final String TERMINAL_SIM_URL  = "";
-    protected static final String MERCHANT_SIM_URL  = "";
-    protected static final String LOGGER_URL        = "";
+    protected static final String GATEWAY_URL       = "http://localhost:8080";
+    protected static final String CARD_MGMT_URL     = "http://localhost:8081";
+    protected static final String SWITCH_URL        = "http://localhost:8082";
+    protected static final String AUTH_URL          = "http://localhost:8083";
+    protected static final String TERMINAL_SIM_URL  = "http://localhost:8085";
+    protected static final String MERCHANT_SIM_URL  = "http://localhost:8086";
+    protected static final String LOGGER_URL        = "http://localhost:8088";
 
     protected final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
