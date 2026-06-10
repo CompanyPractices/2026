@@ -1,7 +1,7 @@
 package com.processing.cardmanagement.repositories;
 
 import com.processing.cardmanagement.models.Card;
-import com.processing.common.dto.cardmanagement.CardStatus;
+import com.processing.cardmanagement.models.CardStatus;
 import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
@@ -15,6 +15,7 @@ public interface CardRepository {
     /**
      * Возвращает список карт с фильтрацией и пагинацией
      * Параметры фильтрации опциональны, если передается null - фильтр по этому полю не применяется
+     *
      * @return список карт
      */
     List<Card> findCards(
@@ -29,6 +30,7 @@ public interface CardRepository {
 
     /**
      * Возвращает количество карт с применением фильтров
+     *
      * @return количество карт
      */
     long countCards(

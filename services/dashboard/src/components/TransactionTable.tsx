@@ -1,21 +1,49 @@
 import { hidePan, convertPenniesToRubles, formatTime } from '../utils/format.ts';
 import { getStatusIcon } from '../utils/statusIcon.ts';
-import {Transaction} from "../types";
+import { Transaction } from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
-import useTransactions from "../hooks/useTransactions.ts"
+import {useWebSocket} from "../hooks/useWebSocket.ts";
+import useTransactions from "../hooks/useTransactions.ts";
 
 export function TransactionTable(){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-    const {transactions, error, loading} = useTransactions();
-    if (error){
-        return <div>Ошибка загрузки транзакций: {error}</div>
+    const { transactions: initialTransactions, loading, error } = useTransactions();
+    const { liveTransactions } = useWebSocket();
+
+    const allTransactions = [
+        ...liveTransactions,
+        ...(initialTransactions || []),
+    ];
+
+    const uniqueTransactions = allTransactions.filter((tx, index, self) =>
+        index === self.findIndex(t => t.id === tx.id)
+    );
+
+    const displayedTransactions = uniqueTransactions.slice(0, 20);
+
+    if (loading && liveTransactions.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Загрузка транзакций...
+            </div>
+        );
     }
-    if (loading){
-        return <div>Загрузка транзакций...</div>
+
+    if (error && liveTransactions.length === 0) {
+        return (
+            <div className="text-center py-8 text-red-500">
+                Ошибка загрузки транзакций: {error}
+            </div>
+        );
     }
-    if (!transactions){
-        return <div>Транзакций не найдено</div>
+
+    if (displayedTransactions.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Ожидание первых транзакций...
+            </div>
+        );
     }
 
     return (
@@ -24,7 +52,7 @@ export function TransactionTable(){
                 Последние 20 транзакций
             </h2>
 
-            <div className="rounded-3xl border-2 border-emerald-600 shadow-lg mb-5">
+            <div className="rounded-3xl overflow-hidden border-2 border-emerald-600 shadow-lg mb-5">
 
                 <div className="overflow-x-auto">
 
@@ -39,7 +67,7 @@ export function TransactionTable(){
                         </tr>
                         </thead>
                         <tbody>
-                        {transactions.map((transaction) => {
+                        {displayedTransactions.map((transaction) => {
                             const statusIconData = getStatusIcon(transaction.status);
 
                             return (
