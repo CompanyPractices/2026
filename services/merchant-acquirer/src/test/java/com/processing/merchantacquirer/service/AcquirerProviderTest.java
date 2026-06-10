@@ -58,26 +58,26 @@ public class AcquirerProviderTest {
     void getFee(){
         long amount = 139_999;
         String stan = "000004";
-        String rrn = "616113423602";
+        String transmissionDateTime = "2026-06-10T18:19:25.843989500";
         String terminalId = "TERM001";
         Long fee = amount * 67 / 1000;
 
-        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(rrn, stan, terminalId);
-        when(repository.findByRrnAndStanAndTerminalId(rrn, stan, terminalId)).thenReturn(new AcquirerFee(rrn, stan, terminalId, fee));
+        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(transmissionDateTime, null, stan, null, terminalId);
+        when(repository.findByTransmissionDateTimeAndStanAndTerminalId(transmissionDateTime, stan, terminalId)).thenReturn(new AcquirerFee(transmissionDateTime, stan, terminalId, fee));
 
         AcquirerFeeResponse acquirerFeeResponse = acquirerProvider.getAcquirerFee(acquirerFeeRequest);
 
-        assertEquals(rrn, acquirerFeeResponse.rrn());
+        assertEquals(transmissionDateTime, acquirerFeeResponse.transmissionDateTime());
         assertEquals(stan, acquirerFeeResponse.stan());
         assertEquals(fee, acquirerFeeResponse.acquirerFee());
     }
 
     @Test
     void getUnrealFeeInMap() {
-        String pan = "4444445808467586";
+        String transmissionDateTime = "2026-06-10T18:19:25.843989500";
         String stan = "000004";
         String terminalId = "TERM001";
-        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(stan, pan, terminalId);
+        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(transmissionDateTime, null, stan, null, terminalId);
 
         assertThrows(NullPointerException.class,
                 () -> acquirerProvider.getAcquirerFee(acquirerFeeRequest));
