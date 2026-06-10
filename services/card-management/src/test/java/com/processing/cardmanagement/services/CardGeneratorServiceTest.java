@@ -26,7 +26,7 @@ public class CardGeneratorServiceTest {
     private final Faker faker = new Faker();
 
     @Mock
-    private CardUseCase cardService;
+    private CardService cardService;
 
     private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
         1_000_000,
@@ -60,7 +60,7 @@ public class CardGeneratorServiceTest {
                 faker.numerify("################"),
                 dto.bin(),
                 faker.name().fullName().toUpperCase(),
-                "0629",
+                YearMonth.now().plusYears(3),
                 dto.status(),
                 "643",
                 dto.dailyLimit(),
