@@ -2,14 +2,11 @@ package com.processing.gateway.integration;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.jayway.jsonpath.JsonPath;
-import org.assertj.core.api.AssertionsForClassTypes;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -54,6 +51,11 @@ public class GatewayRoutingIntegrationTest {
     @RegisterExtension
     static WireMockExtension cardWm = WireMockExtension.newInstance()
             .options(wireMockConfig().port(8081))
+            .build();
+
+    @RegisterExtension
+    static WireMockExtension wrongWm = WireMockExtension.newInstance()
+            .options(wireMockConfig().port(9666))
             .build();
 
     @Autowired
@@ -219,6 +221,116 @@ public class GatewayRoutingIntegrationTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(responseBody);
+    }
+
+    // Negative Tests for Routing
+
+    @Test
+    void shouldNotRouteToNotSwitch() {
+        // Arrange
+        String internalUri = "/api/internal/transactions";
+        String publicUri = "/api/transactions";
+        String requestBody = validTransactionRequest();
+
+        wrongWm.stubFor(post(urlEqualTo(internalUri))
+                .withRequestBody(equalToJson(requestBody))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(publicUri, requestBody, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotRouteToNotTerminal() {
+        // Arrange
+        String uri = "/api/simulator/terminal/run";
+        String requestBody = """
+                {
+                  "count": 50,
+                  "scenario": "normal"
+                }
+                """;
+
+        wrongWm.stubFor(post(urlEqualTo(uri))
+                .withRequestBody(equalToJson(requestBody))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(uri, requestBody, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotRouteToNotMerchant() {
+        // Arrange
+        String uri = "/api/simulator/merchant/run";
+        String requestBody = """
+                {
+                  "count": 50,
+                  "scenario": "normal"
+                }
+                """;
+
+        wrongWm.stubFor(post(urlEqualTo(uri))
+                .withRequestBody(equalToJson(requestBody))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(uri, requestBody, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotRouteToNotLogger() {
+        // Arrange
+        String uri = "/api/dashboard/stats";
+
+        wrongWm.stubFor(get(urlEqualTo(uri))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.getForEntity(uri, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotRouteToNotCardManagement() {
+        // Arrange
+        String uri = "/api/cards";
+        String requestBody = """
+                {
+                  "bin": "400000",
+                  "cardholderName": "IVAN IVANOV",
+                  "currencyCode": "643",
+                  "dailyLimit": 15000000,
+                  "monthlyLimit": 300000000,
+                  "initialBalance": 100000000
+                }
+                """;
+
+        wrongWm.stubFor(post(urlEqualTo(uri))
+                .withRequestBody(equalToJson(requestBody))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(uri, requestBody, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     private String validTransactionRequest() {
