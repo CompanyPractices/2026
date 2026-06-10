@@ -2,52 +2,63 @@ package com.processing.merchantacquirer.client;
 
 import com.processing.merchantacquirer.client.dto.CardsRequest;
 import com.processing.merchantacquirer.client.dto.CardsResponse;
-import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
-import com.processing.merchantacquirer.domain.model.AuthorizationResponse;
 import com.processing.merchantacquirer.exception.ExternalServiceException;
-import lombok.RequiredArgsConstructor;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 @Component
-@RequiredArgsConstructor
 public class GatewayClient {
-    private final RestTemplate restTemplate = new RestTemplate();
-    public final String gatewayUrl = "http://gateway:8080";
+  private final RestClient restClient;
 
-    public CardsResponse getCards(CardsRequest request) {
-        String url = gatewayUrl + "/api/cards";
-        if (request.limit() > 0) {
-            url += "?limit=" + request.limit();
-        }
-        try {
-            return restTemplate.getForEntity(url, CardsResponse.class).getBody();
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
-            throw ExternalServiceException.fromResponse(ex);
-        } catch (Exception ex) {
-            throw new ExternalServiceException(
-                    "Card management",
-                    ex.getMessage(),
-                    "0"
-            );
-        }
+  public GatewayClient(RestClient.Builder builder, @Value("${gateway.url}") String gatewayUrl) {
+      this.restClient = builder.baseUrl(gatewayUrl).build();
+  }
+
+  public CardsResponse getCards(CardsRequest request) {
+    try {
+      return restClient.get()
+              .uri(uriBuilder -> {
+                uriBuilder.path("/api/cards");
+                if (request.limit() > 0) {
+                    uriBuilder.queryParam("limit", request.limit());
+                }
+                if (request.offset() > 0) {
+                    uriBuilder.queryParam("offset", request.offset());
+                }
+                if (request.status() != null) {
+                  uriBuilder.queryParam("status", request.status());
+                }
+                if (request.bin() != null) {
+                  uriBuilder.queryParam("bin", request.status());
+                }
+                return uriBuilder.build();
+              })
+              .retrieve()
+              .body(CardsResponse.class);
+    } catch (HttpClientErrorException | HttpServerErrorException ex) {
+      throw ExternalServiceException.fromResponse(ex);
+    } catch (Exception ex) {
+      throw new ExternalServiceException("Card management", ex.getMessage(), "0");
     }
+  }
 
-    public AuthorizationResponse processAuthorize(AuthorizationRequest authorizationRequest) {
-        String url = gatewayUrl + "/api/transactions";
-        try {
-            return restTemplate.postForEntity(url, authorizationRequest, AuthorizationResponse.class).getBody();
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
-            throw ExternalServiceException.fromResponse(ex);
-        } catch (Exception ex) {
-            throw new ExternalServiceException(
-                    "API Gateway",
-                    ex.getMessage(),
-                    "0"
-            );
-        }
-
+  public AuthorizationResponse processAuthorize(AuthorizationRequest authorizationRequest) {
+    try {
+      return restClient
+          .post()
+              .uri("/api/transactions")
+              .body(authorizationRequest)
+              .retrieve()
+              .body(AuthorizationResponse.class);
+    } catch (HttpClientErrorException | HttpServerErrorException ex) {
+      throw ExternalServiceException.fromResponse(ex);
+    } catch (Exception ex) {
+      throw new ExternalServiceException("API Gateway", ex.getMessage(), "0");
     }
+  }
 }
