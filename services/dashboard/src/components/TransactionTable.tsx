@@ -1,4 +1,4 @@
-import { hidePan, convertPenniesToRubles, formatTime } from '../utils/format.ts';
+import {hidePan, convertPenniesToRubles, formatTime, convertPenniesToRublesCsv} from '../utils/format.ts';
 import { getStatusIcon } from '../utils/statusIcon.ts';
 import { Transaction } from "../types";
 import { useState } from 'react';
@@ -6,6 +6,37 @@ import { TransactionModal } from './TransactionModal';
 import {useWebSocket} from "../hooks/useWebSocket.ts";
 import useTransactions from "../hooks/useTransactions.ts";
 import { ArrowDownToLine } from 'lucide-react';
+import {exportToCsv} from "../utils/exportToCsv.ts";
+
+const CSV_HEADERS = [
+    'STAN',
+    'RRN',
+    'PAN',
+    'Сумма (руб)',
+    'Статус',
+    'Код авторизации',
+    'Терминал',
+    'ID мерчанта',
+    'MCC',
+    'ID эквайера',
+    'ID эмитента',
+    'Время'
+];
+
+const mapTransactionToCsvRow = (tx: Transaction) => ({
+    'STAN': tx.stan,
+    'RRN': tx.rrn || '—',
+    'PAN': hidePan(tx.pan),
+    'Сумма (руб)': convertPenniesToRublesCsv(tx.amount),
+    'Статус': tx.status,
+    'Код авторизации': tx.authCode || '—',
+    'Терминал': `${tx.terminalId}${tx.terminalType ? ` (${tx.terminalType})` : ''}`,
+    'ID мерчанта': tx.merchantId,
+    'MCC': tx.mcc,
+    'ID эквайера': tx.acquirerId,
+    'ID эмитента': tx.issuerId || '—',
+    'Время': formatTime(tx.transmissionDateTime)
+});
 
 export function TransactionTable(){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
@@ -47,13 +78,26 @@ export function TransactionTable(){
         );
     }
 
+    const handleExportCsv = () => {
+        const csvRows = displayedTransactions.map(mapTransactionToCsvRow);
+        const filename = `transactions_${new Date().toISOString().slice(0, 10)}.csv`;
+        exportToCsv(filename, csvRows, CSV_HEADERS);
+    };
+
     return (
         <div className="font-mono w-full">
             <div className="flex items-center justify-center gap-3 mb-4">
                 <h2 className="text-2xl font-bold text-center drop-shadow-lg">
                     Последние 20 транзакций
                 </h2>
-                <button className='px-5 py-1  text-lg rounded-3xl bg-emerald-400 font-semibold cursor-pointer hover:bg-emerald-500 hover:text-zinc-200 transition-colors duration-200 flex items-center gap-1' >
+                <button
+                    className="
+                    px-5 py-1  text-lg rounded-3xl bg-emerald-400 font-semibold cursor-pointer
+                    hover:bg-emerald-500 hover:text-zinc-200 transition-colors duration-200
+                    flex items-center gap-1
+                    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-400 disabled:hover:text-white"
+                    onClick={handleExportCsv}
+                    disabled={displayedTransactions.length === 0} >
                     <ArrowDownToLine size={16} strokeWidth={3} className="inline-block"/>
                     CSV
                 </button>

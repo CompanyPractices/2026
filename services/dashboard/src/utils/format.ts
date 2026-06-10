@@ -13,6 +13,10 @@ export const convertPenniesToRubles = (pennies: number): string => {
     }).replace(',', '.') + ' ₽';
 };
 
+export const convertPenniesToRublesCsv = (pennies: number) => {
+    return pennies / 100;
+}
+
 export const formatTime = (iso: string): string => {
     return formatInTimeZone(iso, 'UTC','HH:mm:ss');
 };
