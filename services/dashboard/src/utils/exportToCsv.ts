@@ -1,20 +1,23 @@
-export const exportToCsv = (filename: string, rows: object[], headers: string[]): void => {
+export const exportToCsv = (filename: string, rows: Record<string, unknown>[]): void => {
     if (!rows || !rows.length) {
         console.warn('Нет данных для экспорта');
         return;
     }
 
     const separator = ';';
-    const keys = Object.keys(rows[0] as Record<string, unknown>);
+
+    const keys = Object.keys(rows[0]);
 
     const csvContent =
         'sep=;\n' +
-        headers.join(separator) + '\n' +
+        keys.join(separator) + '\n' +
         rows.map(row => {
             return keys.map(k => {
-                const value = (row as Record<string, unknown>)[k];
+                const value = row[k];
 
-                let cell = value === null || value === undefined ? '' : String(value).replace(/"/g, '""');
+                let cell = value === null || value === undefined
+                    ? ''
+                    : String(value).replace(/"/g, '""');
 
                 if (cell !== '') {
                     cell = `="${cell}"`;
@@ -35,4 +38,4 @@ export const exportToCsv = (filename: string, rows: object[], headers: string[])
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-}
+};

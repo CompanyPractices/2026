@@ -1,4 +1,4 @@
-import {hidePan, convertPenniesToRubles, formatTime, convertPenniesToRublesCsv} from '../utils/format.ts';
+import {hidePan, convertPenniesToRubles, formatTime} from '../utils/format.ts';
 import { getStatusIcon } from '../utils/statusIcon.ts';
 import { Transaction } from "../types";
 import { useState } from 'react';
@@ -8,22 +8,6 @@ import { ArrowDownToLine } from 'lucide-react';
 import {exportToCsv} from "../utils/exportToCsv.ts";
 import {Filters} from "./Filters.tsx";
 import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
-
-
-const CSV_HEADERS = [
-    'STAN',
-    'RRN',
-    'PAN',
-    'Amount (rub)',
-    'Status',
-    'Auth code',
-    'Terminal',
-    'Merchant ID',
-    'MCC',
-    'Acquirer ID',
-    'Issuer ID',
-    'Time'
-];
 
 const mapTransactionToCsvRow = (tx: Transaction) => ({
     'STAN': tx.stan,
@@ -65,7 +49,7 @@ export function TransactionTable({ liveTransactions }: TransactionTableProps){
         const dateStr = now.toISOString().slice(0, 10);
         const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
         const filename = `transactions_${dateStr}_${timeStr}.csv`;
-        exportToCsv(filename, csvRows, CSV_HEADERS);
+        exportToCsv(filename, csvRows);
     };
 
     return (
