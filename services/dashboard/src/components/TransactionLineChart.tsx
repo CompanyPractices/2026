@@ -1,4 +1,4 @@
-import { LineChart, CartesianGrid, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts'
+import { LineChart, CartesianGrid, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { Transaction } from '../types/index.ts'
 import { format, getHours } from 'date-fns';
 
@@ -50,19 +50,27 @@ export default function TransactionLineChart({transactions, loading, error} : Li
         <ResponsiveContainer width="80%" height={300} className="mx-auto my-auto" >
             <LineChart
                 data = {txData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
             >
-                <CartesianGrid strokeDasharray="3 3"/>
+                <CartesianGrid strokeDasharray="3 3" stroke="silver"/>
                 <XAxis
                     dataKey="name"
-                    stroke="red"
+                    stroke="darkSlateGray"
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
                 />
                 <YAxis
                     dataKey="count"
-                    stroke="blue"
+                    stroke="darkSlateGray"
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
                 />
+                <Tooltip/>
                 <Line
                     type="monotone"
                     dataKey="count"
+                    stroke="green"
+                    animationDuration={2000}
                 />
             </LineChart>
         </ResponsiveContainer>
