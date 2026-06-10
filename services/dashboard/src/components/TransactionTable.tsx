@@ -34,7 +34,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
     const handleExportCsv = () => {
-        const csvRows = displayedTransactions.map(mapTransactionToCsvRow);
+        const csvRows = liveTransactions.map(mapTransactionToCsvRow);
         const now = new Date();
         const dateStr = now.toISOString().slice(0, 10);
         const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
@@ -57,7 +57,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                     flex items-center gap-1
                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-400 disabled:hover:text-white"
                     onClick={handleExportCsv}
-                    disabled={displayedTransactions.length === 0} >
+                    disabled={liveTransactions.length === 0} >
                     <ArrowDownToLine size={16} strokeWidth={3} className="inline-block"/>
                     CSV
                 </button>
