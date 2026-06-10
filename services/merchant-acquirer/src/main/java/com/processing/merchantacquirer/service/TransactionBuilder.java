@@ -11,13 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TransactionBuilder {
   private final AuthorizationRequestFactory authorizationRequestFactory;
-  private final AcquirerProvider acquirerProvider;
+  public final AcquirerProvider acquirerProvider;
   private final Random random = new Random();
 
   public List<AuthorizationRequest> build(
@@ -36,7 +38,10 @@ public class TransactionBuilder {
       AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
               card.pan(), card.currencyCode(), amount, terminal, merchant);
       requests.add(authorizationRequest);
-      acquirerProvider.calculateFee(merchant, amount, authorizationRequest.stan(), card.pan(), terminal.getId());
+      log.info(String.valueOf(authorizationRequest));
+      acquirerProvider.calculateFee(
+              authorizationRequest.merchantId(), authorizationRequest.amount(), authorizationRequest.transmissionDateTime(),
+              authorizationRequest.stan(), authorizationRequest.terminalId());
     }
 
     return requests;

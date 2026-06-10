@@ -1,10 +1,10 @@
 package com.processing.merchantacquirer.repository;
 
-import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
+import com.processing.merchantacquirer.domain.entity.AcquirerFee;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-
-public interface AcquirerFeeRepository {
-    void save(AcquirerFeeRequest key, BigDecimal amount);
-    BigDecimal get(AcquirerFeeRequest key);
+@Repository
+public interface AcquirerFeeRepository extends JpaRepository<AcquirerFee, Long> {
+    AcquirerFee findByTransmissionDateTimeAndStanAndTerminalId(String transmissionDateTime, String stan, String terminalId);
 }

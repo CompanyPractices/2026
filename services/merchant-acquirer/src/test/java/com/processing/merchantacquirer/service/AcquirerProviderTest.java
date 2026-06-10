@@ -2,59 +2,72 @@ package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeResponse;
+import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
-import com.processing.merchantacquirer.repository.InMemoryAcquirerFeeRepository;
+import com.processing.merchantacquirer.repository.AcquirerFeeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-
-import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AcquirerProviderTest {
     private AcquirerProvider acquirerProvider;
-    private InMemoryAcquirerFeeRepository repository;
+    private MerchantProvider merchantProvider;
+    private AcquirerFeeRepository repository;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryAcquirerFeeRepository();
-        acquirerProvider = new AcquirerProvider(repository);
+        merchantProvider = Mockito.mock(MerchantProvider.class);
+        repository = Mockito.mock(AcquirerFeeRepository.class);
+        acquirerProvider = new AcquirerProvider(repository, merchantProvider);
     }
 
     @Test
     void calculateFee(){
-        Merchant merchant = Mockito.mock(Merchant.class);
-        when(merchant.getAcquiringFee()).thenReturn(new BigDecimal("0.067"));
+        Merchant merchant = new Merchant(
+                "MERCH00000000007",
+                "Ашан Сити",
+                "5411",
+                "grocery",
+                "ACQ003",
+                15L,
+                145000);
 
-        long amount = 139_999;
-        String pan = "4444445808467586";
+        when(merchantProvider.getMerchantAcquirerFee(merchant.getAcquirerId())).thenReturn(67L);
+
+        long amount = 1399_99;
         String stan = "000004";
+        String rrn = "616113423602";
         String terminalId = "TERM001";
-        BigDecimal expected = new BigDecimal((double) amount / 10 * 0.067);
+        Long expected = amount * 67 / 1000;
 
-        acquirerProvider.calculateFee(merchant, amount, stan, pan, terminalId);
+        acquirerProvider.calculateFee(merchant.getAcquirerId(), amount, rrn, stan, terminalId);
+        ArgumentCaptor<AcquirerFee> feeCaptor = ArgumentCaptor.forClass(AcquirerFee.class);
 
-        AcquirerFeeRequest expectedRequest = new AcquirerFeeRequest(stan, pan, terminalId);
-        assertEquals(expected, repository.get(expectedRequest));
+        verify(repository).save(feeCaptor.capture());
+        AcquirerFee capturedFee = feeCaptor.getValue();
+        assertEquals(expected, capturedFee.getAcquirerFee());
     }
 
     @Test
     void getFee(){
-        int amount = 139_999;
-        String pan = "4444445808467586";
+        long amount = 139_999;
         String stan = "000004";
+        String rrn = "616113423602";
         String terminalId = "TERM001";
-        BigDecimal fee = new BigDecimal(amount * 0.067);
+        Long fee = amount * 67 / 1000;
 
-        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(stan, pan, terminalId);
-        repository.save(acquirerFeeRequest, fee);
+        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(rrn, stan, terminalId);
+        when(repository.findByRrnAndStanAndTerminalId(rrn, stan, terminalId)).thenReturn(new AcquirerFee(rrn, stan, terminalId, fee));
 
         AcquirerFeeResponse acquirerFeeResponse = acquirerProvider.getAcquirerFee(acquirerFeeRequest);
 
-        assertEquals(pan, acquirerFeeResponse.pan());
+        assertEquals(rrn, acquirerFeeResponse.rrn());
         assertEquals(stan, acquirerFeeResponse.stan());
         assertEquals(fee, acquirerFeeResponse.acquirerFee());
     }
