@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.services;
 
+import com.processing.cardmanagement.events.domain.*;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
@@ -25,6 +26,7 @@ public class CardServiceImpl implements CardService {
     private final CardServiceSettings settings;
     private final CardServiceDefaults defaults;
     private final PanGenerator panGenerator;
+    private final CardServiceEventListener eventListener;
 
     public Card createCard(
         String bin,
@@ -34,13 +36,6 @@ public class CardServiceImpl implements CardService {
         long monthlyLimit,
         long initialBalance
     ) {
-        log.info(
-            "Creating a new card. Holder: {}, BIN: {}, Currency: {}",
-            cardholderName,
-            bin,
-            currencyCode
-        );
-
         var draft = new CardDraft(
             bin,
             cardholderName,
@@ -58,18 +53,11 @@ public class CardServiceImpl implements CardService {
             draft
         ));
 
-        log.info(
-            "Card successfully created. ID: {}, PAN: {}",
-            savedCard.id(),
-            maskPan(savedCard.pan())
-        );
-
+        eventListener.onEvent(new CardServiceCreationEvent(1));
         return savedCard;
     }
 
     public List<Card> createCards(List<CardDraft> data) {
-        log.info("Bulk creating cards. Count: {}", data.size());
-
         var entities = data
             .stream()
             .map(draft -> Card.fromDraft(
@@ -81,15 +69,14 @@ public class CardServiceImpl implements CardService {
             .toList();
 
         var saved = cardRepository.saveAll(entities);
-        log.info("Bulk creation completed. Successfully saved {} cards", saved.size());
+        eventListener.onEvent(new CardServiceCreationEvent(saved.size()));
         return saved;
     }
 
     public Card getCard(String pan) {
-        log.debug("Fetching card by PAN: {}", maskPan(pan));
         return cardRepository
             .findByPan(pan)
-            .orElseThrow(() -> new CardNotFoundException(maskPan(pan)));
+            .orElseThrow(() -> new CardNotFoundException(pan));
     }
 
     public List<Card> getCards(
@@ -101,12 +88,6 @@ public class CardServiceImpl implements CardService {
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
     ) {
-        log.debug(
-            "Filtering cards. Status: {}, BIN: {}, Limit: {}",
-            status,
-            bin,
-            limit
-        );
         return cardRepository.findCards(
             limit != null ? limit : defaults.pageLimit(),
             offset != null ? offset : defaults.pageOffset(),
@@ -125,13 +106,6 @@ public class CardServiceImpl implements CardService {
         @Nullable Long monthlyLimit,
         @Nullable Long availableBalance
     ) {
-        log.info(
-            "Patching card PAN: {}. New status: {}, New daily limit: {}",
-            maskPan(pan),
-            status,
-            dailyLimit
-        );
-
         var card = getCard(pan);
         var saved = cardRepository.save(
             card.withData(
@@ -141,25 +115,21 @@ public class CardServiceImpl implements CardService {
                 availableBalance != null ? availableBalance : card.availableBalance()
             )
         );
-        log.info("Card PAN: {} successfully updated", maskPan(pan));
+
+        eventListener.onEvent(new CardServicePatchEvent(maskPan(pan)));
         return saved;
     }
 
     public void deleteCard(String pan) {
-        log.info("Initiating deletion/block for card PAN: {}", maskPan(pan));
-
         cardRepository.save(getCard(pan).deleted());
-        log.info("Card PAN: {} status changed to DELETED", maskPan(pan));
+        eventListener.onEvent(new CardServiceDeletionEvent(maskPan(pan)));
     }
 
-    public long countCards() {
-        log.debug("Initiating counting cards");
-        var cardsAmount = cardRepository.countCards();
-        log.debug("Found {} cards in repository", cardsAmount);
-        return cardsAmount;
+    public long countCardsFiltered() {
+        return cardRepository.countCards();
     }
 
-    public long countCards(
+    public long countCardsFiltered(
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
@@ -176,14 +146,8 @@ public class CardServiceImpl implements CardService {
     }
 
     public Card reserve(String pan, long amount) {
-        log.info("Reserving amount: {} for card PAN: {}", amount, maskPan(pan));
         var reserved = cardRepository.save(getCard(pan).withReserved(amount));
-        log.info(
-            "Successfully reserved {} for card PAN: {}. New balance: {}",
-            amount,
-            maskPan(pan),
-            reserved.availableBalance()
-        );
+        eventListener.onEvent(new CardServiceReserveEvent(maskPan(pan), amount));
         return reserved;
     }
 

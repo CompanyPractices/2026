@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.services;
 
+import com.processing.cardmanagement.events.domain.CardServiceEventListener;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.cardmanagement.models.Card;
@@ -66,6 +67,9 @@ public final class CardServiceTest {
     @Mock
     private CardRepository cardRepository;
 
+    @Mock
+    private CardServiceEventListener eventListener;
+
     private CardService cardService;
 
     @BeforeEach
@@ -74,7 +78,8 @@ public final class CardServiceTest {
             cardRepository,
             settings,
             defaults,
-            panGenerator
+            panGenerator,
+            eventListener
         );
     }
 
@@ -208,7 +213,7 @@ public final class CardServiceTest {
             endDate
         )).thenReturn(amount);
 
-        var count = cardService.countCards(
+        var count = cardService.countCardsFiltered(
             status,
             bin,
             issuerId,
@@ -222,7 +227,7 @@ public final class CardServiceTest {
     void testCountCards() {
         var returnValue = 1L;
         when(cardRepository.countCards()).thenReturn(returnValue);
-        assertEquals(returnValue, cardService.countCards());
+        assertEquals(returnValue, cardService.countCardsFiltered());
     }
 
     @Test
