@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 public class TransactionServiceIntegrationTest {
@@ -41,8 +42,8 @@ public class TransactionServiceIntegrationTest {
         filter.setPan("4000000000000001");
         TransactionSearchResponse result = transactionService.search(filter);
 
-        assertThat(result.total()).isEqualTo(1);
-        assertThat(result.transactions().get(0).pan()).isEqualTo("4000000000000001");
+        assertEquals(1, result.total());
+        assertEquals("4000000000000001", result.transactions().get(0).pan());
     }
 
     @Test
@@ -55,8 +56,8 @@ public class TransactionServiceIntegrationTest {
         TransactionSearchResponse result = transactionService.search(filter);
 
 
-        assertThat(result.total()).isEqualTo(1);
-        assertThat(result.transactions().get(0).status()).isEqualTo(TransactionStatus.APPROVED);
+        assertEquals(1, result.total());
+        assertEquals(TransactionStatus.APPROVED, result.transactions().get(0).status());
     }
 
     @Test
@@ -70,8 +71,8 @@ public class TransactionServiceIntegrationTest {
         filter.setDateFrom(LocalDate.now());
         TransactionSearchResponse result = transactionService.search(filter);
 
-        assertThat(result.total()).isEqualTo(1);
-        assertThat(result.transactions().get(0).pan()).isEqualTo("4000000000000002");
+        assertEquals(1, result.total());
+        assertEquals("4000000000000002", result.transactions().get(0).pan());
     }
 
     @Test
@@ -85,7 +86,7 @@ public class TransactionServiceIntegrationTest {
         filter.setLimit(1);
         TransactionSearchResponse result = transactionService.search(filter);
 
-        assertThat(result.total()).isEqualTo(4);
+        assertEquals(4, result.total());
         assertThat(result.transactions()).hasSize(1);
     }
 
@@ -100,7 +101,7 @@ public class TransactionServiceIntegrationTest {
         filter.setOffset(2);
         TransactionSearchResponse result = transactionService.search(filter);
 
-        assertThat(result.total()).isEqualTo(5);
+        assertEquals(5, result.total());
         assertThat(result.transactions()).hasSize(2);
     }
 
@@ -115,9 +116,9 @@ public class TransactionServiceIntegrationTest {
         filter.setStatus("APPROVED");
         TransactionSearchResponse result = transactionService.search(filter);
 
-        assertThat(result.total()).isEqualTo(1);
-        assertThat(result.transactions().get(0).pan()).isEqualTo("4000000000000001");
-        assertThat(result.transactions().get(0).status()).isEqualTo(TransactionStatus.APPROVED);
+        assertEquals(1, result.total());
+        assertEquals("4000000000000001", result.transactions().get(0).pan());
+        assertEquals(TransactionStatus.APPROVED, result.transactions().get(0).status());
     }
 
     @Test
@@ -137,8 +138,8 @@ public class TransactionServiceIntegrationTest {
         List<TransactionResponse> result = transactionService.getRecent(10);
 
         assertThat(result).hasSize(3);
-        assertThat(result.get(0).pan()).isEqualTo("4000000000000003");
-        assertThat(result.get(2).pan()).isEqualTo("4000000000000001");
+        assertEquals("4000000000000003", result.get(0).pan());
+        assertEquals("4000000000000001", result.get(2).pan());
     }
 
     @Test

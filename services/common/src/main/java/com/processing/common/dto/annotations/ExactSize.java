@@ -1,21 +1,20 @@
 package com.processing.common.dto.annotations;
 
+import com.processing.common.dto.annotations.validators.ExactSizeValidator;
 import jakarta.validation.Constraint;
-import jakarta.validation.OverridesAttribute;
 import jakarta.validation.Payload;
-import jakarta.validation.constraints.Size;
 
 import java.lang.annotation.*;
 
-@Size
+/**
+ * Validates String value length
+ */
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {})
+@Constraint(validatedBy = ExactSizeValidator.class)
 @Documented
 public @interface ExactSize {
 
-    @OverridesAttribute(constraint = Size.class, name = "min")
-    @OverridesAttribute(constraint = Size.class, name = "max")
     int value();
 
     String message() default "The length must be exactly {value} symbols";

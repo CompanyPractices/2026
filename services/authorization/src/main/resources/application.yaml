@@ -1,21 +1,40 @@
 server:
   port: ${PORT:8083}
+
 logging:
   level:
     com.processing: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
 card-management:
   url: ${CARD_MGMT_URL:http://localhost:8081}
 services-to-health-check: ${CARD_MGMT_URL:http://localhost:8081}
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus,metrics
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: authorization
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]":
+          - 0.5
+          - 0.95
+          - 0.99
 spring:
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:postgres}

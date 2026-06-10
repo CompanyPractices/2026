@@ -75,6 +75,12 @@
 <!--            <artifactId>common</artifactId>-->
 <!--            <version>1.0.0</version>-->
 <!--        </dependency>-->
+
+        <!-- Prometheus metrics export -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
