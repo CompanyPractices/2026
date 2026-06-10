@@ -30,7 +30,7 @@ public class AcquirerProviderTest {
         Merchant merchant = Mockito.mock(Merchant.class);
         when(merchant.getAcquiringFee()).thenReturn(new BigDecimal("0.067"));
 
-        int amount = 139_999;
+        long amount = 139_999;
         String pan = "4444445808467586";
         String stan = "000004";
         double expected = amount * 0.067;

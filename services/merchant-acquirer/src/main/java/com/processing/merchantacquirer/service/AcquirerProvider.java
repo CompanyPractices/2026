@@ -15,7 +15,7 @@ import java.util.Map;
 public class AcquirerProvider {
     Map<AcquirerFeeRequest, Double> acquirerFeeMap;
 
-    public void calculateFee(Merchant merchant, Integer amount, String stan, String pan) {
+    public void calculateFee(Merchant merchant, Long amount, String stan, String pan) {
         double acquiringFee = (double) amount * merchant.getAcquiringFee().doubleValue();
 
         acquirerFeeMap.put(new AcquirerFeeRequest(stan, pan), acquiringFee);

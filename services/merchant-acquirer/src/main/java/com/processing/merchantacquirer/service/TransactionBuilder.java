@@ -31,7 +31,7 @@ public class TransactionBuilder {
     for (int i = 0; i < count; i++) {
       CardDataResponse card = cardDataResponses.get(i % cardDataResponses.size());
       Merchant merchant = merchants.get(random.nextInt(merchants.size()));
-      Integer amount = random.nextInt(scenario.getCountLower(), scenario.getCountUpper());
+      Long amount = random.nextLong(scenario.getCountLower(), scenario.getCountUpper());
 
       AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
               card.pan(), card.currencyCode(), amount, terminal, merchant);

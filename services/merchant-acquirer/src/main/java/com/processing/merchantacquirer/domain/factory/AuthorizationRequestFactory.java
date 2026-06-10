@@ -15,7 +15,7 @@ public class AuthorizationRequestFactory {
   private final StanGenerator stanGenerator;
 
   public AuthorizationRequest build(
-          String pan, String currencyCode, Integer amount, Terminal terminal, Merchant merchant) {
+          String pan, String currencyCode, Long amount, Terminal terminal, Merchant merchant) {
     LocalDateTime time = LocalDateTime.now();
 
     return AuthorizationRequest.builder()
