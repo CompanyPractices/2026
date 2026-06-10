@@ -107,4 +107,12 @@ public class InMemoryCircuitBreaker {
         private Instant openedAt = Instant.EPOCH;
         private boolean halfOpenRequestInProgress;
     }
+
+    public void releaseRequest(String serviceName) {
+        CircuitState state = states.computeIfAbsent(serviceName, ignored -> new CircuitState());
+
+        synchronized (state) {
+            state.halfOpenRequestInProgress = false;
+        }
+    }
 }

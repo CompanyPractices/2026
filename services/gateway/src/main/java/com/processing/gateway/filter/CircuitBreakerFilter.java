@@ -69,14 +69,18 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             if (isDownstreamUnavailable(e)) {
                 circuitBreaker.recordFailure(downstreamService);
+            } else {
+                circuitBreaker.releaseRequest(downstreamService);
             }
+
             rethrow(e);
         }
 
-        if (response.getStatus() >= HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+        if (isFailureResponse(response.getStatus())) {
             circuitBreaker.recordFailure(downstreamService);
             return;
         }
+
 
         circuitBreaker.recordSuccess(downstreamService);
     }
@@ -123,5 +127,11 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
         }
 
         throw new ServletException(exception);
+    }
+
+    private boolean isFailureResponse(int status) {
+        return status >= HttpStatus.INTERNAL_SERVER_ERROR.value()
+                || status == HttpStatus.NOT_FOUND.value()
+                || status == HttpStatus.METHOD_NOT_ALLOWED.value();
     }
 }
