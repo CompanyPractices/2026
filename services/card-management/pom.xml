@@ -83,7 +83,6 @@
             <groupId>net.datafaker</groupId>
             <artifactId>datafaker</artifactId>
             <version>${datafaker.version}</version>
-            <scope>test</scope>
         </dependency>
 
         <!-- Prometheus metrics export -->

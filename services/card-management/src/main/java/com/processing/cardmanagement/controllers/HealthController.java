@@ -1,7 +1,7 @@
 package com.processing.cardmanagement.controllers;
 
 import com.processing.cardmanagement.models.HealthResponse;
-import com.processing.cardmanagement.services.CardService;
+import com.processing.cardmanagement.services.CardServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Health", description = "Health check endpoint")
 public class HealthController {
 
-    private final CardService cardService;
+    private final CardServiceImpl cardService;
 
     @Operation(description = "Check service health")
     @ApiResponse(responseCode = "200", description = "Service is helthy")

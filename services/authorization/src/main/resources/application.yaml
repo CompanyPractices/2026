@@ -1,16 +1,6 @@
 server:
   port: ${PORT:8083}
 
-spring:
-  datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:smp_db}
-    username: ${POSTGRES_USER:smp_user}
-    password: ${POSTGRES_PASSWORD:smp_password}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-
 logging:
   level:
     com.processing: INFO
@@ -45,3 +35,11 @@ management:
           - 0.5
           - 0.95
           - 0.99
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:postgres}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
