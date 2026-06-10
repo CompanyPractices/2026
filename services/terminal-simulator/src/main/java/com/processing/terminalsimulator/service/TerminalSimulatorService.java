@@ -143,15 +143,17 @@ public class TerminalSimulatorService {
         long start = System.currentTimeMillis();
         List<Card> newCards = new ArrayList<>();
         List<Card> activeCards = gatewayClient.getCardsFromCardManager(ACTIVE, 70);
-        List<Card> blockedCards = gatewayClient.getCardsFromCardManager(BLOCKED, 30);
-
-        if (activeCards != null && blockedCards != null) {
-            newCards.addAll(activeCards);
-            newCards.addAll(blockedCards);
-        } else if (activeCards == null) {
+        if (activeCards == null || activeCards.isEmpty()) {
             throw new IllegalStateException("No ACTIVE cards available");
-        } else {
-            throw new IllegalStateException("No BLOCKED cards available");
+        }
+        newCards.addAll(activeCards);
+        boolean needBlocked = scenario == Scenario.mixed || scenario == Scenario.declines_test;
+        if (needBlocked) {
+            List<Card> blockedCards = gatewayClient.getCardsFromCardManager(BLOCKED, 30);
+            if (blockedCards == null || blockedCards.isEmpty()) {
+                throw new IllegalStateException("No BLOCKED cards available");
+            }
+            newCards.addAll(blockedCards);
         }
         cards = newCards;
 
