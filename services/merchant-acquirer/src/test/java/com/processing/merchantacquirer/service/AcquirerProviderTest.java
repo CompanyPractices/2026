@@ -33,7 +33,7 @@ public class AcquirerProviderTest {
         String pan = "4444445808467586";
         String stan = "000004";
         String terminalId = "TERM001";
-        double expected = amount * 0.067;
+        BigDecimal expected = new BigDecimal((double) amount / 10 * 0.067);
 
         acquirerProvider.calculateFee(merchant, amount, stan, pan, terminalId);
 
@@ -47,7 +47,7 @@ public class AcquirerProviderTest {
         String pan = "4444445808467586";
         String stan = "000004";
         String terminalId = "TERM001";
-        double fee = amount * 0.067;
+        BigDecimal fee = new BigDecimal(amount * 0.067);
 
         AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(stan, pan, terminalId);
         repository.save(acquirerFeeRequest, fee);
