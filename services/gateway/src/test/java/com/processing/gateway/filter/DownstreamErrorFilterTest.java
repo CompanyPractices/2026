@@ -1,6 +1,7 @@
 package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.processing.gateway.properties.GatewayRouteProperties;
 import com.processing.gateway.service.DownstreamServiceResolver;
 import jakarta.servlet.ServletException;
@@ -18,8 +19,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DownstreamErrorFilterTest {
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     private final DownstreamErrorFilter filter = new DownstreamErrorFilter(
-            new ObjectMapper(),
+            objectMapper,
             new DownstreamServiceResolver(routeProperties())
     );
 
@@ -38,8 +41,30 @@ class DownstreamErrorFilterTest {
         assertThat(response.getContentAsString()).contains(
                 "\"error\":\"SERVICE_UNAVAILABLE\"",
                 "\"serviceName\":\"switch\"",
-                "switch service is temporarily unavailable"
+                "Switch service is temporarily unavailable"
         );
+    }
+
+    @Test
+    void returnsServiceUnavailableForAuthorizationConnectionFailure() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/internal/authorize");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response,
+                (servletRequest, servletResponse) -> {
+            throw new ResourceAccessException("Connection refused",
+                    new ConnectException("Connection refused"));
+        });
+
+        Map<String, String> body = objectMapper.readValue(
+                response.getContentAsString(),
+                new TypeReference<>() {
+                });
+
+        assertThat(response.getStatus()).isEqualTo(503);
+        assertThat(body).containsEntry("error", "SERVICE_UNAVAILABLE")
+                .containsEntry("message", "Authorization service is temporarily unavailable")
+                .containsEntry("serviceName", "authorization");
     }
 
     @Test
@@ -90,6 +115,7 @@ class DownstreamErrorFilterTest {
         GatewayRouteProperties properties = new GatewayRouteProperties();
         properties.setRoutes(List.of(
                 route("switch", "Path=/api/transactions"),
+                route("authorization", "Path=/api/internal/authorize"),
                 route("cardManagement", "Path=/api/cards/**"),
                 route("logger", "Path=/api/transactions/search"),
                 route("logger", "Path=/api/dashboard/**"),
