@@ -6,20 +6,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OffsetBasedPageRequestTest {
     @Test
     void getOffsetReturnsConfiguredOffset() {
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(25, 50);
 
-        assertThat(pageRequest.getOffset()).isEqualTo(25);
+        assertEquals(25, pageRequest.getOffset());
     }
 
     @Test
     void getPageSizeReturnsConfiguredLimit() {
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(25, 50);
 
-        assertThat(pageRequest.getPageSize()).isEqualTo(50);
+        assertEquals(50, pageRequest.getPageSize());
     }
 
     @Test
@@ -28,8 +29,8 @@ public class OffsetBasedPageRequestTest {
 
         Sort sort = pageRequest.getSort();
 
-        assertThat(sort.getOrderFor(Transaction_.CREATED_AT)).isNotNull();
-        assertThat(sort.getOrderFor(Transaction_.CREATED_AT).getDirection()).isEqualTo(Sort.Direction.DESC);
+        assertNotNull(sort.getOrderFor(Transaction_.CREATED_AT));
+        assertEquals(Sort.Direction.DESC, sort.getOrderFor(Transaction_.CREATED_AT).getDirection());
     }
 
     @Test
@@ -38,7 +39,7 @@ public class OffsetBasedPageRequestTest {
 
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(0, 50, customSort);
 
-        assertThat(pageRequest.getSort()).isEqualTo(customSort);
+        assertEquals(customSort, pageRequest.getSort());
     }
 
     @Test
@@ -47,7 +48,7 @@ public class OffsetBasedPageRequestTest {
 
         Pageable next = pageRequest.next();
 
-        assertThat(next.getOffset()).isEqualTo(50);
+        assertEquals(50, next.getOffset());
     }
 
     @Test
@@ -56,22 +57,22 @@ public class OffsetBasedPageRequestTest {
 
         Pageable first = pageRequest.first();
 
-        assertThat(first.getOffset()).isEqualTo(0);
-        assertThat(first.getPageSize()).isEqualTo(50);
+        assertThat(first.getOffset()).isZero();
+        assertEquals(50, first.getPageSize());
     }
 
     @Test
     void hasPreviousReturnsFalseWhenOffsetIsZero() {
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(0, 50);
 
-        assertThat(pageRequest.hasPrevious()).isFalse();
+        assertFalse(pageRequest.hasPrevious());
     }
 
     @Test
     void hasPreviousReturnsTrueWhenOffsetIsPositive() {
         OffsetBasedPageRequest pageRequest = new OffsetBasedPageRequest(10, 50);
 
-        assertThat(pageRequest.hasPrevious()).isTrue();
+        assertTrue(pageRequest.hasPrevious());
     }
 
     @Test
@@ -80,7 +81,7 @@ public class OffsetBasedPageRequestTest {
 
         Pageable previous = pageRequest.previousOrFirst();
 
-        assertThat(previous.getOffset()).isEqualTo(50);
+        assertEquals(50, previous.getOffset());
     }
 
     @Test
@@ -89,7 +90,7 @@ public class OffsetBasedPageRequestTest {
 
         Pageable previous = pageRequest.previousOrFirst();
 
-        assertThat(previous.getOffset()).isEqualTo(0);
+        assertThat(previous.getOffset()).isZero();
     }
 
     @Test
@@ -98,7 +99,7 @@ public class OffsetBasedPageRequestTest {
 
         Pageable secondPage = pageRequest.withPage(2);
 
-        assertThat(secondPage.getOffset()).isEqualTo(100);
+        assertEquals(100, secondPage.getOffset());
     }
 
     @Test
@@ -108,6 +109,6 @@ public class OffsetBasedPageRequestTest {
 
         Pageable next = pageRequest.withPage(1);
 
-        assertThat(next.getSort()).isEqualTo(customSort);
+        assertEquals(customSort, next.getSort());
     }
 }
