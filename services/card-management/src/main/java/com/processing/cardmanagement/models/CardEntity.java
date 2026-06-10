@@ -1,18 +1,15 @@
 package com.processing.cardmanagement.models;
 
-import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Entity
@@ -24,12 +21,12 @@ import java.util.UUID;
     @Index(name = "idx_cards_created_at", columnList = "created_at")
 })
 @NoArgsConstructor
-@SQLDelete(sql = "UPDATE users SET status = 'DELETED' WHERE id = ?")
+@AllArgsConstructor
 @SQLRestriction("status <> 'DELETED'")
 public class CardEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(updatable = false, nullable = false)
     private UUID id;
 
     @Column(length = 16, unique = true, nullable = false)
@@ -41,90 +38,24 @@ public class CardEntity {
     @Column(nullable = false)
     private String cardholderName;
 
-    @Setter(AccessLevel.NONE)
-    @Column(name = "expiry_date", nullable = false, length = 4)
-    private String strExpiryDate;
-
-    @Transient
-    private LocalDate expiryDate = null;
+    @Column(nullable = false, length = 4)
+    private String expiryDate;
 
     @Column(length = 20, nullable = false)
     @Enumerated(EnumType.STRING)
     private CardStatus status = CardStatus.ACTIVE;
 
     @Column(length = 3, nullable = false)
-    private String currencyCode = "643";
+    private String currencyCode;
 
-    private long dailyLimit = 15_000_000;
+    private long dailyLimit;
 
-    private long monthlyLimit = 300_000_000;
+    private long monthlyLimit;
 
-    private long availableBalance = 1_000_000;
+    private long availableBalance;
 
     @Column(length = 10, nullable = false)
     private String issuerId;
 
     private LocalDateTime createdAt = LocalDateTime.now();
-
-    @Transient
-    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMyy");
-
-    public CardEntity(
-        String pan,
-        String bin,
-        String cardholderName,
-        String currencyCode,
-        CardStatus status,
-        long dailyLimit,
-        long monthlyLimit,
-        long initialBalance,
-        String issuerId
-    ) {
-        this.pan = pan;
-        this.bin = bin;
-        this.cardholderName = cardholderName;
-        this.currencyCode = currencyCode;
-        this.status = status;
-        this.dailyLimit = dailyLimit;
-        this.monthlyLimit = monthlyLimit;
-        this.availableBalance = initialBalance;
-        this.issuerId = issuerId;
-        setExpiryDate(LocalDate.now().plusYears(3));
-    }
-
-    /**
-     * Возвращает дату истечения срока действия карты
-     *
-     * @return дата истечения срока действия
-     */
-    public LocalDate getExpiryDate() {
-        if (expiryDate == null && strExpiryDate != null) {
-            expiryDate = LocalDate.parse(strExpiryDate, formatter);
-        }
-
-        return expiryDate;
-    }
-
-    /**
-     * Устанавливает дату истечения срока действия карты
-     *
-     * @return дата истечения срока действия
-     */
-    public void setExpiryDate(LocalDate expiryDate) {
-        this.expiryDate = expiryDate;
-        this.strExpiryDate = expiryDate.format(formatter);
-    }
-
-    /**
-     * Резервирует средства на карте, уменьшая доступный баланс
-     *
-     * @param amount сумма для резервирования в копейках
-     * @throws InsufficientFundsException если доступный баланс меньше суммы
-     */
-    public void reserve(long amount) {
-        if (this.availableBalance < amount) {
-            throw new InsufficientFundsException();
-        }
-        this.availableBalance -= amount;
-    }
 }
