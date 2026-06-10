@@ -493,8 +493,7 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     },
 ];
 
-export const MOCK_TRANSACTIONS_LineChart: Transaction[] = [
-    // 14:01 — 1 транзакция
+export const MOCK_TRANSACTIONS_LINECHART: Transaction[] = [
     {
         id: 'tx-001', mti: '0100', stan: '000001', rrn: '012345678901',
         pan: '4000001234560001', processingCode: '000000', processingTimeMs: 45,
@@ -503,7 +502,6 @@ export const MOCK_TRANSACTIONS_LineChart: Transaction[] = [
         acquiringFee: 1500, issuerId: 'ISS001', status: 'APPROVED', authCode: 'ABC123',
         transmissionDateTime: '2026-06-10T14:01:30Z', createdAt: '2026-06-10T14:01:30Z',
     },
-    // 14:02 — 3 транзакции (небольшой всплеск)
     {
         id: 'tx-002', mti: '0100', stan: '000002', rrn: '012345678902',
         pan: '4000019876540002', processingCode: '000000', processingTimeMs: 120,
@@ -528,7 +526,6 @@ export const MOCK_TRANSACTIONS_LineChart: Transaction[] = [
         acquiringFee: 890, issuerId: 'ISS001', status: 'APPROVED', authCode: 'GHI789',
         transmissionDateTime: '2026-06-10T14:02:55Z', createdAt: '2026-06-10T14:02:55Z',
     },
-    // 14:03 — 1 транзакция (спад)
     {
         id: 'tx-005', mti: '0100', stan: '000005', rrn: '012345678905',
         pan: '4000007777880005', processingCode: '000000', processingTimeMs: 50,
@@ -537,7 +534,6 @@ export const MOCK_TRANSACTIONS_LineChart: Transaction[] = [
         acquiringFee: 3200, issuerId: 'ISS004', status: 'APPROVED', authCode: 'JKL012',
         transmissionDateTime: '2026-06-10T14:03:10Z', createdAt: '2026-06-10T14:03:10Z',
     },
-    // 14:05 — 4 транзакции (большой пик!)
     {
         id: 'tx-006', mti: '0100', stan: '000006', rrn: '012345678906',
         pan: '4000013333440006', processingCode: '000000', processingTimeMs: 30,
@@ -570,7 +566,6 @@ export const MOCK_TRANSACTIONS_LineChart: Transaction[] = [
         acquiringFee: 1200, issuerId: 'ISS004', status: 'APPROVED', authCode: 'STU901',
         transmissionDateTime: '2026-06-10T14:05:55Z', createdAt: '2026-06-10T14:05:55Z',
     },
-    // 14:07 — 2 транзакции
     {
         id: 'tx-010', mti: '0100', stan: '000010', rrn: '012345678910',
         pan: '4000018888990010', processingCode: '000000', processingTimeMs: 150,
@@ -587,7 +582,6 @@ export const MOCK_TRANSACTIONS_LineChart: Transaction[] = [
         acquiringFee: 0, issuerId: 'ISS002', status: 'DECLINED', declineReason: 'Expired card',
         transmissionDateTime: '2026-06-10T14:07:45Z', createdAt: '2026-06-10T14:07:45Z',
     },
-    // 14:09 — 1 транзакция
     {
         id: 'tx-012', mti: '0100', stan: '000012', rrn: '012345678912',
         pan: '4000030000110012', processingCode: '000000', processingTimeMs: 55,

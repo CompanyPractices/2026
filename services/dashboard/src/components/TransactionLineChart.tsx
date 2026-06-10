@@ -20,10 +20,10 @@ export default function TransactionLineChart({transactions, isConnected} : LineC
     }
 
     const txData = prepareData(transactions)
-    console.log("Данные для графика:", txData);
 
     return (
         <ResponsiveContainer width="80%" height={300} className="mx-auto my-auto" >
+            <>
             {!isConnected &&
                 <div className="grid place-content-center text-zinc-700 font-mono" >Ожидание транзакций...</div>
             }
@@ -49,6 +49,7 @@ export default function TransactionLineChart({transactions, isConnected} : LineC
                 />
                 </LineChart>
             }
+            </>
         </ResponsiveContainer>
     )
 }
