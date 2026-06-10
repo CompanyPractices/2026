@@ -43,8 +43,6 @@ management:
           - 0.5
           - 0.95
           - 0.99
-management.endpoints.web.exposure.include: health,info
-management.endpoint.health.show-details: always
 
 gateway.url: ${GATEWAY_URL:http://gateway:8080}
 

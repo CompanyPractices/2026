@@ -33,7 +33,7 @@ management:
       prometheus:
         enabled: true
     tags:
-      application: transaction-loger
+      application: transaction-logger
     distribution:
       percentiles-histogram:
         "[http.server.requests]": true
