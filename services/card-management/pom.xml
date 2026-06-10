@@ -115,10 +115,11 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- Prometheus metrics -->
+        <!-- REST API integration testing -->
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

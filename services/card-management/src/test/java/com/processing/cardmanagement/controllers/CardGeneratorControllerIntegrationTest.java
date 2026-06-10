@@ -3,33 +3,29 @@ package com.processing.cardmanagement.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.common.dto.cardmanagement.GenerateCardsRequest;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
 
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest()
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 public class CardGeneratorControllerIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    private static final String POSTGRES_IMAGE = "postgres:16-alpine";
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -39,7 +35,10 @@ public class CardGeneratorControllerIntegrationTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(POSTGRES_IMAGE);
+
+    @Value("${local.server.port}")
+    private int port;
 
     @AfterEach
     void cleanUp() {
@@ -52,12 +51,16 @@ public class CardGeneratorControllerIntegrationTest {
         List<String> bins = List.of("400000", "400001");
         GenerateCardsRequest request = new GenerateCardsRequest(count, bins);
 
-        mockMvc.perform(post("/api/cards/generate")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.generated").value(10))
-                .andExpect(jsonPath("$.cards", hasSize(10)));
+        given()
+                .contentType(ContentType.JSON)
+                .body(objectMapper.writeValueAsString(request))
+                .port(port)
+                .when()
+                .post("/api/cards/generate")
+                .then()
+                .statusCode(201)
+                .body("generated", equalTo(10))
+                .body("cards", hasSize(10));
 
         long dbCount = cardJpaRepository.count();
         assertEquals(10, dbCount);
@@ -67,9 +70,13 @@ public class CardGeneratorControllerIntegrationTest {
     void generateShouldReturn400WhenCountIsZero() throws Exception {
         GenerateCardsRequest request = new GenerateCardsRequest(0, List.of("400000"));
 
-        mockMvc.perform(post("/api/cards/generate")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+        given()
+                .contentType(ContentType.JSON)
+                .body(objectMapper.writeValueAsString(request))
+                .port(port)
+                .when()
+                .post("/api/cards/generate")
+                .then()
+                .statusCode(400);
     }
 }
