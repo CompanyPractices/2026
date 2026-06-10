@@ -33,7 +33,7 @@ public class MerchantProviderTest {
 
   @Test
   void throwExceptionWhenNoMerchantsFound() {
-    Collection<String> mccCodes = List.of("0000");
+    List<String> mccCodes = List.of("0000");
 
     when(merchantRepository.findByMccIn(mccCodes)).thenReturn(Collections.emptyList());
 
@@ -42,31 +42,38 @@ public class MerchantProviderTest {
             IllegalArgumentException.class,
             () -> merchantProvider.getMerchant(mccCodes, scenario));
 
-    assertTrue(exception.getMessage().contains("Merchants with given mcc ([0000]) not found"));
+    assertEquals("Merchants with given mcc ([0000]) not found", exception.getMessage());
 
     verify(merchantRepository, times(1)).findByMccIn(mccCodes);
   }
 
   @Test
   void fallbackToScenarioMccWhenMccCodesIsNull() {
-    Collection<String> mccCodes = null;
+    List<String> mccCodes = null;
     List<String> scenarioMcc = scenario.getMcc();
 
-    Merchant merchant = new Merchant();
+    Merchant merchant = new Merchant(
+            "MERCH00000000007",
+            "Ашан Сити",
+            "5411",
+            "grocery",
+            "ACQ003",
+            new BigDecimal("0.015"),
+            145000);
     List<Merchant> expectedMerchants = List.of(merchant);
 
     when(merchantRepository.findByMccIn(scenarioMcc)).thenReturn(expectedMerchants);
 
     List<Merchant> actualMerchants = merchantProvider.getMerchant(mccCodes, scenario);
 
-    assertNotNull(actualMerchants);
+    assertEquals(expectedMerchants, actualMerchants);
     assertEquals(1, actualMerchants.size());
     verify(merchantRepository, times(1)).findByMccIn(scenarioMcc);
   }
 
   @Test
   void returnMerchantsWhenMccCodesProvidedAndFound() {
-    Collection<String> mccCodes = List.of("5411", "5499");
+    List<String> mccCodes = List.of("5411", "5499");
 
     Merchant merchant1 = new Merchant(
             "MERCH00000000007",
@@ -90,9 +97,8 @@ public class MerchantProviderTest {
 
     List<Merchant> actualMerchants = merchantProvider.getMerchant(mccCodes, scenario);
 
-    assertNotNull(actualMerchants);
     assertEquals(2, actualMerchants.size());
-    assertSame(expectedMerchants, actualMerchants);
+    assertEquals(expectedMerchants, actualMerchants);
 
     verify(merchantRepository, times(1)).findByMccIn(mccCodes);
   }
@@ -115,12 +121,14 @@ public class MerchantProviderTest {
             "ACQ003",
             new BigDecimal("0.015"),
             145000);
+    List<Merchant> expectedMerchants = List.of(merchant1, merchant2);
 
     when(merchantRepository.findAll()).thenReturn(List.of(merchant1, merchant2));
 
     List<Merchant> result = merchantProvider.getAll();
 
-    assertThat(result).hasSize(2).contains(merchant1, merchant2);
+    assertEquals(2, result.size());
+    assertEquals(expectedMerchants, result);
     verify(merchantRepository, times(1)).findAll();
   }
 
@@ -130,7 +138,7 @@ public class MerchantProviderTest {
 
     long result = merchantProvider.count();
 
-    assertThat(result).isEqualTo(42L);
+    assertEquals(42L, result);
     verify(merchantRepository, times(1)).count();
   }
 }
