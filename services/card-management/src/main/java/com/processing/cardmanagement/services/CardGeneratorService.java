@@ -1,9 +1,10 @@
 package com.processing.cardmanagement.services;
 
+import com.processing.cardmanagement.models.Card;
+import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
-import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardStatus;
-import com.processing.common.dto.cardmanagement.GeneratedCardDto;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Сервис для генерации тестовых банкогвских карт
+ * Сервис для генерации тестовых банковских карт
  * Карты равномерно распределяются по переданным BIN-префиксам
  */
 @Service
@@ -22,6 +23,7 @@ public class CardGeneratorService {
 
     private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
+    private final MeterRegistry meterRegistry;
 
     private final Faker faker = new Faker();
     private final Random random = new Random();
@@ -35,8 +37,8 @@ public class CardGeneratorService {
      * @param bins  список BIN-префиксов для распределения карт
      * @return список созданных карт
      */
-    public List<CardModel> generate(int count, List<String> bins) {
-        List<GeneratedCardDto> cards = new ArrayList<>();
+    public List<Card> generate(int count, List<String> bins) {
+        List<CardDraft> cards = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
@@ -46,15 +48,17 @@ public class CardGeneratorService {
             int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
             int monthlyLimit = dailyLimit * 30;
 
-            GeneratedCardDto card = new GeneratedCardDto(
-                bin,
-                cardholderName,
-                generatorOptions.currencyCode(),
-                dailyLimit,
-                monthlyLimit,
-                balance,
-                generateStatus()
+            CardDraft card = new CardDraft(
+                    bin,
+                    cardholderName,
+                    generateStatus(),
+                    generatorOptions.currencyCode(),
+                    dailyLimit,
+                    monthlyLimit,
+                    balance
             );
+
+            meterRegistry.counter("cards.generated", "status", card.status().name()).increment();
 
             cards.add(card);
         }
