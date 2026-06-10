@@ -15,7 +15,7 @@ public class AuthorizationRequestFactory {
   private final StanGenerator stanGenerator;
 
   public AuthorizationRequest build(
-          String pan, Integer amount, Terminal terminal, Merchant merchant) {
+          String pan, String currencyCode, Integer amount, Terminal terminal, Merchant merchant) {
     LocalDateTime time = LocalDateTime.now();
 
     return AuthorizationRequest.builder()
@@ -24,7 +24,7 @@ public class AuthorizationRequestFactory {
         .pan(pan) // number card
         .processingCode("000000") // тип транзакции
         .amount(amount) // цена
-        .currencyCode("643") // тип валюты
+        .currencyCode(currencyCode) // тип валюты
         .transmissionDateTime(time.toString()) // генерировать текущее время
         .terminalId(terminal.getId()) // terminal.id
         .terminalType(terminal.getType()) // terminal.type
