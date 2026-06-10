@@ -15,6 +15,9 @@ import java.lang.reflect.Method;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 
 class GlobalExceptionHandlerTest {
 
@@ -35,21 +38,21 @@ class GlobalExceptionHandlerTest {
 
         ResponseEntity<ErrorResponse> response = handler.handleValidation(exception);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().error()).isEqualTo("Validation error");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Validation error", response.getBody().error());
         assertThat(response.getBody().message()).contains("id");
-        assertThat(response.getBody().serviceName()).isEqualTo("transaction-logger");
+        assertEquals("transaction-logger", response.getBody().serviceName());
     }
 
     @Test
     void handleMalformedJsonReturnsBadRequest() {
         ResponseEntity<ErrorResponse> response = handler.handleMalformedJson();
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().error()).isEqualTo("Invalid request body");
-        assertThat(response.getBody().serviceName()).isEqualTo("transaction-logger");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Invalid request body", response.getBody().error());
+        assertEquals("transaction-logger", response.getBody().serviceName());
     }
 
     @Test
@@ -60,9 +63,9 @@ class GlobalExceptionHandlerTest {
                 new TransactionConflictException(id)
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().error()).isEqualTo("Transaction conflict");
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Transaction conflict", response.getBody().error());
         assertThat(response.getBody().message()).contains(id.toString());
     }
 
@@ -72,9 +75,9 @@ class GlobalExceptionHandlerTest {
                 new DataIntegrityViolationException("duplicate transaction")
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().error()).isEqualTo("Data integrity violation");
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Data integrity violation", response.getBody().error());
     }
 
     @Test
@@ -83,10 +86,10 @@ class GlobalExceptionHandlerTest {
                 new DataAccessResourceFailureException("database unavailable")
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().error()).isEqualTo("Database operation failed");
-        assertThat(response.getBody().retryAfterMs()).isEqualTo("1000");
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Database operation failed", response.getBody().error());
+        assertEquals("1000", response.getBody().retryAfterMs());
     }
 
     @Test
@@ -95,9 +98,9 @@ class GlobalExceptionHandlerTest {
                 new RuntimeException("unexpected error")
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().error()).isEqualTo("Internal server error");
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Internal server error", response.getBody().error());
     }
 
     @SuppressWarnings("unused")

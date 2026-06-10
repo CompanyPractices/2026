@@ -25,6 +25,8 @@ public record TransactionResponse(
         String currencyCode,
         @Schema(description = "Идентификатор терминала")
         String terminalId,
+        @Schema(description = "Тип терминала")
+        String terminalType,
         @Schema(description = "Идентификатор мерчанта")
         String merchantId,
         @Schema(description = "Код категории мерчанта")
