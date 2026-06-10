@@ -1,6 +1,6 @@
 package com.processing.merchantacquirer.controller.dto;
 
-import com.processing.merchantacquirer.domain.model.AuthorizationResponse;
+import com.processing.common.dto.authorization.AuthorizationResponse;
 import java.util.List;
 
 public record SimulatorResponse(

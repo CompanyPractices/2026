@@ -59,4 +59,16 @@ public class GlobalExceptionHandler {
                 "Merchant acquirer simulator",
                 "5"));
   }
+
+  @ExceptionHandler(NullPointerException.class)
+  public ResponseEntity<ErrorResponse> handleNullPointer(NullPointerException ex) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(
+                    new ErrorResponse(
+                            "Request processing failed",
+                            ex.getMessage(),
+                            String.valueOf(LocalDateTime.now()),
+                            "Merchant acquirer simulator",
+                            "5"));
+  }
 }
