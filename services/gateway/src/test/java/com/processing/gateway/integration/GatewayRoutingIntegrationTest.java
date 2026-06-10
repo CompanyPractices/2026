@@ -150,6 +150,63 @@ public class GatewayRoutingIntegrationTest {
               "transactionsPerMinute": 12.3
             }
             """;
+
+    private static final String CARD_MANAGEMENT_RESPONSE = """
+            {
+              "pan": "4000003458730237",
+              "status": "ACTIVE"
+            }
+            """;
+
+    private static final String DOWNSTREAM_OPEN_API_RESPONSE = """
+            {
+              "openapi": "3.0.1",
+              "info": {
+                "title": "Switch",
+                "version": "1.0.0"
+              },
+              "paths": {
+                "/api/internal/route": {
+                  "post": {
+                    "responses": {
+                      "200": {
+                        "description": "OK"
+                      }
+                    }
+                  }
+                },
+                "/internal/health": {
+                  "get": {
+                    "responses": {
+                      "200": {
+                        "description": "OK"
+                      }
+                    }
+                  }
+                },
+                "/api/public": {
+                  "get": {
+                    "responses": {
+                      "200": {
+                        "description": "OK"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
+    private static final String TRANSACTION_SEARCH_RESPONSE = """
+            {
+              "items": [
+                {
+                  "stan": "000001"
+                }
+              ]
+            }
+            """;
+
     @DynamicPropertySource
     static void registerDownstreamUrls(DynamicPropertyRegistry registry) {
         registry.add("SWITCH_URL", switchWm::baseUrl);
@@ -265,12 +322,7 @@ public class GatewayRoutingIntegrationTest {
         // Arrange
         String uri = "/api/cards/4000003458730237";
         cardWm.stubFor(get(urlEqualTo(uri))
-                .willReturn(okJson("""
-                        {
-                          "pan": "4000003458730237",
-                          "status": "ACTIVE"
-                        }
-                        """)));
+                .willReturn(okJson(CARD_MANAGEMENT_RESPONSE)));
 
         // Act
         ResponseEntity<String> response =
@@ -289,15 +341,7 @@ public class GatewayRoutingIntegrationTest {
         String uri = "/api/transactions/search";
         loggerWm.stubFor(get(urlPathEqualTo(uri))
                 .withQueryParam("stan", equalTo("000001"))
-                .willReturn(okJson("""
-                        {
-                          "items": [
-                            {
-                              "stan": "000001"
-                            }
-                          ]
-                        }
-                        """)));
+                .willReturn(okJson(TRANSACTION_SEARCH_RESPONSE)));
 
         // Act
         ResponseEntity<String> response =
@@ -316,44 +360,7 @@ public class GatewayRoutingIntegrationTest {
         // Arrange
         String uri = "/v3/api-docs";
         switchWm.stubFor(get(urlEqualTo(uri))
-                .willReturn(okJson("""
-                        {
-                          "openapi": "3.0.1",
-                          "info": {
-                            "title": "Switch",
-                            "version": "1.0.0"
-                          },
-                          "paths": {
-                            "/api/internal/route": {
-                              "post": {
-                                "responses": {
-                                  "200": {
-                                    "description": "OK"
-                                  }
-                                }
-                              }
-                            },
-                            "/internal/health": {
-                              "get": {
-                                "responses": {
-                                  "200": {
-                                    "description": "OK"
-                                  }
-                                }
-                              }
-                            },
-                            "/api/public": {
-                              "get": {
-                                "responses": {
-                                  "200": {
-                                    "description": "OK"
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                        """)));
+                .willReturn(okJson(DOWNSTREAM_OPEN_API_RESPONSE)));
 
         // Act
         ResponseEntity<String> response = restTemplate.getForEntity("/switch-docs", String.class);
@@ -453,24 +460,5 @@ public class GatewayRoutingIntegrationTest {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    }
-
-    private String validTransactionRequest() {
-        return """
-                {
-                  "mti": "0100",
-                  "stan": "000001",
-                  "pan": "4000003458730237",
-                  "processingCode": "000000",
-                  "amount": 1000,
-                  "currencyCode": "643",
-                  "transmissionDateTime": "2026-06-05T18:12:49.07",
-                  "terminalId": "TERM001",
-                  "terminalType": "POS",
-                  "merchantId": "MERCH00000000029",
-                  "mcc": "5045",
-                  "acquirerId": "ACQ002"
-                }
-                """;
     }
 }
