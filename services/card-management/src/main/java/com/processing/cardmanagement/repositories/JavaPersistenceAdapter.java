@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public final class JavaPersistenceAdapter implements CardRepository {
+public class JavaPersistenceAdapter implements CardRepository {
 
     private final CardPersistenceMapper persistenceMapper;
     private final CardJpaRepository jpaRepository;
