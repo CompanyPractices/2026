@@ -30,6 +30,23 @@ class MockWebSocket {
 const mockUseStats = vi.hoisted(() => vi.fn());
 const mockUseWebSocket = vi.hoisted(() => vi.fn());
 
+const MOCK_STATS_SUCCESS = {
+  transactionStats: {
+    totalTransactions: 100,
+    approvedTransactions: 80,
+    totalAmount: 500000,
+    totalProcessingTimeMs: 5000,
+  },
+  loading: false,
+  error: null,
+};
+
+const MOCK_STATS_ERROR = {
+  transactionStats: null,
+  loading: false,
+  error: 'Network error',
+};
+
 vi.mock('./hooks/useStats', () => ({
   default: mockUseStats,
 }));
@@ -56,16 +73,7 @@ describe('App', () => {
   });
 
   it('renders dashboard title', async () => {
-    mockUseStats.mockReturnValue({
-      transactionStats: {
-        totalTransactions: 100,
-        approvedTransactions: 80,
-        totalAmount: 500000,
-        totalProcessingTimeMs: 5000,
-      },
-      loading: false,
-      error: null,
-    });
+    mockUseStats.mockReturnValue(MOCK_STATS_SUCCESS);
 
     render(<App />);
 
@@ -75,16 +83,7 @@ describe('App', () => {
   });
 
   it('renders footer with all three texts', async () => {
-    mockUseStats.mockReturnValue({
-      transactionStats: {
-        totalTransactions: 100,
-        approvedTransactions: 80,
-        totalAmount: 500000,
-        totalProcessingTimeMs: 5000,
-      },
-      loading: false,
-      error: null,
-    });
+    mockUseStats.mockReturnValue(MOCK_STATS_SUCCESS);
 
     render(<App />);
 
@@ -96,16 +95,7 @@ describe('App', () => {
   });
 
   it('has correct structure', async () => {
-    mockUseStats.mockReturnValue({
-      transactionStats: {
-        totalTransactions: 100,
-        approvedTransactions: 80,
-        totalAmount: 500000,
-        totalProcessingTimeMs: 5000,
-      },
-      loading: false,
-      error: null,
-    });
+    mockUseStats.mockReturnValue(MOCK_STATS_SUCCESS);
 
     render(<App />);
 
@@ -117,11 +107,7 @@ describe('App', () => {
   });
 
   it('shows loading then error for stats', async () => {
-    mockUseStats.mockReturnValue({
-      transactionStats: null,
-      loading: false,
-      error: 'Network error',
-    });
+    mockUseStats.mockReturnValue(MOCK_STATS_ERROR);
 
     render(<App />);
 
@@ -131,11 +117,7 @@ describe('App', () => {
   });
 
   it('shows loading then error for transactions', async () => {
-    mockUseStats.mockReturnValue({
-      transactionStats: null,
-      loading: false,
-      error: 'Network error',
-    });
+    mockUseStats.mockReturnValue(MOCK_STATS_ERROR);
 
     render(<App />);
 
