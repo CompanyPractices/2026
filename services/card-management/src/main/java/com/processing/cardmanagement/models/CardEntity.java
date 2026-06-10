@@ -22,7 +22,6 @@ import java.util.UUID;
 })
 @NoArgsConstructor
 @AllArgsConstructor
-@SQLDelete(sql = "UPDATE users SET status = 'DELETED' WHERE id = ?")
 @SQLRestriction("status <> 'DELETED'")
 public class CardEntity {
 
