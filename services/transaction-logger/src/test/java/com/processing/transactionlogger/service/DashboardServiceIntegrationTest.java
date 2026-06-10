@@ -35,13 +35,13 @@ public class DashboardServiceIntegrationTest {
     void getStatsReturnsZeroWhenDatabaseIsEmpty() {
         DashboardStatsResponse stats = transactionService.getStats();
 
-        assertThat(stats.totalTransactions()).isZero();
-        assertThat(stats.approvedCount()).isZero();
-        assertThat(stats.declinedCount()).isZero();
-        assertThat(stats.approvalRate()).isZero();
-        assertThat(stats.totalAmount()).isZero();
-        assertThat(stats.averageAmount()).isZero();
-        assertThat(stats.avgProcessingTimeMs()).isZero();
+        assertEquals(0, stats.totalTransactions());
+        assertEquals(0, stats.approvedCount());
+        assertEquals(0, stats.declinedCount());
+        assertEquals(0, stats.approvalRate());
+        assertEquals(0, stats.totalAmount());
+        assertEquals(0, stats.averageAmount());
+        assertEquals(0, stats.avgProcessingTimeMs());
     }
 
     @Test

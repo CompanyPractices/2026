@@ -57,7 +57,7 @@ public class OffsetBasedPageRequestTest {
 
         Pageable first = pageRequest.first();
 
-        assertThat(first.getOffset()).isZero();
+        assertEquals(0, first.getOffset());
         assertEquals(50, first.getPageSize());
     }
 
