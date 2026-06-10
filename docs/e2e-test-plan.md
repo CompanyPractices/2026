@@ -822,8 +822,8 @@ services/e2e-tests/
 │   ├── test/java/com/processing/e2e/
 │   │   ├── E2EBaseTest.java         # Базовый класс (URL-ы, DB, HTTP)
 │   │   └── tests/
-│   │       ├── HealthCheckTest.java 
-│   │       └── ...                   
+│   │       ├── HealthCheckTest.java
+│   │       └── ...
 │   │   └── utility/
 │   │       ├── HttpUtils.java       # HTTP-хелперы (REST Assured)
 │   │       └── DBUtils.java         # JDBC-хелперы
