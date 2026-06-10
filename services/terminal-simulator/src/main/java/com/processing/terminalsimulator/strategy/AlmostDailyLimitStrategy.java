@@ -2,9 +2,11 @@ package com.processing.terminalsimulator.strategy;
 
 import com.processing.terminalsimulator.dto.Card;
 import com.processing.terminalsimulator.model.TransactionType;
+import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+@Component
 public class AlmostDailyLimitStrategy implements TransactionStrategy {
     @Override
     public TransactionType getType() {
