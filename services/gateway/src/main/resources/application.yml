@@ -147,6 +147,9 @@ gateway:
       cards-url: ${CARD_MGMT_URL:http://localhost:8081}
   rate-limit:
     transactions-per-second: ${TRANSACTIONS_RATE_LIMIT:100}
+  circuit-breaker:
+    failure-threshold: ${CIRCUIT_BREAKER_FAILURE_THRESHOLD:3}
+    open-duration: ${CIRCUIT_BREAKER_OPEN_DURATION:10s}
   open-api:
     url: ${GATEWAY_PUBLIC_URL:http://localhost:${GATEWAY_PORT:8080}}
 

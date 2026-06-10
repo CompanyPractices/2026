@@ -2,15 +2,17 @@ package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
+import com.processing.gateway.circuitbreaker.InMemoryCircuitBreaker;
 import com.processing.gateway.service.DownstreamServiceResolver;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -22,32 +24,71 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpTimeoutException;
+import java.time.Duration;
 import java.util.Optional;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
-@RequiredArgsConstructor
-public class DownstreamErrorFilter extends OncePerRequestFilter {
+@Order(Ordered.HIGHEST_PRECEDENCE + 3)
+public class CircuitBreakerFilter extends OncePerRequestFilter {
+
     private final ObjectMapper objectMapper;
     private final DownstreamServiceResolver serviceResolver;
+    private final InMemoryCircuitBreaker circuitBreaker;
+    private final Duration openDuration;
+
+    public CircuitBreakerFilter(ObjectMapper objectMapper,
+                                DownstreamServiceResolver serviceResolver,
+                                InMemoryCircuitBreaker circuitBreaker,
+                                @Value("${gateway.circuit-breaker.open-duration:10s}") Duration openDuration) {
+        this.objectMapper = objectMapper;
+        this.serviceResolver = serviceResolver;
+        this.circuitBreaker = circuitBreaker;
+        this.openDuration = openDuration;
+    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
+        Optional<String> serviceName = serviceResolver.resolve(request.getRequestURI());
+
+        if (serviceName.isEmpty()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String downstreamService = serviceName.get();
+        if (!circuitBreaker.allowRequest(downstreamService)) {
+            writeCircuitOpen(response, downstreamService);
+            return;
+        }
+
         try {
             filterChain.doFilter(request, response);
         } catch (Exception e) {
-            Optional<String> serviceName = serviceResolver.resolve(request.getRequestURI());
-
-            if (serviceName.isPresent() && isDownstreamUnavailable(e) && !response.isCommitted()) {
-                writeServiceUnavailable(response, serviceName.get());
-                return;
+            if (isDownstreamUnavailable(e)) {
+                circuitBreaker.recordFailure(downstreamService);
+            } else {
+                circuitBreaker.releaseRequest(downstreamService);
             }
 
             rethrow(e);
         }
+
+        int status = response.getStatus();
+        if (status >= HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+            circuitBreaker.recordFailure(downstreamService);
+            return;
+
+        } else if (status == HttpStatus.NOT_FOUND.value()
+                || status == HttpStatus.METHOD_NOT_ALLOWED.value()) {
+            circuitBreaker.releaseRequest(downstreamService);
+            return;
+        }
+
+
+        circuitBreaker.recordSuccess(downstreamService);
     }
 
     private boolean isDownstreamUnavailable(Throwable throwable) {
@@ -68,23 +109,16 @@ public class DownstreamErrorFilter extends OncePerRequestFilter {
         return false;
     }
 
-    private void writeServiceUnavailable(HttpServletResponse response, String serviceName) throws IOException {
+    private void writeCircuitOpen(HttpServletResponse response, String serviceName) throws IOException {
         response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(openDuration.toSeconds()));
 
         objectMapper.writeValue(response.getWriter(), new ServiceUnavailableResponse(
                 "SERVICE_UNAVAILABLE",
-                capitalize(serviceName) + " service is temporarily unavailable",
+                serviceName + " service is temporarily unavailable",
                 serviceName
         ));
-    }
-
-    private String capitalize(String serviceName) {
-        if (serviceName == null || serviceName.isBlank()) {
-            return serviceName;
-        }
-
-        return serviceName.substring(0, 1).toUpperCase() + serviceName.substring(1);
     }
 
     private void rethrow(Exception exception) throws ServletException, IOException {

@@ -23,9 +23,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 
-class TransactionServiceTest {
+class TransactionServiceStoreTest {
 
     @Test
     void storeReturnsExistingTransactionWhenIdAlreadyExists() {
@@ -37,11 +36,11 @@ class TransactionServiceTest {
 
         TransactionStoreResult result = transactionService.store(request);
 
-        assertFalse(result.created());
-        assertEquals(request.id(), result.existingTransaction().id());
-        assertNull(result.storedTransaction());
+        assertThat(result.created()).isFalse();
+        assertThat(result.existingTransaction().id()).isEqualTo(request.id());
+        assertThat(result.storedTransaction()).isNull();
         assertThat(repository.saveCount).isZero();
-        assertNull(webSocketManager.lastMessage);
+        assertThat(webSocketManager.lastMessage).isNull();
     }
 
     @Test
@@ -58,7 +57,7 @@ class TransactionServiceTest {
                 .hasMessageContaining(request.id().toString());
 
         assertThat(repository.saveCount).isZero();
-        assertNull(webSocketManager.lastMessage);
+        assertThat(webSocketManager.lastMessage).isNull();
     }
 
     @Test
@@ -72,11 +71,11 @@ class TransactionServiceTest {
 
         TransactionStoreResult result = transactionService.store(request);
 
-        assertFalse(result.created());
-        assertEquals(request.id(), result.existingTransaction().id());
-        assertNull(result.storedTransaction());
+        assertThat(result.created()).isFalse();
+        assertThat(result.existingTransaction().id()).isEqualTo(request.id());
+        assertThat(result.storedTransaction()).isNull();
         assertThat(repository.saveCount).isOne();
-        assertNull(webSocketManager.lastMessage);
+        assertThat(webSocketManager.lastMessage).isNull();
     }
 
     @Test
@@ -95,7 +94,7 @@ class TransactionServiceTest {
                 .hasMessageContaining(request.id().toString());
 
         assertThat(repository.saveCount).isOne();
-        assertNull(webSocketManager.lastMessage);
+        assertThat(webSocketManager.lastMessage).isNull();
     }
 
     @Test
@@ -107,10 +106,10 @@ class TransactionServiceTest {
 
         TransactionStoreResult result = transactionService.store(request);
 
-        assertTrue(result.created());
-        assertNull(result.existingTransaction());
-        assertEquals(request.id(), result.storedTransaction().id());
-        assertEquals("stored", result.storedTransaction().status());
+        assertThat(result.created()).isTrue();
+        assertThat(result.existingTransaction()).isNull();
+        assertThat(result.storedTransaction().id()).isEqualTo(request.id());
+        assertThat(result.storedTransaction().status()).isEqualTo("stored");
         assertThat(repository.findById(request.id())).isPresent();
         assertThat(repository.saveCount).isOne();
         assertThat(webSocketManager.lastMessage).contains(request.id().toString());
@@ -140,7 +139,7 @@ class TransactionServiceTest {
                 "643",
                 "TERM001",
                 "POS",
-                "MERCH12345678901",
+                "MERCH1234567890",
                 "5411",
                 "ACQ001",
                 "ISS001",
@@ -165,6 +164,7 @@ class TransactionServiceTest {
         transaction.setAmount(request.amount());
         transaction.setCurrencyCode(request.currencyCode());
         transaction.setTerminalId(request.terminalId());
+        transaction.setTerminalType(request.terminalType());
         transaction.setMerchantId(request.merchantId());
         transaction.setMcc(request.mcc());
         transaction.setAcquirerId(request.acquirerId());
