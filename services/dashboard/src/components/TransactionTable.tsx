@@ -29,7 +29,7 @@ const mapTransactionToCsvRow = (tx: Transaction) => ({
     'STAN': tx.stan,
     'RRN': tx.rrn || '—',
     'PAN': hidePan(tx.pan),
-    'Amount (rub)': convertPenniesToRublesCsv(tx.amount),
+    'Amount': tx.amount,
     'Status': tx.status,
     'Auth code': tx.authCode || '—',
     'Terminal': `${tx.terminalId}${tx.terminalType ? ` (${tx.terminalType})` : ''}`,
