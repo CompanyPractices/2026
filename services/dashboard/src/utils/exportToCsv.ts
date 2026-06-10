@@ -1,4 +1,4 @@
-export const exportToCsv = (filename: string, rows: object[], headers?: string[]): void => {
+export const exportToCsv = (filename: string, rows: object[], headers: string[]): void => {
     if (!rows || !rows.length) {
         console.warn('Нет данных для экспорта');
         return;
@@ -6,11 +6,10 @@ export const exportToCsv = (filename: string, rows: object[], headers?: string[]
 
     const separator = ';';
     const keys = Object.keys(rows[0] as Record<string, unknown>);
-    const columnHeaders = headers ?? keys;
 
     const csvContent =
         'sep=;\n' +
-        columnHeaders.join(separator) + '\n' +
+        headers.join(separator) + '\n' +
         rows.map(row => {
             return keys.map(k => {
                 const value = (row as Record<string, unknown>)[k];
