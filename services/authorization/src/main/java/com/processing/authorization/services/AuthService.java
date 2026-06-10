@@ -5,7 +5,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.authorization.entities.LimitUsage;
-import com.processing.common.dto.cardmanagement.CardStatus;
+import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.authorization.exceptions.CardNotFoundException;
 import com.processing.authorization.exceptions.ReserveCardException;
 import com.processing.authorization.exceptions.ServiceUnavailableException;
@@ -105,15 +105,15 @@ public class AuthService {
             return DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
         }
 
-        CardStatus currCardStatus = cardResponse.status();
+        CardModelStatus currCardStatus = cardResponse.status();
         if (currCardStatus == null) {
             return DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
         }
-        if (!currCardStatus.equals(CardStatus.ACTIVE)) {
+        if (!currCardStatus.equals(CardModelStatus.ACTIVE)) {
             return switch (currCardStatus) {
-                case CardStatus.EXPIRED -> DeclineOutcome.CARD_EXPIRED.build(request, requestInputTime);
-                case CardStatus.BLOCKED -> DeclineOutcome.CARD_BLOCKED.build(request, requestInputTime);
-                case CardStatus.INACTIVE -> DeclineOutcome.CARD_INACTIVE.build(request, requestInputTime);
+                case CardModelStatus.EXPIRED -> DeclineOutcome.CARD_EXPIRED.build(request, requestInputTime);
+                case CardModelStatus.BLOCKED -> DeclineOutcome.CARD_BLOCKED.build(request, requestInputTime);
+                case CardModelStatus.INACTIVE -> DeclineOutcome.CARD_INACTIVE.build(request, requestInputTime);
                 default -> DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
             };
         }

@@ -1,9 +1,8 @@
 package com.processing.common.dto.cardmanagement;
 
-public enum CardStatus {
+public enum CardModelStatus {
     ACTIVE,
     INACTIVE,
     BLOCKED,
     EXPIRED,
-    DELETED,
 }

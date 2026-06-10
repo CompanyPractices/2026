@@ -7,6 +7,7 @@ import com.processing.authorization.entities.LimitUsage;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import com.processing.authorization.exceptions.ServiceUnavailableException;
 import com.processing.authorization.services.AuthService;
+import com.processing.common.dto.cardmanagement.CardModelStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 import static com.processing.authorization.constants.DeclineOutcome.*;
-import com.processing.common.dto.cardmanagement.CardStatus;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDate;
@@ -66,7 +66,7 @@ class AuthServiceTest {
                 "123456",
                 "John Golt",
                 YearMonth.of(2026, 12),
-                CardStatus.ACTIVE,
+                CardModelStatus.ACTIVE,
                 "810",
                 100000L,
                 500000L,
@@ -123,7 +123,7 @@ class AuthServiceTest {
                 activeCardResponse.bin(),
                 activeCardResponse.cardholderName(),
                 activeCardResponse.expiryDate(),
-                CardStatus.EXPIRED,
+            CardModelStatus.EXPIRED,
                 activeCardResponse.currencyCode(),
                 activeCardResponse.dailyLimit(),
                 activeCardResponse.monthlyLimit(),
@@ -148,7 +148,7 @@ class AuthServiceTest {
                 activeCardResponse.bin(),
                 activeCardResponse.cardholderName(),
                 activeCardResponse.expiryDate(),
-                CardStatus.BLOCKED,
+                CardModelStatus.BLOCKED,
                 activeCardResponse.currencyCode(),
                 activeCardResponse.dailyLimit(),
                 activeCardResponse.monthlyLimit(),
@@ -172,7 +172,7 @@ class AuthServiceTest {
                 activeCardResponse.bin(),
                 activeCardResponse.cardholderName(),
                 activeCardResponse.expiryDate(),
-                CardStatus.INACTIVE,
+                CardModelStatus.INACTIVE,
                 activeCardResponse.currencyCode(),
                 activeCardResponse.dailyLimit(),
                 activeCardResponse.monthlyLimit(),
@@ -222,7 +222,7 @@ class AuthServiceTest {
                 activeCardResponse.bin(),
                 activeCardResponse.cardholderName(),
                 expiredDate,
-                CardStatus.ACTIVE,
+                CardModelStatus.ACTIVE,
                 activeCardResponse.currencyCode(),
                 activeCardResponse.dailyLimit(),
                 activeCardResponse.monthlyLimit(),
@@ -247,7 +247,7 @@ class AuthServiceTest {
                 activeCardResponse.bin(),
                 activeCardResponse.cardholderName(),
                 activeCardResponse.expiryDate(),
-                CardStatus.ACTIVE,
+                CardModelStatus.ACTIVE,
                 activeCardResponse.currencyCode(),
                 activeCardResponse.dailyLimit(),
                 activeCardResponse.monthlyLimit(),
