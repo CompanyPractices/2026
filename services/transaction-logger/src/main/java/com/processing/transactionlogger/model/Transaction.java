@@ -38,7 +38,7 @@ public class Transaction {
     @Column(nullable = false, length = 8)
     private String terminalId;
     @Column(length = 10)
-    private String TerminalType;
+    private String terminalType;
     @Column(nullable = false, length = 15)
     private String merchantId;
     @Column(nullable = false, length = 4)
