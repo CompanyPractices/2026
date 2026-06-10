@@ -105,56 +105,56 @@ export function TransactionTable({ liveTransactions }: TransactionTableProps){
             {!loading && !error && displayedTransactions.length > 0 &&
                 <div className="rounded-3xl border-2 border-emerald-600 shadow-lg mb-5">
 
-                <div className="overflow-x-auto">
+                    <div className="overflow-x-auto">
 
-                    <table className="w-full min-w-[900px] text-sm">
-                        <thead>
-                        <tr className="border-b-2 border-emerald-600 text-center font-semibold">
-                            <th className="px-6 py-4">Время</th>
-                            <th className="px-6 py-4">PAN</th>
-                            <th className="px-6 py-4 text-right">Сумма</th>
-                            <th className="px-6 py-4">Мерчант</th>
-                            <th className="px-6 py-4">Статус</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {displayedTransactions.map((transaction) => {
-                            const statusIconData = getStatusIcon(transaction.status);
+                        <table className="w-full min-w-[900px] text-sm">
+                            <thead>
+                            <tr className="border-b-2 border-emerald-600 text-center font-semibold">
+                                <th className="px-6 py-4">Время</th>
+                                <th className="px-6 py-4">PAN</th>
+                                <th className="px-6 py-4 text-right">Сумма</th>
+                                <th className="px-6 py-4">Мерчант</th>
+                                <th className="px-6 py-4">Статус</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {displayedTransactions.map((transaction) => {
+                                const statusIconData = getStatusIcon(transaction.status);
 
-                            return (
-                                <tr
-                                    key={transaction.id}
-                                    className="text-center cursor-pointer hover:bg-emerald-50 transition-colors border-b border-gray-100 last:border-0"
-                                    onClick={() => setSelectedTx(transaction)}
-                                >
-                                    <td className="px-6 py-3">{formatTime(transaction.transmissionDateTime)}</td>
-                                    <td className="px-6 py-3">{hidePan(transaction.pan)}</td>
-                                    <td className="px-6 py-3 text-right">{convertPenniesToRubles(transaction.amount)}</td>
-                                    <td className="px-6 py-3 ">{transaction.merchantId}</td>
-                                    <td className="px-6 py-3">
-                                        <div className="flex justify-center items-center gap-2">
-                                            <statusIconData.icon
-                                                className={statusIconData.color}
-                                                size={statusIconData.size}
-                                                aria-hidden="true"
-                                            />
-                                            <span className="sr-only">{statusIconData.label}</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                        </tbody>
-                    </table>
+                                return (
+                                    <tr
+                                        key={transaction.id}
+                                        className="text-center cursor-pointer hover:bg-emerald-50 transition-colors border-b border-gray-100 last:border-0"
+                                        onClick={() => setSelectedTx(transaction)}
+                                    >
+                                        <td className="px-6 py-3">{formatTime(transaction.transmissionDateTime)}</td>
+                                        <td className="px-6 py-3">{hidePan(transaction.pan)}</td>
+                                        <td className="px-6 py-3 text-right">{convertPenniesToRubles(transaction.amount)}</td>
+                                        <td className="px-6 py-3 ">{transaction.merchantId}</td>
+                                        <td className="px-6 py-3">
+                                            <div className="flex justify-center items-center gap-2">
+                                                <statusIconData.icon
+                                                    className={statusIconData.color}
+                                                    size={statusIconData.size}
+                                                    aria-hidden="true"
+                                                />
+                                                <span className="sr-only">{statusIconData.label}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
             }
             {selectedTx && (
                 <TransactionModal
-                transaction={selectedTx}
-            onClose={() => setSelectedTx(null)}
-        />
-    )}
-</div>
-);
+                    transaction={selectedTx}
+                    onClose={() => setSelectedTx(null)}
+                />
+            )}
+        </div>
+    );
 }
