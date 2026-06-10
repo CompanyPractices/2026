@@ -12,9 +12,9 @@ import com.processing.authorization.exceptions.ServiceUnavailableException;
 import com.processing.common.dto.cardmanagement.ReserveRequest;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -124,6 +124,10 @@ public class AuthService {
             return DeclineOutcome.CARD_EXPIRED.build(request, requestInputTime);
         }
 
+        if (request.amount() > cardResponse.availableBalance()) {
+            return DeclineOutcome.INSUFFICIENT_FUNDS.build(request, requestInputTime);
+        }
+
         Optional<LimitUsage> currLimitUsage =  limitUsageRepository
                 .findByPanAndUsageDate(request.pan(), transmissionDate);
 
@@ -140,10 +144,6 @@ public class AuthService {
                 .sumMonthlyAmountByPanAndMonth(request.pan(), transmissionDate.withDayOfMonth(1), transmissionDate);
         if (monthlyLimitUsage + request.amount() > cardResponse.monthlyLimit()) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
-        }
-
-        if (request.amount() > cardResponse.availableBalance()) {
-            return DeclineOutcome.INSUFFICIENT_FUNDS.build(request, requestInputTime);
         }
 
         String rrn = generateRRN();
