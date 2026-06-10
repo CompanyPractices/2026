@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -30,6 +31,9 @@ public class CardGeneratorServiceTest {
     private CardService cardService;
 
     @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
     private MeterRegistry meterRegistry;
 
     private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
@@ -44,7 +48,7 @@ public class CardGeneratorServiceTest {
 
     @BeforeEach
     void setUp() {
-        cardGeneratorService = new CardGeneratorService(cardService, generatorOptions, meterRegistry);
+        cardGeneratorService = new CardGeneratorService(cardService, generatorOptions, eventPublisher);
     }
 
     @Test
