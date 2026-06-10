@@ -16,11 +16,6 @@ public class HealthController {
 
     @GetMapping("/health")
     public ResponseEntity<HealthResponse> health() {
-        return ResponseEntity.ok(new HealthResponse(
-                "ok",
-                "gateway",
-                "1.0.0",
-                healthService.getDownstreamServicesHealth()
-        ));
+        return ResponseEntity.ok(healthService.getDownstreamServicesHealth());
     }
 }

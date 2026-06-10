@@ -1,9 +1,13 @@
 package com.processing.gateway.service;
 
+import com.processing.gateway.dto.HealthResponse;
+import com.processing.gateway.enums.HealthStatus;
+import com.processing.gateway.properties.GatewayProperties;
 import com.processing.gateway.properties.HealthProperties;
 import com.processing.gateway.properties.ServiceProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -17,10 +21,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class HealthService {
-    private static final String HEALTH_ROUTE = "/health";
-    private static final String HEALTH_OK = "ok";
-    private static final String HEALTH_DOWN = "down";
-
+    private static final String GATEWAY_SERVICE_NAME = "gateway";
     private static final String SWITCH_SERVICE_NAME = "switch";
     private static final String AUTH_SERVICE_NAME = "authorization";
     private static final String CARD_MGMT_SERVICE_NAME = "cardManagement";
@@ -29,18 +30,23 @@ public class HealthService {
     private final HttpClient httpClient;
     private final ServiceProperties serviceProperties;
     private final HealthProperties healthProperties;
+    private final GatewayProperties gatewayProperties;
 
-    public Map<String, String> getDownstreamServicesHealth() {
-        String switchUrl = serviceProperties.getSwitchUrl() + HEALTH_ROUTE;
-        String loggerUrl = serviceProperties.getLoggerUrl() + HEALTH_ROUTE;
-        String authUrl = serviceProperties.getAuthUrl() + HEALTH_ROUTE;
-        String cardsUrl = serviceProperties.getCardsUrl() + HEALTH_ROUTE;
+    public HealthResponse getDownstreamServicesHealth() {
+        String switchUrl = serviceProperties.getSwitchUrl() + healthProperties.getUrl();
+        String loggerUrl = serviceProperties.getLoggerUrl() + healthProperties.getUrl();
+        String authUrl = serviceProperties.getAuthUrl() + healthProperties.getUrl();
+        String cardsUrl = serviceProperties.getCardsUrl() + healthProperties.getUrl();
 
-        return Map.of(
-                SWITCH_SERVICE_NAME, checkService(switchUrl),
-                AUTH_SERVICE_NAME, checkService(authUrl),
-                CARD_MGMT_SERVICE_NAME, checkService(cardsUrl),
-                LOGGER_SERVICE_NAME, checkService(loggerUrl));
+        return new HealthResponse(
+                HealthStatus.OK.name().toLowerCase(),
+                GATEWAY_SERVICE_NAME,
+                gatewayProperties.getVersion(),
+                Map.of(
+                    SWITCH_SERVICE_NAME, checkService(switchUrl),
+                    AUTH_SERVICE_NAME, checkService(authUrl),
+                    CARD_MGMT_SERVICE_NAME, checkService(cardsUrl),
+                    LOGGER_SERVICE_NAME, checkService(loggerUrl)));
     }
 
     private String checkService(String url) {
@@ -53,13 +59,13 @@ public class HealthService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() == 200) {
-                return HEALTH_OK;
+            if (response.statusCode() == HttpStatus.OK.value()) {
+                return HealthStatus.OK.name().toLowerCase();
             }
 
-            return HEALTH_DOWN;
+            return HealthStatus.UNAVAILABLE.name().toLowerCase();
         } catch (Exception e) {
-            return HEALTH_DOWN;
+            return HealthStatus.UNAVAILABLE.name().toLowerCase();
         }
     }
 }

@@ -139,6 +139,7 @@ spring:
 
 # Gateway
 gateway:
+  version: 1.0.0
   downstream-services:
     urls:
       switch-url: ${SWITCH_URL:http://localhost:8082}
@@ -152,6 +153,7 @@ gateway:
   health:
     connection-timeout: 5
     request-timeout: 3
+    url: /health
 
 #---
 # Swagger
