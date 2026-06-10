@@ -96,6 +96,9 @@
             <modules>
                 <module>e2e-tests</module>
             </modules>
+            <properties>
+                <skipE2eTests>false</skipE2eTests>
+            </properties>
         </profile>
 
 

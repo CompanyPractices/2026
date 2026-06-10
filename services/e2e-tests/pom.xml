@@ -23,6 +23,8 @@
         <testng.version>7.10.2</testng.version>
         <rest-assured.version>5.4.0</rest-assured.version>
         <jackson.version>2.17.2</jackson.version>
+        <!-- E2E require docker compose; enabled only via -Pe2e-tests -->
+        <skipE2eTests>true</skipE2eTests>
     </properties>
 
 
@@ -80,6 +82,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <skipTests>${skipE2eTests}</skipTests>
                     <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                 </configuration>
                 <dependencies>
