@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 public class DashboardServiceIntegrationTest {
@@ -34,13 +35,13 @@ public class DashboardServiceIntegrationTest {
     void getStatsReturnsZeroWhenDatabaseIsEmpty() {
         DashboardStatsResponse stats = transactionService.getStats();
 
-        assertThat(stats.totalTransactions()).isZero();
-        assertThat(stats.approvedCount()).isZero();
-        assertThat(stats.declinedCount()).isZero();
-        assertThat(stats.approvalRate()).isZero();
-        assertThat(stats.totalAmount()).isZero();
-        assertThat(stats.averageAmount()).isZero();
-        assertThat(stats.avgProcessingTimeMs()).isZero();
+        assertEquals(0, stats.totalTransactions());
+        assertEquals(0, stats.approvedCount());
+        assertEquals(0, stats.declinedCount());
+        assertEquals(0, stats.approvalRate());
+        assertEquals(0, stats.totalAmount());
+        assertEquals(0, stats.averageAmount());
+        assertEquals(0, stats.avgProcessingTimeMs());
     }
 
     @Test
@@ -52,12 +53,12 @@ public class DashboardServiceIntegrationTest {
 
         DashboardStatsResponse stats = transactionService.getStats();
 
-        assertThat(stats.totalTransactions()).isEqualTo(4);
-        assertThat(stats.approvedCount()).isEqualTo(3);
-        assertThat(stats.declinedCount()).isEqualTo(1);
-        assertThat(stats.totalAmount()).isEqualTo(650000L);
-        assertThat(stats.averageAmount()).isEqualTo(162500L);
-        assertThat(stats.avgProcessingTimeMs()).isEqualTo(50.0);
+        assertEquals(4, stats.totalTransactions());
+        assertEquals(3, stats.approvedCount());
+        assertEquals(1, stats.declinedCount());
+        assertEquals(650000L, stats.totalAmount());
+        assertEquals(162500L, stats.averageAmount());
+        assertEquals(50.0, stats.avgProcessingTimeMs());
     }
 
     @Test
@@ -69,7 +70,7 @@ public class DashboardServiceIntegrationTest {
 
         DashboardStatsResponse stats = transactionService.getStats();
 
-        assertThat(stats.approvalRate()).isEqualTo(0.75);
+        assertEquals(0.75, stats.approvalRate());
     }
 
     @Test
@@ -82,7 +83,7 @@ public class DashboardServiceIntegrationTest {
 
         DashboardStatsResponse stats = transactionService.getStats();
 
-        assertThat(stats.transactionsPerMinute()).isEqualTo(1);
+        assertEquals(1, stats.transactionsPerMinute());
     }
 
     @Test
@@ -102,8 +103,8 @@ public class DashboardServiceIntegrationTest {
         List<TransactionResponse> result = transactionService.getRecent(10);
 
         assertThat(result).hasSize(3);
-        assertThat(result.get(0).amount()).isEqualTo(300000L);
-        assertThat(result.get(2).amount()).isEqualTo(100000L);
+        assertEquals(300000L, result.get(0).amount());
+        assertEquals(100000L, result.get(2).amount());
     }
 
     private Transaction save(Transaction transaction) {

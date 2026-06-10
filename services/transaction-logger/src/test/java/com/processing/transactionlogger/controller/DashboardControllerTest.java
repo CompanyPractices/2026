@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +36,7 @@ public class DashboardControllerTest {
 
         DashboardStatsResponse result = dashboardController.getStats();
 
-        assertThat(result).isEqualTo(expected);
+        assertEquals(expected, result);
     }
 
     @Test
@@ -46,7 +46,7 @@ public class DashboardControllerTest {
 
         List<TransactionResponse> result = dashboardController.getRecent(20);
 
-        assertThat(result).isEqualTo(expected);
+        assertEquals(expected, result);
     }
 
     @Test
@@ -74,6 +74,7 @@ public class DashboardControllerTest {
                 150000L,
                 "643",
                 "TERM001",
+                "POS",
                 "MERCH12345678901",
                 "5411",
                 "ACQ001",

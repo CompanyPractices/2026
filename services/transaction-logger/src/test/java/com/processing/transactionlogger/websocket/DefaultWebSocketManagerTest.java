@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.socket.PingMessage;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -97,5 +98,37 @@ public class DefaultWebSocketManagerTest {
         manager.broadcast(TEST_MESSAGE);
 
         verify(healthy).sendMessage(new TextMessage(TEST_MESSAGE));
+    }
+
+    @Test
+    void pingSendsMessageToOpenSessions() throws Exception {
+        when(session.isOpen()).thenReturn(true);
+        manager.addSession(session);
+
+        manager.ping();
+
+        verify(session).sendMessage(any(PingMessage.class));
+    }
+
+    @Test
+    void pingRemovesClosedSession() throws Exception {
+        when(session.isOpen()).thenReturn(false);
+        manager.addSession(session);
+
+        manager.ping();
+        manager.broadcast(TEST_MESSAGE);
+
+        verify(session, never()).sendMessage(any());
+    }
+    @Test
+    void pingRemovesSessionThatFailsToReceivePing() throws Exception {
+        when(session.isOpen()).thenReturn(true);
+        doThrow(new IOException("PING_ERROR")).when(session).sendMessage(any(PingMessage.class));
+        manager.addSession(session);
+
+        manager.ping();
+        manager.broadcast(TEST_MESSAGE);
+
+        verify(session, times(1)).sendMessage(any());
     }
 }

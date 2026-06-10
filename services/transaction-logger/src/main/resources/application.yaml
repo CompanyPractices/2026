@@ -1,6 +1,10 @@
 server:
   port: ${SERVER_PORT:${PORT:8080}}
 
+websocket:
+  allowed-origins: ${DASHBOARD_ORIGIN:https://localhost:3000}
+  ping-interval-ms: 30000
+
 spring:
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:smp_db}
@@ -22,10 +26,26 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus,metrics
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: transaction-logger
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]":
+          - 0.5
+          - 0.95
+          - 0.99
 
 springdoc:
   swagger-ui:
