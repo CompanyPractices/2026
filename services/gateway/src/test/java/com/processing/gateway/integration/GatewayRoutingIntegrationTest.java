@@ -50,9 +50,106 @@ public class GatewayRoutingIntegrationTest {
             .options(wireMockConfig().dynamicPort())
             .build();
 
+    @RegisterExtension
+    static WireMockExtension wrongWm = WireMockExtension.newInstance()
+            .options(wireMockConfig().port(9666))
+            .build();
+
     @Autowired
     private TestRestTemplate restTemplate;
 
+    // Requests
+
+    private static final String VALID_TRANSACTION_REQUEST = """
+            {
+              "mti": "0100",
+              "stan": "000001",
+              "pan": "4000003458730237",
+              "processingCode": "000000",
+              "amount": 1000,
+              "currencyCode": "643",
+              "transmissionDateTime": "2026-06-05T18:12:49.07",
+              "terminalId": "TERM001",
+              "terminalType": "POS",
+              "merchantId": "MERCH00000000029",
+              "mcc": "5045",
+              "acquirerId": "ACQ002"
+            }
+            """;
+
+    private static final String TERMINAL_SIMULATOR_REQUEST = """
+            {
+              "count": 50,
+              "scenario": "normal"
+            }
+            """;
+
+    private static final String MERCHANT_SIMULATOR_REQUEST = """
+            {
+              "count": 50,
+              "mccCodes": ["5411", "5812"],
+              "scenario": "grocery"
+            }
+            """;
+
+    private static final String CARD_MANAGEMENT_REQUEST = """
+            {
+              "bin": "400000",
+              "cardholderName": "IVAN IVANOV",
+              "currencyCode": "643",
+              "dailyLimit": 15000000,
+              "monthlyLimit": 300000000,
+              "initialBalance": 100000000
+            }
+            """;
+
+    // Responses
+
+    private static final String TRANSACTION_RESPONSE = """
+            {
+              "mti": "0110",
+              "stan": "000001",
+              "rrn": "123456789012",
+              "authCode": "A12345",
+              "responseCode": "00",
+              "status": "APPROVED",
+              "declineReason": null,
+              "processingTimeMs": 10
+            }
+            """;
+
+    private static final String TERMINAL_SIMULATOR_RESPONSE = """
+            {
+              "totalSubmitted": 50,
+              "approved": 47,
+              "declined": 3,
+              "elapsedMs": 2300,
+              "transactions": []
+            }
+            """;
+
+    private static final String MERCHANT_SIMULATOR_RESPONSE = """
+            {
+              "totalSubmitted": 50,
+              "approved": 47,
+              "declined": 3,
+              "elapsedMs": 2300,
+              "transactions": []
+            }
+            """;
+
+    private static final String LOGGER_RESPONSE = """
+            {
+              "totalTransactions": 1250,
+              "approvedCount": 1100,
+              "declinedCount": 150,
+              "approvalRate": 0.88,
+              "totalAmount": 187500000,
+              "averageAmount": 150000,
+              "avgProcessingTimeMs": 38.5,
+              "transactionsPerMinute": 12.3
+            }
+            """;
     @DynamicPropertySource
     static void registerDownstreamUrls(DynamicPropertyRegistry registry) {
         registry.add("SWITCH_URL", switchWm::baseUrl);
@@ -75,39 +172,12 @@ public class GatewayRoutingIntegrationTest {
     void routesTransactionToSwitchWithRewrittenPath() {
         // Arrange
         switchWm.stubFor(post(urlEqualTo("/api/internal/route"))
-                .willReturn(okJson("""
-                        {
-                          "mti": "0110",
-                          "stan": "000001",
-                          "rrn": "123456789012",
-                          "authCode": "A12345",
-                          "responseCode": "00",
-                          "status": "APPROVED",
-                          "declineReason": null,
-                          "processingTimeMs": 10
-                        }
-                        """)));
-
-        String request = """
-                {
-                  "mti": "0100",
-                  "stan": "000001",
-                  "pan": "4000003458730237",
-                  "processingCode": "000000",
-                  "amount": 1000,
-                  "currencyCode": "643",
-                  "transmissionDateTime": "2026-06-05T18:12:49.07",
-                  "terminalId": "TERM001",
-                  "terminalType": "POS",
-                  "merchantId": "MERCH00000000029",
-                  "mcc": "5045",
-                  "acquirerId": "ACQ002"
-                }
-                """;
+                .withRequestBody(equalToJson(VALID_TRANSACTION_REQUEST))
+                .willReturn(okJson(TRANSACTION_RESPONSE)));
 
         // Act
         ResponseEntity<String> response =
-                restTemplate.postForEntity("/api/transactions", request, String.class);
+                restTemplate.postForEntity("/api/transactions", VALID_TRANSACTION_REQUEST, String.class);
 
         // Assert
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
@@ -121,7 +191,7 @@ public class GatewayRoutingIntegrationTest {
     @Test
     void rejectsInvalidTransactionBeforeCallingSwitch() {
         // Arrange
-        String request = validTransactionRequest().replace("4000003458730237", "4000");
+        String request = VALID_TRANSACTION_REQUEST.replace("4000003458730237", "4000");
 
         // Act
         ResponseEntity<String> response =
@@ -141,88 +211,45 @@ public class GatewayRoutingIntegrationTest {
     void shouldRouteToTerminalSimulator() {
         // Arrange
         String uri = "/api/simulator/terminal/run";
-        String requestBody = """
-                {
-                  "count": 50,
-                  "scenario": "normal"
-                }
-                """;
-        String responseBody = """
-                {
-                  "totalSubmitted": 50,
-                  "approved": 47,
-                  "declined": 3,
-                  "elapsedMs": 2300,
-                  "transactions": []
-                }
-                """;
 
         terminalWm.stubFor(post(urlEqualTo(uri))
-                .withRequestBody(equalToJson(requestBody))
-                .willReturn(okJson(responseBody)));
+                .withRequestBody(equalToJson(TERMINAL_SIMULATOR_REQUEST))
+                .willReturn(okJson(TERMINAL_SIMULATOR_RESPONSE)));
 
         // Act
         ResponseEntity<String> response =
-                restTemplate.postForEntity(uri, requestBody, String.class);
+                restTemplate.postForEntity(uri, TERMINAL_SIMULATOR_REQUEST, String.class);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(responseBody);
+        assertThat(response.getBody()).isEqualTo(TERMINAL_SIMULATOR_RESPONSE);
     }
 
     @Test
     void shouldRouteToMerchantSimulator() {
         // Arrange
         String uri = "/api/simulator/merchant/run";
-        String requestBody = """
-                {
-                  "count": 50,
-                  "mccCodes": ["5411", "5812"],
-                  "scenario": "grocery"
-                }
-                """;
-        String responseBody = """
-                {
-                  "totalSubmitted": 50,
-                  "approved": 47,
-                  "declined": 3,
-                  "elapsedMs": 2300,
-                  "transactions": []
-                }
-                """;
 
         merchantWm.stubFor(post(urlEqualTo(uri))
-                .withRequestBody(equalToJson(requestBody))
-                .willReturn(okJson(responseBody)));
+                .withRequestBody(equalToJson(MERCHANT_SIMULATOR_REQUEST))
+                .willReturn(okJson(MERCHANT_SIMULATOR_RESPONSE)));
 
         // Act
         ResponseEntity<String> response =
-                restTemplate.postForEntity(uri, requestBody, String.class);
+                restTemplate.postForEntity(uri, MERCHANT_SIMULATOR_REQUEST, String.class);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(responseBody);
+        assertThat(response.getBody()).isEqualTo(MERCHANT_SIMULATOR_RESPONSE);
     }
 
     @Test
     void dashboardShouldRouteToLogger() {
         // Arrange
         String uri = "/api/dashboard/stats";
-        String responseBody = """
-                {
-                  "totalTransactions": 1250,
-                  "approvedCount": 1100,
-                  "declinedCount": 150,
-                  "approvalRate": 0.88,
-                  "totalAmount": 187500000,
-                  "averageAmount": 150000,
-                  "avgProcessingTimeMs": 38.5,
-                  "transactionsPerMinute": 12.3
-                }
-                """;
 
         loggerWm.stubFor(get(urlEqualTo(uri))
-                .willReturn(okJson(responseBody)));
+                .willReturn(okJson(LOGGER_RESPONSE)));
 
         // Act
         ResponseEntity<String> response =
@@ -230,7 +257,7 @@ public class GatewayRoutingIntegrationTest {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(responseBody);
+        assertThat(response.getBody()).isEqualTo(LOGGER_RESPONSE);
     }
 
     @Test
@@ -339,6 +366,93 @@ public class GatewayRoutingIntegrationTest {
         assertThat(response.getBody()).doesNotContain("/api/internal/route", "/internal/health");
 
         switchWm.verify(getRequestedFor(urlEqualTo(uri)));
+    }
+                                   
+    // Negative Tests for Routing
+
+    @Test
+    void shouldNotRouteToNotSwitch() {
+        // Arrange
+        String internalUri = "/api/internal/transactions";
+        String publicUri = "/api/transactions";
+
+        wrongWm.stubFor(post(urlEqualTo(internalUri))
+                .withRequestBody(equalToJson(VALID_TRANSACTION_REQUEST))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(publicUri, VALID_TRANSACTION_REQUEST, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotRouteToNotTerminal() {
+        // Arrange
+        String uri = "/api/simulator/terminal/run";
+
+        wrongWm.stubFor(post(urlEqualTo(uri))
+                .withRequestBody(equalToJson(TERMINAL_SIMULATOR_REQUEST))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(uri, TERMINAL_SIMULATOR_REQUEST, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotRouteToNotMerchant() {
+        // Arrange
+        String uri = "/api/simulator/merchant/run";
+
+        wrongWm.stubFor(post(urlEqualTo(uri))
+                .withRequestBody(equalToJson(MERCHANT_SIMULATOR_REQUEST))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(uri, MERCHANT_SIMULATOR_REQUEST, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotRouteToNotLogger() {
+        // Arrange
+        String uri = "/api/dashboard/stats";
+
+        wrongWm.stubFor(get(urlEqualTo(uri))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.getForEntity(uri, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotRouteToNotCardManagement() {
+        // Arrange
+        String uri = "/api/cards";
+
+        wrongWm.stubFor(post(urlEqualTo(uri))
+                .withRequestBody(equalToJson(CARD_MANAGEMENT_REQUEST))
+                .willReturn(ok()));
+
+        // Act
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(uri, CARD_MANAGEMENT_REQUEST, String.class);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     private String validTransactionRequest() {
