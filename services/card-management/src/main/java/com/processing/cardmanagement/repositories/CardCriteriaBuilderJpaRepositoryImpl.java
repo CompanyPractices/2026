@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CardCriteriaBuilderJpaRepositoryImpl
-    implements CardCriteriaBuilderRepository {
+    implements CardCriteriaBuilderJpaRepository {
 
     @PersistenceContext
     private EntityManager entityManager;
