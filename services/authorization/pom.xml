@@ -94,7 +94,6 @@
             <groupId>com.processing</groupId>
             <artifactId>common</artifactId>
         </dependency>
-
     </dependencies>
 
     <build>
