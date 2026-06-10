@@ -8,7 +8,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface CardJpaRepository extends JpaRepository<CardEntity, UUID>, CardCriteriaBuilderRepository {
+public interface CardJpaRepository
+    extends JpaRepository<CardEntity, UUID>,
+    CardCriteriaBuilderJpaRepository {
 
     Optional<CardEntity> findByPan(String pan);
 }
