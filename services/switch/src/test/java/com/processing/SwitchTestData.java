@@ -53,7 +53,7 @@ public final class SwitchTestData {
                 "000001",
                 "4000001234560001",
                 "000000",
-                150_000,
+                150000L,
                 "643",
                 "2026-06-01T10:30:00",
                 "TERM001",
@@ -61,7 +61,6 @@ public final class SwitchTestData {
                 "MERCH12345678901",
                 "5411",
                 "ACQ001",
-                null,
                 null
         );
     }

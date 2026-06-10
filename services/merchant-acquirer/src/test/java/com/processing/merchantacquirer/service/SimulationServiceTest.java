@@ -2,6 +2,7 @@ package com.processing.merchantacquirer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -35,7 +36,7 @@ class SimulationServiceTest {
     @InjectMocks private SimulationService simulationService;
 
     @Test
-    void run_endToEndAcrossRealBeans() {
+    void endToEndAcrossRealBeans() {
         SimulatorRequest request = new SimulatorRequest(3, ScenarioType.grocery, null);
         List<CardDataResponse> mockCards = List.of(mock(CardDataResponse.class), mock(CardDataResponse.class));
         Scenario mockScenario = mock(Scenario.class);
@@ -65,11 +66,11 @@ class SimulationServiceTest {
 
         SimulatorResponse response = simulationService.run(request);
 
-        assertThat(response.totalSubmitted()).isEqualTo(3);
-        assertThat(response.approved()).isEqualTo(2);
-        assertThat(response.declined()).isEqualTo(1);
-        assertThat(response.transactions()).hasSize(3);
-        assertThat(response.elapsedMs()).isGreaterThanOrEqualTo(0);
+        assertEquals(3, response.totalSubmitted());
+        assertEquals(2, response.approved());
+        assertEquals(1, response.declined());
+        assertEquals(mockTransactions, response.transactions());
+        assertTrue(response.elapsedMs() > 0);
 
         verify(cardProvider).getCards(3);
         verify(scenarioProvider).getScenario(ScenarioType.grocery);
@@ -79,7 +80,7 @@ class SimulationServiceTest {
 
 
     @Test
-    void run_cardProviderUsesRequestCount() {
+    void cardProviderUsesRequestCount() {
         SimulatorRequest request = new SimulatorRequest(4, ScenarioType.grocery, null);
         Scenario mockScenario = mock(Scenario.class);
         List<Merchant> mockMerchants = List.of(mock(Merchant.class));
@@ -91,13 +92,14 @@ class SimulationServiceTest {
         when(transactionBuilder.build(eq(4), any(), any(), any(), any())).thenReturn(List.of());
         when(transactionSender.sendAll(any())).thenReturn(mockStats);
 
-        simulationService.run(request);
+        SimulatorResponse respone = simulationService.run(request);
 
+        assertEquals(4, respone.totalSubmitted());
         verify(cardProvider).getCards(4);
     }
 
     @Test
-    void run_scenarioMccReachRepository() {
+    void scenarioMccReachRepository() {
         SimulatorRequest request = new SimulatorRequest(1, ScenarioType.travel, null);
         Scenario mockScenario = mock(Scenario.class);
         List<Merchant> mockMerchants = List.of(mock(Merchant.class));
@@ -117,7 +119,7 @@ class SimulationServiceTest {
     }
 
     @Test
-    void run_gatewayFailureDegradesToDeclined() {
+    void gatewayFailureDegradesToDeclined() {
         SimulatorRequest request = new SimulatorRequest(2, ScenarioType.grocery, null);
         Scenario mockScenario = mock(Scenario.class);
 
@@ -126,13 +128,12 @@ class SimulationServiceTest {
 
         when(merchantProvider.getMerchant(any(), any())).thenThrow(new RuntimeException("gateway down"));
 
-        assertThatThrownBy(() -> simulationService.run(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("gateway down");
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> simulationService.run(request));
+        assertEquals("gateway down", exception.getMessage());
     }
 
     @Test
-    void run_noMerchants_throws() {
+    void noMerchants_throws() {
         SimulatorRequest request = new SimulatorRequest(1, ScenarioType.grocery, null);
         Scenario mockScenario = mock(Scenario.class);
 
@@ -140,19 +141,17 @@ class SimulationServiceTest {
         when(scenarioProvider.getScenario(ScenarioType.grocery)).thenReturn(mockScenario);
         when(merchantProvider.getMerchant(any(), any())).thenThrow(new IllegalArgumentException("Merchants with given mcc not found"));
 
-        assertThatThrownBy(() -> simulationService.run(request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Merchants with given mcc");
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> simulationService.run(request));
+        assertEquals("Merchants with given mcc not found", exception.getMessage());
     }
 
     @Test
-    void run_noCards_throws() {
+    void noCards_throws() {
         SimulatorRequest request = new SimulatorRequest(1, ScenarioType.grocery, null);
 
         when(cardProvider.getCards(1)).thenThrow(new IllegalArgumentException("Cards not found"));
 
-        assertThatThrownBy(() -> simulationService.run(request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Cards not found");
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> simulationService.run(request));
+        assertEquals("Cards not found", exception.getMessage());
     }
 }
