@@ -74,6 +74,7 @@ public class DashboardControllerTest {
                 150000L,
                 "643",
                 "TERM001",
+                "POS",
                 "MERCH12345678901",
                 "5411",
                 "ACQ001",
