@@ -1,5 +1,5 @@
 create table Merchants (
-    id VARCHAR(50) PRIMARY KEY,
+    id VARCHAR(15) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     mcc CHAR(4) NOT NULL,
     category VARCHAR(50) NOT NULL,
