@@ -1,4 +1,5 @@
 package com.processing.common.dto.cardmanagement;
+
 import com.processing.common.dto.annotations.NotNegative;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
@@ -8,15 +9,16 @@ public record PatchCardRequest(
 
     @Nullable
     @Schema(
-        description = "Card status",
+        description = "Card model status",
         example = "ACTIVE",
-        allowableValues = {"ACTIVE",
-        "INACTIVE",
-        "BLOCKED",
-        "EXPIRED",
-        "DELETED"}
+        allowableValues = {
+            "ACTIVE",
+            "INACTIVE",
+            "BLOCKED",
+            "EXPIRED"
+        }
     )
-    CardStatus status,
+    CardModelStatus status,
 
     @Nullable
     @NotNegative

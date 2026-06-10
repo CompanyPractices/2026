@@ -1,5 +1,7 @@
 package com.processing.merchantacquirer.controller;
 
+import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
+import com.processing.merchantacquirer.controller.dto.AcquirerFeeResponse;
 import com.processing.merchantacquirer.controller.dto.SimulatorRequest;
 import com.processing.merchantacquirer.controller.dto.SimulatorResponse;
 import com.processing.merchantacquirer.domain.entity.Merchant;
@@ -28,5 +30,10 @@ public class SimulationController {
   @GetMapping("/api/simulator/merchants")
   public ResponseEntity<List<Merchant>> merchants() {
     return ResponseEntity.ok(simulationService.getAllMerchants());
+  }
+
+  @GetMapping("/api/simulator/merchant/fee")
+  public ResponseEntity<AcquirerFeeResponse> merchants(@RequestBody @Valid AcquirerFeeRequest request) {
+    return ResponseEntity.ok(simulationService.getAcquirerFee(request));
   }
 }

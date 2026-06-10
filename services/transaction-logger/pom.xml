@@ -84,6 +84,12 @@
             <artifactId>hibernate-jpamodelgen</artifactId>
         </dependency>
 
+        <!-- Prometheus metrics export -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
         <!-- Test data integration -->
         <dependency>
             <groupId>org.instancio</groupId>
@@ -142,6 +148,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <excludeGeneratedSources>true</excludeGeneratedSources>
+                </configuration>
             </plugin>
         </plugins>
     </build>
