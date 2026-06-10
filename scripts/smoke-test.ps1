@@ -1,5 +1,5 @@
 # =========================================================================
-# smoke-test.ps1 — Автоматическая приёмка для ревью (Windows PowerShell)
+# smoke-test.ps1 - Автоматическая приёмка для ревью (Windows PowerShell)
 # =========================================================================
 # Запуск:
 #   powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1
@@ -13,7 +13,7 @@ function Fail($msg) { Write-Host "❌ $msg" -ForegroundColor Red; exit 1 }
 function Info($msg) { Write-Host "⏳ $msg" -ForegroundColor Yellow }
 
 Write-Host "=========================================="
-Write-Host "  Smoke Test — Automated Acceptance"
+Write-Host "  Smoke Test - Automated Acceptance"
 Write-Host "  СМП Processing Simulator"
 Write-Host "=========================================="
 Write-Host ""
@@ -26,10 +26,10 @@ Info "1. Checking health-checks..."
 function Check-Health($name, $url) {
     try {
         $response = Invoke-WebRequest -Uri $url -TimeoutSec 5 -UseBasicParsing
-        if ($response.StatusCode -eq 200) { Pass "$name ($url) — HTTP 200" }
-        else { Fail "$name ($url) — HTTP $($response.StatusCode) (expected 200)" }
+        if ($response.StatusCode -eq 200) { Pass "$name ($url) - HTTP 200" }
+        else { Fail "$name ($url) - HTTP $($response.StatusCode) (expected 200)" }
     } catch {
-        Fail "$name ($url) — UNREACHABLE"
+        Fail "$name ($url) - UNREACHABLE"
     }
 }
 
@@ -43,9 +43,9 @@ Check-Health "Transaction Logger" "http://localhost:8088/health"
 
 try {
     $db = Invoke-WebRequest -Uri "http://localhost:3000" -TimeoutSec 5 -UseBasicParsing
-    Pass "Web Dashboard (http://localhost:3000) — HTTP $($db.StatusCode)"
+    Pass "Web Dashboard (http://localhost:3000) - HTTP $($db.StatusCode)"
 } catch {
-    Fail "Web Dashboard (http://localhost:3000) — UNREACHABLE"
+    Fail "Web Dashboard (http://localhost:3000) - UNREACHABLE"
 }
 
 Write-Host ""

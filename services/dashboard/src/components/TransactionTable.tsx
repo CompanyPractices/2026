@@ -3,10 +3,12 @@ import { getStatusIcon } from '../utils/statusIcon.ts';
 import { Transaction } from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
-import {useWebSocket} from "../hooks/useWebSocket.ts";
 import useTransactions from "../hooks/useTransactions.ts";
 import { ArrowDownToLine } from 'lucide-react';
 import {exportToCsv} from "../utils/exportToCsv.ts";
+import {Filters} from "./Filters.tsx";
+import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
+
 
 const CSV_HEADERS = [
     'STAN',
@@ -38,10 +40,13 @@ const mapTransactionToCsvRow = (tx: Transaction) => ({
     'Время': formatTime(tx.transmissionDateTime)
 });
 
-export function TransactionTable(){
+type TransactionTableProps = {
+    liveTransactions: Transaction[],
+};
+
+export function TransactionTable({ liveTransactions }: TransactionTableProps){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-    const { transactions: initialTransactions, loading, error } = useTransactions();
-    const { liveTransactions } = useWebSocket();
+    const { transactions: initialTransactions, loading, error, searchTransactions } = useTransactions();
 
     const allTransactions = [
         ...liveTransactions,
@@ -54,30 +59,6 @@ export function TransactionTable(){
 
     const displayedTransactions = uniqueTransactions.slice(0, 20);
 
-    if (loading && liveTransactions.length === 0) {
-        return (
-            <div className="text-center py-8 text-gray-500">
-                Загрузка транзакций...
-            </div>
-        );
-    }
-
-    if (error && liveTransactions.length === 0) {
-        return (
-            <div className="text-center py-8 text-red-500">
-                Ошибка загрузки транзакций: {error}
-            </div>
-        );
-    }
-
-    if (displayedTransactions.length === 0) {
-        return (
-            <div className="text-center py-8 text-gray-500">
-                Ожидание первых транзакций...
-            </div>
-        );
-    }
-
     const handleExportCsv = () => {
         const csvRows = displayedTransactions.map(mapTransactionToCsvRow);
         const filename = `transactions_${new Date().toISOString().slice(0, 10)}.csv`;
@@ -86,6 +67,8 @@ export function TransactionTable(){
 
     return (
         <div className="font-mono w-full">
+            <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={searchTransactions}/>
+
             <div className="flex items-center justify-center gap-3 mb-4">
                 <h2 className="text-2xl font-bold text-center drop-shadow-lg">
                     Последние 20 транзакций
@@ -103,7 +86,24 @@ export function TransactionTable(){
                 </button>
             </div>
 
-            <div className="rounded-3xl overflow-hidden border-2 border-emerald-600 shadow-lg mb-5">
+            {error &&
+                <div className="text-center py-8 text-red-500">
+                    Ошибка загрузки транзакций: {error}
+                </div>
+            }
+
+            {loading &&
+                <div className="text-center py-8 text-gray-500">
+                    Загрузка транзакций...
+                </div>
+            }
+
+            {!loading && !error && displayedTransactions.length === 0 &&
+                <div>Транзакций не найдено</div>
+            }
+
+            {!loading && !error && displayedTransactions.length > 0 &&
+                <div className="rounded-3xl border-2 border-emerald-600 shadow-lg mb-5">
 
                 <div className="overflow-x-auto">
 
@@ -148,13 +148,13 @@ export function TransactionTable(){
                     </table>
                 </div>
             </div>
-
+            }
             {selectedTx && (
                 <TransactionModal
-                    transaction={selectedTx}
-                    onClose={() => setSelectedTx(null)}
-                />
-            )}
-        </div>
-    );
+                transaction={selectedTx}
+            onClose={() => setSelectedTx(null)}
+        />
+    )}
+</div>
+);
 }
