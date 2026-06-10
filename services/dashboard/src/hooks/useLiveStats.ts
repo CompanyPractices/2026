@@ -29,7 +29,7 @@ export function useLiveStats(liveTransactions: Transaction[]) {
                 totalTx: transactionStats.totalTransactions || 0,
                 approvedTx: transactionStats.approvedCount || 0,
                 totalAmount: transactionStats.totalAmount || 0,
-                totalTime: transactionStats.avgProcessingTimeMs || 0,
+                totalTime: transactionStats.avgProcessingTimeMs * transactionStats.totalTransactions || 0,
             };
 
             statsRef.current = mappedStats;
