@@ -1,7 +1,6 @@
 package com.processing.cardmanagement.repositories;
 
 import com.processing.cardmanagement.models.CardEntity;
-import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.annotation.Nullable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,7 +29,7 @@ public interface CardJpaRepository extends JpaRepository<CardEntity, UUID> {
             (CAST(:endDate AS localdatetime) IS NULL OR card.createdAt <= :endDate)
         """)
     List<CardEntity> findCards(
-        @Nullable @Param("status") CardStatus status,
+        @Nullable @Param("status") String status,
         @Nullable @Param("bin") String bin,
         @Nullable @Param("issuerId") String issuerId,
         @Nullable @Param("startDate") LocalDateTime startDate,
@@ -49,7 +48,7 @@ public interface CardJpaRepository extends JpaRepository<CardEntity, UUID> {
             (CAST(:endDate AS localdatetime) IS NULL OR card.createdAt <= :endDate)
         """)
     long countCards(
-        @Nullable @Param("status") CardStatus status,
+        @Nullable @Param("status") String status,
         @Nullable @Param("bin") String bin,
         @Nullable @Param("issuerId") String issuerId,
         @Nullable @Param("startDate") LocalDateTime startDate,

@@ -2,7 +2,7 @@ package com.processing.cardmanagement.repositories;
 
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.models.Card;
-import com.processing.common.dto.cardmanagement.CardStatus;
+import com.processing.cardmanagement.models.CardStatus;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.PageRequest;
@@ -39,7 +39,7 @@ public final class JavaPersistenceAdapter implements CardRepository {
 
         return jpaRepository
             .findCards(
-                status,
+                status != null ? status.name() : null,
                 bin,
                 issuerId,
                 startDate,
@@ -60,7 +60,7 @@ public final class JavaPersistenceAdapter implements CardRepository {
         @Nullable LocalDateTime endDate
     ) {
         return jpaRepository.countCards(
-            status,
+            status != null ? status.name() : null,
             bin,
             issuerId,
             startDate,
