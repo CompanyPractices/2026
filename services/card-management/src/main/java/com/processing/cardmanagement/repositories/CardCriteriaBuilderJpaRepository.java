@@ -6,7 +6,7 @@ import jakarta.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface CardCriteriaBuilderRepository {
+public interface CardCriteriaBuilderJpaRepository {
 
     List<CardEntity> findCards(
         long limit,
