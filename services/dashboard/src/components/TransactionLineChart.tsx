@@ -4,10 +4,11 @@ import { format, getHours } from 'date-fns';
 
 type LineChartProps = {
     transactions: Transaction[];
-    isConnected: boolean;
+    loading: boolean;
+    error: string | null
 }
 
-export default function TransactionLineChart({transactions, isConnected} : LineChartProps) {
+export default function TransactionLineChart({transactions, loading, error} : LineChartProps) {
     const currentHour = getHours(new Date());
 
     function prepareData(transactions: Transaction[]){
@@ -21,35 +22,49 @@ export default function TransactionLineChart({transactions, isConnected} : LineC
 
     const txData = prepareData(transactions)
 
+    if (error) {
+        return (
+            <div className="text-center py-8 text-red-500">
+                Ошибка загрузки транзакций: {error}
+            </div>
+        )
+    }
+
+    if (loading) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Загрузка транзакций...
+            </div>
+        )
+    }
+
+    if (!loading && !error && transactions.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Транзакций не найдено
+            </div>
+        )
+    }
+
     return (
         <ResponsiveContainer width="80%" height={300} className="mx-auto my-auto" >
-            <>
-            {!isConnected &&
-                <div className="grid place-content-center text-zinc-700 font-mono" >Ожидание транзакций...</div>
-            }
-            {isConnected && txData.length === 0 &&
-                <div className="grid place-content-center text-zinc-700 font-mono" >Нет новых транзакций за последний час</div>
-            }
-            {isConnected && txData.length > 0 &&
-                <LineChart
-                    data = {txData}
-                >
+            <LineChart
+                data = {txData}
+            >
                 <CartesianGrid strokeDasharray="3 3"/>
                 <XAxis
-                dataKey="name"
-                stroke="red"
+                    dataKey="name"
+                    stroke="red"
                 />
                 <YAxis
-                dataKey="count"
-                stroke="blue"
+                    dataKey="count"
+                    stroke="blue"
                 />
                 <Line
-                type="monotone"
-                dataKey="count"
+                    type="monotone"
+                    dataKey="count"
                 />
-                </LineChart>
-            }
-            </>
+            </LineChart>
         </ResponsiveContainer>
     )
 }

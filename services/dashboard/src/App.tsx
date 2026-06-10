@@ -5,6 +5,7 @@ import {TransactionTable} from "./components/TransactionTable.tsx";
 import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
+import { MOCK_TRANSACTIONS_LINECHART } from './mockData.ts'
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
@@ -27,10 +28,10 @@ function App() {
             <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
             <main className="w-2/3 flex-grow grid grid-cols-4 gap-4">
                 <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
-                    <TransactionLineChart transactions={displayedTransactions} />
+                    <TransactionLineChart transactions={displayedTransactions} loading={loading} error={error} />
                 </div>
                 <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
-                    <TransactionPieChart transactions={displayedTransactions} />
+                    <TransactionPieChart transactions={displayedTransactions} loading={loading} error={error}/>
                 </div>
                 <div className="col-span-4 m-4 place-content-center">
                     <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
