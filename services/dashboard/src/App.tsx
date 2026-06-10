@@ -2,20 +2,25 @@ import LineChart from "./components/LineChart.tsx";
 import {Header} from "./components/Header.tsx";
 import PieChart from "./components/PieChart.tsx";
 import {TransactionTable} from "./components/TransactionTable.tsx";
+import {useLiveStats} from "./hooks/useLiveStats.ts";
+import {useWebSocket} from "./hooks/useWebSocket.ts";
 
 function App() {
+  const { liveTransactions, isConnected } = useWebSocket();
+  const { stats, loading, error } = useLiveStats(liveTransactions);
+
   return (
     <div className="bg-zinc-200 min-h-screen flex flex-col items-center justify-items-stretch">
-      <Header />
+      <Header stats={stats} loading={loading} error={error} isConnected={isConnected}/>
       <main className="w-2/3 flex-grow grid grid-cols-4 gap-4">
-          <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-xl place-content-center">
+          <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
               <LineChart />
           </div>
-          <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-xl place-content-center">
+          <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
               <PieChart />
           </div>
           <div className="col-span-4 m-4 place-content-center">
-              <TransactionTable/>
+              <TransactionTable liveTransactions={liveTransactions} />
           </div>
       </main>
 
