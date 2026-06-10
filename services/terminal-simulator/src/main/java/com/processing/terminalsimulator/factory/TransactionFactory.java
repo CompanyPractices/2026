@@ -37,7 +37,7 @@ public class TransactionFactory {
         long amount = transactionStrategy.calculateAmount(card);
         String mcc = transactionStrategy.getMcc();
         String pan = transactionStrategy.isInvalidPan() ? getInvalidPan(card) : card.pan();
-        String terminalId = String.format("TERM%03d", ThreadLocalRandom.current().nextInt(1, 1000));
+        String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
         String terminalType = String.valueOf(TerminalType.values()[(int) (Math.random() * 3)]);
         String merchantId = String.format("MERCH%10d", ThreadLocalRandom.current().nextLong(1, 10_000_000_000L));
         String acquirerId = String.format("ACQ%03d", ThreadLocalRandom.current().nextLong(1, 1000));
