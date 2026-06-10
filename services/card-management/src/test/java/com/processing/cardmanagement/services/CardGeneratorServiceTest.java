@@ -58,11 +58,11 @@ public class CardGeneratorServiceTest {
     void generateShouldReturnCorrectCount() {
         int count = 100;
         List<String> bins = List.of(
-            faker.numerify("######"),
-            faker.numerify("######"),
-            faker.numerify("######"),
-            faker.numerify("######"),
-            faker.numerify("######"));
+                faker.numerify("######"),
+                faker.numerify("######"),
+                faker.numerify("######"),
+                faker.numerify("######"),
+                faker.numerify("######"));
 
         when(cardService.createCards(anyList())).thenAnswer(inv -> {
             List<CardDraft> dtos = inv.getArgument(0);
