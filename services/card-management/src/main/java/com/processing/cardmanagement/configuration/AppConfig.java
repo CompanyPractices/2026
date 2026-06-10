@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.configuration;
 
+import com.processing.cardmanagement.events.domain.CardServiceEventListener;
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.options.CardServiceConfigurationProperties;
 import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationProperties;
@@ -34,13 +35,15 @@ public class AppConfig {
         CardRepository cardRepository,
         CardServiceConfigurationProperties serviceConfigurationProperties,
         CardServiceDefaultsConfigurationProperties defaultsConfigurationProperties,
-        PanGenerator panGenerator
+        PanGenerator panGenerator,
+        CardServiceEventListener cardServiceEventListener
     ) {
         return new CardServiceImpl(
             cardRepository,
             serviceConfigurationProperties.toCardServiceSettings(),
             defaultsConfigurationProperties.toCardServiceDefaults(),
-            panGenerator
+            panGenerator,
+            cardServiceEventListener
         );
     }
 }
