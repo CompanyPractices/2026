@@ -55,6 +55,10 @@ public record TransactionRequest(
         @Size(max = 8)
         String terminalId,
 
+        @Schema(description = "Тип терминала")
+        @Size(max = 10)
+        String terminalType,
+
         @Schema(description = "Идентификатор мерчанта")
         @NotBlank
         @Size(max = 15)

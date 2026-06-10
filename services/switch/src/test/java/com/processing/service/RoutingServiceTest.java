@@ -2,10 +2,12 @@ package com.processing.service;
 
 import com.processing.SwitchTestData;
 import com.processing.config.SwitchProperties;
+import com.processing.exception.UnknownBinException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RoutingServiceTest {
 
@@ -24,14 +26,17 @@ class RoutingServiceTest {
     }
 
     @Test
-    void getIssuerIdByPan_returnsNullForUnknownBin() {
-        assertThat(routingService.getIssuerIdByPan("9999991234560001")).isNull();
+    void getIssuerIdByPan_throwsExceptionForUnknownBin() {
+        assertThrows(UnknownBinException.class, () ->
+                routingService.getIssuerIdByPan("9999991234560001"));
     }
 
     @Test
-    void getIssuerIdByPan_returnsNullForShortOrMissingPan() {
-        assertThat(routingService.getIssuerIdByPan("40000")).isNull();
-        assertThat(routingService.getIssuerIdByPan(null)).isNull();
+    void getIssuerIdByPan_throwsExceptionForShortOrMissingPan() {
+        assertThrows(UnknownBinException.class, () ->
+                routingService.getIssuerIdByPan("40000"));
+        assertThrows(UnknownBinException.class, () ->
+                routingService.getIssuerIdByPan(null));
     }
 
     @Test
@@ -41,11 +46,13 @@ class RoutingServiceTest {
                 java.util.Map.of("499999", "ISS999"),
                 "http://auth",
                 "http://logger",
-                true
+                SwitchTestData.defaultHttp(),
+                SwitchTestData.defaultRetry()
         );
         RoutingService customRouting = new RoutingService(custom);
 
         assertThat(customRouting.getIssuerIdByPan("4999991234560001")).isEqualTo("ISS999");
-        assertThat(customRouting.getIssuerIdByPan("4000001234560001")).isNull();
+        assertThrows(UnknownBinException.class, () ->
+                customRouting.getIssuerIdByPan("4000001234560001"));
     }
 }

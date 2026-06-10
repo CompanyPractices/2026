@@ -23,14 +23,15 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "400000123456000",
                 "000000",
-                150000,
+                150000L,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
                 "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(request))
@@ -45,14 +46,15 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560001",
                 "000000",
-                0,
+                0L,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
                 "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(request))
@@ -67,14 +69,15 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560001",
                 "000000",
-                150000,
+                150000L,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
                 "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(request))
@@ -88,14 +91,15 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560001",
                 "000000",
-                150000,
+                150000L,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
                 "POS",
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null
         );
     }
 
@@ -106,14 +110,15 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560000",
                 "000000",
-                150000,
+                150000L,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
                 null,
                 "MERCH12345678901",
                 "5411",
-                "ACQ001"
+                "ACQ001",
+                null
         );
 
         assertThatCode(() -> validator.validate(request))
