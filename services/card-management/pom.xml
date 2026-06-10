@@ -114,6 +114,13 @@
             <version>${mapstruct.version}</version>
             <scope>compile</scope>
         </dependency>
+
+        <!-- REST API integration testing -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
