@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
 import {useWebSocket} from "../hooks/useWebSocket.ts";
 import useTransactions from "../hooks/useTransactions.ts";
+import { ArrowDownToLine } from 'lucide-react';
 
 export function TransactionTable(){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
@@ -48,9 +49,15 @@ export function TransactionTable(){
 
     return (
         <div className="font-mono w-full">
-            <h2 className="text-2xl font-bold mb-4 text-center drop-shadow-lg">
-                Последние 20 транзакций
-            </h2>
+            <div className="flex items-center justify-center gap-3 mb-4">
+                <h2 className="text-2xl font-bold text-center drop-shadow-lg">
+                    Последние 20 транзакций
+                </h2>
+                <button className='px-5 py-1  text-lg rounded-3xl bg-emerald-400 font-semibold cursor-pointer hover:bg-emerald-500 hover:text-zinc-200 transition-colors duration-200 flex items-center gap-1' >
+                    <ArrowDownToLine size={16} strokeWidth={3} className="inline-block"/>
+                    CSV
+                </button>
+            </div>
 
             <div className="rounded-3xl overflow-hidden border-2 border-emerald-600 shadow-lg mb-5">
 
