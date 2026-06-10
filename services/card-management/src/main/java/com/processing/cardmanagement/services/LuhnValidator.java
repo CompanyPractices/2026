@@ -11,11 +11,9 @@ import java.util.Random;
 public class LuhnValidator implements PanGenerator {
 
     private final Random random = new Random();
-    private String pan;
 
     @Override
     public boolean isValid(@Pan String pan) {
-        this.pan = pan;
         int total = 0;
         boolean isEvenIdx = false;
 

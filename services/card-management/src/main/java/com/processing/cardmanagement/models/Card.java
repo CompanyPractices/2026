@@ -1,7 +1,6 @@
 package com.processing.cardmanagement.models;
 
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
-import com.processing.common.dto.cardmanagement.CardStatus;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
