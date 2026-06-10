@@ -43,7 +43,8 @@ public class SimulationService {
     log.info(String.valueOf(merchants));
 
     // Создание терминала
-    Terminal terminal = new Terminal("TERM" + ThreadLocalRandom.current().nextInt(1, 1000), "POS");
+    String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10000));
+    Terminal terminal = new Terminal(terminalId, "POS");
 
     // Создание транакций
     List<AuthorizationRequest> authorizationRequests =
