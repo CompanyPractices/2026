@@ -4,7 +4,6 @@ package com.processing.terminalsimulator.util;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -24,7 +23,6 @@ public class DateTimeGenerator {
         int second = ThreadLocalRandom.current().nextInt(0, 60);
 
         LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, minute, second);
-        return ldt.toInstant(ZoneOffset.UTC).toString();
-
+        return ldt.toString();
     }
 }
