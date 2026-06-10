@@ -9,7 +9,7 @@ MAX_CONTAINERS=10
 echo "Автоскейлер запущен"
 
 while true; do
-  RESPONSE=$(curl -s "http://localhost:9090/api/v1/query?query=sum%28rate%28http_server_requests_seconds_count%7Bapplication%3D%22gateway%22%7D%5B1m%5D%29%29")
+  RESPONSE=$(curl -s "http://prometheus:9090/api/v1/query?query=sum%28rate%28http_server_requests_seconds_count%7Bapplication%3D%22gateway%22%7D%5B1m%5D%29%29")
 
   RAW_RPS=$(echo "$RESPONSE" | sed -E 's/.*,\[.*,"([^"]+)".*/\1/')
 
