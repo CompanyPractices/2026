@@ -10,6 +10,9 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,7 +44,7 @@ public class SimulationService {
     log.info(String.valueOf(merchants));
 
     // Создание терминала
-    Terminal terminal = new Terminal("TERM001", "POS");
+    Terminal terminal = new Terminal("TERM" + ThreadLocalRandom.current().nextInt(1, 1000), "POS");
 
     // Создание транакций
     List<AuthorizationRequest> authorizationRequests =

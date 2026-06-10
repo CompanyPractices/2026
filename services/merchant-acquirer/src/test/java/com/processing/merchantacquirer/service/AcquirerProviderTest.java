@@ -3,6 +3,7 @@ package com.processing.merchantacquirer.service;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeResponse;
 import com.processing.merchantacquirer.domain.entity.Merchant;
+import com.processing.merchantacquirer.repository.InMemoryAcquirerFeeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -17,12 +18,12 @@ import static org.mockito.Mockito.when;
 
 public class AcquirerProviderTest {
     private AcquirerProvider acquirerProvider;
-    Map<AcquirerFeeRequest, Double> acquirerFeeMap;
+    private InMemoryAcquirerFeeRepository repository;
 
     @BeforeEach
     void setUp() {
-        acquirerFeeMap = new HashMap<>();
-        acquirerProvider = new AcquirerProvider(acquirerFeeMap);
+        repository = new InMemoryAcquirerFeeRepository();
+        acquirerProvider = new AcquirerProvider(repository);
     }
 
     @Test
@@ -33,12 +34,13 @@ public class AcquirerProviderTest {
         long amount = 139_999;
         String pan = "4444445808467586";
         String stan = "000004";
+        String terminalId = "TERM001";
         double expected = amount * 0.067;
 
-        acquirerProvider.calculateFee(merchant, amount, stan, pan);
+        acquirerProvider.calculateFee(merchant, amount, stan, pan, terminalId);
 
-        AcquirerFeeRequest expectedRequest = new AcquirerFeeRequest(stan, pan);
-        assertEquals(expected, acquirerFeeMap.get(expectedRequest));
+        AcquirerFeeRequest expectedRequest = new AcquirerFeeRequest(stan, pan, terminalId);
+        assertEquals(expected, repository.get(expectedRequest));
     }
 
     @Test
@@ -46,10 +48,11 @@ public class AcquirerProviderTest {
         int amount = 139_999;
         String pan = "4444445808467586";
         String stan = "000004";
+        String terminalId = "TERM001";
         double fee = amount * 0.067;
 
-        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(stan, pan);
-        acquirerFeeMap.put(acquirerFeeRequest, fee);
+        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(stan, pan, terminalId);
+        repository.save(acquirerFeeRequest, fee);
 
         AcquirerFeeResponse acquirerFeeResponse = acquirerProvider.getAcquirerFee(acquirerFeeRequest);
 
@@ -62,7 +65,8 @@ public class AcquirerProviderTest {
     void getUnrealFeeInMap() {
         String pan = "4444445808467586";
         String stan = "000004";
-        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(stan, pan);
+        String terminalId = "TERM001";
+        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(stan, pan, terminalId);
 
         assertThrows(NullPointerException.class,
                 () -> acquirerProvider.getAcquirerFee(acquirerFeeRequest));

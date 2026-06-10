@@ -36,7 +36,7 @@ public class TransactionBuilder {
       AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
               card.pan(), card.currencyCode(), amount, terminal, merchant);
       requests.add(authorizationRequest);
-      acquirerProvider.calculateFee(merchant, amount, authorizationRequest.stan(), card.pan());
+      acquirerProvider.calculateFee(merchant, amount, authorizationRequest.stan(), card.pan(), terminal.getId());
     }
 
     return requests;

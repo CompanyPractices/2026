@@ -3,6 +3,7 @@ package com.processing.merchantacquirer.service;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeResponse;
 import com.processing.merchantacquirer.domain.entity.Merchant;
+import com.processing.merchantacquirer.repository.AcquirerFeeRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -13,24 +14,20 @@ import java.util.Map;
 @Component
 @AllArgsConstructor
 public class AcquirerProvider {
-    Map<AcquirerFeeRequest, Double> acquirerFeeMap;
+    public final AcquirerFeeRepository repository;
 
-    public void calculateFee(Merchant merchant, Long amount, String stan, String pan) {
+    public void calculateFee(Merchant merchant, Long amount, String stan, String pan, String terminalId) {
         double acquiringFee = (double) amount * merchant.getAcquiringFee().doubleValue();
 
-        acquirerFeeMap.put(new AcquirerFeeRequest(stan, pan), acquiringFee);
-        log.info("Calculate acquirer fee: STAN: {} PAN: {} Acquirer fee: {}", stan, pan, acquiringFee);
+        repository.save(new AcquirerFeeRequest(stan, pan, terminalId), acquiringFee);
+        log.info("Calculate acquirer fee: STAN: {} PAN: {} Acquirer fee: {} TerminalID: {}", stan, pan, acquiringFee, terminalId);
     }
 
     public AcquirerFeeResponse getAcquirerFee(AcquirerFeeRequest request) {
-        try {
-            double acquirerFee = acquirerFeeMap.get(request);
-            log.info("Request for get acquirer fee: STAN: {} PAN: {} Acquirer fee: {}",
-                    request.stan(), request.pan(), acquirerFee);
+        double acquirerFee = repository.get(request);
+        log.info("Request for get acquirer fee: STAN: {} PAN: {} Acquirer fee: {}",
+                request.stan(), request.pan(), acquirerFee);
 
-            return new AcquirerFeeResponse(request.stan(), request.pan(), acquirerFee);
-        } catch (NullPointerException e) {
-            throw new NullPointerException("Local table with acquirerFee is empty. Try generate transactions");
-        }
+        return new AcquirerFeeResponse(request.stan(), request.pan(), acquirerFee);
     }
 }
