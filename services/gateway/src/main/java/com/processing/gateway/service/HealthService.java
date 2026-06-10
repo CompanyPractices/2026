@@ -32,6 +32,8 @@ public class HealthService {
     private final HealthProperties healthProperties;
     private final GatewayProperties gatewayProperties;
 
+    private HealthStatus gatewayStatus = HealthStatus.OK;
+
     public HealthResponse getDownstreamServicesHealth() {
         String switchUrl = serviceProperties.getSwitchUrl() + healthProperties.getUrl();
         String loggerUrl = serviceProperties.getLoggerUrl() + healthProperties.getUrl();
@@ -39,17 +41,17 @@ public class HealthService {
         String cardsUrl = serviceProperties.getCardsUrl() + healthProperties.getUrl();
 
         return new HealthResponse(
-                HealthStatus.OK.name().toLowerCase(),
+                gatewayStatus,
                 GATEWAY_SERVICE_NAME,
                 gatewayProperties.getVersion(),
                 Map.of(
-                    SWITCH_SERVICE_NAME, checkService(switchUrl),
-                    AUTH_SERVICE_NAME, checkService(authUrl),
-                    CARD_MGMT_SERVICE_NAME, checkService(cardsUrl),
-                    LOGGER_SERVICE_NAME, checkService(loggerUrl)));
+                    SWITCH_SERVICE_NAME, checkService(switchUrl, SWITCH_SERVICE_NAME),
+                    AUTH_SERVICE_NAME, checkService(authUrl, AUTH_SERVICE_NAME),
+                    CARD_MGMT_SERVICE_NAME, checkService(cardsUrl, AUTH_SERVICE_NAME),
+                    LOGGER_SERVICE_NAME, checkService(loggerUrl, LOGGER_SERVICE_NAME)));
     }
 
-    private String checkService(String url) {
+    private HealthStatus checkService(String url, String serviceName) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .GET()
@@ -60,12 +62,15 @@ public class HealthService {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == HttpStatus.OK.value()) {
-                return HealthStatus.OK.name().toLowerCase();
+                return HealthStatus.OK;
             }
 
-            return HealthStatus.UNAVAILABLE.name().toLowerCase();
+            gatewayStatus = HealthStatus.DEGRADED;
+            return HealthStatus.UNAVAILABLE;
         } catch (Exception e) {
-            return HealthStatus.UNAVAILABLE.name().toLowerCase();
+            log.error("Exception occurred while checking health of service {}", serviceName, e);
+            gatewayStatus = HealthStatus.DEGRADED;
+            return HealthStatus.UNAVAILABLE;
         }
     }
 }
