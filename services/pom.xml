@@ -85,7 +85,6 @@
             <id>switch</id>
             <modules>
                 <module>common</module>
-                <module>e2e-tests</module>
                 <module>switch</module>
             </modules>
         </profile>
@@ -161,13 +160,8 @@
                 <groupId>com.processing</groupId>
                 <artifactId>e2e-tests</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.processing</groupId>
-                <artifactId>e2e-tests</artifactId>
-                <version>${project.version}</version>
                 <type>test-jar</type>
-                <classifier>tests</classifier>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
