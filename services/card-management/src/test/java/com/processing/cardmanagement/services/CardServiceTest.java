@@ -3,10 +3,10 @@ package com.processing.cardmanagement.services;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.cardmanagement.models.Card;
+import com.processing.cardmanagement.models.CardStatus;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardRepository;
-import com.processing.common.dto.cardmanagement.CardStatus;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,6 +86,7 @@ public final class CardServiceTest {
         var dailyLimit = faker.number().numberBetween(0L, 10000000L);
         var monthlyLimit = faker.number().numberBetween(dailyLimit, 30000000L);
         var initialBalance = faker.number().numberBetween(0L, 10000000L);
+        var expDate = YearMonth.now().plusYears(settings.cardYtl());
 
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
@@ -99,15 +100,22 @@ public final class CardServiceTest {
             initialBalance
         );
 
-        assertEquals(panGeneratorCardNumber, response.pan());
-        assertEquals(bin, response.bin());
-        assertEquals(cardholderName, response.cardholderName());
-        assertEquals(YearMonth.now().plusYears(settings.cardYtl()), response.expiryDate());
-        assertEquals(CardStatus.ACTIVE, response.status());
-        assertEquals(currencyCode, response.currencyCode());
-        assertEquals(dailyLimit, response.dailyLimit());
-        assertEquals(monthlyLimit, response.monthlyLimit());
-        assertEquals(initialBalance, response.availableBalance());
+        var expected = new Card(
+            response.id(),
+            panGeneratorCardNumber,
+            bin,
+            cardholderName,
+            expDate,
+            CardStatus.ACTIVE,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            initialBalance,
+            settings.issuerId(),
+            response.createdAt()
+        );
+
+        assertEquals(expected, response);
     }
 
     @Test
@@ -147,6 +155,7 @@ public final class CardServiceTest {
         )).thenReturn(List.of(testCard));
 
         var cards = cardService.getCards(limit, offset, status, bin, issuerId, startDate, endDate);
+        assertEquals(1, cards.size());
         assertEquals(testCard, cards.getFirst());
     }
 
@@ -163,6 +172,21 @@ public final class CardServiceTest {
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
+        var expected = new Card(
+            testCard.id(),
+            testCard.pan(),
+            testCard.bin(),
+            testCard.cardholderName(),
+            testCard.expiryDate(),
+            status,
+            testCard.currencyCode(),
+            dailyLimit,
+            monthlyLimit,
+            availableBalance,
+            testCard.issuerId(),
+            testCard.createdAt()
+        );
+
         var card = cardService.patchCard(
             pan,
             status,
@@ -170,11 +194,7 @@ public final class CardServiceTest {
             monthlyLimit,
             availableBalance
         );
-
-        assertEquals(status, card.status());
-        assertEquals(dailyLimit, card.dailyLimit());
-        assertEquals(monthlyLimit, card.monthlyLimit());
-        assertEquals(availableBalance, card.availableBalance());
+        assertEquals(expected, card);
     }
 
     @Test
@@ -185,10 +205,25 @@ public final class CardServiceTest {
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
+        var expected = new Card(
+            testCard.id(),
+            testCard.pan(),
+            testCard.bin(),
+            testCard.cardholderName(),
+            testCard.expiryDate(),
+            CardStatus.DELETED,
+            testCard.currencyCode(),
+            testCard.dailyLimit(),
+            testCard.monthlyLimit(),
+            testCard.availableBalance(),
+            testCard.issuerId(),
+            testCard.createdAt()
+        );
+
         cardService.deleteCard(pan);
         verify(cardRepository, times(1)).save(cardCaptor.capture());
         var deletedCard = cardCaptor.getValue();
-        assertEquals(CardStatus.DELETED, deletedCard.status());
+        assertEquals(expected, deletedCard);
     }
 
     @Test
@@ -230,13 +265,27 @@ public final class CardServiceTest {
         var pan = generatePan();
         var testCard = createTestCard(pan);
         var reserveAmount = faker.number().numberBetween(0L, testCard.availableBalance());
-        var prevBalance = testCard.availableBalance();
         when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
+        var expected = new Card(
+            testCard.id(),
+            testCard.pan(),
+            testCard.bin(),
+            testCard.cardholderName(),
+            testCard.expiryDate(),
+            testCard.status(),
+            testCard.currencyCode(),
+            testCard.dailyLimit(),
+            testCard.monthlyLimit(),
+            testCard.availableBalance() - reserveAmount,
+            testCard.issuerId(),
+            testCard.createdAt()
+        );
+
         var card = cardService.reserve(pan, reserveAmount);
-        assertEquals(prevBalance - reserveAmount, card.availableBalance());
+        assertEquals(expected, card);
         assertThrows(InsufficientFundsException.class, () ->
             cardService.reserve(
                 pan,
