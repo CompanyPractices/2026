@@ -2,7 +2,4 @@ package com.processing.merchantacquirer.client.dto;
 
 import java.util.List;
 
-public record CardsResponse(
-        Integer total,
-        List<CardDataResponse> cards
-) {}
+public record CardsResponse(int total, List<CardDataResponse> cards) {}

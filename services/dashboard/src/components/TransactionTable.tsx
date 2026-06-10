@@ -1,8 +1,9 @@
 import { hidePan, convertPenniesToRubles, formatTime } from '../utils/format.ts';
 import { getStatusIcon } from '../utils/statusIcon.ts';
-import {Transaction} from "../types";
+import { Transaction } from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
+import {useWebSocket} from "../hooks/useWebSocket.ts";
 import useTransactions from "../hooks/useTransactions.ts"
 import {Filters} from "./Filters.tsx";
 import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
@@ -10,6 +11,42 @@ import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
 export function TransactionTable(){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
     const {transactions, error, loading, searchTransactions} = useTransactions();
+    const { liveTransactions } = useWebSocket();
+
+    const allTransactions = [
+        ...liveTransactions,
+        ...(initialTransactions || []),
+    ];
+
+    const uniqueTransactions = allTransactions.filter((tx, index, self) =>
+        index === self.findIndex(t => t.id === tx.id)
+    );
+
+    const displayedTransactions = uniqueTransactions.slice(0, 20);
+
+    if (loading && liveTransactions.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Загрузка транзакций...
+            </div>
+        );
+    }
+
+    if (error && liveTransactions.length === 0) {
+        return (
+            <div className="text-center py-8 text-red-500">
+                Ошибка загрузки транзакций: {error}
+            </div>
+        );
+    }
+
+    if (displayedTransactions.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Ожидание первых транзакций...
+            </div>
+        );
+    }
 
     return (
         <div className="font-mono w-full">
@@ -47,7 +84,7 @@ export function TransactionTable(){
                         </tr>
                         </thead>
                         <tbody>
-                        {transactions.map((transaction) => {
+                        {displayedTransactions.map((transaction) => {
                             const statusIconData = getStatusIcon(transaction.status);
 
                             return (
