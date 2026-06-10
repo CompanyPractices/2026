@@ -46,6 +46,8 @@ management:
 management.endpoints.web.exposure.include: health,info
 management.endpoint.health.show-details: always
 
+gateway.url: ${GATEWAY_URL:http://gateway:8080}
+
 # Scenarios
 simulation.scenarios.grocery:
   mcc: ["5411", "5499"]

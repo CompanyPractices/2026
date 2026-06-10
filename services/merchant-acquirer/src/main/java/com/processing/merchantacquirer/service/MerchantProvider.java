@@ -23,4 +23,12 @@ public class MerchantProvider {
 
     return merchants;
   }
+
+  public List<Merchant> getAll() {
+    return merchantRepository.findAll();
+  }
+
+  public long count() {
+    return merchantRepository.count();
+  }
 }

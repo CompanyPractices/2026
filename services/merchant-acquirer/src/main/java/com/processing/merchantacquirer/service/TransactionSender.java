@@ -1,9 +1,9 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.GatewayClient;
-import com.processing.merchantacquirer.domain.model.AuthorizationRequest;
-import com.processing.merchantacquirer.domain.model.AuthorizationResponse;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

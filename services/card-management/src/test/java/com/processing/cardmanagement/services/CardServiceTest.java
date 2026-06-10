@@ -2,10 +2,11 @@ package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
-import com.processing.cardmanagement.models.CardEntity;
-import com.processing.cardmanagement.options.CardServiceOptions;
+import com.processing.cardmanagement.models.Card;
+import com.processing.cardmanagement.options.CardServiceDefaults;
+import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardRepository;
-import com.processing.common.dto.cardmanagement.*;
+import com.processing.common.dto.cardmanagement.CardStatus;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,10 +14,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -34,7 +34,19 @@ public final class CardServiceTest {
 
     private final Faker faker = new Faker(Locale.ENGLISH);
 
-    private final CardServiceOptions options = new CardServiceOptions("TESTISSUER");
+    private final CardServiceSettings settings = new CardServiceSettings(
+        "TESTISSUER",
+        3
+    );
+
+    private final CardServiceDefaults defaults = new CardServiceDefaults(
+        0,
+        50,
+        "643",
+        15000000,
+        300000000,
+        1000000
+    );
 
     private final PanGenerator panGenerator = new PanGenerator() {
         @Override
@@ -48,8 +60,8 @@ public final class CardServiceTest {
         }
     };
 
-    private final ArgumentCaptor<CardEntity> cardCaptor =
-        ArgumentCaptor.forClass(CardEntity.class);
+    private final ArgumentCaptor<Card> cardCaptor =
+        ArgumentCaptor.forClass(Card.class);
 
     @Mock
     private CardRepository cardRepository;
@@ -58,57 +70,55 @@ public final class CardServiceTest {
 
     @BeforeEach
     void setUp() {
-        cardService = new CardService(
+        cardService = new CardServiceImpl(
             cardRepository,
-            options,
+            settings,
+            defaults,
             panGenerator
         );
     }
 
     @Test
     void testCreateCard() {
-        when(cardRepository.save(any(CardEntity.class))).thenAnswer(invocation -> {
-            var data = (CardEntity) invocation.getArgument(0);
-            data.setId(UUID.randomUUID());
-            return data;
-        });
+        var bin = faker.number().digits(6);
+        var cardholderName = faker.name().fullName().toUpperCase(Locale.ROOT);
+        var currencyCode = faker.number().digits(3);
+        var dailyLimit = faker.number().numberBetween(0L, 10000000L);
+        var monthlyLimit = faker.number().numberBetween(dailyLimit, 30000000L);
+        var initialBalance = faker.number().numberBetween(0L, 10000000L);
 
-        var request = new CreateCardRequest(
-            faker.number().digits(6),
-            faker.name().fullName().toUpperCase(Locale.ROOT),
-            faker.number().digits(3),
-            faker.number().numberBetween(0L, 10000000L),
-            faker.number().numberBetween(0L, 30000000L),
-            faker.number().numberBetween(0L, 10000000L)
+        when(cardRepository.save(any(Card.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = cardService.createCard(
+            bin,
+            cardholderName,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            initialBalance
         );
 
-        var model = cardService.createCard(request);
-        verify(cardRepository, times(1)).save(cardCaptor.capture());
-        var entity = cardCaptor.getValue();
-
-        assertEquals(panGeneratorCardNumber, entity.getPan());
-        assertEquals(request.bin(), entity.getBin());
-        assertEquals(request.cardholderName(), entity.getCardholderName());
-        assertEquals(LocalDate.now().plusYears(3), entity.getExpiryDate());
-        assertEquals(CardStatus.ACTIVE, entity.getStatus());
-        assertEquals(request.currencyCode(), entity.getCurrencyCode());
-        assertEquals(request.dailyLimit(), entity.getDailyLimit());
-        assertEquals(request.monthlyLimit(), entity.getMonthlyLimit());
-        assertEquals(request.initialBalance(), entity.getAvailableBalance());
-
-        entity.setId(model.id());
-        validateCardModel(entity, model);
+        assertEquals(panGeneratorCardNumber, response.pan());
+        assertEquals(bin, response.bin());
+        assertEquals(cardholderName, response.cardholderName());
+        assertEquals(YearMonth.now().plusYears(settings.cardYtl()), response.expiryDate());
+        assertEquals(CardStatus.ACTIVE, response.status());
+        assertEquals(currencyCode, response.currencyCode());
+        assertEquals(dailyLimit, response.dailyLimit());
+        assertEquals(monthlyLimit, response.monthlyLimit());
+        assertEquals(initialBalance, response.availableBalance());
     }
 
     @Test
     void testGetCard() {
         var pan = generatePan();
 
-        var entity = createTestCardEntity(pan);
-        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(entity));
+        var card = createTestCard(pan);
+        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(card));
 
         var found = cardService.getCard(pan);
-        validateCardModel(entity, found);
+        assertEquals(card, found);
 
         when(cardRepository.findByPan(anyString())).thenReturn(Optional.empty());
         assertThrows(CardNotFoundException.class, () -> cardService.getCard(pan));
@@ -116,7 +126,7 @@ public final class CardServiceTest {
 
     @Test
     void testGetCards() {
-        var entity = createTestCardEntity(generatePan());
+        var testCard = createTestCard(generatePan());
 
         int limit = faker.number().numberBetween(1, 100);
         int offset = faker.number().numberBetween(0, 100);
@@ -127,13 +137,68 @@ public final class CardServiceTest {
         LocalDateTime endDate = LocalDateTime.now();
 
         when(cardRepository.findCards(
+            limit,
+            offset,
             status,
             bin,
             issuerId,
             startDate,
-            endDate,
-            PageRequest.of(offset, limit)
-        )).thenReturn(List.of(entity));
+            endDate
+        )).thenReturn(List.of(testCard));
+
+        var cards = cardService.getCards(limit, offset, status, bin, issuerId, startDate, endDate);
+        assertEquals(testCard, cards.getFirst());
+    }
+
+    @Test
+    void testPatchCard() {
+        var pan = generatePan();
+        var status = CardStatus.EXPIRED;
+        var dailyLimit = faker.number().numberBetween(0L, 10000000L);
+        var monthlyLimit = faker.number().numberBetween(dailyLimit, 30000000L);
+        var availableBalance = faker.number().numberBetween(0L, 10000000L);
+        var testCard = createTestCard(pan);
+
+        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
+        when(cardRepository.save(any(Card.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var card = cardService.patchCard(
+            pan,
+            status,
+            dailyLimit,
+            monthlyLimit,
+            availableBalance
+        );
+
+        assertEquals(status, card.status());
+        assertEquals(dailyLimit, card.dailyLimit());
+        assertEquals(monthlyLimit, card.monthlyLimit());
+        assertEquals(availableBalance, card.availableBalance());
+    }
+
+    @Test
+    void testDeleteCard() {
+        var pan = generatePan();
+        var testCard = createTestCard(pan);
+        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
+        when(cardRepository.save(any(Card.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        cardService.deleteCard(pan);
+        verify(cardRepository, times(1)).save(cardCaptor.capture());
+        var deletedCard = cardCaptor.getValue();
+        assertEquals(CardStatus.DELETED, deletedCard.status());
+    }
+
+    @Test
+    void testCountCardsFiltered() {
+        var amount = 1L;
+        CardStatus status = CardStatus.ACTIVE;
+        String bin = faker.number().digits(6);
+        String issuerId = faker.regexify("[A-Z0-9]{1,10}");
+        LocalDateTime startDate = LocalDateTime.now().minusDays(1);
+        LocalDateTime endDate = LocalDateTime.now();
 
         when(cardRepository.countCards(
             status,
@@ -141,89 +206,59 @@ public final class CardServiceTest {
             issuerId,
             startDate,
             endDate
-        )).thenReturn(1);
+        )).thenReturn(amount);
 
-        var result = cardService.getCards(limit, offset, status, bin, issuerId, startDate, endDate);
-        validateCardModel(entity, result.cards().getFirst());
-        assertEquals(1, result.total());
-    }
-
-    @Test
-    void testPatchCard() {
-        var pan = generatePan();
-        var request = new PatchCardRequest(
-            CardStatus.EXPIRED,
-            faker.number().numberBetween(0L, 10000000L),
-            faker.number().numberBetween(0L, 30000000L),
-            faker.number().numberBetween(0L, 10000000L)
+        var count = cardService.countCards(
+            status,
+            bin,
+            issuerId,
+            startDate,
+            endDate
         );
-        var entity = createTestCardEntity(pan);
-        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(entity));
-        cardService.patchCard(pan, request);
-
-        assertEquals(request.status(), entity.getStatus());
-        assertEquals(request.dailyLimit(), entity.getDailyLimit());
-        assertEquals(request.monthlyLimit(), entity.getMonthlyLimit());
-        assertEquals(request.availableBalance(), entity.getAvailableBalance());
-    }
-
-    @Test
-    void testDeleteCard() {
-        var pan = generatePan();
-        var entity = createTestCardEntity(pan);
-        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(entity));
-        cardService.deleteCard(pan);
-        verify(cardRepository, times(1)).delete(entity);
+        assertEquals(amount, count);
     }
 
     @Test
     void testCountCards() {
         var returnValue = 1L;
-        when(cardRepository.count()).thenReturn(returnValue);
+        when(cardRepository.countCards()).thenReturn(returnValue);
         assertEquals(returnValue, cardService.countCards());
     }
 
     @Test
     void testReserve() {
         var pan = generatePan();
-        var entity = createTestCardEntity(pan);
-        var data = new ReserveRequest(
-            faker.number().numberBetween(0L, entity.getAvailableBalance()),
-            faker.lorem().characters()
-        );
-        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(entity));
-        var prevBalance = entity.getAvailableBalance();
-        cardService.reserve(pan, data);
-        assertEquals(prevBalance - data.amount(), entity.getAvailableBalance());
+        var testCard = createTestCard(pan);
+        var reserveAmount = faker.number().numberBetween(0L, testCard.availableBalance());
+        var prevBalance = testCard.availableBalance();
+        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
+        when(cardRepository.save(any(Card.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var card = cardService.reserve(pan, reserveAmount);
+        assertEquals(prevBalance - reserveAmount, card.availableBalance());
         assertThrows(InsufficientFundsException.class, () ->
-            cardService.reserve(pan, new ReserveRequest(
-                Long.MAX_VALUE,
-                faker.lorem().characters()
-            ))
+            cardService.reserve(
+                pan,
+                Long.MAX_VALUE
+            )
         );
     }
 
-    private CardEntity createTestCardEntity(String pan) {
-        var entity = new CardEntity();
-        entity.setId(UUID.randomUUID());
-        entity.setPan(pan);
-        entity.setBin(pan.substring(0, 6));
-        entity.setCardholderName(faker.name().fullName().toUpperCase(Locale.ROOT));
-        entity.setExpiryDate(LocalDate.now().plusYears(3));
-        entity.setIssuerId(options.issuerId());
-        entity.setCreatedAt(LocalDateTime.now());
-        return entity;
-    }
-
-    private void validateCardModel(CardEntity entity, CardModel model) {
-        assertEquals(entity.getId(), model.id());
-        assertEquals(entity.getPan(), model.pan());
-        assertEquals(entity.getBin(), model.bin());
-        assertEquals(entity.getCardholderName(), model.cardholderName());
-        assertEquals(entity.getStrExpiryDate(), model.expiryDate());
-        assertEquals(entity.getStatus().name(), model.status());
-        assertEquals(entity.getCurrencyCode(), model.currencyCode());
-        assertEquals(entity.getDailyLimit(), model.dailyLimit());
+    private Card createTestCard(String pan) {
+        return new Card(
+            UUID.randomUUID(),
+            pan,
+            pan.substring(0, 6),
+            faker.name().fullName().toUpperCase(Locale.ROOT),
+            YearMonth.now().plusYears(settings.cardYtl()),
+            CardStatus.ACTIVE,
+            defaults.currencyCode(),
+            defaults.dailyLimit(),
+            defaults.monthlyLimit(),
+            defaults.balance(),
+            settings.issuerId()
+        );
     }
 
     private String generatePan() {
