@@ -55,7 +55,7 @@ public class DashboardServiceIntegrationTest {
 
         assertEquals(4, stats.totalTransactions());
         assertEquals(3, stats.approvedCount());
-        assertEquals(3, stats.declinedCount());
+        assertEquals(1, stats.declinedCount());
         assertEquals(650000L, stats.totalAmount());
         assertEquals(162500L, stats.averageAmount());
         assertEquals(50.0, stats.avgProcessingTimeMs());
