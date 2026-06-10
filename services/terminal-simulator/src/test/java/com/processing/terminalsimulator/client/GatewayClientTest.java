@@ -23,8 +23,8 @@ class GatewayClientTest {
 
     private GatewayClient gatewayClient;
     private MockRestServiceServer mockServer;
-    private static final String GATEWAY_URL = "http://gateway:8080/api/transactions";
-    private static final String CARD_MGMT_URL = "http://card-management:8080/api/cards";
+    private static final String GATEWAY_URL = "http://localhost:8080";
+    private static final String CARD_MGMT_URL = "http://localhost:8080";
 
     @BeforeEach
     void setUp() {
@@ -48,7 +48,7 @@ class GatewayClientTest {
                 }
                 """;
 
-        mockServer.expect(requestTo(GATEWAY_URL))
+        mockServer.expect(requestTo(GATEWAY_URL + "/api/transactions"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(content().json("{\"stan\":\"000001\"}"))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
@@ -75,7 +75,7 @@ class GatewayClientTest {
                 }
                 """;
 
-        mockServer.expect(requestTo(CARD_MGMT_URL + "?status=ACTIVE&limit=70"))
+        mockServer.expect(requestTo(CARD_MGMT_URL + "/api/cards?status=ACTIVE&limit=70"))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
@@ -88,7 +88,7 @@ class GatewayClientTest {
     void getCardsFromCardManager_whenResponseEmpty_shouldThrowException() {
         String responseJson = "{\"cards\":[], \"total\":0}";
 
-        mockServer.expect(requestTo(CARD_MGMT_URL + "?status=ACTIVE&limit=70"))
+        mockServer.expect(requestTo(CARD_MGMT_URL + "/api/cards?status=ACTIVE&limit=70"))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         assertThatThrownBy(() -> gatewayClient.getCardsFromCardManager(ACTIVE, 70))
