@@ -13,7 +13,7 @@ import static org.hamcrest.Matchers.*;
 import static org.testng.Assert.*;
 
 
-public class SwitchTest {
+public class TC_06_TC_14_SwitchTest {
 
     private static final String GATEWAY_URL = "http://localhost:8080";
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/smp_db";
