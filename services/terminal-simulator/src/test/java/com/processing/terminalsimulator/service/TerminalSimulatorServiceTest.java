@@ -23,6 +23,7 @@ import static com.processing.terminalsimulator.model.CardStatus.ACTIVE;
 import static com.processing.terminalsimulator.model.CardStatus.BLOCKED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -116,7 +117,7 @@ class TerminalSimulatorServiceTest {
     void run_normalScenario_TerminalSimulatorIsAlive() {
         RunResponse response = service.run(5, Scenario.normal);
 
-        assertThat(response.totalSubmitted()).isEqualTo(5);
+        assertEquals(5, response.totalSubmitted());
         assertThat(response.approved()).isZero();
         assertThat(response.declined()).isZero();
         assertThat(response.transactions()).hasSize(5);
@@ -133,7 +134,7 @@ class TerminalSimulatorServiceTest {
         List<AuthorizationRequest> allRequests = captor.getAllValues();
 
         long normalCount = allRequests.stream().filter(this::isNormal).count();
-        assertThat(normalCount).isEqualTo(totalCount);
+        assertEquals(totalCount, normalCount);
     }
 
     @Test
@@ -146,7 +147,7 @@ class TerminalSimulatorServiceTest {
         List<AuthorizationRequest> allRequests = captor.getAllValues();
         long nightCount = allRequests.stream().filter(this::isNight).count();
 
-        assertThat(nightCount).isEqualTo(totalCount);
+        assertEquals(totalCount, nightCount);
     }
 
     @Test
@@ -159,7 +160,7 @@ class TerminalSimulatorServiceTest {
         List<AuthorizationRequest> allRequests = captor.getAllValues();
         long highValue = allRequests.stream().filter(this::isHighValue).count();
 
-        assertThat(highValue).isEqualTo(totalCount);
+        assertEquals(totalCount, highValue);
     }
 
     @Test
@@ -186,7 +187,7 @@ class TerminalSimulatorServiceTest {
         assertThat(highValueCount).isBetween(expectedHighValue - tolerance, expectedHighValue + tolerance);
         assertThat(dailyLimitCount).isBetween(expectedDailyLimit - tolerance, expectedDailyLimit + tolerance);
         assertThat(blockedCount).isBetween(expectedBlocked - tolerance, expectedBlocked + tolerance);
-        assertThat(normalCount + highValueCount + dailyLimitCount + blockedCount).isEqualTo(totalCount);
+        assertEquals(totalCount, normalCount + highValueCount + dailyLimitCount + blockedCount);
     }
 
     @Test
@@ -214,11 +215,8 @@ class TerminalSimulatorServiceTest {
         assertThat(noMoneyCount).isBetween(expected - tolerance, expected + tolerance);
         assertThat(moreThanDailyCount).isBetween(expected - tolerance, expected + tolerance);
         assertThat(normalCount).isBetween(expected - tolerance, expected + tolerance);
-
-        assertThat(invalidPanCount + blockedCount + noMoneyCount + moreThanDailyCount + normalCount)
-                .isEqualTo(totalCount);
+        assertEquals(totalCount, invalidPanCount + blockedCount + noMoneyCount + moreThanDailyCount + normalCount);
     }
-
 
     @Test
     void run_whenNoActiveCards_throwsException() {
@@ -237,19 +235,20 @@ class TerminalSimulatorServiceTest {
     }
 
     @Test
-    void stanCounter_shouldGenerateUniqueAndWrapAround() throws Exception {
-        java.lang.reflect.Field field = TerminalSimulatorService.class.getDeclaredField("stanCounter");
-        field.setAccessible(true);
-        field.set(service, 999999);
-
+    void stanCounter_shouldGenerateSequentialNumbers() {
         ArgumentCaptor<AuthorizationRequest> captor = ArgumentCaptor.forClass(AuthorizationRequest.class);
-        service.run(2, Scenario.normal);
+        service.run(1_000_000, Scenario.normal);
 
-        verify(gatewayClient, times(2)).sendToGateway(captor.capture());
+        verify(gatewayClient, times(1_000_000)).sendToGateway(captor.capture());
         List<AuthorizationRequest> requests = captor.getAllValues();
 
-        assertThat(requests.get(0).stan()).isEqualTo("999999");
-        assertThat(requests.get(1).stan()).isEqualTo("000001");
+        String stan1 = requests.get(0).stan();
+        String stan2 = requests.get(999_998).stan();
+        String stan3 = requests.get(999_999).stan();
+
+        assertEquals("000001", stan1);
+        assertEquals("999999", stan2);
+        assertEquals("000001", stan3);
     }
 
     @Test
@@ -269,18 +268,29 @@ class TerminalSimulatorServiceTest {
     }
 
     @Test
-    void getInvalidPan_shouldFlipLastDigit() throws Exception {
-        java.lang.reflect.Method method = TerminalSimulatorService.class.getDeclaredMethod("getInvalidPan");
-        method.setAccessible(true);
+    void getInvalidPan_shouldFlipLastDigit() {
+        int totalCount = 10;
+        ArgumentCaptor<AuthorizationRequest> captor = ArgumentCaptor.forClass(AuthorizationRequest.class);
+        service.run(totalCount, Scenario.declines_test);
 
-        java.lang.reflect.Field cardsField = TerminalSimulatorService.class.getDeclaredField("cards");
-        cardsField.setAccessible(true);
-        cardsField.set(service, List.of(activeCard, blockedCard));
+        verify(gatewayClient, atLeastOnce()).sendToGateway(captor.capture());
+        List<AuthorizationRequest> allRequests = captor.getAllValues();
 
-        String invalidPan = (String) method.invoke(service);
         String validPan = activeCard.pan();
+        String blockedPan = blockedCard.pan();
+        AuthorizationRequest invalidRequest = allRequests.stream()
+                .filter(req -> !req.pan().equals(validPan) && !req.pan().equals(blockedPan))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No invalid PAN transaction found"));
+        String invalidPan = invalidRequest.pan();
+        char lastValid = validPan.charAt(validPan.length() - 1);
+        char expectedLast = (lastValid == '0') ? '1' : '0';
         char lastInvalid = invalidPan.charAt(invalidPan.length() - 1);
-        assertThat(lastInvalid).isEqualTo('0');
-        assertThat(invalidPan.substring(0, invalidPan.length() - 1)).isEqualTo(validPan.substring(0, validPan.length() - 1));
+
+        assertEquals(validPan.length(), invalidPan.length());
+        assertEquals(validPan.substring(0, validPan.length() - 1), invalidPan.substring(0, invalidPan.length() - 1));
+        assertEquals(expectedLast, lastInvalid);
+        assertEquals(validPan.substring(0, validPan.length() - 1),
+                invalidPan.substring(0, invalidPan.length() - 1));
     }
 }

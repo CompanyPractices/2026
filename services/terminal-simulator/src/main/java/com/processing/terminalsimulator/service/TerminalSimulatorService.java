@@ -130,7 +130,6 @@ public class TerminalSimulatorService {
             AuthorizationRequest tx = createTransaction(scenario, partOfDay);
             AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
             authResps.add(authResp);
-            System.out.println(tx);
 
             if ("APPROVED".equals(authResp.status())) {
                 approved.incrementAndGet();
@@ -191,7 +190,9 @@ public class TerminalSimulatorService {
                 generateTransactionHandler(count / 2, count, approved, declined, "high_value", authResps,
                         "night");
             }
-            case normal, high_value -> generateTransactionHandler(0, count, approved, declined, scenario.name(), authResps,
+            case normal -> generateTransactionHandler(0, count, approved, declined, scenario.name(), authResps,
+                    "day");
+            case high_value -> generateTransactionHandler(0, count, approved, declined, scenario.name(), authResps,
                     "day");
         }
 

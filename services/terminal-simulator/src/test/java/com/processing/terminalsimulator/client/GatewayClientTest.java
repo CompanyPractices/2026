@@ -15,6 +15,7 @@ import java.util.List;
 import static com.processing.terminalsimulator.model.CardStatus.ACTIVE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
@@ -53,7 +54,7 @@ class GatewayClientTest {
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         AuthorizationResponse response = gatewayClient.sendToGateway(request);
-        assertThat(response.status()).isEqualTo("APPROVED");
+        assertEquals("APPROVED", response.status());
         mockServer.verify();
     }
 
@@ -80,7 +81,7 @@ class GatewayClientTest {
 
         List<Card> cards = gatewayClient.getCardsFromCardManager(ACTIVE, 70);
         assertThat(cards).hasSize(1);
-        assertThat(cards.get(0).pan()).isEqualTo("4000001234560001");
+        assertEquals("4000001234560001", cards.get(0).pan());
     }
 
     @Test
