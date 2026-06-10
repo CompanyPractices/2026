@@ -280,6 +280,9 @@ public class GatewayRoutingIntegrationTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(TERMINAL_SIMULATOR_RESPONSE);
+
+        terminalWm.verify(postRequestedFor(urlEqualTo(uri))
+                .withRequestBody(equalToJson(TERMINAL_SIMULATOR_REQUEST)));
     }
 
     @Test
@@ -298,6 +301,9 @@ public class GatewayRoutingIntegrationTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(MERCHANT_SIMULATOR_RESPONSE);
+
+        merchantWm.verify(postRequestedFor(urlEqualTo(uri))
+                .withRequestBody(equalToJson(MERCHANT_SIMULATOR_REQUEST)));
     }
 
     @Test
@@ -315,6 +321,8 @@ public class GatewayRoutingIntegrationTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(LOGGER_RESPONSE);
+
+        loggerWm.verify(getRequestedFor(urlEqualTo(uri)));
     }
 
     @Test
@@ -393,6 +401,7 @@ public class GatewayRoutingIntegrationTest {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        wrongWm.verify(0, postRequestedFor(urlEqualTo(internalUri)));
     }
 
     @Test
@@ -410,6 +419,7 @@ public class GatewayRoutingIntegrationTest {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        wrongWm.verify(0, postRequestedFor(urlEqualTo(uri)));
     }
 
     @Test
@@ -427,6 +437,7 @@ public class GatewayRoutingIntegrationTest {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        wrongWm.verify(0, postRequestedFor(urlEqualTo(uri)));
     }
 
     @Test
@@ -443,6 +454,7 @@ public class GatewayRoutingIntegrationTest {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        wrongWm.verify(0, getRequestedFor(urlEqualTo(uri)));
     }
 
     @Test
@@ -460,5 +472,6 @@ public class GatewayRoutingIntegrationTest {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        wrongWm.verify(0, postRequestedFor(urlEqualTo(uri)));
     }
 }
