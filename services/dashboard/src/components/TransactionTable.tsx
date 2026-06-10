@@ -10,11 +10,11 @@ import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
 
 export function TransactionTable(){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-    const {transactions, error, loading, searchTransactions} = useTransactions();
+    const { transactions: initialTransactions, loading, error, searchTransactions } = useTransactions();
     const { liveTransactions } = useWebSocket();
 
     const allTransactions = [
-        ...liveTransactions,
+        ...liveTransactions || [],
         ...(initialTransactions || []),
     ];
 
@@ -22,31 +22,11 @@ export function TransactionTable(){
         index === self.findIndex(t => t.id === tx.id)
     );
 
+    uniqueTransactions.sort((a, b) =>
+        new Date(b.transmissionDateTime).getTime() - new Date(a.transmissionDateTime).getTime()
+    );
+
     const displayedTransactions = uniqueTransactions.slice(0, 20);
-
-    if (loading && liveTransactions.length === 0) {
-        return (
-            <div className="text-center py-8 text-gray-500">
-                Загрузка транзакций...
-            </div>
-        );
-    }
-
-    if (error && liveTransactions.length === 0) {
-        return (
-            <div className="text-center py-8 text-red-500">
-                Ошибка загрузки транзакций: {error}
-            </div>
-        );
-    }
-
-    if (displayedTransactions.length === 0) {
-        return (
-            <div className="text-center py-8 text-gray-500">
-                Ожидание первых транзакций...
-            </div>
-        );
-    }
 
     return (
         <div className="font-mono w-full">
@@ -57,18 +37,22 @@ export function TransactionTable(){
             </h2>
 
             {error &&
-                <div>Ошибка загрузки транзакций: {error}</div>
+                <div className="text-center py-8 text-red-500">
+                    Ошибка загрузки транзакций: {error}
+                </div>
             }
 
             {loading &&
-                <div>Загрузка транзакций...</div>
+                <div className="text-center py-8 text-gray-500">
+                    Загрузка транзакций...
+                </div>
             }
 
-            {!loading && !error && (!transactions || transactions.length === 0) &&
+            {!loading && !error && displayedTransactions.length === 0 &&
                 <div>Транзакций не найдено</div>
             }
 
-            {!loading && !error && (transactions && transactions.length > 0) &&
+            {!loading && !error && displayedTransactions.length > 0 &&
                 <div className="rounded-3xl border-2 border-emerald-600 shadow-lg mb-5">
 
                 <div className="overflow-x-auto">
