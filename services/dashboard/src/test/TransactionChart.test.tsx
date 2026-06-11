@@ -3,11 +3,6 @@ import { describe, it, expect, vi } from 'vitest';
 import TransactionLineChart from '../components/TransactionLineChart';
 import TransactionPieChart from '../components/TransactionPieChart';
 
-vi.mock('date-fns', () => ({
-    format: vi.fn(() => '12:30'),
-    getHours: vi.fn(() => 12),
-}));
-
 describe('TransactionLineChart', () => {
     it('should display loading state', () => {
         render(<TransactionLineChart transactions={[]} loading={true} error={null} />);
