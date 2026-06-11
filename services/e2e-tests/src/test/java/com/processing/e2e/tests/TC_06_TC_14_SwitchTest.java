@@ -54,23 +54,36 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
             List.of("switch", "cardManagement", "authorization", "logger");
 
 
+    private static final String[] TEST_TRANSACTION_STANS = {
+            TC06_STAN, "140000", "140001", "140002", "140003", "140004"
+    };
+
+
     private Connection connection;
     private String tc06Pan;
     private boolean testCardsPrepared;
+    private final List<String> generatedPans = new ArrayList<>();
 
 
     @BeforeClass
     public void setUp() throws Exception {
         RestAssured.baseURI = GATEWAY_URL;
         connection = DriverManager.getConnection(jdbcUrl(), DB_USER, DB_PASSWORD);
+        cleanupLeftoverSwitchTestData();
         assertStackIsReady();
     }
 
 
     @AfterClass(alwaysRun = true)
     public void tearDown() throws SQLException {
-        if (connection != null && !connection.isClosed()) {
-            connection.close();
+        try {
+            if (connection != null && !connection.isClosed()) {
+                cleanupSwitchTestData();
+            }
+        } finally {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
         }
     }
 
@@ -219,11 +232,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    private void ensureTestCards() {
+    private void ensureTestCards() throws Exception {
         if (testCardsPrepared) {
             return;
         }
-        given()
+        Response response = given()
                 .contentType(ContentType.JSON)
                 .body("""
                         {
@@ -234,8 +247,60 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
                 .when()
                 .post("/api/cards/generate")
                 .then()
-                .statusCode(201);
+                .statusCode(201)
+                .extract()
+                .response();
+
+        JsonNode cards = mapper.readTree(response.asString()).get("cards");
+        for (JsonNode card : cards) {
+            generatedPans.add(card.get("pan").asText());
+        }
         testCardsPrepared = true;
+    }
+
+
+    private void cleanupLeftoverSwitchTestData() throws SQLException {
+        deleteTestTransactions();
+        softDeleteCardsByBins(BINS);
+    }
+
+
+    private void cleanupSwitchTestData() throws SQLException {
+        deleteTestTransactions();
+        softDeleteGeneratedCards(generatedPans);
+        generatedPans.clear();
+    }
+
+
+    private void deleteTestTransactions() throws SQLException {
+        for (String stan : TEST_TRANSACTION_STANS) {
+            cleanupTransaction(stan);
+        }
+    }
+
+
+    private void softDeleteGeneratedCards(List<String> pans) throws SQLException {
+        if (pans.isEmpty()) {
+            return;
+        }
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "UPDATE cards SET status = 'DELETED' WHERE pan = ? AND status <> 'DELETED'")) {
+            for (String pan : pans) {
+                stmt.setString(1, pan);
+                stmt.executeUpdate();
+            }
+        }
+    }
+
+
+    private void softDeleteCardsByBins(String[] bins) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "UPDATE cards SET status = 'DELETED' WHERE bin = ? AND status <> 'DELETED'")) {
+            for (String bin : bins) {
+                stmt.setString(1, bin);
+                stmt.executeUpdate();
+            }
+        }
     }
 
 
