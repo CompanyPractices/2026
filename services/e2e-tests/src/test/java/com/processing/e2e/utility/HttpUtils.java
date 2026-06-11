@@ -1,5 +1,6 @@
 package com.processing.e2e.utility;
 
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -21,7 +22,11 @@ public class HttpUtils {
                 .statusCode(expectedStatus)
                 .extract()
                 .response();
-        return response.body().as(JsonNode.class);
+        try {
+            return mapper.readTree(response.asString());
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to parse JSON from " + baseUrl + path, e);
+        }
     }
 
     public JsonNode httpPostRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {

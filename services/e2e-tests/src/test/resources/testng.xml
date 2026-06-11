@@ -2,11 +2,19 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="SMP E2E Test Suite" parallel="false" verbose="2">
 
+
     <test name="Health Check">
         <classes>
             <class name="com.processing.e2e.tests.HealthCheckTest"/>
             <class name="com.processing.e2e.tests.InsufficientFundsTest"/>
             <class name="com.processing.e2e.tests.CardNotFoundTest"></class>
+        </classes>
+    </test>
+
+
+    <test name="Switch routing">
+        <classes>
+            <class name="com.processing.e2e.tests.TC_06_TC_14_SwitchTest"/>
         </classes>
     </test>
 </suite>

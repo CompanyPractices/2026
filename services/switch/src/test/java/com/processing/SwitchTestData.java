@@ -12,6 +12,8 @@ import java.util.Map;
 public final class SwitchTestData {
 
 
+    public static final String TERMINAL_TYPE = "POS";
+
     public static final Map<String, String> BIN_ROUTING = Map.of(
             "400000", "ISS001",
             "400001", "ISS002",
@@ -41,6 +43,7 @@ public final class SwitchTestData {
                 BIN_ROUTING,
                 "http://localhost:8083",
                 "http://localhost:8088",
+                "http://localhost:8086",
                 defaultHttp(),
                 defaultRetry()
         );
@@ -57,7 +60,7 @@ public final class SwitchTestData {
                 "643",
                 "2026-06-01T10:30:00",
                 "TERM001",
-                null,
+                TERMINAL_TYPE,
                 "MERCH12345678901",
                 "5411",
                 "ACQ001",
