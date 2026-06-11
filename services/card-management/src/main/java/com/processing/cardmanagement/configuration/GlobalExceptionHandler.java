@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Slf4j
 @RestControllerAdvice
@@ -37,7 +36,20 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleConstraintViolationException(
         ConstraintViolationException ex
     ) {
-        log.warn(ex.getMessage());
+        var violation = ex.getConstraintViolations()
+            .stream()
+            .findFirst();
+
+        if (violation.isEmpty()) {
+            log.warn(ex.getMessage());
+        } else {
+            log.warn(
+                "Message: {}, Invalid value: {}",
+                ex.getMessage(),
+                violation.get().getInvalidValue()
+            );
+        }
+
         return errorResponseFromException(ex);
     }
 
@@ -46,15 +58,26 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleMethodArgumentNotValidException(
         MethodArgumentNotValidException ex
     ) {
-        String errorMessage = ex.getBindingResult()
+        var fieldError = ex.getBindingResult()
             .getFieldErrors()
             .stream()
-            .map(FieldError::getDefaultMessage)
-            .filter(Objects::nonNull)
-            .findFirst()
-            .orElse("Validation failed");
+            .findFirst();
 
-        log.warn(errorMessage);
+        var errorMessage = fieldError
+            .map(FieldError::getDefaultMessage)
+            .orElse("Constraint violation");
+
+        if (fieldError.isEmpty()) {
+            log.warn(ex.getMessage());
+        } else {
+            log.warn(
+                "Message: {}, Field: {}, Invalid value: {}",
+                fieldError.get().getDefaultMessage(),
+                fieldError.get().getField(),
+                fieldError.get().getRejectedValue()
+            );
+        }
+
         return new ErrorResponse(
             ex.getClass().getSimpleName(),
             errorMessage,
