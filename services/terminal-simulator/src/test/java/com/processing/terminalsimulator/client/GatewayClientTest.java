@@ -4,6 +4,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
+import com.processing.terminalsimulator.TransactionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -13,7 +14,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
@@ -54,7 +54,7 @@ class GatewayClientTest {
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         AuthorizationResponse response = gatewayClient.sendToGateway(request);
-        assertEquals("APPROVED", response.status());
+        assertEquals(TransactionStatus.APPROVED, response.status());
         mockServer.verify();
     }
 
@@ -80,7 +80,7 @@ class GatewayClientTest {
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         List<CardModel> cards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70);
-        assertThat(cards).hasSize(1);
+        assertEquals(1, cards.size());
         assertEquals("4000001234560001", cards.get(0).pan());
     }
 

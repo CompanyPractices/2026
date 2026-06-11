@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class StanGeneratorTest {
 
     private StanGenerator generator;
+    private static int MAX_STAN_COUNT = 999_999;
 
     @BeforeEach
     void setUp() {
@@ -21,8 +22,8 @@ class StanGeneratorTest {
     }
 
     @Test
-    void shouldResetToOneAfter999999() {
-        for (int i = 1; i <= 999_999; i++) {
+    void shouldResetToOneAfterMAX_STAN_COUNT() {
+        for (int i = 1; i <= MAX_STAN_COUNT; i++) {
             generator.getNextStan();
         }
 

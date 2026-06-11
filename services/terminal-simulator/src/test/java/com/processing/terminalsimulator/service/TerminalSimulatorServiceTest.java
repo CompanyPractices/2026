@@ -7,6 +7,7 @@ import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.dto.terminalsimulator.TerminalRunResponse;
 import com.processing.common.dto.terminalsimulator.TerminalScenario;
 import com.processing.common.dto.terminalsimulator.TerminalType;
+import com.processing.terminalsimulator.TransactionStatus;
 import com.processing.terminalsimulator.factory.TransactionFactory;
 import com.processing.terminalsimulator.client.GatewayClient;
 import com.processing.terminalsimulator.model.PartofDay;
@@ -26,7 +27,6 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -71,7 +71,7 @@ class TerminalSimulatorServiceTest {
                 "MERCH12345678901", "5411", "ACQ001", ""));
         when(gatewayClient.sendToGateway(any(AuthorizationRequest.class)))
                 .thenReturn(new AuthorizationResponse("", "", "", "",
-                        "", "APPROVED", "", 0));
+                        "", TransactionStatus.APPROVED.name(), "", 0));
     }
 
     @Test
@@ -80,7 +80,7 @@ class TerminalSimulatorServiceTest {
 
         assertEquals(5, response.totalSubmitted());
         assertEquals(5, response.approved());
-        assertThat(response.transactions()).hasSize(5);
+        assertEquals(5, response.transactions().size());
         verify(gatewayClient, times(5)).sendToGateway(any(AuthorizationRequest.class));
     }
 

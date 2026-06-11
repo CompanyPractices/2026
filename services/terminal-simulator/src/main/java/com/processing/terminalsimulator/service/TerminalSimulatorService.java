@@ -6,6 +6,7 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.dto.terminalsimulator.TerminalRunResponse;
 import com.processing.common.dto.terminalsimulator.TerminalScenario;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.terminalsimulator.factory.TransactionFactory;
 import com.processing.terminalsimulator.client.GatewayClient;
 import com.processing.terminalsimulator.model.PartofDay;
@@ -46,9 +47,9 @@ public class TerminalSimulatorService {
             AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
             authResps.add(authResp);
 
-            if ("APPROVED".equals(authResp.status())) {
+            if (TransactionStatus.APPROVED.name().equals(authResp.status())) {
                 approved.incrementAndGet();
-            } else if ("DECLINED".equals(authResp.status())) {
+            } else if (TransactionStatus.DECLINED.name().equals(authResp.status())) {
                 declined.incrementAndGet();
             }
         }
