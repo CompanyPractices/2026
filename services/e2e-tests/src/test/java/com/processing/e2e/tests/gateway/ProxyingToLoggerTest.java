@@ -104,4 +104,3 @@ public class ProxyingToLoggerTest extends E2EBaseTest {
         assertEquals(dbCount, httpResponse.path("totalTransactions").asInt());
     }
 }
-
