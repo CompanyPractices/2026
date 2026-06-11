@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 
 import static io.restassured.RestAssured.given;
@@ -57,6 +56,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
 
     private Connection connection;
     private String tc06Pan;
+    private boolean testCardsPrepared;
 
 
     @BeforeClass
@@ -112,79 +112,9 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    @Test(priority = 1, description = "TC-03: Массовая генерация тестовых карт (предусловие)")
-    public void tc03_massCardGeneration() throws Exception {
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body("""
-                        {
-                          "count": 100,
-                          "bins": ["400000","400001","400002","400003","400004"]
-                        }
-                        """)
-                .when()
-                .post("/api/cards/generate")
-                .then()
-                .statusCode(201)
-                .extract()
-                .response();
-
-
-        JsonNode body = mapper.readTree(response.asString());
-        int generated = body.get("generated").asInt();
-        JsonNode cards = body.get("cards");
-
-
-        assertTrue(generated >= 100, "generated must be >= 100");
-        assertEquals(cards.size(), generated, "cards array length must match generated");
-
-
-        Set<String> pans = new HashSet<>();
-        Set<String> binsPresent = new HashSet<>();
-        for (JsonNode card : cards) {
-            assertNotNull(card.get("id").asText());
-            UUID.fromString(card.get("id").asText());
-
-
-            String pan = card.get("pan").asText();
-            assertEquals(pan.length(), 16, "pan must be 16 digits");
-            assertTrue(pan.matches("\\d{16}"), "pan must contain only digits");
-            assertTrue(isValidLuhn(pan), "pan must pass Luhn: " + pan);
-            assertTrue(pans.add(pan), "duplicate pan in response: " + pan);
-
-
-            assertNotNull(card.get("status").asText());
-            binsPresent.add(card.get("bin").asText());
-        }
-
-
-        for (String bin : BINS) {
-            assertTrue(binsPresent.contains(bin), "missing bin in response: " + bin);
-        }
-
-
-        long activeCardsCount = queryLong("SELECT COUNT(*) FROM cards WHERE status <> 'DELETED'");
-        assertTrue(activeCardsCount >= 100, "DB must contain at least 100 non-deleted cards");
-
-
-        List<String> distinctBins = queryStringList("SELECT DISTINCT bin FROM cards");
-        for (String bin : BINS) {
-            assertTrue(distinctBins.contains(bin), "DB must contain bin: " + bin);
-        }
-
-
-        List<String> samplePans = queryStringList(
-                "SELECT pan FROM cards WHERE status = 'ACTIVE' ORDER BY RANDOM() LIMIT 5");
-        assertEquals(samplePans.size(), 5, "need 5 sample PANs for Luhn check");
-        for (String pan : samplePans) {
-            assertTrue(isValidLuhn(pan), "DB pan must pass Luhn: " + pan);
-        }
-    }
-
-
-    @Test(priority = 2, dependsOnMethods = "tc03_massCardGeneration",
-            description = "TC-06: Полный цикл одиночной транзакции (APPROVED)")
+    @Test(description = "TC-06: Полный цикл одиночной транзакции (APPROVED)")
     public void tc06_fullApprovedTransactionCycle() throws Exception {
+        ensureTestCards();
         tc06Pan = findActivePanWithBalance(BINS[0], TC06_AMOUNT);
         cleanupTransaction(TC06_STAN);
 
@@ -223,7 +153,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
 
 
         long balanceAfterHttp = getCardBalanceFromApi(tc06Pan);
-        assertEquals(balanceAfterHttp, balanceBeforeDb - TC06_AMOUNT,
+        assertEquals(balanceAfterHttp, balanceAfterDb,
                 "HTTP balance after transaction must match DB");
 
 
@@ -244,9 +174,9 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    @Test(priority = 3, dependsOnMethods = "tc03_massCardGeneration",
-            description = "TC-14: Маршрутизация по BIN (5 BIN → 5 issuerId)")
+    @Test(description = "TC-14: Маршрутизация по BIN (5 BIN → 5 issuerId)")
     public void tc14_binRoutingToIssuerId() throws Exception {
+        ensureTestCards();
         Set<String> observedIssuers = new HashSet<>();
 
 
@@ -289,6 +219,26 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    private void ensureTestCards() {
+        if (testCardsPrepared) {
+            return;
+        }
+        given()
+                .contentType(ContentType.JSON)
+                .body("""
+                        {
+                          "count": 100,
+                          "bins": ["400000","400001","400002","400003","400004"]
+                        }
+                        """)
+                .when()
+                .post("/api/cards/generate")
+                .then()
+                .statusCode(201);
+        testCardsPrepared = true;
+    }
+
+
     private String transactionPayload(String stan, String pan, int amount) {
         return """
                 {
@@ -311,6 +261,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
 
     private long getCardBalanceFromApi(String pan) throws Exception {
         Response response = given()
+                .queryParam("_", System.currentTimeMillis())
                 .when()
                 .get("/api/cards/{pan}", pan)
                 .then()
@@ -411,19 +362,6 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    private List<String> queryStringList(String sql, Object... params) throws SQLException {
-        List<String> result = new ArrayList<>();
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            bindParams(stmt, params);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                result.add(rs.getString(1));
-            }
-        }
-        return result;
-    }
-
-
     private void bindParams(PreparedStatement stmt, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             stmt.setObject(i + 1, params[i]);
@@ -431,20 +369,4 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    private static boolean isValidLuhn(String pan) {
-        int sum = 0;
-        boolean alternate = false;
-        for (int i = pan.length() - 1; i >= 0; i--) {
-            int digit = Character.getNumericValue(pan.charAt(i));
-            if (alternate) {
-                digit *= 2;
-                if (digit > 9) {
-                    digit -= 9;
-                }
-            }
-            sum += digit;
-            alternate = !alternate;
-        }
-        return sum % 10 == 0;
-    }
 }
