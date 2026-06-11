@@ -43,6 +43,11 @@ public abstract class E2EBaseTest {
     }
 
 
+    protected JsonNode httpPost(String baseUrl, String path, Object body, int expectedStatus) {
+        return httpUtils.httpPost(baseUrl, path, body, expectedStatus);
+    }
+
+
     public static String jdbcUrl() {
         return "jdbc:postgresql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME;
     }

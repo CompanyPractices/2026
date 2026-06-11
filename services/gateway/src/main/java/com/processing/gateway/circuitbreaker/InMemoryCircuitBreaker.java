@@ -10,6 +10,13 @@ import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Thread-safe in-memory circuit breaker for downstream services.
+ *
+ * <p>The breaker keeps an independent state per service name. After the
+ * configured number of failures it opens the circuit, rejects requests for the
+ * configured duration, and then allows one half-open probe request.</p>
+ */
 @Component
 public class InMemoryCircuitBreaker {
     private final Duration openDuration;
@@ -17,6 +24,12 @@ public class InMemoryCircuitBreaker {
     private final Clock clock;
     private final ConcurrentMap<String, CircuitState> states = new ConcurrentHashMap<>();
 
+    /**
+     * Creates a circuit breaker from application properties.
+     *
+     * @param openDuration time while an opened circuit rejects requests
+     * @param failureThreshold number of failures needed to open the circuit
+     */
     @Autowired
     public InMemoryCircuitBreaker(
             @Value("${gateway.circuit-breaker.open-duration:10s}") Duration openDuration,
@@ -25,7 +38,14 @@ public class InMemoryCircuitBreaker {
         this(openDuration, failureThreshold, Clock.systemUTC());
     }
 
-
+    /**
+     * Creates a circuit breaker with a custom clock for deterministic tests.
+     *
+     * @param openDuration time while an opened circuit rejects requests
+     * @param failureThreshold number of failures needed to open the circuit
+     * @param clock clock used to measure the open interval
+     * @return configured circuit breaker instance
+     */
     public static InMemoryCircuitBreaker forTesting(Duration openDuration, int failureThreshold, Clock clock) {
         return new InMemoryCircuitBreaker(openDuration, failureThreshold, clock);
     }
@@ -36,6 +56,12 @@ public class InMemoryCircuitBreaker {
         this.clock = clock;
     }
 
+    /**
+     * Returns whether a request may be sent to the given downstream service.
+     *
+     * @param serviceName downstream service identifier
+     * @return {@code true} when the request can proceed
+     */
     public boolean allowRequest(String serviceName) {
         CircuitState state = states.computeIfAbsent(serviceName, ignored -> new CircuitState());
         Instant now = clock.instant();
@@ -59,6 +85,11 @@ public class InMemoryCircuitBreaker {
         }
     }
 
+    /**
+     * Records a successful downstream call and closes the circuit.
+     *
+     * @param serviceName downstream service identifier
+     */
     public void recordSuccess(String serviceName) {
         CircuitState state = states.computeIfAbsent(serviceName, ignored -> new CircuitState());
 
@@ -70,6 +101,12 @@ public class InMemoryCircuitBreaker {
         }
     }
 
+    /**
+     * Records a failed downstream call and opens the circuit when the threshold
+     * is reached.
+     *
+     * @param serviceName downstream service identifier
+     */
     public void recordFailure(String serviceName) {
         CircuitState state = states.computeIfAbsent(serviceName, ignored -> new CircuitState());
         Instant now = clock.instant();
@@ -108,6 +145,11 @@ public class InMemoryCircuitBreaker {
         private boolean halfOpenRequestInProgress;
     }
 
+    /**
+     * Releases the half-open probe slot without changing failure counters.
+     *
+     * @param serviceName downstream service identifier
+     */
     public void releaseRequest(String serviceName) {
         CircuitState state = states.computeIfAbsent(serviceName, ignored -> new CircuitState());
 

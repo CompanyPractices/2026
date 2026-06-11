@@ -20,6 +20,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Applies the configured per-second in-memory limit to transaction requests.
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @RequiredArgsConstructor
