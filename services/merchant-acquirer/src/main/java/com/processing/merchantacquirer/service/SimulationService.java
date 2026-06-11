@@ -20,12 +20,12 @@ import org.springframework.stereotype.Service;
 @Service
 @AllArgsConstructor
 public class SimulationService {
-  public final CardProvider cardProvider;
-  public final MerchantProvider merchantProvider;
-  public final TransactionBuilder transactionBuilder;
-  public final TransactionSender transactionSender;
-  public final ScenarioProvider scenarioProvider;
-  public final AcquirerProvider acquirerProvider;
+  private final CardProvider cardProvider;
+  private final MerchantProvider merchantProvider;
+  private final TransactionBuilder transactionBuilder;
+  private final TransactionSender transactionSender;
+  private final ScenarioProvider scenarioProvider;
+  private final AcquirerProvider acquirerProvider;
 
   public SimulatorResponse run(SimulatorRequest request) {
     LocalDateTime startTime = LocalDateTime.now();
@@ -43,7 +43,8 @@ public class SimulationService {
     log.info(String.valueOf(merchants));
 
     // Создание терминала
-    Terminal terminal = new Terminal("TERM" + ThreadLocalRandom.current().nextInt(1, 1000), "POS");
+    String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10000));
+    Terminal terminal = new Terminal(terminalId, "POS");
 
     // Создание транакций
     List<AuthorizationRequest> authorizationRequests =
