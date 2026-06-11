@@ -5,7 +5,6 @@ import com.processing.common.dto.cardmanagement.*;
 import io.restassured.http.ContentType;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +21,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -193,10 +193,10 @@ public class CardServiceControllerIntegrationTest {
             faker.number().numberBetween(dailyLimit, 300_000_000L),
             faker.number().numberBetween(0L, 1_000_000L)
         );
-        Assertions.assertNotNull(patchRequest.status());
-        Assertions.assertNotNull(patchRequest.dailyLimit());
-        Assertions.assertNotNull(patchRequest.monthlyLimit());
-        Assertions.assertNotNull(patchRequest.availableBalance());
+        assertNotNull(patchRequest.status());
+        assertNotNull(patchRequest.dailyLimit());
+        assertNotNull(patchRequest.monthlyLimit());
+        assertNotNull(patchRequest.availableBalance());
 
         given()
             .port(port)
