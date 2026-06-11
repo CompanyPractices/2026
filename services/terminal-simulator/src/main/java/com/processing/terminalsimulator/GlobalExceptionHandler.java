@@ -1,6 +1,7 @@
 package com.processing.terminalsimulator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -29,6 +30,12 @@ public class GlobalExceptionHandler {
         ErrorResponse response = new ErrorResponse("Resource access", ex.getMessage(),
                 LocalDateTime.now().toString(), "terminal-simulator", String.valueOf(0));
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(HttpMessageNotReadableException ex) {
+        ErrorResponse response = new ErrorResponse("Invalid request format", ex.getMessage(),
+                LocalDateTime.now().toString(), "terminal-simulator", "0");
+        return ResponseEntity.badRequest().body(response);
     }
     @ExceptionHandler(HttpClientErrorException.class)
     public ResponseEntity<ErrorResponse> handleHttpClientError(HttpClientErrorException ex) {

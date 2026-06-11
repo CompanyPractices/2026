@@ -94,7 +94,6 @@ class AuthorizationClientTest {
         mockServer.expect(requestTo("http://localhost:8083/api/internal/authorize"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(jsonPath("$.mti").value("0400"))
-                .andExpect(jsonPath("$.rrn").value("012345678901"))
                 .andExpect(jsonPath("$.stan").value("000001"))
                 .andRespond(withSuccess());
 

@@ -24,6 +24,7 @@ public class TransactionMapper {
         transaction.setAmount(request.amount());
         transaction.setCurrencyCode(request.currencyCode());
         transaction.setTerminalId(request.terminalId());
+        transaction.setTerminalType(request.terminalType());
         transaction.setMerchantId(request.merchantId());
         transaction.setMcc(request.mcc());
         transaction.setAcquirerId(request.acquirerId());
@@ -49,6 +50,7 @@ public class TransactionMapper {
                 transaction.getAmount(),
                 transaction.getCurrencyCode(),
                 transaction.getTerminalId(),
+                transaction.getTerminalType(),
                 transaction.getMerchantId(),
                 transaction.getMcc(),
                 transaction.getAcquirerId(),
@@ -77,6 +79,7 @@ public class TransactionMapper {
                 && Objects.equals(transaction.getAmount(), request.amount())
                 && Objects.equals(transaction.getCurrencyCode(), request.currencyCode())
                 && Objects.equals(transaction.getTerminalId(), request.terminalId())
+                && Objects.equals(transaction.getTerminalType(), request.terminalType())
                 && Objects.equals(transaction.getMerchantId(), request.merchantId())
                 && Objects.equals(transaction.getMcc(), request.mcc())
                 && Objects.equals(transaction.getAcquirerId(), request.acquirerId())

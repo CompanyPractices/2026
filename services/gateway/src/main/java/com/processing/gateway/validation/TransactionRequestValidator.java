@@ -31,7 +31,7 @@ public class TransactionRequestValidator {
         if (request.amount() == null) {
             throw new TransactionValidationException("Field 'amount' is required");
         }
-        if (request.amount().compareTo(0) <= 0) {
+        if (request.amount().compareTo(0L) <= 0L) {
             throw new TransactionValidationException("Field 'amount' must be > 0");
         }
         if (request.currencyCode().length() != 3) {

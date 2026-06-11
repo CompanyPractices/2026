@@ -1,0 +1,145 @@
+package com.processing.transactionlogger.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.common.dto.transactionlogger.TransactionResponse;
+import com.processing.common.dto.transactionlogger.TransactionStatus;
+import com.processing.transactionlogger.dto.DashboardStatsResponse;
+import com.processing.transactionlogger.dto.TransactionSearchResponse;
+import com.processing.transactionlogger.mapper.TransactionMapper;
+import com.processing.transactionlogger.model.Transaction;
+import com.processing.transactionlogger.repository.TransactionRepository;
+import com.processing.transactionlogger.specification.TransactionFilter;
+import com.processing.transactionlogger.websocket.WebSocketManager;
+import org.instancio.Instancio;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.time.Instant;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+public class TransactionServiceSearchTest {
+    @Mock
+    private TransactionRepository transactionRepository;
+    @Mock
+    private WebSocketManager webSocketManager;
+    private TransactionService transactionService;
+
+    @BeforeEach()
+    void setUp() {
+        transactionService = new TransactionService(
+                transactionRepository,
+                new TransactionMapper(),
+                webSocketManager,
+                new ObjectMapper().findAndRegisterModules());
+    }
+
+    @Test
+    void searchReturnsTransactionsMappedToDto() {
+        Transaction transaction = Instancio.create(Transaction.class);
+        when(transactionRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(transaction)));
+
+        TransactionSearchResponse result = transactionService.search(emptyFilter());
+
+        assertThat(result.transactions()).hasSize(1);
+        assertEquals(result.transactions().get(0).id(), transaction.getId());
+    }
+
+    @Test
+    void searchReturnsTotalFromPage() {
+        List<Transaction> content = Instancio.ofList(Transaction.class).size(3).create();
+        when(transactionRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(content, Pageable.unpaged(), 150));
+
+        TransactionSearchResponse result = transactionService.search(emptyFilter());
+
+        assertEquals(150, result.total());
+        assertThat(result.transactions()).hasSize(3);
+    }
+
+    @Test
+    void searchReturnsEmptyResultWhenNoTransactions() {
+        when(transactionRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        TransactionSearchResponse result = transactionService.search(emptyFilter());
+
+        assertThat(result.total()).isZero();
+        assertThat(result.transactions()).isEmpty();
+    }
+
+    @Test
+    void getStatsReturnsAggregatedData() {
+        when(transactionRepository.count()).thenReturn(100L);
+        when(transactionRepository.countByStatus(TransactionStatus.APPROVED)).thenReturn(80L);
+        when(transactionRepository.countByStatus(TransactionStatus.DECLINED)).thenReturn(20L);
+        when(transactionRepository.sumAmount()).thenReturn(500000L);
+        when(transactionRepository.countByCreatedAtAfter(any(Instant.class))).thenReturn(5L);
+        when(transactionRepository.averageProcessingTimeMs()).thenReturn(42.5);
+
+        DashboardStatsResponse stats = transactionService.getStats();
+
+        assertEquals(100L, stats.totalTransactions());
+        assertEquals(80L, stats.approvedCount());
+        assertEquals(20L, stats.declinedCount());
+        assertEquals(0.8, stats.approvalRate());
+        assertEquals(500000L, stats.totalAmount());
+        assertEquals(5000L, stats.averageAmount());
+        assertEquals(42.5, stats.avgProcessingTimeMs());
+        assertEquals(5.0, stats.transactionsPerMinute());
+    }
+
+    @Test
+    void getStatsReturnsZeroWhenNotTransactions() {
+        when(transactionRepository.count()).thenReturn(0L);
+        when(transactionRepository.countByStatus(any())).thenReturn(0L);
+        when(transactionRepository.countByCreatedAtAfter(any(Instant.class))).thenReturn(0L);
+
+        DashboardStatsResponse stats = transactionService.getStats();
+
+        assertThat(stats.totalTransactions()).isZero();
+        assertThat(stats.approvalRate()).isZero();
+        assertThat(stats.totalAmount()).isZero();
+        assertThat(stats.averageAmount()).isZero();
+        assertThat(stats.avgProcessingTimeMs()).isZero();
+    }
+
+    @Test
+    void getRecentReturnsTransactionsMappedToDto() {
+        List<Transaction> transactions = Instancio.ofList(Transaction.class).size(5).create();
+        when(transactionRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(transactions));
+
+        List<TransactionResponse> result = transactionService.getRecent(5);
+
+        assertThat(result).hasSize(5);
+        assertEquals(transactions.get(0).getId(), result.get(0).id());
+    }
+
+    @Test
+    void getRecentReturnsEmptyListWhenNoTransactions() {
+        when(transactionRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        List<TransactionResponse> result = transactionService.getRecent(10);
+
+        assertThat(result).isEmpty();
+    }
+
+    private static TransactionFilter emptyFilter() {
+        return new TransactionFilter();
+    }
+
+}

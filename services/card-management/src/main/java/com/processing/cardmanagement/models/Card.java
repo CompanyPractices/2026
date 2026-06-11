@@ -1,7 +1,6 @@
 package com.processing.cardmanagement.models;
 
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
-import com.processing.common.dto.cardmanagement.CardStatus;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -132,9 +131,9 @@ public record Card(
      */
     public Card withData(
         CardStatus status,
-        Long dailyLimit,
-        Long monthlyLimit,
-        Long availableBalance
+        long dailyLimit,
+        long monthlyLimit,
+        long availableBalance
     ) {
         if (dailyLimit < 0 || monthlyLimit < 0) {
             throw new IllegalArgumentException("Limit can not contain negative values");
