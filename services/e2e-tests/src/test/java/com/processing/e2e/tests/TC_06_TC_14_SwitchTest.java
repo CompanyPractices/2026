@@ -1,0 +1,450 @@
+package com.processing.e2e.tests;
+
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.processing.e2e.E2EBaseTest;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.oneOf;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+
+
+public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
+
+
+    private static final String[] BINS = {"400000", "400001", "400002", "400003", "400004"};
+    private static final String[] EXPECTED_ISSUERS = {"ISS001", "ISS002", "ISS003", "ISS004", "ISS005"};
+
+
+    private static final int TC06_AMOUNT = 150_000;
+    private static final String TC06_STAN = "000001";
+    private static final String TERMINAL_ID = "TERM0001";
+    private static final String TERMINAL_TYPE = "POS";
+    private static final String MERCHANT_ID = "MERCH0000000001";
+    private static final String TRANSMISSION_DATE_TIME = "2026-06-01T10:30:00";
+    private static final Duration STACK_READY_TIMEOUT = Duration.ofMinutes(3);
+    private static final Duration STACK_READY_POLL_INTERVAL = Duration.ofSeconds(3);
+    private static final List<String> REQUIRED_SERVICES =
+            List.of("switch", "cardManagement", "authorization", "logger");
+
+
+    private Connection connection;
+    private String tc06Pan;
+
+
+    @BeforeClass
+    public void setUp() throws Exception {
+        RestAssured.baseURI = GATEWAY_URL;
+        connection = DriverManager.getConnection(jdbcUrl(), DB_USER, DB_PASSWORD);
+        assertStackIsReady();
+    }
+
+
+    @AfterClass(alwaysRun = true)
+    public void tearDown() throws SQLException {
+        if (connection != null && !connection.isClosed()) {
+            connection.close();
+        }
+    }
+
+
+    private void assertStackIsReady() throws Exception {
+        Instant deadline = Instant.now().plus(STACK_READY_TIMEOUT);
+        String lastServicesState = null;
+
+
+        while (Instant.now().isBefore(deadline)) {
+            Response health = given().when().get("/health").then().statusCode(200).extract().response();
+            JsonNode body = mapper.readTree(health.asString());
+            assertEquals(body.get("status").asText(), "ok", "Gateway must be ok");
+
+
+            JsonNode services = body.get("services");
+            assertNotNull(services, "Gateway health must expose services map");
+
+
+            List<String> notReady = new ArrayList<>();
+            for (String service : REQUIRED_SERVICES) {
+                if (!"ok".equals(services.get(service).asText())) {
+                    notReady.add(service + "=" + services.get(service).asText());
+                }
+            }
+            if (notReady.isEmpty()) {
+                return;
+            }
+
+
+            lastServicesState = String.join(", ", notReady);
+            Thread.sleep(STACK_READY_POLL_INTERVAL.toMillis());
+        }
+
+
+        fail("Stack not ready within " + STACK_READY_TIMEOUT.toSeconds()
+                + "s. Still down: " + lastServicesState
+                + ". Run `docker compose up -d` and wait for all services to become healthy.");
+    }
+
+
+    @Test(priority = 1, description = "TC-03: Массовая генерация тестовых карт (предусловие)")
+    public void tc03_massCardGeneration() throws Exception {
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body("""
+                        {
+                          "count": 100,
+                          "bins": ["400000","400001","400002","400003","400004"]
+                        }
+                        """)
+                .when()
+                .post("/api/cards/generate")
+                .then()
+                .statusCode(201)
+                .extract()
+                .response();
+
+
+        JsonNode body = mapper.readTree(response.asString());
+        int generated = body.get("generated").asInt();
+        JsonNode cards = body.get("cards");
+
+
+        assertTrue(generated >= 100, "generated must be >= 100");
+        assertEquals(cards.size(), generated, "cards array length must match generated");
+
+
+        Set<String> pans = new HashSet<>();
+        Set<String> binsPresent = new HashSet<>();
+        for (JsonNode card : cards) {
+            assertNotNull(card.get("id").asText());
+            UUID.fromString(card.get("id").asText());
+
+
+            String pan = card.get("pan").asText();
+            assertEquals(pan.length(), 16, "pan must be 16 digits");
+            assertTrue(pan.matches("\\d{16}"), "pan must contain only digits");
+            assertTrue(isValidLuhn(pan), "pan must pass Luhn: " + pan);
+            assertTrue(pans.add(pan), "duplicate pan in response: " + pan);
+
+
+            assertNotNull(card.get("status").asText());
+            binsPresent.add(card.get("bin").asText());
+        }
+
+
+        for (String bin : BINS) {
+            assertTrue(binsPresent.contains(bin), "missing bin in response: " + bin);
+        }
+
+
+        long activeCardsCount = queryLong("SELECT COUNT(*) FROM cards WHERE status <> 'DELETED'");
+        assertTrue(activeCardsCount >= 100, "DB must contain at least 100 non-deleted cards");
+
+
+        List<String> distinctBins = queryStringList("SELECT DISTINCT bin FROM cards");
+        for (String bin : BINS) {
+            assertTrue(distinctBins.contains(bin), "DB must contain bin: " + bin);
+        }
+
+
+        List<String> samplePans = queryStringList(
+                "SELECT pan FROM cards WHERE status = 'ACTIVE' ORDER BY RANDOM() LIMIT 5");
+        assertEquals(samplePans.size(), 5, "need 5 sample PANs for Luhn check");
+        for (String pan : samplePans) {
+            assertTrue(isValidLuhn(pan), "DB pan must pass Luhn: " + pan);
+        }
+    }
+
+
+    @Test(priority = 2, dependsOnMethods = "tc03_massCardGeneration",
+            description = "TC-06: Полный цикл одиночной транзакции (APPROVED)")
+    public void tc06_fullApprovedTransactionCycle() throws Exception {
+        tc06Pan = findActivePanWithBalance(BINS[0], TC06_AMOUNT);
+        cleanupTransaction(TC06_STAN);
+
+
+        long balanceBeforeHttp = getCardBalanceFromApi(tc06Pan);
+        long balanceBeforeDb = getCardBalanceFromDb(tc06Pan);
+        assertEquals(balanceBeforeDb, balanceBeforeHttp, "HTTP and DB balance before transaction must match");
+
+
+        Response txResponse = given()
+                .contentType(ContentType.JSON)
+                .body(transactionPayload(TC06_STAN, tc06Pan, TC06_AMOUNT))
+                .when()
+                .post("/api/transactions")
+                .then()
+                .statusCode(200)
+                .body("status", equalTo("APPROVED"))
+                .body("responseCode", equalTo("00"))
+                .body("mti", equalTo("0100"))
+                .body("stan", equalTo(TC06_STAN))
+                .body("rrn", matchesPattern("\\d{12}"))
+                .body("authCode", matchesPattern("[A-Z0-9]{6}"))
+                .body("processingTimeMs", greaterThan(0))
+                .extract()
+                .response();
+
+
+        JsonNode txBody = mapper.readTree(txResponse.asString());
+        String rrn = txBody.get("rrn").asText();
+        String authCode = txBody.get("authCode").asText();
+
+
+        long balanceAfterDb = getCardBalanceFromDb(tc06Pan);
+        assertEquals(balanceAfterDb, balanceBeforeDb - TC06_AMOUNT,
+                "DB balance must decrease by transaction amount");
+
+
+        long balanceAfterHttp = getCardBalanceFromApi(tc06Pan);
+        assertEquals(balanceAfterHttp, balanceBeforeDb - TC06_AMOUNT,
+                "HTTP balance after transaction must match DB");
+
+
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT status, pan, amount, rrn, auth_code, issuer_id, created_at "
+                        + "FROM transactions WHERE stan = ?")) {
+            stmt.setString(1, TC06_STAN);
+            ResultSet rs = stmt.executeQuery();
+            assertTrue(rs.next(), "transaction must exist in DB");
+            assertEquals(rs.getString("status"), "APPROVED");
+            assertEquals(rs.getString("pan"), tc06Pan);
+            assertEquals(rs.getLong("amount"), TC06_AMOUNT);
+            assertEquals(rs.getString("rrn"), rrn);
+            assertEquals(rs.getString("auth_code"), authCode);
+            assertNotNull(rs.getString("issuer_id"));
+            assertNotNull(rs.getTimestamp("created_at"));
+        }
+    }
+
+
+    @Test(priority = 3, dependsOnMethods = "tc03_massCardGeneration",
+            description = "TC-14: Маршрутизация по BIN (5 BIN → 5 issuerId)")
+    public void tc14_binRoutingToIssuerId() throws Exception {
+        Set<String> observedIssuers = new HashSet<>();
+
+
+        for (int i = 0; i < BINS.length; i++) {
+            String bin = BINS[i];
+            String expectedIssuer = EXPECTED_ISSUERS[i];
+            String pan = findActivePanByBin(bin);
+            String stan = String.format("14%04d", i);
+
+
+            cleanupTransaction(stan);
+
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(transactionPayload(stan, pan, 1_000))
+                    .when()
+                    .post("/api/transactions")
+                    .then()
+                    .statusCode(200)
+                    .body("status", oneOf("APPROVED", "DECLINED"));
+
+
+            String issuerIdDb = getIssuerIdFromDbByStan(stan);
+            assertNotNull(issuerIdDb, "issuer_id must be present in DB for stan " + stan);
+            assertEquals(issuerIdDb, expectedIssuer,
+                    "BIN " + bin + " must route to " + expectedIssuer);
+
+
+            String issuerIdHttp = getIssuerIdFromSearchApi(pan, stan);
+            assertEquals(issuerIdHttp, issuerIdDb,
+                    "issuerId from HTTP search must match DB for pan " + pan);
+
+
+            observedIssuers.add(issuerIdDb);
+        }
+
+
+        assertEquals(observedIssuers.size(), 5, "must observe 5 distinct issuerId values");
+    }
+
+
+    private String transactionPayload(String stan, String pan, int amount) {
+        return """
+                {
+                  "mti": "0100",
+                  "stan": "%s",
+                  "pan": "%s",
+                  "processingCode": "000000",
+                  "amount": %d,
+                  "currencyCode": "643",
+                  "transmissionDateTime": "%s",
+                  "terminalId": "%s",
+                  "terminalType": "%s",
+                  "merchantId": "%s",
+                  "mcc": "5411",
+                  "acquirerId": "ACQ001"
+                }
+                """.formatted(stan, pan, amount, TRANSMISSION_DATE_TIME, TERMINAL_ID, TERMINAL_TYPE, MERCHANT_ID);
+    }
+
+
+    private long getCardBalanceFromApi(String pan) throws Exception {
+        Response response = given()
+                .when()
+                .get("/api/cards/{pan}", pan)
+                .then()
+                .statusCode(200)
+                .extract()
+                .response();
+
+
+        JsonNode body = mapper.readTree(response.asString());
+        return body.get("availableBalance").asLong();
+    }
+
+
+    private long getCardBalanceFromDb(String pan) throws SQLException {
+        return queryLong("SELECT available_balance FROM cards WHERE pan = ?", pan);
+    }
+
+
+    private String findActivePanByBin(String bin) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT pan FROM cards WHERE bin = ? AND status = 'ACTIVE' LIMIT 1")) {
+            stmt.setString(1, bin);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("pan");
+            }
+        }
+        throw new IllegalStateException("No ACTIVE card for BIN " + bin);
+    }
+
+
+    private String findActivePanWithBalance(String bin, long minBalance) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT pan FROM cards WHERE bin = ? AND status = 'ACTIVE' "
+                        + "AND available_balance >= ? LIMIT 1")) {
+            stmt.setString(1, bin);
+            stmt.setLong(2, minBalance);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("pan");
+            }
+        }
+        throw new IllegalStateException(
+                "No ACTIVE card for BIN " + bin + " with balance >= " + minBalance);
+    }
+
+
+    private String getIssuerIdFromDbByStan(String stan) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT issuer_id FROM transactions WHERE stan = ?")) {
+            stmt.setString(1, stan);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next() ? rs.getString("issuer_id") : null;
+        }
+    }
+
+
+    private String getIssuerIdFromSearchApi(String pan, String stan) throws Exception {
+        Response response = given()
+                .queryParam("pan", pan)
+                .queryParam("limit", 50)
+                .when()
+                .get("/api/transactions/search")
+                .then()
+                .statusCode(200)
+                .extract()
+                .response();
+
+
+        JsonNode transactions = mapper.readTree(response.asString()).get("transactions");
+        for (JsonNode tx : transactions) {
+            if (stan.equals(tx.get("stan").asText())) {
+                return tx.get("issuerId").asText();
+            }
+        }
+        throw new IllegalStateException("Transaction stan " + stan + " not found in search API");
+    }
+
+
+    private void cleanupTransaction(String stan) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "DELETE FROM transactions WHERE stan = ?")) {
+            stmt.setString(1, stan);
+            stmt.executeUpdate();
+        }
+    }
+
+
+    private long queryLong(String sql, Object... params) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            bindParams(stmt, params);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+        }
+        throw new IllegalStateException("Query returned no rows: " + sql);
+    }
+
+
+    private List<String> queryStringList(String sql, Object... params) throws SQLException {
+        List<String> result = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            bindParams(stmt, params);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                result.add(rs.getString(1));
+            }
+        }
+        return result;
+    }
+
+
+    private void bindParams(PreparedStatement stmt, Object... params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            stmt.setObject(i + 1, params[i]);
+        }
+    }
+
+
+    private static boolean isValidLuhn(String pan) {
+        int sum = 0;
+        boolean alternate = false;
+        for (int i = pan.length() - 1; i >= 0; i--) {
+            int digit = Character.getNumericValue(pan.charAt(i));
+            if (alternate) {
+                digit *= 2;
+                if (digit > 9) {
+                    digit -= 9;
+                }
+            }
+            sum += digit;
+            alternate = !alternate;
+        }
+        return sum % 10 == 0;
+    }
+}
