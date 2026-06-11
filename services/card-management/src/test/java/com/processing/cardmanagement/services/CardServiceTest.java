@@ -91,7 +91,7 @@ public final class CardServiceTest {
         var dailyLimit = faker.number().numberBetween(0L, 10000000L);
         var monthlyLimit = faker.number().numberBetween(dailyLimit, 30000000L);
         var initialBalance = faker.number().numberBetween(0L, 10000000L);
-        var expDate = YearMonth.now().plusYears(settings.cardYtl());
+        var expDate = YearMonth.now().plusYears(settings.cardValidityPeriod());
 
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
@@ -305,7 +305,7 @@ public final class CardServiceTest {
             pan,
             pan.substring(0, 6),
             faker.name().fullName().toUpperCase(Locale.ROOT),
-            YearMonth.now().plusYears(settings.cardYtl()),
+            YearMonth.now().plusYears(settings.cardValidityPeriod()),
             CardStatus.ACTIVE,
             defaults.currencyCode(),
             defaults.dailyLimit(),
