@@ -84,8 +84,8 @@ $txBody = @{
     amount = 150000
     currencyCode = "643"
     transmissionDateTime = "2026-06-01T10:30:00Z"
-    terminalId = "TERM001"
-    merchantId = "MERCH00000000001"
+    terminalId = "TERM0001"
+    merchantId = "MERCH0000000001"
     mcc = "5411"
     acquirerId = "ACQ001"
 } | ConvertTo-Json -Compress
