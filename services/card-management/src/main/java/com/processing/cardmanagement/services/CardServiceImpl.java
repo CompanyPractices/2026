@@ -1,6 +1,6 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.domain.*;
+import com.processing.cardmanagement.events.*;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
@@ -23,7 +23,7 @@ public class CardServiceImpl implements CardService {
     private final CardServiceSettings settings;
     private final CardServiceDefaults defaults;
     private final PanGenerator panGenerator;
-    private final CardServiceEventListener eventListener;
+    private final CardEventListener eventListener;
 
     public Card createCard(
         String bin,
@@ -46,7 +46,7 @@ public class CardServiceImpl implements CardService {
         var savedCard = cardRepository.save(Card.fromDraft(
             panGenerator.generatePan(draft.bin()),
             settings.issuerId(),
-            settings.cardYtl(),
+            settings.cardValidityPeriod(),
             draft
         ));
 
@@ -60,7 +60,7 @@ public class CardServiceImpl implements CardService {
             .map(draft -> Card.fromDraft(
                 panGenerator.generatePan(draft.bin()),
                 settings.issuerId(),
-                settings.cardYtl(),
+                settings.cardValidityPeriod(),
                 draft
             ))
             .toList();
