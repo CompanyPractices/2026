@@ -5,17 +5,23 @@ import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.common.dto.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @Value("${app.service-name}")
+    private String serviceName;
 
     @ExceptionHandler(CardNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -40,8 +46,22 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleMethodArgumentNotValidException(
         MethodArgumentNotValidException ex
     ) {
-        log.warn(ex.getMessage());
-        return errorResponseFromException(ex);
+        String errorMessage = ex.getBindingResult()
+            .getFieldErrors()
+            .stream()
+            .map(FieldError::getDefaultMessage)
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse("Validation failed");
+
+        log.warn(errorMessage);
+        return new ErrorResponse(
+            ex.getClass().getSimpleName(),
+            errorMessage,
+            LocalDateTime.now().toString(),
+            serviceName,
+            null
+        );
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -76,7 +96,7 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleException(
         Exception ex
     ) {
-        log.error(ex.getMessage());
+        log.error("Critical error: {}", ex.getMessage(), ex);
         return errorResponseFromException(ex);
     }
 
@@ -85,7 +105,7 @@ public class GlobalExceptionHandler {
             ex.getClass().getSimpleName(),
             ex.getMessage(),
             LocalDateTime.now().toString(),
-            null,
+            serviceName,
             null
         );
     }
