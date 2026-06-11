@@ -23,4 +23,34 @@ public class HttpUtils {
                 .response();
         return response.body().as(JsonNode.class);
     }
+
+    public JsonNode httpPost(String baseUrl, String path, Object body, int expectedStatus) {
+        Response response = RestAssured
+                .given()
+                .baseUri(baseUrl)
+                .contentType("application/json")
+                .body(body)
+                .when()
+                .post(path)
+                .then()
+                .statusCode(expectedStatus)
+                .extract()
+                .response();
+        return response.body().as(JsonNode.class);
+    }
+
+    public JsonNode httpPostRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
+        Response response = RestAssured
+                .given()
+                .baseUri(baseUrl)
+                .contentType("application/json")
+                .body(jsonBody)
+                .when()
+                .post(path)
+                .then()
+                .statusCode(expectedStatus)
+                .extract()
+                .response();
+        return response.body().as(JsonNode.class);
+    }
 }
