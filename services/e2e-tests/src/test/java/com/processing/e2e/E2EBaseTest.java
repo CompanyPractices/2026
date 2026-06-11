@@ -57,5 +57,9 @@ public abstract class E2EBaseTest {
         return httpUtils.httpPostRaw(baseUrl, path, jsonBody, expectedStatus);
     }
 
+    protected JsonNode httpPatchRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
+        return httpUtils.httpPatchRaw(baseUrl, path, jsonBody, expectedStatus);
+    }
+
     protected DBUtils db = new DBUtils();
 }
