@@ -45,8 +45,8 @@ export default function TransactionPieChart({transactions, loading, error}: PieC
                     dataKey="value" isAnimationActive={true}
                     cy="40%"
                 >
-                    <Cell fill="red" />
                     <Cell fill="green" />
+                    <Cell fill="red" />
                 </Pie>
                 <Legend
                     layout="horizontal"
