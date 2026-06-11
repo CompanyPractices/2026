@@ -158,6 +158,12 @@
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${mapstruct.version}</version>
                         </path>
+                        <!-- For CriteriaBuilder -->
+                        <path>
+                            <groupId>org.hibernate.orm</groupId>
+                            <artifactId>hibernate-jpamodelgen</artifactId>
+                            <version>6.4.4.Final</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
