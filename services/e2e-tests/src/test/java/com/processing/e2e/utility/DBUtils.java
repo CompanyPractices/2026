@@ -2,7 +2,6 @@ package com.processing.e2e.utility;
 
 import com.processing.e2e.E2EBaseTest;
 
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;

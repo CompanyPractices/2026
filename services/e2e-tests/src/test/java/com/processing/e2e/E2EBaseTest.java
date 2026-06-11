@@ -1,6 +1,5 @@
 package com.processing.e2e;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -31,16 +30,13 @@ public abstract class E2EBaseTest {
     protected final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
 
-
     protected HttpUtils httpUtils;
-
 
     @BeforeClass(alwaysRun = true)
     public void baseSetUp() {
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
         httpUtils = new HttpUtils();
     }
-
 
     protected JsonNode httpGet(String baseUrl, String path, int expectedStatus) {
         return httpUtils.httpGet(baseUrl, path, expectedStatus);
