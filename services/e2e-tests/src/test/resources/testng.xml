@@ -7,4 +7,10 @@
             <class name="com.processing.e2e.tests.HealthCheckTest"/>
         </classes>
     </test>
+
+    <test name="Gateway Validation">
+        <classes>
+            <class name="com.processing.e2e.tests.GatewayValidationTest"/>
+        </classes>
+    </test>
 </suite>

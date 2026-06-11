@@ -60,6 +60,12 @@ public class HealthCheckTest extends E2EBaseTest {
         soft.assertEquals(logger.path("service").asText(), "transaction-logger",
                 "Transaction Logger: $.service does not match");
 
+        try {
+            assertGetStatus(DASHBOARD_URL, "/", 200);
+        } catch (AssertionError error) {
+            soft.fail("Dashboard: expected HTTP 200 on /", error);
+        }
+
         soft.assertAll();
     }
 }
