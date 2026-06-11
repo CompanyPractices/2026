@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+/**
+ * Aggregates gateway and downstream health information.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,6 +30,11 @@ public class HealthService {
     private final HealthProperties healthProperties;
     private final GatewayProperties gatewayProperties;
 
+    /**
+     * Checks configured downstream services and builds the gateway health response.
+     *
+     * @return aggregated health response
+     */
     public HealthResponse getDownstreamServicesHealth() {
         String switchUrl = serviceProperties.getSwitchUrl() + healthProperties.getUrl();
         String loggerUrl = serviceProperties.getLoggerUrl() + healthProperties.getUrl();
