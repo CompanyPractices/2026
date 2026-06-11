@@ -67,7 +67,7 @@ public class ProxyingToLoggerTest extends E2EBaseTest {
     void getTransactionsSearchDirectlyShouldMatch() {
         JsonNode response = httpUtils.httpGet(LOGGER_URL, "/api/transactions/search?limit=5", 200);
 
-        assertEquals(response, gatewayResponse);
+        assertEquals((Object) response, (Object) gatewayResponse);
     }
 
     @Test(priority = 1303)
