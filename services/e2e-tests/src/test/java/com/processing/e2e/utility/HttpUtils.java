@@ -1,6 +1,5 @@
 package com.processing.e2e.utility;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -30,5 +29,21 @@ public class HttpUtils {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to parse JSON from " + baseUrl + path, e);
         }
+    }
+
+
+    public JsonNode httpPost(String baseUrl, String path, Object body, int expectedStatus) {
+        Response response = RestAssured
+                .given()
+                .baseUri(baseUrl)
+                .contentType("application/json")
+                .body(body)
+                .when()
+                .post(path)
+                .then()
+                .statusCode(expectedStatus)
+                .extract()
+                .response();
+        return response.body().as(JsonNode.class);
     }
 }
