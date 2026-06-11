@@ -3,11 +3,9 @@ package com.processing.e2e.utility;
 import com.processing.e2e.E2EBaseTest;
 
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 
 public class DBUtils {
@@ -45,6 +43,24 @@ public class DBUtils {
         }
     }
 
+    public Map<String, Object> queryRow(String sql, Object... params) throws SQLException {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new SQLException(("No result for: " + sql));
+                }
+                Map<String, Object> row = new LinkedHashMap<>();
+                ResultSetMetaData meta = rs.getMetaData();
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    row.put(meta.getColumnName(i), rs.getObject(i));
+                }
+
+                return row;
+            }
+        }
+    }
 
     private static void bindParams(PreparedStatement ps, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
