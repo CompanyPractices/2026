@@ -267,21 +267,19 @@ services:
       - smp-network
 
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.3.2
     container_name: smp-loki
     restart: unless-stopped
     ports:
-      - "3100:3100"
+      - "${LOKI_PORT:-3100}:3100"
     volumes:
       - ./infra/loki/loki-config.yml:/etc/loki/local-config.yaml
       - loki_data:/loki
     networks:
       - smp-network
-    depends_on:
-      - prometheus
 
   promtail:
-    image: grafana/promtail:latest
+    image: grafana/promtail:3.3.2
     container_name: smp-promtail
     restart: unless-stopped
     volumes:
