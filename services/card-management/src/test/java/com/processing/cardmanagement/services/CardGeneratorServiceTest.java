@@ -1,9 +1,10 @@
 package com.processing.cardmanagement.services;
 
+import com.processing.cardmanagement.events.CardEventListener;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
-import com.processing.common.dto.cardmanagement.CardModel;
+import io.micrometer.core.instrument.MeterRegistry;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,12 @@ public class CardGeneratorServiceTest {
     @Mock
     private CardService cardService;
 
+    @Mock
+    private CardEventListener eventListener;
+
+    @Mock
+    private MeterRegistry meterRegistry;
+
     private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
         1_000_000,
         50_000_000,
@@ -40,7 +47,11 @@ public class CardGeneratorServiceTest {
 
     @BeforeEach
     void setUp() {
-        cardGeneratorService = new CardGeneratorService(cardService, generatorOptions);
+        cardGeneratorService = new CardGeneratorService(
+            cardService,
+            generatorOptions,
+            eventListener
+        );
     }
 
     @Test
@@ -55,7 +66,7 @@ public class CardGeneratorServiceTest {
 
         when(cardService.createCards(anyList())).thenAnswer(inv -> {
             List<CardDraft> dtos = inv.getArgument(0);
-            return dtos.stream().map(dto -> new CardModel(
+            return dtos.stream().map(dto -> new Card(
                 UUID.randomUUID(),
                 faker.numerify("################"),
                 dto.bin(),
