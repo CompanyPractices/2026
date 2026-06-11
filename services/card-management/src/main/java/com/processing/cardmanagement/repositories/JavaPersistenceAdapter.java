@@ -5,14 +5,13 @@ import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
-import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public final class JavaPersistenceAdapter implements CardRepository {
+public class JavaPersistenceAdapter implements CardRepository {
 
     private final CardPersistenceMapper persistenceMapper;
     private final CardJpaRepository jpaRepository;
@@ -34,17 +33,15 @@ public final class JavaPersistenceAdapter implements CardRepository {
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
     ) {
-        int pageNumber = (int) (offset / limit);
-        int pageSize = (int) limit;
-
         return jpaRepository
             .findCards(
+                limit,
+                offset,
                 status != null ? status.name() : null,
                 bin,
                 issuerId,
                 startDate,
-                endDate,
-                PageRequest.of(pageNumber, pageSize)
+                endDate
             )
             .stream()
             .map(persistenceMapper::toDomain)

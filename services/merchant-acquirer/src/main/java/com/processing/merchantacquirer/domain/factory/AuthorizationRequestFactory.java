@@ -21,15 +21,15 @@ public class AuthorizationRequestFactory {
     return AuthorizationRequest.builder()
         .mti("0100")
         .stan(stanGenerator.next())
-        .pan(pan) // number card
-        .processingCode("000000") // тип транзакции
-        .amount(amount) // цена
-        .currencyCode(currencyCode) // тип валюты
-        .transmissionDateTime(time.toString()) // генерировать текущее время
-        .terminalId(terminal.getId()) // terminal.id
-        .terminalType(terminal.getType()) // terminal.type
-        .merchantId(merchant.getId()) // merchant.id
-        .mcc(merchant.getMcc()) // merchant.mcc
+        .pan(pan)
+        .processingCode("000000")
+        .amount(amount)
+        .currencyCode(currencyCode)
+        .transmissionDateTime(time.toString())
+        .terminalId(terminal.getId())
+        .terminalType(terminal.getType())
+        .merchantId(merchant.getId())
+        .mcc(merchant.getMcc())
         .acquirerId(merchant.getAcquirerId())
         .build();
   }

@@ -1,8 +1,11 @@
 package com.processing.merchantacquirer.repository;
 
-import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
+import com.processing.merchantacquirer.domain.entity.AcquirerFee;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface AcquirerFeeRepository {
-    void save(AcquirerFeeRequest key, Double amount);
-    Double get(AcquirerFeeRequest key);
+@Repository
+public interface AcquirerFeeRepository extends JpaRepository<AcquirerFee, Long> {
+    AcquirerFee findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
+            String transmissionDateTime, String stan, String terminalId, Long amount, String pan);
 }

@@ -1,5 +1,8 @@
 package com.processing.terminalsimulator.dto;
 
+import lombok.Builder;
+
+@Builder
 public record AuthorizationRequest(
     String mti,
     String stan,
