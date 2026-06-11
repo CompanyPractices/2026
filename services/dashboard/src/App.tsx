@@ -27,10 +27,10 @@ function App() {
             <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
             <main className="w-2/3 flex-grow grid grid-cols-4 gap-4">
                 <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
-                    <TransactionLineChart transactions={displayedTransactions} loading={loading} error={error} />
+                    <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
                 </div>
                 <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
-                    <TransactionPieChart transactions={displayedTransactions} loading={loading} error={error}/>
+                    <TransactionPieChart transactions={uniqueTransactions} loading={loading} error={false}/>
                 </div>
                 <div className="col-span-4 m-4 place-content-center">
                     <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
