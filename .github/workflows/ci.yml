@@ -144,7 +144,10 @@ jobs:
 
       - name: Show logs on failure
         if: failure()
-        run: docker compose logs --tail=100
+        run: |
+          for service in $(docker compose ps --services); do
+            docker compose logs --tail=200 $service
+          done
 
       - name: Cleanup
         if: always()
