@@ -90,7 +90,7 @@ public class AuthService {
      * @see AuthorizationRequest
      * @see AuthorizationResponse
      */
-    @Transactional
+    @Transactional(rollbackFor = { Exception.class })
     public AuthorizationResponse authorize(AuthorizationRequest request, LocalDateTime requestInputTime) {
         CardModel cardResponse;
         try {
