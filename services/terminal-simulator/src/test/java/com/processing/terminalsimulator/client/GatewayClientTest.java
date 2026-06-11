@@ -54,7 +54,7 @@ class GatewayClientTest {
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         AuthorizationResponse response = gatewayClient.sendToGateway(request);
-        assertEquals(TransactionStatus.APPROVED, response.status());
+        assertEquals(TransactionStatus.APPROVED.name(), response.status());
         mockServer.verify();
     }
 
