@@ -126,7 +126,7 @@ E2E (TestNG, нужен `docker compose up -d`):
 
 ```bash
 cd services
-mvn test "-Pswitch,integration" -pl switch -am "-Dtest=TC_06_TC_14_SwitchTest"
+mvn test -Pe2e-tests -pl e2e-tests
 ```
 
 ### Docker
