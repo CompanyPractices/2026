@@ -30,7 +30,7 @@ function App() {
                     <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
                 </div>
                 <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
-                    <TransactionPieChart transactions={uniqueTransactions} loading={loading} error={false}/>
+                    <TransactionPieChart transactions={uniqueTransactions} loading={loading} error={error}/>
                 </div>
                 <div className="col-span-4 m-4 place-content-center">
                     <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
