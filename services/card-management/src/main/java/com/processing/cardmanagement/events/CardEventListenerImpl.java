@@ -1,4 +1,4 @@
-package com.processing.cardmanagement.events.domain;
+package com.processing.cardmanagement.events;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
@@ -9,12 +9,12 @@ import java.util.List;
 @Component
 @Primary
 @RequiredArgsConstructor
-public class CardServiceEventListenerImpl implements CardServiceEventListener {
+public class CardEventListenerImpl implements CardEventListener {
 
-    private final List<CardServiceEventListener> listeners;
+    private final List<CardEventListener> listeners;
 
     @Override
-    public void onEvent(CardServiceEvent event) {
+    public void onEvent(CardEvent event) {
         for (var l : listeners) {
             l.onEvent(event);
         }

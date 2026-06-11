@@ -1,6 +1,6 @@
 package com.processing.cardmanagement.configuration;
 
-import com.processing.cardmanagement.events.domain.CardServiceEventListener;
+import com.processing.cardmanagement.events.CardEventListener;
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.options.CardServiceConfigurationProperties;
 import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationProperties;
@@ -36,7 +36,7 @@ public class AppConfig {
         CardServiceConfigurationProperties serviceConfigurationProperties,
         CardServiceDefaultsConfigurationProperties defaultsConfigurationProperties,
         PanGenerator panGenerator,
-        CardServiceEventListener cardServiceEventListener
+        CardEventListener cardServiceEventListener
     ) {
         return new CardServiceImpl(
             cardRepository,

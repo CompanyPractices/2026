@@ -1,6 +1,6 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.domain.CardServiceEventListener;
+import com.processing.cardmanagement.events.CardEventListener;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.cardmanagement.models.Card;
@@ -68,7 +68,7 @@ public final class CardServiceTest {
     private CardRepository cardRepository;
 
     @Mock
-    private CardServiceEventListener eventListener;
+    private CardEventListener eventListener;
 
     private CardService cardService;
 
