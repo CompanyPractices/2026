@@ -1,0 +1,78 @@
+import { LineChart, CartesianGrid, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
+import { Transaction } from '../types/index.ts'
+import { format, subHours } from 'date-fns';
+
+type LineChartProps = {
+    transactions: Transaction[];
+    loading: boolean;
+    error: string | null
+}
+
+export default function TransactionLineChart({transactions, loading, error} : LineChartProps) {
+
+    function prepareData(transactions: Transaction[]){
+        const hourAgo = subHours(new Date(), 1)
+        const txCount: Record<string, number> = {};
+        transactions.filter((tx) => new Date(tx.transmissionDateTime) >= hourAgo).map((tr) => {
+            const time = format(tr.transmissionDateTime, 'HH:mm');
+            txCount[time] = (txCount[time] || 0) + 1;
+        });
+        return Object.entries(txCount).map(([name, count]) => ({name, count})).sort((a, b) => a.name.localeCompare(b.name))
+    }
+
+    const txData = prepareData(transactions)
+
+    if (error) {
+        return (
+            <div className="text-center py-8 text-red-500">
+                Ошибка загрузки транзакций: {error}
+            </div>
+        )
+    }
+
+    if (loading) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Загрузка транзакций...
+            </div>
+        )
+    }
+
+    if (!loading && !error && transactions.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Транзакций не найдено
+            </div>
+        )
+    }
+
+    return (
+        <ResponsiveContainer width="80%" height={300} className="mx-auto my-auto" >
+            <LineChart
+                data = {txData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            >
+                <CartesianGrid strokeDasharray="3 3" stroke="silver"/>
+                <XAxis
+                    dataKey="name"
+                    stroke="darkSlateGray"
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                />
+                <YAxis
+                    dataKey="count"
+                    stroke="darkSlateGray"
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                />
+                <Tooltip/>
+                <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="green"
+                    animationDuration={2000}
+                />
+            </LineChart>
+        </ResponsiveContainer>
+    )
+}
