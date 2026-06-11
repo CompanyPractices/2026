@@ -1,4 +1,4 @@
-package com.processing.terminalsimulator.model;
+package com.processing.common.dto.terminalsimulator;
 
 public enum TerminalType {
     POS,

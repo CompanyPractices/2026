@@ -1,6 +1,6 @@
 package com.processing.terminalsimulator.strategy;
 
-import com.processing.terminalsimulator.dto.Card;
+import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +13,7 @@ public class AlmostDailyLimitStrategy implements TransactionStrategy {
         return TransactionType.ALMOST_DAILY_LIMIT;
     }
     @Override
-    public long calculateAmount(Card card) {
+    public long calculateAmount(CardModel card) {
         return  card.dailyLimit() - 1;
     }
     @Override
