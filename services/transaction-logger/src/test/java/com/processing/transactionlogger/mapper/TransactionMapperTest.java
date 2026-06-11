@@ -31,6 +31,7 @@ class TransactionMapperTest {
         assertThat(transaction.getAmount()).isEqualTo(request.amount());
         assertThat(transaction.getCurrencyCode()).isEqualTo(request.currencyCode());
         assertThat(transaction.getTerminalId()).isEqualTo(request.terminalId());
+        assertThat(transaction.getTerminalType()).isEqualTo(request.terminalType());
         assertThat(transaction.getMerchantId()).isEqualTo(request.merchantId());
         assertThat(transaction.getMcc()).isEqualTo(request.mcc());
         assertThat(transaction.getAcquirerId()).isEqualTo(request.acquirerId());
@@ -59,6 +60,7 @@ class TransactionMapperTest {
         assertThat(response.amount()).isEqualTo(transaction.getAmount());
         assertThat(response.currencyCode()).isEqualTo(transaction.getCurrencyCode());
         assertThat(response.terminalId()).isEqualTo(transaction.getTerminalId());
+        assertThat(response.terminalType()).isEqualTo(transaction.getTerminalType());
         assertThat(response.merchantId()).isEqualTo(transaction.getMerchantId());
         assertThat(response.mcc()).isEqualTo(transaction.getMcc());
         assertThat(response.acquirerId()).isEqualTo(transaction.getAcquirerId());
@@ -103,6 +105,17 @@ class TransactionMapperTest {
         assertThat(matches).isFalse();
     }
 
+    @Test
+    void matchesReturnsFalseWhenTerminalTypeDiffersFromRequest() {
+        TransactionRequest request = transactionRequest();
+        Transaction transaction = transaction();
+        transaction.setTerminalType("ATM");
+
+        boolean matches = mapper.matches(transaction, request);
+
+        assertThat(matches).isFalse();
+    }
+
     private static TransactionRequest transactionRequest() {
         return new TransactionRequest(
                 UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
@@ -115,7 +128,7 @@ class TransactionMapperTest {
                 "643",
                 "TERM001",
                 "POS",
-                "MERCH12345678901",
+                "MERCH1234567890",
                 "5411",
                 "ACQ001",
                 "ISS001",
@@ -141,6 +154,7 @@ class TransactionMapperTest {
         transaction.setAmount(request.amount());
         transaction.setCurrencyCode(request.currencyCode());
         transaction.setTerminalId(request.terminalId());
+        transaction.setTerminalType(request.terminalType());
         transaction.setMerchantId(request.merchantId());
         transaction.setMcc(request.mcc());
         transaction.setAcquirerId(request.acquirerId());

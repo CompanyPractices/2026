@@ -23,12 +23,13 @@ public class GatewayClient {
                          @Value("${gateway.url}") String gatewayUrl,
                          @Value("${gateway.card-management-url}") String cardManagementUrl) {
         this.rest = rest;
-        this.gatewayUrl = gatewayUrl;
-        this.cardManagementUrl = cardManagementUrl;
+        this.gatewayUrl = gatewayUrl + "/api/transactions";
+        this.cardManagementUrl = cardManagementUrl + "/api/cards";
     }
 
     public AuthorizationResponse sendToGateway(AuthorizationRequest tx) {
-        ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl, tx, AuthorizationResponse.class);
+        ResponseEntity<AuthorizationResponse> response = rest.postForEntity(gatewayUrl,
+                tx, AuthorizationResponse.class);
         return response.getBody();
     }
 

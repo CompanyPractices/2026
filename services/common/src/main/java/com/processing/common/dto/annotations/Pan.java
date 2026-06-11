@@ -1,15 +1,17 @@
 package com.processing.common.dto.annotations;
 
+import com.processing.common.dto.annotations.validators.PanValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
-import jakarta.validation.constraints.Pattern;
 
 import java.lang.annotation.*;
 
-@Pattern(regexp = "^\\d{16}$")
+/**
+ * Validates pan number
+ */
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {})
+@Constraint(validatedBy = PanValidator.class)
 @Documented
 public @interface Pan {
 
