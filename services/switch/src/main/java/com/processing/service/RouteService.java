@@ -62,7 +62,13 @@ public class RouteService {
         }
 
         Long acquiringFee = acquiringFeeClient.fetchAcquiringFee(
-                routedRequest.stan(), routedRequest.pan(), routedRequest.terminalId());
+                routedRequest.transmissionDateTime(),
+                routedRequest.stan(),
+                routedRequest.pan(),
+                routedRequest.terminalId(),
+                routedRequest.amount()
+        );
+
         TransactionRequest transaction = buildTransaction(routedRequest, response, acquiringFee);
 
         boolean logged;
