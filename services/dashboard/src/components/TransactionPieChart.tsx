@@ -35,15 +35,15 @@ export default function TransactionPieChart({transactions, loading, error}: PieC
     }
 
     return (
-        <ResponsiveContainer width="80%" height={300} className="mx-auto my-auto" >
+        <ResponsiveContainer height={300} className="mx-auto my-auto" >
             <PieChart>
                 <Pie
                     data={[
                         { name: 'APPROVED', value: approved },
                         { name: 'DECLINED', value: declined },
                     ]}
+                    margin={{ top: 0, right: 0, left: 0, bottom: 20 }}
                     dataKey="value" isAnimationActive={true}
-                    cy="40%"
                 >
                     <Cell fill="green" />
                     <Cell fill="red" />

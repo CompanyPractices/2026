@@ -22,12 +22,20 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
 
     return (
         <form onSubmit={filterSubmit} className="grid grid-cols-5 gap-4">
-            <div className="col-span-3" >Фильтр по таблице</div>
-            <button type="submit">Найти</button>
-            <button type="button" onClick={reset}>Сбросить</button>
+            <h2 className="col-span-3 text-lg font-bold drop-shadow-lg">
+                Фильтр по таблице
+            </h2>
+            <button type="submit" className="text-lg font-bold drop-shadow-lg">
+                Найти
+            </button>
+            <button type="button" onClick={reset} className="text-lg font-bold drop-shadow-lg">
+                Сбросить
+            </button>
 
             <div className="flex flex-col">
-                <label htmlFor="status">Статус: </label>
+                <label htmlFor="status" className="text-base font-bold">
+                    Статус:
+                </label>
                 <select value={filter.status ?? ''}
                         onChange={(e) => setFilter({
                             ...filter,
@@ -41,7 +49,9 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
             </div>
 
             <div className="flex flex-col">
-                <label htmlFor="issuer">Банк эмитент: </label>
+                <label htmlFor="issuer" className="text-base font-bold">
+                    Банк эмитент:
+                </label>
                 <select value={filter.issuerId ?? ''}
                         onChange={(e) => setFilter({
                             ...filter,
@@ -56,7 +66,9 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
             </div>
 
             <div className="flex flex-col">
-                <label htmlFor="mcc">MCC: </label>
+                <label htmlFor="mcc" className="text-base font-bold">
+                    MCC:
+                </label>
                 <select value={filter.mcc ?? ''}
                         onChange={(e) => setFilter({
                             ...filter,
@@ -71,7 +83,9 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
             </div>
 
             <div className="flex flex-col">
-                <label htmlFor="dateFrom">Начало даты: </label>
+                <label htmlFor="dateFrom" className="text-base font-bold">
+                    Начало даты:
+                </label>
                 <input value={filter.dateFrom ?? ''}
                        onChange={(e) => setFilter({
                            ...filter,
@@ -82,7 +96,9 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
             </div>
 
             <div className="flex flex-col">
-                <label htmlFor="dateTo">Конец даты: </label>
+                <label htmlFor="dateTo" className="text-base font-bold">
+                    Конец даты:
+                </label>
                 <input value={filter.dateTo ?? ''}
                        onChange={(e) => setFilter({
                            ...filter,

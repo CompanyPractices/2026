@@ -5,6 +5,7 @@ import {TransactionTable} from "./components/TransactionTable.tsx";
 import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
+import { MOCK_TRANSACTIONS_LINECHART } from './mockData.ts'
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
@@ -26,11 +27,17 @@ function App() {
         <div className="bg-zinc-200 min-h-screen flex flex-col items-center justify-items-stretch">
             <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
             <main className="w-2/3 flex-grow grid grid-cols-4 gap-4">
-                <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
-                    <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
+                <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg flex flex-col justify-center items-center p-4">
+                    <h2 className="text-lg font-bold text-center drop-shadow-lg">
+                        График потока транзакций за последний час
+                    </h2>
+                    <TransactionLineChart transactions={MOCK_TRANSACTIONS_LINECHART} loading={loading} error={false} />
                 </div>
-                <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
-                    <TransactionPieChart transactions={uniqueTransactions} loading={loading} error={error}/>
+                <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg flex flex-col justify-center items-center p-4">
+                    <h2 className="text-lg font-bold text-center drop-shadow-lg">
+                        Круговая диаграмма Approved vs Declined
+                    </h2>
+                    <TransactionPieChart transactions={MOCK_TRANSACTIONS_LINECHART} loading={loading} error={false}/>
                 </div>
                 <div className="col-span-4 m-4 place-content-center">
                     <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
