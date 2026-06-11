@@ -1,9 +1,9 @@
 package com.processing.cardmanagement.configuration;
 
-import com.processing.cardmanagement.events.domain.CardServiceEventListener;
+import com.processing.cardmanagement.events.CardEventListener;
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
-import com.processing.cardmanagement.options.CardServiceConfigurationProperties;
-import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationProperties;
+import com.processing.cardmanagement.options.CardServiceDefaults;
+import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.cardmanagement.repositories.JavaPersistenceAdapter;
@@ -33,15 +33,15 @@ public class AppConfig {
     @Bean
     public CardService cardService(
         CardRepository cardRepository,
-        CardServiceConfigurationProperties serviceConfigurationProperties,
-        CardServiceDefaultsConfigurationProperties defaultsConfigurationProperties,
+        CardServiceSettings serviceConfigurationProperties,
+        CardServiceDefaults defaultsConfigurationProperties,
         PanGenerator panGenerator,
-        CardServiceEventListener cardServiceEventListener
+        CardEventListener cardServiceEventListener
     ) {
         return new CardServiceImpl(
             cardRepository,
-            serviceConfigurationProperties.toCardServiceSettings(),
-            defaultsConfigurationProperties.toCardServiceDefaults(),
+            serviceConfigurationProperties,
+            defaultsConfigurationProperties,
             panGenerator,
             cardServiceEventListener
         );

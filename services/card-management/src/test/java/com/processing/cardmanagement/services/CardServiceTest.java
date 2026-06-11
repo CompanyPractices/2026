@@ -1,12 +1,14 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.domain.CardServiceEventListener;
+import com.processing.cardmanagement.events.CardEventListener;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
 import com.processing.cardmanagement.options.CardServiceDefaults;
+import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationProperties;
 import com.processing.cardmanagement.options.CardServiceSettings;
+import com.processing.cardmanagement.options.CardServiceSettingsConfigurationProperties;
 import com.processing.cardmanagement.repositories.CardRepository;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,13 +37,13 @@ public final class CardServiceTest {
 
     private final Faker faker = new Faker(Locale.ENGLISH);
 
-    private final CardServiceSettings settings = new CardServiceSettings(
+    private final CardServiceSettings settings = new CardServiceSettingsConfigurationProperties(
         "TESTISSUER",
         3
     );
 
-    private final CardServiceDefaults defaults = new CardServiceDefaults(
-        0,
+    private final CardServiceDefaults defaults = new CardServiceDefaultsConfigurationProperties(
+        1,
         50,
         "643",
         15000000,
@@ -68,7 +70,7 @@ public final class CardServiceTest {
     private CardRepository cardRepository;
 
     @Mock
-    private CardServiceEventListener eventListener;
+    private CardEventListener eventListener;
 
     private CardService cardService;
 
@@ -91,7 +93,7 @@ public final class CardServiceTest {
         var dailyLimit = faker.number().numberBetween(0L, 10000000L);
         var monthlyLimit = faker.number().numberBetween(dailyLimit, 30000000L);
         var initialBalance = faker.number().numberBetween(0L, 10000000L);
-        var expDate = YearMonth.now().plusYears(settings.cardYtl());
+        var expDate = YearMonth.now().plusYears(settings.cardValidityPeriod());
 
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
@@ -305,7 +307,7 @@ public final class CardServiceTest {
             pan,
             pan.substring(0, 6),
             faker.name().fullName().toUpperCase(Locale.ROOT),
-            YearMonth.now().plusYears(settings.cardYtl()),
+            YearMonth.now().plusYears(settings.cardValidityPeriod()),
             CardStatus.ACTIVE,
             defaults.currencyCode(),
             defaults.dailyLimit(),
