@@ -1,6 +1,5 @@
 package com.processing.merchantacquirer.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -8,8 +7,6 @@ import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.repository.MerchantRepository;
 
-import java.math.BigDecimal;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +55,7 @@ public class MerchantProviderTest {
             "5411",
             "grocery",
             "ACQ003",
-            new BigDecimal("0.015"),
+            15L,
             145000);
     List<Merchant> expectedMerchants = List.of(merchant);
 
@@ -81,7 +78,7 @@ public class MerchantProviderTest {
             "5411",
             "grocery",
             "ACQ003",
-            new BigDecimal("0.015"),
+            15L,
             145000);
     Merchant merchant2 = new Merchant(
             "MERCH00000000007",
@@ -89,7 +86,7 @@ public class MerchantProviderTest {
             "5499",
             "grocery",
             "ACQ003",
-            new BigDecimal("0.015"),
+            15L,
             145000);
     List<Merchant> expectedMerchants = List.of(merchant1, merchant2);
 
@@ -111,7 +108,7 @@ public class MerchantProviderTest {
             "5411",
             "grocery",
             "ACQ003",
-            new BigDecimal("0.015"),
+            15L,
             145000);
     Merchant merchant2 = new Merchant(
             "MERCH00000000007",
@@ -119,7 +116,7 @@ public class MerchantProviderTest {
             "5499",
             "grocery",
             "ACQ003",
-            new BigDecimal("0.015"),
+            15L,
             145000);
     List<Merchant> expectedMerchants = List.of(merchant1, merchant2);
 

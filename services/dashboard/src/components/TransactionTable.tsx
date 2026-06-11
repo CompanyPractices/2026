@@ -1,9 +1,8 @@
 import {hidePan, convertPenniesToRubles, formatTime} from '../utils/format.ts';
 import { getStatusIcon } from '../utils/statusIcon.ts';
-import { Transaction } from "../types";
+import {Filter, Transaction} from "../types";
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
-import useTransactions from "../hooks/useTransactions.ts";
 import { ArrowDownToLine } from 'lucide-react';
 import {exportToCsv} from "../utils/exportToCsv.ts";
 import {Filters} from "./Filters.tsx";
@@ -26,25 +25,16 @@ const mapTransactionToCsvRow = (tx: Transaction) => ({
 
 type TransactionTableProps = {
     liveTransactions: Transaction[],
+    error: string | null
+    loading: boolean
+    search: (filter: Filter) => void;
 };
 
-export function TransactionTable({ liveTransactions }: TransactionTableProps){
+export function TransactionTable({ liveTransactions, error, loading, search }: TransactionTableProps){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-    const { transactions: initialTransactions, loading, error, searchTransactions } = useTransactions();
-
-    const allTransactions = [
-        ...liveTransactions,
-        ...(initialTransactions || []),
-    ];
-
-    const uniqueTransactions = allTransactions.filter((tx, index, self) =>
-        index === self.findIndex(t => t.id === tx.id)
-    );
-
-    const displayedTransactions = uniqueTransactions.slice(0, 20);
 
     const handleExportCsv = () => {
-        const csvRows = displayedTransactions.map(mapTransactionToCsvRow);
+        const csvRows = liveTransactions.map(mapTransactionToCsvRow);
         const now = new Date();
         const dateStr = now.toISOString().slice(0, 10);
         const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
@@ -54,7 +44,7 @@ export function TransactionTable({ liveTransactions }: TransactionTableProps){
 
     return (
         <div className="font-mono w-full">
-            <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={searchTransactions}/>
+            <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={search}/>
 
             <div className="flex items-center justify-center gap-3 m-4">
                 <h2 className="text-2xl font-bold text-center drop-shadow-lg">
@@ -67,7 +57,7 @@ export function TransactionTable({ liveTransactions }: TransactionTableProps){
                     flex items-center gap-1
                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-400 disabled:hover:text-white"
                     onClick={handleExportCsv}
-                    disabled={displayedTransactions.length === 0} >
+                    disabled={liveTransactions.length === 0} >
                     <ArrowDownToLine size={16} strokeWidth={3} className="inline-block"/>
                     CSV
                 </button>
@@ -85,56 +75,56 @@ export function TransactionTable({ liveTransactions }: TransactionTableProps){
                 </div>
             }
 
-            {!loading && !error && displayedTransactions.length === 0 &&
+            {!loading && !error && liveTransactions.length === 0 &&
                 <div>Транзакций не найдено</div>
             }
 
-            {!loading && !error && displayedTransactions.length > 0 &&
+            {!loading && !error && liveTransactions.length > 0 &&
                 <div className="rounded-3xl border-2 border-emerald-600 shadow-lg mb-5">
 
-                    <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
 
-                        <table className="w-full min-w-[900px] text-sm">
-                            <thead>
-                            <tr className="border-b-2 border-emerald-600 text-center font-semibold">
-                                <th className="px-6 py-4">Время</th>
-                                <th className="px-6 py-4">PAN</th>
-                                <th className="px-6 py-4 text-right">Сумма</th>
-                                <th className="px-6 py-4">Мерчант</th>
-                                <th className="px-6 py-4">Статус</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {displayedTransactions.map((transaction) => {
-                                const statusIconData = getStatusIcon(transaction.status);
+                    <table className="w-full min-w-[900px] text-sm">
+                        <thead>
+                        <tr className="border-b-2 border-emerald-600 text-center font-semibold">
+                            <th className="px-6 py-4">Время</th>
+                            <th className="px-6 py-4">PAN</th>
+                            <th className="px-6 py-4 text-right">Сумма</th>
+                            <th className="px-6 py-4">Мерчант</th>
+                            <th className="px-6 py-4">Статус</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {liveTransactions.map((transaction) => {
+                            const statusIconData = getStatusIcon(transaction.status);
 
-                                return (
-                                    <tr
-                                        key={transaction.id}
-                                        className="text-center cursor-pointer hover:bg-emerald-50 transition-colors border-b border-gray-100 last:border-0"
-                                        onClick={() => setSelectedTx(transaction)}
-                                    >
-                                        <td className="px-6 py-3">{formatTime(transaction.transmissionDateTime)}</td>
-                                        <td className="px-6 py-3">{hidePan(transaction.pan)}</td>
-                                        <td className="px-6 py-3 text-right">{convertPenniesToRubles(transaction.amount)}</td>
-                                        <td className="px-6 py-3 ">{transaction.merchantId}</td>
-                                        <td className="px-6 py-3">
-                                            <div className="flex justify-center items-center gap-2">
-                                                <statusIconData.icon
-                                                    className={statusIconData.color}
-                                                    size={statusIconData.size}
-                                                    aria-hidden="true"
-                                                />
-                                                <span className="sr-only">{statusIconData.label}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            </tbody>
-                        </table>
-                    </div>
+                            return (
+                                <tr
+                                    key={transaction.id}
+                                    className="text-center cursor-pointer hover:bg-emerald-50 transition-colors border-b border-gray-100 last:border-0"
+                                    onClick={() => setSelectedTx(transaction)}
+                                >
+                                    <td className="px-6 py-3">{formatTime(transaction.transmissionDateTime)}</td>
+                                    <td className="px-6 py-3">{hidePan(transaction.pan)}</td>
+                                    <td className="px-6 py-3 text-right">{convertPenniesToRubles(transaction.amount)}</td>
+                                    <td className="px-6 py-3 ">{transaction.merchantId}</td>
+                                    <td className="px-6 py-3">
+                                        <div className="flex justify-center items-center gap-2">
+                                            <statusIconData.icon
+                                                className={statusIconData.color}
+                                                size={statusIconData.size}
+                                                aria-hidden="true"
+                                            />
+                                            <span className="sr-only">{statusIconData.label}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        </tbody>
+                    </table>
                 </div>
+            </div>
             }
             {selectedTx && (
                 <TransactionModal

@@ -1,10 +1,12 @@
 package com.processing.gateway.dto;
 
+import com.processing.gateway.enums.HealthStatus;
+
 import java.util.Map;
 
 public record HealthResponse(
-        String status,
+        HealthStatus status,
         String service,
         String version,
-        Map<String, String> services
+        Map<String, HealthStatus> services
 ) {}
