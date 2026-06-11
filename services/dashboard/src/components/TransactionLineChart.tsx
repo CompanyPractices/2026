@@ -13,7 +13,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
     function prepareData(transactions: Transaction[]){
         const hourAgo = subHours(new Date(), 1)
         const txCount: Record<string, number> = {};
-        transactions.filter((tx) => new Date(tx.transmissionDateTime) >= hourAgo).map((tr) => {
+        transactions.filter((tx) => new Date(tx.transmissionDateTime)).map((tr) => {
             const time = format(tr.transmissionDateTime, 'HH:mm');
             txCount[time] = (txCount[time] || 0) + 1;
         });
@@ -47,10 +47,10 @@ export default function TransactionLineChart({transactions, loading, error} : Li
     }
 
     return (
-        <ResponsiveContainer width="80%" height={300} className="mx-auto my-auto" >
+        <ResponsiveContainer height={300} className="mx-auto my-auto" >
             <LineChart
                 data = {txData}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                margin={{ top: 35, right: 50, left: 0, bottom: 20 }}
             >
                 <CartesianGrid strokeDasharray="3 3" stroke="silver"/>
                 <XAxis
@@ -58,6 +58,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
                     stroke="darkSlateGray"
                     tick={{ fontSize: 12 }}
                     tickLine={false}
+                    label={{value: 'Время', position:"insideBottom", offset:-10 }}
                 />
                 <YAxis
                     dataKey="count"
@@ -65,6 +66,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
                     tick={{ fontSize: 12 }}
                     tickLine={false}
                     allowDecimals={false}
+                    label={{value: 'TX/min', position:"top", offset:15}}
                 />
                 <Tooltip/>
                 <Line
