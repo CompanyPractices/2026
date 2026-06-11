@@ -8,25 +8,25 @@ import org.testng.asserts.SoftAssert;
 
 import java.sql.SQLException;
 
+import static org.testng.Assert.*;
+
 /*
  * TC-12 - Checks if gateway proxying requests to Card Management Service correctly.
  */
 public class ProxyingToCardsTest extends E2EBaseTest {
-
-    private final SoftAssert soft = new SoftAssert();
     private final DBUtils dbUtils = new DBUtils();
 
     private record ResponseFieldsToCompare(
-            String id,
-            String pan,
-            String status,
-            String balance
+            JsonNode id,
+            JsonNode pan,
+            JsonNode status,
+            JsonNode balance
     ) {}
 
     private ResponseFieldsToCompare gatewayResponse;
     private ResponseFieldsToCompare directResponse;
 
-    private String directResponseJson;
+    private JsonNode directResponseJson;
     private String pan;
 
     @Test(priority = 1201)
@@ -45,13 +45,13 @@ public class ProxyingToCardsTest extends E2EBaseTest {
         JsonNode response = httpUtils.httpPost(GATEWAY_URL, "/api/cards", requestBody, 201);
 
         gatewayResponse = new ResponseFieldsToCompare(
-                response.path("id").asText(),
-                response.path("pan").asText(),
-                response.path("status").asText(),
-                response.path("availableBalance").asText()
+                response.path("id"),
+                response.path("pan"),
+                response.path("status"),
+                response.path("availableBalance")
         );
 
-        pan = gatewayResponse.pan();
+        pan = gatewayResponse.pan().asText();
     }
 
     @Test(priority = 1202)
@@ -59,39 +59,39 @@ public class ProxyingToCardsTest extends E2EBaseTest {
         JsonNode response = httpUtils.httpGet(CARD_MGMT_URL, "/api/cards/" + pan, 200);
 
         directResponse = new ResponseFieldsToCompare(
-                response.path("id").asText(),
-                response.path("pan").asText(),
-                response.path("status").asText(),
-                response.path("availableBalance").asText()
+                response.path("id"),
+                response.path("pan"),
+                response.path("status"),
+                response.path("availableBalance")
         );
 
-        directResponseJson = response.asText();
+        directResponseJson = response;
 
-        soft.assertEquals(response.path("cardholderName"), "PROXY TEST");
-        soft.assertEquals(response.path("availableBalance"), "5000000");
+        assertEquals(response.path("cardholderName").asText(), "PROXY TEST");
+        assertEquals(response.path("availableBalance").asText(), "5000000");
     }
 
     @Test(priority = 1203)
     void compareGatewayAndDirectResponsesShouldMatch() {
-        soft.assertEquals(gatewayResponse.id(), directResponse.id());
-        soft.assertEquals(gatewayResponse.pan(), directResponse.pan());
-        soft.assertEquals(gatewayResponse.status(), directResponse.status());
-        soft.assertEquals(gatewayResponse.balance(), directResponse.balance());
+        assertEquals(gatewayResponse.id(), directResponse.id());
+        assertEquals(gatewayResponse.pan(), directResponse.pan());
+        assertEquals(gatewayResponse.status(), directResponse.status());
+        assertEquals(gatewayResponse.balance(), directResponse.balance());
     }
 
     @Test(priority = 1204)
     void getCardByPanThroughGatewayShouldMatchDirect() {
         JsonNode response = httpUtils.httpGet(GATEWAY_URL, "/api/cards/" + pan, 200);
 
-        soft.assertEquals(response.asText(), directResponseJson);
+        assertEquals(response, directResponseJson);
     }
 
     @Test(priority = 1205)
     void getCardsLimit5ShouldReturnArray() {
         JsonNode response = httpUtils.httpGet(GATEWAY_URL, "/api/cards?limit=5", 200);
 
-        soft.assertEquals(response.path("cards").isArray(), true);
-        soft.assertEquals(response.path("total").asInt() > 1, true);
+        assertTrue(response.path("cards").isArray());
+        assertTrue(response.path("total").asInt() > 1);
     }
 
     @Test(priority = 1206)
@@ -100,6 +100,6 @@ public class ProxyingToCardsTest extends E2EBaseTest {
 
         String result = dbUtils.queryString(query, pan);
 
-        soft.assertEquals(result.isEmpty(), false);
+        assertFalse(result.isEmpty());
     }
 }
