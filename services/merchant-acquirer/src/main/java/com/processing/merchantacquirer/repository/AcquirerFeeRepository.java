@@ -6,5 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AcquirerFeeRepository extends JpaRepository<AcquirerFee, Long> {
-    AcquirerFee findByTransmissionDateTimeAndStanAndTerminalId(String transmissionDateTime, String stan, String terminalId);
+    AcquirerFee findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
+            String transmissionDateTime, String stan, String terminalId, Long amount, String pan);
 }

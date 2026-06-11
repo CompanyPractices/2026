@@ -15,6 +15,8 @@ public class AcquirerFee {
     @Id
     private String transmissionDateTime;
     private String stan;
+    private String pan;
     private String terminalId;
     private Long acquirerFee;
+    private Long amount;
 }

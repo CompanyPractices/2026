@@ -44,9 +44,10 @@ public class AcquirerProviderTest {
         String stan = "000004";
         String rrn = "616113423602";
         String terminalId = "TERM001";
+        String pan = "4000005310852539";
         Long expected = amount * 67 / 1000;
 
-        acquirerProvider.calculateFee(merchant.getAcquirerId(), amount, rrn, stan, terminalId);
+        acquirerProvider.calculateFee(merchant.getAcquirerId(), amount, rrn, stan, terminalId, pan);
         ArgumentCaptor<AcquirerFee> feeCaptor = ArgumentCaptor.forClass(AcquirerFee.class);
 
         verify(repository).save(feeCaptor.capture());
@@ -60,15 +61,14 @@ public class AcquirerProviderTest {
         String stan = "000004";
         String transmissionDateTime = "2026-06-10T18:19:25.843989500";
         String terminalId = "TERM001";
+        String pan = "4000005310852539";
         Long fee = amount * 67 / 1000;
 
-        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(transmissionDateTime, null, stan, null, terminalId);
-        when(repository.findByTransmissionDateTimeAndStanAndTerminalId(transmissionDateTime, stan, terminalId)).thenReturn(new AcquirerFee(transmissionDateTime, stan, terminalId, fee));
+        AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(transmissionDateTime, pan, stan, amount, terminalId);
+        when(repository.findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(transmissionDateTime, stan, terminalId, amount, pan)).thenReturn(new AcquirerFee(transmissionDateTime, stan, pan, terminalId, fee, amount));
 
         AcquirerFeeResponse acquirerFeeResponse = acquirerProvider.getAcquirerFee(acquirerFeeRequest);
 
-        assertEquals(transmissionDateTime, acquirerFeeResponse.transmissionDateTime());
-        assertEquals(stan, acquirerFeeResponse.stan());
         assertEquals(fee, acquirerFeeResponse.acquirerFee());
     }
 

@@ -12,25 +12,27 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class AcquirerProvider {
-    public final AcquirerFeeRepository repository;
+    private final AcquirerFeeRepository repository;
     private final MerchantProvider merchantProvider;
 
-    public void calculateFee(String merchantId, Long amount, String transmissionDateTime, String stan, String terminalId) {
+    public void calculateFee(
+            String merchantId, Long amount, String transmissionDateTime, String stan, String terminalId, String pan) {
         Long fee = merchantProvider.getMerchantAcquirerFee(merchantId);
         Long acquiringFee = amount * fee / 1000;
 
-        repository.save(
-                new AcquirerFee(transmissionDateTime, stan, terminalId, acquiringFee));
-        log.info("Calculate acquirer fee: DataTime: {} STAN: {} Acquirer fee: {} Amount: {} Fee: {} TerminalID: {}",
-                transmissionDateTime, stan, acquiringFee, amount, fee, terminalId);
+        AcquirerFee acquirerFeeEntity = new AcquirerFee(transmissionDateTime, stan, pan, terminalId, acquiringFee, amount);
+        repository.save(acquirerFeeEntity);
+        log.info("Calculate acquirer fee: {}",
+                acquirerFeeEntity);
     }
 
     public AcquirerFeeResponse getAcquirerFee(AcquirerFeeRequest request) {
-        Long acquirerFee = repository.findByTransmissionDateTimeAndStanAndTerminalId(
-                request.transmissionDateTime(), request.stan(), request.terminalId()).getAcquirerFee();
+        Long acquirerFee = repository.findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
+                request.transmissionDateTime(), request.stan(), request.terminalId(),
+                request.amount(), request.pan()).getAcquirerFee();
         log.info("Request for get acquirer fee: DataTime: {} STAN: {} Acquirer fee: {}",
                 request.transmissionDateTime(), request.stan(), acquirerFee);
 
-        return new AcquirerFeeResponse(request.transmissionDateTime(), request.stan(), acquirerFee);
+        return new AcquirerFeeResponse(acquirerFee);
     }
 }

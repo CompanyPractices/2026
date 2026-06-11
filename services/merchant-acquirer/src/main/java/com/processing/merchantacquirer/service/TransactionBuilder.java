@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionBuilder {
   private final AuthorizationRequestFactory authorizationRequestFactory;
-  public final AcquirerProvider acquirerProvider;
+  private final AcquirerProvider acquirerProvider;
   private final Random random = new Random();
 
   public List<AuthorizationRequest> build(
@@ -41,7 +41,7 @@ public class TransactionBuilder {
       log.info(String.valueOf(authorizationRequest));
       acquirerProvider.calculateFee(
               authorizationRequest.merchantId(), authorizationRequest.amount(), authorizationRequest.transmissionDateTime(),
-              authorizationRequest.stan(), authorizationRequest.terminalId());
+              authorizationRequest.stan(), authorizationRequest.terminalId(), authorizationRequest.pan());
     }
 
     return requests;

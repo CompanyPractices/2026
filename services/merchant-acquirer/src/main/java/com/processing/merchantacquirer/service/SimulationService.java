@@ -20,12 +20,12 @@ import org.springframework.stereotype.Service;
 @Service
 @AllArgsConstructor
 public class SimulationService {
-  public final CardProvider cardProvider;
-  public final MerchantProvider merchantProvider;
-  public final TransactionBuilder transactionBuilder;
-  public final TransactionSender transactionSender;
-  public final ScenarioProvider scenarioProvider;
-  public final AcquirerProvider acquirerProvider;
+  private final CardProvider cardProvider;
+  private final MerchantProvider merchantProvider;
+  private final TransactionBuilder transactionBuilder;
+  private final TransactionSender transactionSender;
+  private final ScenarioProvider scenarioProvider;
+  private final AcquirerProvider acquirerProvider;
 
   public SimulatorResponse run(SimulatorRequest request) {
     LocalDateTime startTime = LocalDateTime.now();
