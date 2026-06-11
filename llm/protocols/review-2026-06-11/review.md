@@ -5,6 +5,8 @@
 **Modules:** gateway, switch, authorization, card-management, terminal-simulator, merchant-acquirer, transaction-logger, dashboard, common
 
 **Reviewer:** qwen/qwen3.7-max
+**Opponent 1:** deepseek/deepseek-v4-pro
+**Opponent 2:** xiaomi/mimo-v2.5-pro
 
 ---
 
