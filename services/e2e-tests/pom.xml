@@ -72,6 +72,11 @@
             <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.processing</groupId>
+            <artifactId>common</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 
