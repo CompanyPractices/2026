@@ -1,6 +1,6 @@
 import { LineChart, CartesianGrid, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { Transaction } from '../types/index.ts'
-import { format, getHours } from 'date-fns';
+import { format, subHours } from 'date-fns';
 
 type LineChartProps = {
     transactions: Transaction[];
@@ -9,11 +9,11 @@ type LineChartProps = {
 }
 
 export default function TransactionLineChart({transactions, loading, error} : LineChartProps) {
-    const currentHour = getHours(new Date());
 
     function prepareData(transactions: Transaction[]){
+        const hourAgo = subHours(new Date(), 1)
         const txCount: Record<string, number> = {};
-        transactions.filter((tx) => getHours(tx.transmissionDateTime) === currentHour).map((tr) => {
+        transactions.filter((tx) => new Date(tx.transmissionDateTime) >= hourAgo).map((tr) => {
             const time = format(tr.transmissionDateTime, 'HH:mm');
             txCount[time] = (txCount[time] || 0) + 1;
         });
