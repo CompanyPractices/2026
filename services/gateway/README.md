@@ -1,17 +1,21 @@
 # Gateway Service
 
-Gateway Service - точка входа во внешнее REST API. Принимает запросы от симуляторов
-и dashboard, валидирует входящие транзакции, применяет rate limit и проксирует запросы в нужные downstream-сервисы.
+Gateway Service - точка входа во внешнее REST API процессинговой системы. Сервис
+принимает запросы от симуляторов и dashboard, валидирует входящий поток, применяет
+rate limit, добавляет трассировку и проксирует запросы в downstream-сервисы.
 
-## Что делает сервис
+Подробные контракты API, модели запросов/ответов, коды ошибок и правила валидации
+описаны в OpenAPI-спецификации.
 
-- Проверяет состояние gateway и downstream-сервисов через `GET /health`.
-- Принимает авторизационные транзакции на `POST /api/transactions`.
-- Валидирует `AuthorizationRequest` перед отправкой в свич.
-- Ограничивает нагрузку на `POST /api/transactions` лимитом.
-- Проксирует REST-запросы в Switch, Card Management, Transaction Logger, Terminal Simulator и Merchant Simulator.
-- Возвращает JSON-ошибки для validation/rate-limit/downstream-failure сценариев.
-- Добавляет `X-Request-Id` в запрос и ответ, а также пишет request log.
+## Возможности
+
+- Health-check самого gateway и зависимых сервисов.
+- Reverse proxy для основных сервисов процессинга.
+- Валидация авторизационных транзакций перед отправкой в Switch.
+- In-memory rate limiting для транзакционного endpoint'а.
+- Единая обработка недоступности downstream-сервисов.
+- Request logging с `X-Request-Id` и MDC.
+- OpenAPI/Swagger UI через springdoc.
 
 ## Технологии
 
@@ -23,19 +27,9 @@ Gateway Service - точка входа во внешнее REST API. Прини
 - Maven
 - Docker
 
-## Основные endpoint-ы
+## API-документация
 
-| Метод | Путь | Назначение | Downstream |
-|---|---|---|---|
-| `GET` | `/health` | Health-check Gateway и зависимых сервисов | Gateway |
-| `POST` | `/api/transactions` | Прием и валидация авторизационной транзакции | Switch: `/api/internal/route` |
-| `GET/POST/...` | `/api/cards/**` | Операции с картами | Card Management |
-| `GET` | `/api/transactions/search` | Поиск транзакций | Transaction Logger |
-| `GET/POST/...` | `/api/dashboard/**` | Данные для dashboard | Transaction Logger |
-| `GET/POST/...` | `/api/simulator/terminal/**` | Terminal Simulator API | Terminal Simulator |
-| `GET/POST/...` | `/api/simulator/merchant/**` | Merchant Simulator API | Merchant Simulator |
-
-Swagger UI доступен по стандартному springdoc-пути:
+После запуска сервиса документация доступна в Swagger UI:
 
 ```text
 http://localhost:8080/docs
@@ -45,106 +39,6 @@ OpenAPI JSON:
 
 ```text
 http://localhost:8080/v3/api-docs
-```
-
-## Валидация транзакций
-
-`POST /api/transactions` принимает `AuthorizationRequest` из общего модуля `common`.
-
-Пример запроса:
-
-```json
-{
-  "mti": "0100",
-  "stan": "000001",
-  "pan": "4000003458730237",
-  "processingCode": "000000",
-  "amount": 72472,
-  "currencyCode": "643",
-  "transmissionDateTime": "2026-06-05T18:12:49.07",
-  "terminalId": "TERM001",
-  "terminalType": "POS",
-  "merchantId": "MERCH00000000029",
-  "mcc": "5045",
-  "acquirerId": "ACQ002"
-}
-```
-
-Gateway проверяет:
-
-- обязательные строковые поля не пустые;
-- `mti` равен `0100`;
-- `pan` состоит ровно из 16 цифр;
-- `amount` передан и больше `0`;
-- `currencyCode` содержит ровно 3 символа;
-- `mcc` состоит ровно из 4 цифр.
-
-Если валидация не проходит, Gateway возвращает `400 Bad Request`:
-
-```json
-{
-  "error": "VALIDATION_ERROR",
-  "message": "Field 'pan' must be exactly 16 digits",
-  "timestamp": "2026-06-01T10:30:00Z",
-  "details": null,
-  "path": null
-}
-```
-
-## Rate limiting
-
-Для `POST /api/transactions` включен in-memory rate limit. По умолчанию разрешено 100 запросов в секунду.
-
-При превышении лимита Gateway возвращает `429 Too Many Requests`:
-
-```json
-{
-  "error": "RATE_LIMIT_EXCEEDED",
-  "message": "Too many requests. Try again later.",
-  "retryAfterMs": 1000
-}
-```
-
-Также выставляется HTTP-заголовок:
-
-```text
-Retry-After: 1
-```
-
-## Downstream errors
-
-Если downstream-сервис недоступен или не отвечает по сети, Gateway возвращает `503 Service Unavailable`.
-
-Пример ответа:
-
-```json
-{
-  "error": "SERVICE_UNAVAILABLE",
-  "message": "switch service is temporarily unavailable",
-  "serviceName": "switch"
-}
-```
-
-Имя сервиса определяется по gateway route metadata `serviceName` из `application.yml`.
-
-## Логирование и трассировка
-
-На каждый запрос Gateway добавляет или переиспользует заголовок:
-
-```text
-X-Request-Id: <uuid или входящее значение>
-```
-
-Этот же идентификатор возвращается в ответе и кладется в MDC. В лог пишется JSON с базовой информацией о запросе:
-
-```json
-{
-  "requestId": "0f7d08ec-17b4-4d56-85e3-3139e40001ab",
-  "method": "POST",
-  "path": "/api/transactions",
-  "responseCode": 200,
-  "responseTime": 37
-}
 ```
 
 ## Конфигурация
@@ -161,7 +55,10 @@ X-Request-Id: <uuid или входящее значение>
 | `CARD_MGMT_URL` | `http://localhost:8081` | URL Card Management Service. |
 | `TERMINAL_SIM_URL` | `http://localhost:8085` | URL Terminal Simulator. |
 | `MERCHANT_SIM_URL` | `http://localhost:8086` | URL Merchant Simulator. |
-| `TRANSACTIONS_RATE_LIMIT` | `100` | Максимум `POST /api/transactions` запросов в секунду. |
+| `TRANSACTIONS_RATE_LIMIT` | `100` | Лимит транзакционных запросов в секунду. |
+
+Маршруты, metadata downstream-сервисов и rewrite-правила находятся в
+`src/main/resources/application.yml`.
 
 ## Локальный запуск
 
@@ -171,14 +68,19 @@ X-Request-Id: <uuid или входящее значение>
 mvn -P gateway -pl gateway -am spring-boot:run
 ```
 
-Или собрать jar:
+Сборка jar:
 
 ```bash
 mvn -P gateway -pl gateway -am package
+```
+
+Запуск собранного jar:
+
+```bash
 java -jar gateway/target/gateway-*.jar
 ```
 
-Пример запуска с адресами downstream-сервисов:
+Пример запуска с явными адресами downstream-сервисов:
 
 ```bash
 SWITCH_URL=http://localhost:8082 \
@@ -190,7 +92,7 @@ mvn -P gateway -pl gateway -am spring-boot:run
 
 ## Docker
 
-Сборка образа из корня репозитория:
+Сборка образа выполняется из корня репозитория:
 
 ```bash
 docker build -f services/gateway/Dockerfile -t processing-gateway .
@@ -209,36 +111,15 @@ docker run --rm -p 8080:8080 \
   processing-gateway
 ```
 
-## Проверка
+## Проверка и тесты
 
-Health-check:
+Быстрая проверка запущенного сервиса:
 
 ```bash
 curl http://localhost:8080/health
 ```
 
-Тестовая транзакция:
-
-```bash
-curl -X POST http://localhost:8080/api/transactions \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "mti": "0100",
-    "stan": "000001",
-    "pan": "4000003458730237",
-    "processingCode": "000000",
-    "amount": 72472,
-    "currencyCode": "643",
-    "transmissionDateTime": "2026-06-05T18:12:49.07",
-    "terminalId": "TERM001",
-    "terminalType": "POS",
-    "merchantId": "MERCH00000000029",
-    "mcc": "5045",
-    "acquirerId": "ACQ002"
-  }'
-```
-
-Запуск тестов:
+Unit-тесты:
 
 ```bash
 mvn -P gateway -pl gateway -am test
