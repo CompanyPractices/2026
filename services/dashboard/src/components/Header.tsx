@@ -35,6 +35,19 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
     return (
         <header className="relative flex flex-col items-center font-mono m-5 w-full">
 
+            <div className="absolute top-0 left-0 ml-8 mt-3 flex items-center gap-2">
+                <label className="group flex items-center gap-4 cursor-pointer select-none">
+                    <div className="relative">
+                        <input
+                            type="checkbox"
+                            role="switch"
+                            className="peer appearance-none w-12 h-7 bg-zinc-400 checked:bg-emerald-500 rounded-full cursor-pointer transition-colors outline-offset-4"
+                        />
+                        <div className="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 peer-checked:translate-x-5"></div>
+                    </div>
+                </label>
+            </div>
+
             <div className="absolute top-0 right-0 mr-8 mt-3 flex items-center gap-2">
                 <span
                     className={`w-7 h-7 rounded-full drop-shadow-lg ${
