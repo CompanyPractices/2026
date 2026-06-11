@@ -23,16 +23,16 @@ function App() {
     const displayedTransactions = uniqueTransactions.slice(0, 20);
 
     return (
-        <div className="bg-zinc-200 min-h-screen flex flex-col items-center justify-items-stretch">
+        <div className="bg-zinc-200 dark:bg-slate-900 min-h-screen flex flex-col items-center justify-items-stretch">
             <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
             <main className="w-2/3 flex-grow grid grid-cols-4 gap-4">
-                <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
+                <div className="col-span-2 bg-zinc-300  m-4 rounded-lg shadow-lg place-content-center">
                     <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
                 </div>
-                <div className="col-span-2 bg-zinc-300 m-4 rounded-lg shadow-lg place-content-center">
+                <div className="col-span-2 pt-6 bg-zinc-300  m-4 rounded-lg shadow-lg place-content-center">
                     <TransactionPieChart transactions={uniqueTransactions} loading={loading} error={error}/>
                 </div>
-                <div className="col-span-4 m-4 place-content-center">
+                <div className="col-span-4 pt-6 m-4 place-content-center">
                     <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
                 </div>
             </main>

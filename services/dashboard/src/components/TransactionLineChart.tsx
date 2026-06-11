@@ -64,6 +64,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
                     stroke="darkSlateGray"
                     tick={{ fontSize: 12 }}
                     tickLine={false}
+                    allowDecimals={false}
                 />
                 <Tooltip/>
                 <Line
