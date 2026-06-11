@@ -7,7 +7,7 @@ on:
     paths:
       - 'services/**'
       - '.github/workflows/ci.yml'
-      - 'docker-compose.yml'
+      - 'docker-compose.yaml'
       - '.env.example'
       - 'docs/api/**'
   pull_request:
@@ -15,7 +15,7 @@ on:
     paths:
       - 'services/**'
       - '.github/workflows/ci.yml'
-      - 'docker-compose.yml'
+      - 'docker-compose.yaml'
       - '.env.example'
       - 'docs/api/**'
 
