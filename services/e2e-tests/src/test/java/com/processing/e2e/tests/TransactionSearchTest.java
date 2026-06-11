@@ -11,6 +11,13 @@ import org.testng.asserts.SoftAssert;
 
 import java.time.LocalDateTime;
 
+/**
+ TC-19 — Transaction search with filters and pagination.
+ Goal: verify search endpoint filters (status, pan, AND-logic) and pagination correctness.
+ Each HTTP result is cross-checked against DB count via JDBC.
+ Setup creates one card with 3 APPROVED + 1 DECLINED transactions.
+ */
+
 public class TransactionSearchTest extends E2EBaseTest {
     private final DBUtils dbUtils = new DBUtils();
 
