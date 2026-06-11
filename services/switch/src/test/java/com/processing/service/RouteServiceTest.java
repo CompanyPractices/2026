@@ -33,6 +33,7 @@ class RouteServiceTest {
         RouteService routeService = new RouteService(
                 routingService,
                 new CapturingAuthorizationClient(),
+                (stan, pan, terminalId) -> null,
                 logger);
 
 
@@ -41,7 +42,7 @@ class RouteServiceTest {
         AuthorizationRequest request = new AuthorizationRequest(
                 "0100", "000002", "9999991234560001", "000000", 150000L, "643",
                 SwitchTestData.sampleRequest().transmissionDateTime(),
-                "TERM001", null, "MERCH12345678901", "5411", "ACQ001", null);
+                "TERM001", SwitchTestData.TERMINAL_TYPE, "MERCH12345678901", "5411", "ACQ001", null);
 
 
 
@@ -63,7 +64,8 @@ class RouteServiceTest {
     void route_knownBin_authorizesAndLogsTransaction() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
         TrackingLoggerClient logger = new TrackingLoggerClient(true);
-        RouteService routeService = new RouteService(routingService, authorizationClient, logger);
+        RouteService routeService = new RouteService(
+                routingService, authorizationClient, (stan, pan, terminalId) -> null, logger);
 
 
 
@@ -77,11 +79,27 @@ class RouteServiceTest {
         assertThat(response.status()).isEqualTo("APPROVED");
         assertThat(response.responseCode()).isEqualTo("00");
         assertThat(authorizationClient.lastRequest().issuerId()).isEqualTo("ISS001");
+        assertThat(authorizationClient.lastRequest().terminalType()).isEqualTo(SwitchTestData.TERMINAL_TYPE);
         assertThat(logger.wasCalled()).isTrue();
         assertThat(logger.lastTransaction().issuerId()).isEqualTo("ISS001");
         assertThat(logger.lastTransaction().status()).isEqualTo(TransactionStatus.APPROVED);
         assertThat(logger.lastTransaction().mti()).isEqualTo("0100");
         assertThat(logger.lastTransaction().pan()).isEqualTo(request.pan());
+    }
+
+    @Test
+    void route_includesAcquiringFeeFromMerchantAcquirer() {
+        CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
+        TrackingLoggerClient logger = new TrackingLoggerClient(true);
+        RouteService routeService = new RouteService(
+                routingService,
+                authorizationClient,
+                (stan, pan, terminalId) -> 2_250L,
+                logger);
+
+        routeService.route(SwitchTestData.sampleRequest());
+
+        assertThat(logger.lastTransaction().acquiringFee()).isEqualTo(2_250L);
     }
 
 
@@ -91,7 +109,8 @@ class RouteServiceTest {
     void route_loggerFailureAfterApproved_triggersRollbackAndReturns96() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
         TrackingLoggerClient logger = new TrackingLoggerClient(false);
-        RouteService routeService = new RouteService(routingService, authorizationClient, logger);
+        RouteService routeService = new RouteService(
+                routingService, authorizationClient, (stan, pan, terminalId) -> null, logger);
 
 
 
@@ -118,7 +137,8 @@ class RouteServiceTest {
                 "Insufficient funds", 10);
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient(declined);
         TrackingLoggerClient logger = new TrackingLoggerClient(true);
-        RouteService routeService = new RouteService(routingService, authorizationClient, logger);
+        RouteService routeService = new RouteService(
+                routingService, authorizationClient, (stan, pan, terminalId) -> null, logger);
 
 
 

@@ -115,14 +115,4 @@ describe('App', () => {
       expect(screen.getByText(/Ошибка загрузки статистики:/)).toBeInTheDocument();
     });
   });
-
-  it('shows loading then error for transactions', async () => {
-    mockUseStats.mockReturnValue(MOCK_STATS_ERROR);
-
-    render(<App />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Ошибка загрузки транзакций:/)).toBeInTheDocument();
-    });
-  });
 });

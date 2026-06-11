@@ -14,6 +14,7 @@ public record SwitchProperties(
         Map<String, String> binRouting,
         String authorizationUrl,
         String loggerUrl,
+        String merchantAcquirerUrl,
         HttpProperties http,
         RetryProperties retry
 ) {

@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+
+websocket:
+  allowed-origins: "*"
+  ping-interval-ms: 30000
+
+card-management:
+  url: ${CARD_MGMT_URL:http://localhost:8081}
+services-to-health-check: ${CARD_MGMT_URL:http://localhost:8081}

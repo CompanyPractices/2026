@@ -24,14 +24,17 @@ public class RouteService {
 
     private final RoutingService routingService;
     private final AuthorizationClient authorizationClient;
+    private final AcquiringFeeClient acquiringFeeClient;
     private final LoggerClient loggerClient;
 
     public RouteService(
             RoutingService routingService,
             AuthorizationClient authorizationClient,
+            AcquiringFeeClient acquiringFeeClient,
             LoggerClient loggerClient) {
         this.routingService = routingService;
         this.authorizationClient = authorizationClient;
+        this.acquiringFeeClient = acquiringFeeClient;
         this.loggerClient = loggerClient;
     }
 
@@ -58,7 +61,9 @@ public class RouteService {
             return AuthorizationResponse.authUnavailable(request.stan());
         }
 
-        TransactionRequest transaction = buildTransaction(routedRequest, response);
+        Long acquiringFee = acquiringFeeClient.fetchAcquiringFee(
+                routedRequest.stan(), routedRequest.pan(), routedRequest.terminalId());
+        TransactionRequest transaction = buildTransaction(routedRequest, response, acquiringFee);
 
         boolean logged;
         try {
@@ -83,7 +88,8 @@ public class RouteService {
 
     private TransactionRequest buildTransaction(
             AuthorizationRequest request,
-            AuthorizationResponse response) {
+            AuthorizationResponse response,
+            Long acquiringFee) {
         return new TransactionRequest(
                 UUID.randomUUID(),
                 request.mti(),
@@ -99,7 +105,7 @@ public class RouteService {
                 request.mcc(),
                 request.acquirerId(),
                 request.issuerId(),
-                null,
+                acquiringFee,
                 toTransactionStatus(response.status()),
                 response.declineReason(),
                 response.authCode(),
