@@ -18,8 +18,8 @@ public record CreateCardRequest(
 
     @NotBlank
     @Pattern(
-        regexp = "^[A-Z\\s\\-]+$",
-        message = "Cardholder name can contain only uppercase letters, spaces and -"
+        regexp = "^[A-Z\\s\\-\\.']+$",
+        message = "Cardholder name can contain only uppercase letters, spaces, ', dots and -"
     )
     @Schema(description = "Cardholder name", example = "IVAN IVANOV")
     String cardholderName,

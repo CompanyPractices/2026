@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.services;
 
+import com.processing.cardmanagement.events.domain.*;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
@@ -9,10 +10,12 @@ import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardRepository;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 public class CardServiceImpl implements CardService {
 
@@ -20,6 +23,7 @@ public class CardServiceImpl implements CardService {
     private final CardServiceSettings settings;
     private final CardServiceDefaults defaults;
     private final PanGenerator panGenerator;
+    private final CardServiceEventListener eventListener;
 
     public Card createCard(
         String bin,
@@ -39,12 +43,15 @@ public class CardServiceImpl implements CardService {
             initialBalance
         );
 
-        return cardRepository.save(Card.fromDraft(
+        var savedCard = cardRepository.save(Card.fromDraft(
             panGenerator.generatePan(draft.bin()),
             settings.issuerId(),
             settings.cardYtl(),
             draft
         ));
+
+        eventListener.onEvent(new CardServiceCreationEvent(1));
+        return savedCard;
     }
 
     public List<Card> createCards(List<CardDraft> data) {
@@ -58,13 +65,15 @@ public class CardServiceImpl implements CardService {
             ))
             .toList();
 
-        return cardRepository.saveAll(entities);
+        var saved = cardRepository.saveAll(entities);
+        eventListener.onEvent(new CardServiceCreationEvent(saved.size()));
+        return saved;
     }
 
     public Card getCard(String pan) {
         return cardRepository
             .findByPan(pan)
-            .orElseThrow(CardNotFoundException::new);
+            .orElseThrow(() -> new CardNotFoundException(pan));
     }
 
     public List<Card> getCards(
@@ -95,7 +104,7 @@ public class CardServiceImpl implements CardService {
         @Nullable Long availableBalance
     ) {
         var card = getCard(pan);
-        return cardRepository.save(
+        var saved = cardRepository.save(
             card.withData(
                 status != null ? status : card.status(),
                 dailyLimit != null ? dailyLimit : card.dailyLimit(),
@@ -103,18 +112,21 @@ public class CardServiceImpl implements CardService {
                 availableBalance != null ? availableBalance : card.availableBalance()
             )
         );
+
+        eventListener.onEvent(new CardServicePatchEvent(maskPan(pan)));
+        return saved;
     }
 
     public void deleteCard(String pan) {
-        var card = getCard(pan);
-        cardRepository.save(card.deleted());
+        cardRepository.save(getCard(pan).deleted());
+        eventListener.onEvent(new CardServiceDeletionEvent(maskPan(pan)));
     }
 
-    public long countCards() {
+    public long countCardsFiltered() {
         return cardRepository.countCards();
     }
 
-    public long countCards(
+    public long countCardsFiltered(
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
@@ -131,7 +143,12 @@ public class CardServiceImpl implements CardService {
     }
 
     public Card reserve(String pan, long amount) {
-        var card = getCard(pan);
-        return cardRepository.save(card.withReserved(amount));
+        var reserved = cardRepository.save(getCard(pan).withReserved(amount));
+        eventListener.onEvent(new CardServiceReserveEvent(maskPan(pan), amount));
+        return reserved;
+    }
+
+    private String maskPan(String pan) {
+        return pan.substring(0, 6) + "******" + pan.substring(pan.length() - 4);
     }
 }

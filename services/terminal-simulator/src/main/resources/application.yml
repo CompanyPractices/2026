@@ -2,8 +2,8 @@ server:
   port: ${PORT:8080}
 
 gateway:
-  url: http://gateway:8080/api/transactions
-  card-management-url: http://gateway:8080/api/cards
+  url: ${GATEWAY_URL:http://localhost:8080}
+  card-management-url: ${CARD_MGMT_URL:http://localhost:8080}
 
 # PostgreSQL (раскомментируй, если нужна БД)
 # spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:processing}
@@ -16,5 +16,27 @@ logging.level.com.processing=INFO
 logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
 ---
 # Actuator
-management.endpoints.web.exposure.include=health,info
-management.endpoint.health.show-details=always
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: terminal-simulator
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]":
+          - 0.5
+          - 0.95
+          - 0.99

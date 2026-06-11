@@ -2,7 +2,6 @@ package com.processing.transactionlogger.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.transactionlogger.TransactionRequest;
-import com.processing.common.dto.transactionlogger.TransactionStoredResponse;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.exception.TransactionConflictException;
 import com.processing.transactionlogger.mapper.TransactionMapper;
@@ -25,7 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class TransactionServiceTest {
+class TransactionServiceStoreTest {
 
     @Test
     void storeReturnsExistingTransactionWhenIdAlreadyExists() {
@@ -140,7 +139,7 @@ class TransactionServiceTest {
                 "643",
                 "TERM001",
                 "POS",
-                "MERCH12345678901",
+                "MERCH1234567890",
                 "5411",
                 "ACQ001",
                 "ISS001",
@@ -165,6 +164,7 @@ class TransactionServiceTest {
         transaction.setAmount(request.amount());
         transaction.setCurrencyCode(request.currencyCode());
         transaction.setTerminalId(request.terminalId());
+        transaction.setTerminalType(request.terminalType());
         transaction.setMerchantId(request.merchantId());
         transaction.setMcc(request.mcc());
         transaction.setAcquirerId(request.acquirerId());

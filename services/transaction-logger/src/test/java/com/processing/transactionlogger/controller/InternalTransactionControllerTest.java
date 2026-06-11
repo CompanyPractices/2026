@@ -13,7 +13,8 @@ import org.springframework.http.ResponseEntity;
 import java.time.Instant;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InternalTransactionControllerTest {
 
@@ -28,8 +29,8 @@ class InternalTransactionControllerTest {
 
         ResponseEntity<?> response = controller.store(request);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(existingResponse);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(existingResponse, response.getBody());
     }
 
     @Test
@@ -43,9 +44,9 @@ class InternalTransactionControllerTest {
 
         ResponseEntity<?> response = controller.store(request);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody()).isEqualTo(storedResponse);
-        assertThat(transactionService.storeCalled).isTrue();
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(storedResponse, response.getBody());
+        assertTrue(transactionService.storeCalled);
     }
 
     private static TransactionRequest transactionRequest() {
@@ -60,7 +61,7 @@ class InternalTransactionControllerTest {
                 "643",
                 "TERM001",
                 "POS",
-                "MERCH12345678901",
+                "MERCH1234567890",
                 "5411",
                 "ACQ001",
                 "ISS001",
@@ -86,7 +87,7 @@ class InternalTransactionControllerTest {
                 "643",
                 "TERM001",
                 "POS",
-                "MERCH12345678901",
+                "MERCH1234567890",
                 "5411",
                 "ACQ001",
                 "ISS001",
