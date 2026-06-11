@@ -32,6 +32,7 @@ class RouteControllerTest {
         RouteService routeService = new RouteService(
                 new RoutingService(SwitchTestData.defaultProperties()),
                 new CapturingAuthorizationClient(),
+                (stan, pan, terminalId) -> null,
                 new TrackingLoggerClient(true));
         mockMvc = MockMvcBuilders.standaloneSetup(new RouteController(routeService)).build();
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());

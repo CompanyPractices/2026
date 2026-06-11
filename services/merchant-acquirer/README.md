@@ -80,18 +80,18 @@
 **Тело запроса:**
 ```json
 {
+  "transmissionDateTime": "dataTime",
   "stan": "string",
   "pan": "string",
-  "terminalId": "string"
+  "terminalId": "string",
+  "amount": "long"
 }
 ```
 
 **Ответ 200:**
 ```json
 {
-  "stan": "string",
-  "pan": "string",
-  "acquirerFee": "double"
+  "acquirerFee": "long"
 }
 ```
 

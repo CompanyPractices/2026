@@ -8,6 +8,7 @@ import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.service.SimulationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class SimulationController {
@@ -33,7 +35,7 @@ public class SimulationController {
   }
 
   @GetMapping("/api/simulator/merchant/fee")
-  public ResponseEntity<AcquirerFeeResponse> merchants(@RequestBody @Valid AcquirerFeeRequest request) {
+  public ResponseEntity<AcquirerFeeResponse> getAcquirerFee(@RequestBody @Valid AcquirerFeeRequest request) {
     return ResponseEntity.ok(simulationService.getAcquirerFee(request));
   }
 }

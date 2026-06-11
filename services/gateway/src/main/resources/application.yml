@@ -139,6 +139,7 @@ spring:
 
 # Gateway
 gateway:
+  version: 1.0.0
   downstream-services:
     urls:
       switch-url: ${SWITCH_URL:http://localhost:8082}
@@ -152,6 +153,10 @@ gateway:
     open-duration: ${CIRCUIT_BREAKER_OPEN_DURATION:10s}
   open-api:
     url: ${GATEWAY_PUBLIC_URL:http://localhost:${GATEWAY_PORT:8080}}
+  health:
+    connection-timeout: 5
+    request-timeout: 3
+    url: /health
 
 #---
 # Swagger
