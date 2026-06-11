@@ -3,7 +3,7 @@ package com.processing.e2e;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.processing.e2e.ulility.HttpUtils;
+import com.processing.e2e.utility.HttpUtils;
 import io.restassured.RestAssured;
 import org.testng.annotations.BeforeClass;
 import com.processing.e2e.ulility.DBUtils;
@@ -30,10 +30,6 @@ public abstract class E2EBaseTest {
 
     protected JsonNode httpGet(String baseUrl, String path, int expectedStatus) {
         return httpUtils.httpGet(baseUrl, path, expectedStatus);
-    }
-
-    protected JsonNode httpPost(String baseUrl, String path, Object body, int expectedStatus) {
-        return httpUtils.httpPost(baseUrl, path, body, expectedStatus);
     }
 
     protected JsonNode httpPostRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {

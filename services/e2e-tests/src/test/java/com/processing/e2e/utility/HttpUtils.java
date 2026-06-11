@@ -1,4 +1,4 @@
-package com.processing.e2e.ulility;
+package com.processing.e2e.utility;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,21 +17,6 @@ public class HttpUtils {
                 .baseUri(baseUrl)
                 .when()
                 .get(path)
-                .then()
-                .statusCode(expectedStatus)
-                .extract()
-                .response();
-        return response.body().as(JsonNode.class);
-    }
-
-    public JsonNode httpPost(String baseUrl, String path, Object body, int expectedStatus) {
-        Response response = RestAssured
-                .given()
-                .baseUri(baseUrl)
-                .contentType("application/json")
-                .body(body)
-                .when()
-                .post(path)
                 .then()
                 .statusCode(expectedStatus)
                 .extract()

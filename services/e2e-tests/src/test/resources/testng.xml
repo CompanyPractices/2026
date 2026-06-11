@@ -5,6 +5,8 @@
     <test name="Health Check">
         <classes>
             <class name="com.processing.e2e.tests.HealthCheckTest"/>
+            <class name="com.processing.e2e.tests.InsufficientFundsTest"/>
+            <class name="com.processing.e2e.tests.CardNotFoundTest"></class>
         </classes>
     </test>
 </suite>
