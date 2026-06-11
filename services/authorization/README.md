@@ -23,10 +23,7 @@
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/health` | Health-check сервиса |
-| GET | `/api/cards/{pan}` | Получить карту по PAN |
 | POST | `/api/internal/authorize` | Authorization: проверка |
-| POST | `/api/cards/{pan}/reserve` | Резервирует сумму с availableBalance карты. |
-
 ### Подробно
 
 #### `GET /health`
@@ -35,50 +32,45 @@
 ```json
 {
   "status": "ok",
-  "service": "{service-name}",
+  "service": "authservice",
   "dependencies": {
     "{dep1}": "ok"
   }
 }
 ```
 
-#### `GET /api/cards/{pan}`
-
-get card
-
 #### `POST /api/internal/authorize`
 
 **Тело запроса:**
 ```json
 {
-  "mti": "value",
-  "stan": "value",
-  "rrn": "",
-  "pan": "",
-  "processingCode": "",
+  "mti": "0100",
+  "stan": "123456",
+  "pan": "1234567890123456",
+  "processingCode": "000000",
   "amount": 0,
-  "currencyCode": "",
-  "transmissionDateTime": "2026-06-03T12:00:00",
-  "terminalId": "",
+  "currencyCode": "810",
+  "transmissionDateTime": "2026-06-05T18:12:49.07",
+  "terminalId": "T0000001",
   "terminalType": "ATM",
-  "merchantId": "",
-  "mcc": "",
-  "acquirerId": "",
-  "issuerId": ""
+  "merchantId": "M00000000000001",
+  "mcc": "5411",
+  "acquirerId": "A001",
+  "issuerId": "I001"
 }
 ```
 
 **Ответ 200:**
 ```json
 {
-  "mti": "0110",
-  "stan": "",
-  "rrn": "",
-  "authCode": "",
-  "responseCode": "",
-  "status": "",
+  "mti": "0100",
+  "stan": "123456",
+  "rrn": "616211293600"
+  "authCode": "A1B2C3",
+  "responseCode": "00",
+  "status": "APPROVED",
   "declineReason": "",
-  "processingTimeMs": 0
+  "processingTimeMs": 42
 }
 ```
 
@@ -86,7 +78,9 @@ get card
 | Код | Условие |
 |-----|---------|
 | 400 | Ошибка валидации |
-| 404 | {Сущность} не найдена |
+| 403 | Карта заблокирована, неактивна или просрочена |
+| 404 | Карта не найдена |
+| 422 | Недостаточно средств |
 | 503 | Downstream-сервис недоступен |
 
 ---
@@ -97,13 +91,13 @@ get card
 
 | Переменная | Значение по умолчанию | Описание |
 |------------|----------------------|----------|
-| `PORT` | `{8080}` | Порт сервиса |
+| `PORT` | `{8083}` | Порт сервиса |
 | `DB_HOST` | `localhost` | Хост PostgreSQL |
 | `DB_PORT` | `5432` | Порт PostgreSQL |
-| `DB_NAME` | `processing` | Имя базы данных |
-| `DB_USER` | `postgres` | Пользователь БД |
-| `DB_PASSWORD` | `postgres` | Пароль БД |
-| `{UPSTREAM}_URL` | `http://localhost:{port}` | URL смежного сервиса |
+| `DB_NAME` | `smp_db` | Имя базы данных |
+| `DB_USER` | `smp_user` | Пользователь БД |
+| `DB_PASSWORD` | `smp_password` | Пароль БД |
+| `CARD_MGMT_URL` | `http://localhost:8081` | URL смежного сервиса |
 
 ---
 
@@ -119,15 +113,15 @@ get card
 ### В Docker
 
 ```bash
-docker build -t {service-name} .
-docker run -p {port}:{port} --env-file ../.env {service-name}
+docker build -t authorization .
+docker run -p 8083:8080 --env-file ../.env authorization
 ```
 
 ### В составе Docker Compose
 
 ```bash
 # Из корня репозитория
-docker compose up -d {service-name}
+docker compose up -d authorization
 ```
 
 ---
@@ -136,7 +130,7 @@ docker compose up -d {service-name}
 
 ```bash
 # Java
-./mvnw test
+mvn test
 ```
 
 ---
@@ -145,7 +139,7 @@ docker compose up -d {service-name}
 
 | Сервис | Направление | Протокол | Зачем |
 |--------|:----------:|----------|-------|
-| Gateway | ← входящий | HTTP REST | присылает запросы на вход |
+| Switch | ← входящий | HTTP REST | присылает запросы на вход |
 | CardManagment | → исходящий | HTTP REST | запрашиваем данные карты и резервирум средства |
 
 ---
@@ -153,13 +147,23 @@ docker compose up -d {service-name}
 ## Структура проекта
 
 ```text
-{authorization}/
-├── src/main
-│   ├── java.com.processing/
-│   │   ├── controllers/    # HTTP-handlers / controllers
-│   │   ├── dto/          # Модели данных / DTO
-│   │   ├── enums/
-│   └── test/               # Тесты
+authorization/src/
+├── main/
+│   └── java.com.processing.authorization/
+│       ├── configs/
+│       ├── constants/      # HTTP-handlers / controllers
+│       ├── controller/     # HTTP-handlers / controllers
+│       ├── dto/            # Модели данных / DTO
+│       ├── entities/
+│       ├── exceptions/
+│       ├── repositories/
+│       └── services/
+├── test/                   # Тесты
+│   ├── resoursces/
+│   └── java.com.processing.authorization/
+│       ├── controller/
+│       ├── integration/
+│       └── service/
 ├── Dockerfile
 ├── README.md
 ├── pom.xml
@@ -172,7 +176,7 @@ docker compose up -d {service-name}
 
 ## Авторы
 
-- {Дарья Ермолаева} — разработчик
-- {Алина Клименко} — разработчик
+- Дарья Ермолаева — разработчик
+- Алина Клименко — разработчик
 
 **Группа:** A { Core }
