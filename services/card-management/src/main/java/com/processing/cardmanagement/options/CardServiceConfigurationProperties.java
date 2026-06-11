@@ -22,13 +22,13 @@ public record CardServiceConfigurationProperties(
     String issuerId,
 
     @Positive
-    int cardYtl
+    int cardValidityPeriod
 ) {
 
     public CardServiceSettings toCardServiceSettings() {
         return new CardServiceSettings(
             this.issuerId,
-            this.cardYtl
+            this.cardValidityPeriod
         );
     }
 }
