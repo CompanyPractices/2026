@@ -23,7 +23,10 @@
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/health` | Health-check сервиса |
+| GET | `/api/cards/{pan}` | Получить карту по PAN |
 | POST | `/api/internal/authorize` | Authorization: проверка |
+| POST | `/api/cards/{pan}/reserve` | Резервирует сумму с availableBalance карты. |
+
 ### Подробно
 
 #### `GET /health`
@@ -32,45 +35,50 @@
 ```json
 {
   "status": "ok",
-  "service": "authservice",
+  "service": "{service-name}",
   "dependencies": {
     "{dep1}": "ok"
   }
 }
 ```
 
+#### `GET /api/cards/{pan}`
+
+get card
+
 #### `POST /api/internal/authorize`
 
 **Тело запроса:**
 ```json
 {
-  "mti": "0100",
-  "stan": "123456",
-  "pan": "1234567890123456",
-  "processingCode": "000000",
+  "mti": "value",
+  "stan": "value",
+  "rrn": "",
+  "pan": "",
+  "processingCode": "",
   "amount": 0,
-  "currencyCode": "810",
-  "transmissionDateTime": "2026-06-05T18:12:49.07",
-  "terminalId": "T0000001",
+  "currencyCode": "",
+  "transmissionDateTime": "2026-06-03T12:00:00",
+  "terminalId": "",
   "terminalType": "ATM",
-  "merchantId": "M00000000000001",
-  "mcc": "5411",
-  "acquirerId": "A001",
-  "issuerId": "I001"
+  "merchantId": "",
+  "mcc": "",
+  "acquirerId": "",
+  "issuerId": ""
 }
 ```
 
 **Ответ 200:**
 ```json
 {
-  "mti": "0100",
-  "stan": "123456",
-  "rrn": "616211293600"
-  "authCode": "A1B2C3",
-  "responseCode": "00",
-  "status": "APPROVED",
+  "mti": "0110",
+  "stan": "",
+  "rrn": "",
+  "authCode": "",
+  "responseCode": "",
+  "status": "",
   "declineReason": "",
-  "processingTimeMs": 42
+  "processingTimeMs": 0
 }
 ```
 
@@ -78,9 +86,7 @@
 | Код | Условие |
 |-----|---------|
 | 400 | Ошибка валидации |
-| 403 | Карта заблокирована, неактивна или просрочена |
-| 404 | Карта не найдена |
-| 422 | Недостаточно средств |
+| 404 | {Сущность} не найдена |
 | 503 | Downstream-сервис недоступен |
 
 ---
@@ -91,13 +97,13 @@
 
 | Переменная | Значение по умолчанию | Описание |
 |------------|----------------------|----------|
-| `PORT` | `{8083}` | Порт сервиса |
+| `PORT` | `{8080}` | Порт сервиса |
 | `DB_HOST` | `localhost` | Хост PostgreSQL |
 | `DB_PORT` | `5432` | Порт PostgreSQL |
-| `DB_NAME` | `smp_db` | Имя базы данных |
-| `DB_USER` | `smp_user` | Пользователь БД |
-| `DB_PASSWORD` | `smp_password` | Пароль БД |
-| `CARD_MGMT_URL` | `http://localhost:8081` | URL смежного сервиса |
+| `DB_NAME` | `processing` | Имя базы данных |
+| `DB_USER` | `postgres` | Пользователь БД |
+| `DB_PASSWORD` | `postgres` | Пароль БД |
+| `{UPSTREAM}_URL` | `http://localhost:{port}` | URL смежного сервиса |
 
 ---
 
@@ -113,15 +119,15 @@
 ### В Docker
 
 ```bash
-docker build -t authorization .
-docker run -p 8083:8080 --env-file ../.env authorization
+docker build -t {service-name} .
+docker run -p {port}:{port} --env-file ../.env {service-name}
 ```
 
 ### В составе Docker Compose
 
 ```bash
 # Из корня репозитория
-docker compose up -d authorization
+docker compose up -d {service-name}
 ```
 
 ---
@@ -130,7 +136,7 @@ docker compose up -d authorization
 
 ```bash
 # Java
-mvn test
+./mvnw test
 ```
 
 ---
@@ -139,7 +145,7 @@ mvn test
 
 | Сервис | Направление | Протокол | Зачем |
 |--------|:----------:|----------|-------|
-| Switch | ← входящий | HTTP REST | присылает запросы на вход |
+| Gateway | ← входящий | HTTP REST | присылает запросы на вход |
 | CardManagment | → исходящий | HTTP REST | запрашиваем данные карты и резервирум средства |
 
 ---
@@ -147,23 +153,13 @@ mvn test
 ## Структура проекта
 
 ```text
-authorization/src/
-├── main/
-│   └── java.com.processing.authorization/
-│       ├── configs/
-│       ├── constants/      # HTTP-handlers / controllers
-│       ├── controller/     # HTTP-handlers / controllers
-│       ├── dto/            # Модели данных / DTO
-│       ├── entities/
-│       ├── exceptions/
-│       ├── repositories/
-│       └── services/
-├── test/                   # Тесты
-│   ├── resoursces/
-│   └── java.com.processing.authorization/
-│       ├── controller/
-│       ├── integration/
-│       └── service/
+{authorization}/
+├── src/main
+│   ├── java.com.processing/
+│   │   ├── controllers/    # HTTP-handlers / controllers
+│   │   ├── dto/          # Модели данных / DTO
+│   │   ├── enums/
+│   └── test/               # Тесты
 ├── Dockerfile
 ├── README.md
 ├── pom.xml
@@ -176,7 +172,7 @@ authorization/src/
 
 ## Авторы
 
-- Дарья Ермолаева — разработчик
-- Алина Клименко — разработчик
+- {Дарья Ермолаева} — разработчик
+- {Алина Клименко} — разработчик
 
 **Группа:** A { Core }
