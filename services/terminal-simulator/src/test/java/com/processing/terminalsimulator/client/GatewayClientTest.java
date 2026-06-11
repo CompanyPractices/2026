@@ -1,8 +1,9 @@
 package com.processing.terminalsimulator.client;
 
-import com.processing.terminalsimulator.dto.AuthorizationRequest;
-import com.processing.terminalsimulator.dto.AuthorizationResponse;
-import com.processing.terminalsimulator.dto.Card;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.cardmanagement.CardModel;
+import com.processing.common.dto.cardmanagement.CardModelStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -12,7 +13,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
-import static com.processing.terminalsimulator.model.CardStatus.ACTIVE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -79,7 +79,7 @@ class GatewayClientTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
-        List<Card> cards = gatewayClient.getCardsFromCardManager(ACTIVE, 70);
+        List<CardModel> cards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70);
         assertThat(cards).hasSize(1);
         assertEquals("4000001234560001", cards.get(0).pan());
     }
@@ -91,7 +91,7 @@ class GatewayClientTest {
         mockServer.expect(requestTo(CARD_MGMT_URL + "/api/cards?status=ACTIVE&limit=70"))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> gatewayClient.getCardsFromCardManager(ACTIVE, 70))
+        assertThatThrownBy(() -> gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("No ACTIVE cards available");
     }

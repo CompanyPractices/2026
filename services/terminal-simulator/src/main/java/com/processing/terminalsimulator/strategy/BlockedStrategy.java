@@ -1,7 +1,7 @@
 package com.processing.terminalsimulator.strategy;
 
-import com.processing.terminalsimulator.dto.Card;
-import com.processing.terminalsimulator.model.CardStatus;
+import com.processing.common.dto.cardmanagement.CardModel;
+import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +17,7 @@ public class BlockedStrategy implements TransactionStrategy {
         return TransactionType.BLOCKED;
     }
     @Override
-    public long calculateAmount(Card card) {
+    public long calculateAmount(CardModel card) {
         return 10_000 + (long) (random.nextDouble() * 490_000);
     }
     @Override
@@ -26,8 +26,8 @@ public class BlockedStrategy implements TransactionStrategy {
                 "7994", "3501"}[ThreadLocalRandom.current().nextInt(8)];
     }
     @Override
-    public CardStatus getRequiredCardStatus() {
-        return CardStatus.BLOCKED;
+    public CardModelStatus getRequiredCardStatus() {
+        return CardModelStatus.BLOCKED;
     }
     @Override
     public boolean isInvalidPan() {

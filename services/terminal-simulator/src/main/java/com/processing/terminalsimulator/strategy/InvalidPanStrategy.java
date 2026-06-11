@@ -1,6 +1,6 @@
 package com.processing.terminalsimulator.strategy;
 
-import com.processing.terminalsimulator.dto.Card;
+import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +13,7 @@ public class InvalidPanStrategy implements TransactionStrategy {
         return TransactionType.INVALID_PAN;
     }
     @Override
-    public long calculateAmount(Card card) {
+    public long calculateAmount(CardModel card) {
         return 10_000 + (long) (Math.random() * 490_000);
     }
     @Override

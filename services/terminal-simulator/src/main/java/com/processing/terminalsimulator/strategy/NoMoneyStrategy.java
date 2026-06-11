@@ -1,6 +1,6 @@
 package com.processing.terminalsimulator.strategy;
 
-import com.processing.terminalsimulator.dto.Card;
+import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +16,7 @@ public class NoMoneyStrategy implements TransactionStrategy {
         return TransactionType.NO_MONEY;
     }
     @Override
-    public long calculateAmount(Card card) {
+    public long calculateAmount(CardModel card) {
         return card.availableBalance() + (long) (random.nextDouble() * 100_000);
     }
     @Override

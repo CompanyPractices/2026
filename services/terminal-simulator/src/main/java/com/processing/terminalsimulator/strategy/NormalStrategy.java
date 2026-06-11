@@ -1,6 +1,6 @@
 package com.processing.terminalsimulator.strategy;
 
-import com.processing.terminalsimulator.dto.Card;
+import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +15,7 @@ public class NormalStrategy implements TransactionStrategy {
         return TransactionType.NORMAL;
     }
     @Override
-    public long calculateAmount(Card card) {
+    public long calculateAmount(CardModel card) {
         return 10_000 + (long) (random.nextDouble() * 490_000);
     }
     @Override
