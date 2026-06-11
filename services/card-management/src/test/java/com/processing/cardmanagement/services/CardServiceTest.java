@@ -6,7 +6,9 @@ import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
 import com.processing.cardmanagement.options.CardServiceDefaults;
+import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationProperties;
 import com.processing.cardmanagement.options.CardServiceSettings;
+import com.processing.cardmanagement.options.CardServiceSettingsConfigurationProperties;
 import com.processing.cardmanagement.repositories.CardRepository;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,13 +37,13 @@ public final class CardServiceTest {
 
     private final Faker faker = new Faker(Locale.ENGLISH);
 
-    private final CardServiceSettings settings = new CardServiceSettings(
+    private final CardServiceSettings settings = new CardServiceSettingsConfigurationProperties(
         "TESTISSUER",
         3
     );
 
-    private final CardServiceDefaults defaults = new CardServiceDefaults(
-        0,
+    private final CardServiceDefaults defaults = new CardServiceDefaultsConfigurationProperties(
+        1,
         50,
         "643",
         15000000,
