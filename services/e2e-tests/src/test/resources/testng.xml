@@ -9,6 +9,9 @@
         </classes>
     </test>
 
+    <test name="Gateway Validation">
+        <classes>
+            <class name="com.processing.e2e.tests.GatewayValidationTest"/>
 
     <test name="Switch routing">
         <classes>

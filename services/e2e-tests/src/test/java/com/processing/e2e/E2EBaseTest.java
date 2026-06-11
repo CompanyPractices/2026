@@ -46,6 +46,8 @@ public abstract class E2EBaseTest {
         return httpUtils.httpGet(baseUrl, path, expectedStatus);
     }
 
+    protected void assertGetStatus(String baseUrl, String path, int expectedStatus) {
+        httpUtils.assertGetStatus(baseUrl, path, expectedStatus);
 
     public static String jdbcUrl() {
         return "jdbc:postgresql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME;

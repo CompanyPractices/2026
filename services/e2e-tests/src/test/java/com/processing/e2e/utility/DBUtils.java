@@ -12,6 +12,9 @@ import java.sql.SQLException;
 
 public class DBUtils {
 
+    private static final String DB_URL      = "jdbc:postgresql://localhost:5432/smp_db";
+    private static final String DB_USER     = "smp_user";
+    private static final String DB_PASSWORD = "smp_password";
 
     public Connection getConnection() throws SQLException {
         return DriverManager.getConnection(E2EBaseTest.jdbcUrl(), E2EBaseTest.DB_USER, E2EBaseTest.DB_PASSWORD);
