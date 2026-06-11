@@ -27,6 +27,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Calendar;
 import java.util.Optional;
 import java.util.Random;
@@ -89,7 +90,7 @@ public class AuthService {
      * @see AuthorizationRequest
      * @see AuthorizationResponse
      */
-    @Transactional
+    @Transactional(rollbackFor = { Exception.class })
     public AuthorizationResponse authorize(AuthorizationRequest request, LocalDateTime requestInputTime) {
         CardModel cardResponse;
         try {
@@ -118,7 +119,13 @@ public class AuthService {
             };
         }
 
-        LocalDate transmissionDate = LocalDateTime.parse(request.transmissionDateTime()).toLocalDate();
+        LocalDate transmissionDate;
+        if (request.transmissionDateTime().endsWith("Z")) {
+            transmissionDate = OffsetDateTime.parse(request.transmissionDateTime()).toLocalDate();
+        } else {
+            transmissionDate = LocalDateTime.parse(request.transmissionDateTime()).toLocalDate();
+        }
+
         LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
         if (lastValidDay.isBefore(transmissionDate)) {
             return DeclineOutcome.CARD_EXPIRED.build(request, requestInputTime);
@@ -128,7 +135,7 @@ public class AuthService {
             return DeclineOutcome.INSUFFICIENT_FUNDS.build(request, requestInputTime);
         }
 
-        Optional<LimitUsage> currLimitUsage =  limitUsageRepository
+        Optional<LimitUsage> currLimitUsage = limitUsageRepository
                 .findByPanAndUsageDate(request.pan(), transmissionDate);
 
         if (currLimitUsage.isPresent()) {
@@ -209,26 +216,26 @@ public class AuthService {
         log.debug("Getting card info for pan {}", maskPAN(pan));
 
         CardModel response = webClient.get()
-            .uri(url)
-            .retrieve()
-            .onStatus(status -> status == HttpStatus.NOT_FOUND, clientResponse -> {
-                log.debug("Card not found: " + maskPAN(pan));
-                return Mono.error(new CardNotFoundException("Card not found: " + maskPAN(pan)));
-            })
-            .onStatus(status -> status == HttpStatus.SERVICE_UNAVAILABLE, clientResponse -> {
-                log.debug("Card Management service unavailable: {}", clientResponse.statusCode());
-                return Mono
-                        .error(new ServiceUnavailableException(
-                                "Card Management service unavailable: " + clientResponse.statusCode()));
-            })
-            .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
-                return Mono
-                        .error(new CardNotFoundException(
-                                "Failed to get card. Status: " + clientResponse.statusCode()));
-            })
-            .bodyToMono(CardModel.class)
-            .block();
+                .uri(url)
+                .retrieve()
+                .onStatus(status -> status == HttpStatus.NOT_FOUND, clientResponse -> {
+                    log.debug("Card not found: " + maskPAN(pan));
+                    return Mono.error(new CardNotFoundException("Card not found: " + maskPAN(pan)));
+                })
+                .onStatus(status -> status == HttpStatus.SERVICE_UNAVAILABLE, clientResponse -> {
+                    log.debug("Card Management service unavailable: {}", clientResponse.statusCode());
+                    return Mono
+                            .error(new ServiceUnavailableException(
+                                    "Card Management service unavailable: " + clientResponse.statusCode()));
+                })
+                .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
+                    log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
+                    return Mono
+                            .error(new CardNotFoundException(
+                                    "Failed to get card. Status: " + clientResponse.statusCode()));
+                })
+                .bodyToMono(CardModel.class)
+                .block();
         return response;
     }
 

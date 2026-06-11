@@ -1,5 +1,7 @@
 package com.processing.gateway.config;
 
+import com.processing.gateway.properties.HealthProperties;
+import lombok.RequiredArgsConstructor;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -12,11 +14,14 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
+@RequiredArgsConstructor
 public class BeanConfiguration {
+    private final HealthProperties healthProperties;
+
     @Bean
     public HttpClient httpClient() {
         return HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(5))
+                .connectTimeout(Duration.ofSeconds(healthProperties.getConnectionTimeout()))
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
     }
