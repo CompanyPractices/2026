@@ -4,7 +4,6 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -13,10 +12,10 @@ public class HighValueStrategy implements TransactionStrategy {
     public TransactionType getType() {
         return TransactionType.HIGH_VALUE;
     }
-    private final Random random = new Random();
     @Override
     public long calculateAmount(CardModel card) {
-        return 10_000_000 + (long) (random.nextDouble() * 40_000_000);
+        double randomDouble = ThreadLocalRandom.current().nextDouble();
+        return 10_000_000 + (long) (randomDouble * 40_000_000);
     }
     @Override
     public String getMcc() {

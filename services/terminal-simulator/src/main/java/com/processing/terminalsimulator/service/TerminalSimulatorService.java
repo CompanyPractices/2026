@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -24,7 +25,6 @@ public class TerminalSimulatorService {
     private final GatewayClient gatewayClient;
     private final TransactionFactory transactionFactory;
 
-    private final Random random = new Random();
     private volatile List<CardModel> cards = new ArrayList<>();
 
     private CardModel getRandomCard(CardModelStatus cardStatus) {
@@ -34,7 +34,8 @@ public class TerminalSimulatorService {
         if (filtered.isEmpty()) {
             throw new IllegalStateException("No " + cardStatus + " cards available");
         }
-        return filtered.get(random.nextInt(filtered.size()));
+        int randomIndex = ThreadLocalRandom.current().nextInt(filtered.size());
+        return filtered.get(randomIndex);
     }
 
     private void generateTransactionHandler(int start, int end, AtomicInteger approved, AtomicInteger declined,

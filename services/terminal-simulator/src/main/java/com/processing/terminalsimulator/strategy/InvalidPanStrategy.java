@@ -14,7 +14,8 @@ public class InvalidPanStrategy implements TransactionStrategy {
     }
     @Override
     public long calculateAmount(CardModel card) {
-        return 10_000 + (long) (Math.random() * 490_000);
+        double randomDouble = ThreadLocalRandom.current().nextDouble();
+        return 10_000 + (long) (randomDouble * 490_000);
     }
     @Override
     public String getMcc() {
