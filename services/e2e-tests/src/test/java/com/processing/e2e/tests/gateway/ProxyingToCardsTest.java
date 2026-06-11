@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.processing.e2e.E2EBaseTest;
 import com.processing.e2e.utility.DBUtils;
 import org.testng.annotations.Test;
-import org.testng.asserts.SoftAssert;
 
 import java.sql.SQLException;
 
@@ -73,17 +72,14 @@ public class ProxyingToCardsTest extends E2EBaseTest {
 
     @Test(priority = 1203)
     void compareGatewayAndDirectResponsesShouldMatch() {
-        assertEquals(gatewayResponse.id(), directResponse.id());
-        assertEquals(gatewayResponse.pan(), directResponse.pan());
-        assertEquals(gatewayResponse.status(), directResponse.status());
-        assertEquals(gatewayResponse.balance(), directResponse.balance());
+        assertEquals(gatewayResponse, directResponse);
     }
 
     @Test(priority = 1204)
     void getCardByPanThroughGatewayShouldMatchDirect() {
         JsonNode response = httpUtils.httpGet(GATEWAY_URL, "/api/cards/" + pan, 200);
 
-        assertEquals(response, directResponseJson);
+        assertEquals((Object) response, (Object) directResponseJson);
     }
 
     @Test(priority = 1205)
