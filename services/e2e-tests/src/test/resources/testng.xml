@@ -15,4 +15,10 @@
             <class name="com.processing.e2e.tests.TC_06_TC_14_SwitchTest"/>
         </classes>
     </test>
+
+    <test name="Transaction search">
+        <classes>
+            <class name="com.processing.e2e.tests.TransactionSearchTest" />
+        </classes>
+    </test>
 </suite>
