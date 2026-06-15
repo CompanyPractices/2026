@@ -43,6 +43,8 @@ public class RouteService {
         String pan = request.pan();
         String bin = pan != null && pan.length() >= 6 ? pan.substring(0, 6) : "??????";
 
+        AuthorizationRequest normalizedRequest = AuthorizationRequestNormalizer.normalize(request);
+
         String issuerId;
         try {
             issuerId = routingService.getIssuerIdByPan(pan);
@@ -51,7 +53,7 @@ public class RouteService {
             return AuthorizationResponse.unknownBin(request.stan());
         }
 
-        AuthorizationRequest routedRequest = request.withIssuerId(issuerId);
+        AuthorizationRequest routedRequest = normalizedRequest.withIssuerId(issuerId);
 
         AuthorizationResponse response;
         try {

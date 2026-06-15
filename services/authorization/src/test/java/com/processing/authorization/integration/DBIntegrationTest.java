@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
@@ -21,7 +22,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
 import com.processing.authorization.services.AuthService;
@@ -31,7 +32,6 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
 
 @Slf4j
 @SpringBootTest
@@ -43,18 +43,18 @@ public class DBIntegrationTest {
     @Autowired
     private DataSource dataSource;
     @MockitoBean
-    private WebClient webClient;
+    private RestClient restClient;
 
     @Mock
-    private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
+    private RestClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
     @Mock
-    private WebClient.RequestHeadersSpec requestHeadersSpec;
+    private RestClient.RequestHeadersSpec<?> requestHeadersSpec;
     @Mock
-    private WebClient.ResponseSpec responseSpec;
+    private RestClient.ResponseSpec responseSpec;
     @Mock
-    private WebClient.RequestBodyUriSpec requestBodyUriSpec;
+    private RestClient.RequestBodyUriSpec requestBodyUriSpec;
     @Mock
-    private WebClient.RequestBodySpec requestBodySpec;
+    private RestClient.RequestBodySpec requestBodySpec;
 
     private LocalDateTime now;
     private AuthorizationRequest correctRequest;
@@ -84,24 +84,22 @@ public class DBIntegrationTest {
         log.debug("Test database URL: {}", getDatabaseUrl());
     }
 
-    private void mockWebClientGetCard(CardModel cardToReturn) {
-        when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(any(URI.class))).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        when(responseSpec.bodyToMono(CardModel.class))
-                .thenReturn(Mono.just(cardToReturn));
+    private void mockGetCard(CardModel cardToReturn) {
+        doReturn(requestHeadersUriSpec).when(restClient).get();
+        doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(any(URI.class));
+        doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        doReturn(responseSpec).when(responseSpec).onStatus(any(), any());
+        doReturn(cardToReturn).when(responseSpec).body(CardModel.class);
     }
 
-    private void mockWebClientReserveSuccess() {
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(any(URI.class))).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
-        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        when(responseSpec.bodyToMono(String.class))
-                .thenReturn(Mono.just("RESERVED"));
+    private void mockReserveSuccess() {
+        doReturn(requestBodyUriSpec).when(restClient).post();
+        doReturn(requestBodySpec).when(requestBodyUriSpec).uri(any(URI.class));
+        doReturn(requestBodySpec).when(requestBodySpec).contentType(any());
+        doReturn(requestBodySpec).when(requestBodySpec).body(any(Object.class));
+        doReturn(responseSpec).when(requestBodySpec).retrieve();
+        doReturn(responseSpec).when(responseSpec).onStatus(any(), any());
+        doReturn(null).when(responseSpec).toBodilessEntity();
     }
 
     private String getDatabaseUrl() {
@@ -116,7 +114,7 @@ public class DBIntegrationTest {
     @Test
     void authorizeShouldReturnDeclinedWhenCardIsBlocked() {
         CardModel mockCard = createBlockedCardModel();
-        mockWebClientGetCard(mockCard);
+        mockGetCard(mockCard);
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertThat(response.authCode()).isNull();
@@ -127,7 +125,7 @@ public class DBIntegrationTest {
     @Test
     void authorizeShouldReturnDeclinedWhenCardIsExpired() {
         CardModel mockCard = createExpiredCardModel();
-        mockWebClientGetCard(mockCard);
+        mockGetCard(mockCard);
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("CARD_EXPIRED", response.declineReason());
@@ -136,7 +134,7 @@ public class DBIntegrationTest {
     @Test
     void authorizeShouldReturnDeclinedWhenCardIsInactive() {
         CardModel mockCard = createInactiveCardModel();
-        mockWebClientGetCard(mockCard);
+        mockGetCard(mockCard);
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("CARD_INACTIVE", response.declineReason());
@@ -145,7 +143,7 @@ public class DBIntegrationTest {
     @Test
     void authorizeShouldReturnDeclinedWhenInsufficientFunds() {
         CardModel mockCard = createCardWithLowBalance();
-        mockWebClientGetCard(mockCard);
+        mockGetCard(mockCard);
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("INSUFFICIENT_FUNDS", response.declineReason());
@@ -154,7 +152,7 @@ public class DBIntegrationTest {
     @Test
     void authorizeShouldReturnDeclinedWhenExceededMonthlyLimit() {
         CardModel mockCard = createActiveCardModelWithLowMonthlyLimit();
-        mockWebClientGetCard(mockCard);
+        mockGetCard(mockCard);
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("EXCEEDS_AMOUNT_LIMIT", response.declineReason());
@@ -163,7 +161,7 @@ public class DBIntegrationTest {
     @Test
     void authorizeShouldReturnDeclinedWhenReservationFails() throws Exception {
         CardModel mockCard = createActiveCardModel();
-        mockWebClientGetCard(mockCard);
+        mockGetCard(mockCard);
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("RESERVATION_FAILED", response.declineReason());
@@ -172,7 +170,7 @@ public class DBIntegrationTest {
     @Test
     void authorizeShouldReturnDeclinedWhenCardExpiredByDate() {
         CardModel mockCard = createCardExpiredByDate();
-        mockWebClientGetCard(mockCard);
+        mockGetCard(mockCard);
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("CARD_EXPIRED", response.declineReason());
@@ -181,8 +179,8 @@ public class DBIntegrationTest {
     @Test
     void authorizeShouldBeApproved() {
         CardModel mockCard = createActiveCardModel();
-        mockWebClientGetCard(mockCard);
-        mockWebClientReserveSuccess();
+        mockGetCard(mockCard);
+        mockReserveSuccess();
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_APPROVED, response.status());
         assertThat(response.authCode()).isNotNull();
@@ -192,8 +190,8 @@ public class DBIntegrationTest {
     @Test
     void authorizeShouldBeApprovedAndPersistToDatabase() {
         CardModel mockCard = createActiveCardModel();
-        mockWebClientGetCard(mockCard);
-        mockWebClientReserveSuccess();
+        mockGetCard(mockCard);
+        mockReserveSuccess();
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_APPROVED, response.status());
         assertThat(limitUsageRepository.findAll()).hasSize(1);
