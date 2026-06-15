@@ -20,7 +20,7 @@ export default function TransactionPieChart({transactions, loading, error}: PieC
 
     if (loading) {
         return (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-sage-50 font-mono">
                 Загрузка транзакций...
             </div>
         )
@@ -28,44 +28,48 @@ export default function TransactionPieChart({transactions, loading, error}: PieC
 
     if (!loading && !error && transactions.length === 0) {
         return (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-sage-50 font-mono">
                 Транзакций не найдено
             </div>
         )
     }
 
     return (
-        <ResponsiveContainer width="80%" height={300} className="mx-auto my-auto" >
-            <PieChart>
-                <Pie
-                    data={[
-                        { name: 'APPROVED', value: approved },
-                        { name: 'DECLINED', value: declined },
-                    ]}
-                    dataKey="value" isAnimationActive={true}
-                    cy="40%"
-                >
-                    <Cell fill="green" />
-                    <Cell fill="red" />
-                </Pie>
-                <Legend
-                    layout="horizontal"
-                    align="center"
-                    verticalAlign="bottom"
-                    iconType="circle"
-                    formatter={(value) => {
-                        const count = value === 'APPROVED' ? approved : declined;
-                        const label = value === 'APPROVED' ? 'Одобрено' : 'Отклонено';
-                        return (
-                            <span className="text-zinc-700 font-mono">
+        <ResponsiveContainer width="100%" height="100%" >
+        <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+            <Pie
+                data={[
+                    { name: 'APPROVED', value: approved },
+                    { name: 'DECLINED', value: declined },
+                ]}
+                dataKey="value"
+                isAnimationActive={true}
+                cx="50%"
+                cy="45%"
+                outerRadius={100}
+                label={false}
+            >
+                <Cell fill="green" />
+                <Cell fill="red" />
+            </Pie>
+            <Legend
+                layout="horizontal"
+                align="center"
+                verticalAlign="bottom"
+                iconType="circle"
+                formatter={(value) => {
+                    const count = value === 'APPROVED' ? approved : declined;
+                    const label = value === 'APPROVED' ? 'Одобрено' : 'Отклонено';
+                    return (
+                        <span className="text-zinc-700 font-mono dark:text-sage-50">
                                 { `${label}(${count})`}
                             </span>
-                        )
-                    }
-                    }
-                />
-                <Tooltip/>
-            </PieChart>
-        </ResponsiveContainer>
+                    )
+                }
+                }
+            />
+            <Tooltip/>
+        </PieChart>
+    </ResponsiveContainer>
     )
 }
