@@ -13,6 +13,12 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
+/**
+ * HTTP client wrapper used by gateway health checks.
+ *
+ * <p>It converts downstream HTTP and network failures into {@link HealthStatus}
+ * values so health aggregation does not leak transport exceptions.</p>
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -20,6 +26,14 @@ public class HealthClient {
     private final HttpClient httpClient;
     private final HealthProperties healthProperties;
 
+    /**
+     * Sends a health-check request to a downstream service.
+     *
+     * @param url full health-check URL
+     * @param serviceName service name used in logs
+     * @return {@link HealthStatus#OK} for HTTP 200, otherwise
+     *         {@link HealthStatus#UNAVAILABLE}
+     */
     public HealthStatus sendHealthCheckRequest(String url, String serviceName) {
         try {
             HttpRequest request = HttpRequest.newBuilder()

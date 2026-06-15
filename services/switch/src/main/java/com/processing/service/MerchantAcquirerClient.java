@@ -22,17 +22,17 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     }
 
     @Override
-    public Long fetchAcquiringFee(String stan, String pan, String terminalId) {
+    public Long fetchAcquiringFee(String transmissionDateTime, String stan, String pan, String terminalId, Long amount) {
         try {
             AcquirerFeeResponse response = restClient.method(HttpMethod.GET)
                     .uri(switchProperties.merchantAcquirerUrl() + "/api/simulator/merchant/fee")
-                    .body(new AcquirerFeeRequest(stan, pan, terminalId))
+                    .body(new AcquirerFeeRequest(transmissionDateTime, stan, pan, terminalId, amount))
                     .retrieve()
                     .body(AcquirerFeeResponse.class);
             if (response == null) {
                 return null;
             }
-            return Math.round(response.acquirerFee());
+            return response.acquirerFee();
         } catch (Exception e) {
             LOG.warn("Acquiring fee unavailable for STAN={}: {}", stan, e.getMessage());
             return null;
@@ -40,16 +40,16 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     }
 
     private record AcquirerFeeRequest(
+            String transmissionDateTime,
             String stan,
             String pan,
-            @JsonProperty("terminalID") String terminalId
+            @JsonProperty("terminalId") String terminalId,
+            Long amount
     ) {
     }
 
     private record AcquirerFeeResponse(
-            String stan,
-            String pan,
-            double acquirerFee
+            Long acquirerFee
     ) {
     }
 }
