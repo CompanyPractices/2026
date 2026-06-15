@@ -47,7 +47,7 @@ public record AuthorizationRequest(
 
         @NotBlank
         @Size(min = 8, max = 8)
-        @Schema(description = "Terminal id", example = "TERM001")
+        @Schema(description = "Terminal id", example = "TERM0001")
         String terminalId,
 
         @Schema(description = "Terminal type", example = "POS")
@@ -55,7 +55,7 @@ public record AuthorizationRequest(
 
         @NotBlank
         @Size(min = 15, max = 15)
-        @Schema(description = "Merchant ID", example = "MERCH00000000029")
+        @Schema(description = "Merchant ID", example = "MERCH0000000002")
         String merchantId,
 
         @NotBlank

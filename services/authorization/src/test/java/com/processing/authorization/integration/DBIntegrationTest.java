@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -66,7 +67,7 @@ public class DBIntegrationTest {
                 "123456",
                 "1234567890123456",
                 "000000",
-                5000L,
+                BigDecimal.valueOf(5000),
                 "810",
                 "2026-06-05T18:12:49.070",
                 "T0000001",
@@ -195,9 +196,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 CardModelStatus.ACTIVE,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -211,9 +212,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 CardModelStatus.BLOCKED,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -227,9 +228,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 1),
                 CardModelStatus.EXPIRED,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -243,9 +244,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2029, 1),
                 CardModelStatus.INACTIVE,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -259,9 +260,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 CardModelStatus.ACTIVE,
                 "810",
-                100000L,
-                500000L,
-                1000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(1000),
                 "I001",
                 now);
     }
@@ -275,9 +276,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 CardModelStatus.ACTIVE,
                 "810",
-                100000L,
-                500L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -291,9 +292,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2006, 12),
                 CardModelStatus.ACTIVE,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }

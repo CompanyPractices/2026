@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,7 +28,7 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
           + "FROM LimitUsage lu "
           + "WHERE lu.pan = :pan AND lu.usageDate BETWEEN :startDate AND :endDate"
     )
-    Long sumMonthlyAmountByPanAndMonth(
+    BigDecimal sumMonthlyAmountByPanAndMonth(
             @Param("pan")String pan,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
