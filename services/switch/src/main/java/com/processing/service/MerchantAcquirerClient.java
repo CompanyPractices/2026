@@ -24,11 +24,19 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     }
 
     @Override
-    public BigDecimal fetchAcquiringFee(String transmissionDateTime, String stan, String pan, String terminalId, BigDecimal amount) {
+    public BigDecimal fetchAcquiringFee(
+            String transmissionDateTime,
+            String stan,
+            String pan,
+            String terminalId,
+            BigDecimal amount
+    ) {
         try {
             AcquirerFeeResponse response = restClient.method(HttpMethod.GET)
-                    .uri(switchProperties.merchantAcquirerUrl() + "/api/simulator/merchant/fee")
-                    .body(new AcquirerFeeRequest(transmissionDateTime, stan, pan, terminalId, amount))
+                    .uri(switchProperties.merchantAcquirerUrl()
+                            + "/api/simulator/merchant/fee")
+                    .body(new AcquirerFeeRequest(
+                            transmissionDateTime, stan, pan, terminalId, amount))
                     .retrieve()
                     .body(AcquirerFeeResponse.class);
             if (response == null) {
