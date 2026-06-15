@@ -7,20 +7,20 @@ import org.testng.asserts.SoftAssert;
 import java.sql.SQLException;
 
 /**
- * TC-09 — Decline: card blocked.
- * Goal: check reject based on cards blocked status.
+ * TC-10 — Decline: card expired.
+ * Goal: check reject based on cards date expired.
  * All checks in one method, SoftAssert.
  */
-public class TC_09_CardBlockedTest extends E2EBaseTest {
-    @Test(description = "TC-09 — Decline: card blocked (responseCode 05)")
-    public void DeclineCardBlocked() throws SQLException {
+public class TC_10_CardExpiredTest extends E2EBaseTest {
+    @Test(description = "TC-10 — Decline: card expired (responseCode 54)")
+    public void DeclineCardExpired() throws SQLException {
         SoftAssert soft = new SoftAssert();
 
         // Create card ---
         String createCardRequest = """
                 {
                     "bin": 400000,
-                    "cardholderName": "IVAN IVANOV",
+                    "cardholderName": "IVAN IVANOVV",
                     "currencyCode": 643,
                     "dailyLimit": 15000000,
                     "monthlyLimit": 300000000,
@@ -41,26 +41,18 @@ public class TC_09_CardBlockedTest extends E2EBaseTest {
         soft.assertEquals(cardStatusActive, "ACTIVE",
                 "DB: card status should be 'ACTIVE' after creation, but was: " +
                         cardStatusActive);
+        // Expire the card
+        db.executeUpdate(
+                "UPDATE cards SET expiry_date = '0120' WHERE pan = '" + pan + "'");
 
-        // Block the card
-        String patchCardRequest = """
-                {
-                "status": "BLOCKED"
-                }
-                """;
-        JsonNode patchCard = httpPatchRaw(CARD_MGMT_URL, "/api/cards/" + pan,
-                patchCardRequest, 200);
-        soft.assertNotNull(patchCard, "Cards PATCH response should not be null");
-        soft.assertFalse(patchCard.isEmpty(), "Cards PATCH response should not be empty");
+        // DB check — card is EXPIRED
+        String cardExpiryDate = db.queryString(
+                "SELECT expiry_date FROM cards WHERE pan = '" + pan + "'");
+        soft.assertEquals(cardExpiryDate, "0120",
+                "DB: card expiry date should be '0120' after patch, but was: " +
+                        cardExpiryDate);
 
-        // DB check — card is BLOCKED
-        String cardStatusBlocked = db.queryString(
-                "SELECT status FROM cards WHERE pan = '" + pan + "'");
-        soft.assertEquals(cardStatusBlocked, "BLOCKED",
-                "DB: card status should be 'BLOCKED' after patch, but was: " +
-                        cardStatusBlocked);
-
-        // Send transaction with blocked card
+        // Send transaction with expired card
         String transactionRequest = """
                 {
                 "mti": "0100",
@@ -82,18 +74,18 @@ public class TC_09_CardBlockedTest extends E2EBaseTest {
 
         soft.assertEquals(postTransaction.path("status").asText(), "DECLINED",
                 "Transaction: $.status should be 'DECLINED'");
-        soft.assertEquals(postTransaction.path("responseCode").asText(), "05",
-                "Transaction: $.responseCode should be '05'");
+        soft.assertEquals(postTransaction.path("responseCode").asText(), "54",
+                "Transaction: $.responseCode should be '54'");
         soft.assertTrue(
-                postTransaction.path("declineReason").asText().contains("BLOCKED"),
-                "Transaction: $.declineReason should contain 'BLOCKED'");
+                postTransaction.path("declineReason").asText().contains("EXPIRED"),
+                "Transaction: $.declineReason should contain 'EXPIRED', but was: " + postTransaction.path("declineReason").asText());
 
         // DB check — declined transaction record
         String dbDeclineReason = db.queryString(
                 "SELECT decline_reason FROM transactions WHERE pan = '" + pan + "' AND status = 'DECLINED'");
         soft.assertTrue(
-                dbDeclineReason != null && dbDeclineReason.contains("BLOCKED"),
-                "DB: decline_reason should contain 'BLOCKED', but was: " + dbDeclineReason);
+                dbDeclineReason != null && dbDeclineReason.contains("EXPIRED"),
+                "DB: decline_reason should contain 'EXPIRED', but was: " + dbDeclineReason);
         soft.assertAll();
     }
 }
