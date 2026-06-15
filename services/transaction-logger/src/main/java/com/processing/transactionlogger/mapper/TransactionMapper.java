@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
+/**
+ * Конвертирует объекты транзакций между слоями: DTO ↔ Entity ↔ Response.
+ */
 @Component
 public class TransactionMapper {
 
@@ -69,6 +72,14 @@ public class TransactionMapper {
         return new TransactionStoredResponse(transaction.getId(), STORED_STATUS);
     }
 
+    /**
+     * Проверяет, совпадают ли все поля существующей транзакции с входящим запросом.
+     * Используется для идемпотентности: повторный запрос с теми же данными не является конфликтом.
+     *
+     * @param transaction запись из БД
+     * @param request     входящий запрос от Switch
+     * @return {@code true} если все поля идентичны
+     */
     public boolean matches(Transaction transaction, TransactionRequest request) {
         return Objects.equals(transaction.getId(), request.id())
                 && Objects.equals(transaction.getMti(), request.mti())
