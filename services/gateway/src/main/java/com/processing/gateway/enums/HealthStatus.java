@@ -2,6 +2,9 @@ package com.processing.gateway.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+/**
+ * Health state used for gateway and downstream service checks.
+ */
 public enum HealthStatus {
     OK,
     UNAVAILABLE,

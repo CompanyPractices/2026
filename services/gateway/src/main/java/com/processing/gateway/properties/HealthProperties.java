@@ -4,6 +4,9 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+/**
+ * Configuration for downstream health-check HTTP requests.
+ */
 @ConfigurationProperties(prefix = "gateway.health")
 @Component
 @Data
