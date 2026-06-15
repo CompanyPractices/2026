@@ -15,15 +15,11 @@ import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,6 +29,10 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 /**
  * Сервис авторизации транзакций по банковским картам.
@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final WebClient webClient;
+    private final RestClient restClient;
 
     /**
      * Базовый URL Card Management System.
@@ -218,28 +218,22 @@ public class AuthService {
         String url = getCardUrl + "/" + pan;
         log.debug("Getting card info for pan {}", maskPAN(pan));
 
-        CardModel response = webClient.get()
+        return restClient.get()
             .uri(url)
             .retrieve()
-            .onStatus(status -> status == HttpStatus.NOT_FOUND, clientResponse -> {
-                log.debug("Card not found: " + maskPAN(pan));
-                return Mono.error(new CardNotFoundException("Card not found: " + maskPAN(pan)));
+            .onStatus(status -> status.value() == 404, (req, res) -> {
+                log.debug("Card not found: {}", maskPAN(pan));
+                throw new CardNotFoundException("Card not found: " + maskPAN(pan));
             })
-            .onStatus(status -> status == HttpStatus.SERVICE_UNAVAILABLE, clientResponse -> {
-                log.debug("Card Management service unavailable: {}", clientResponse.statusCode());
-                return Mono
-                    .error(new ServiceUnavailableException(
-                        "Card Management service unavailable: " + clientResponse.statusCode()));
+            .onStatus(status -> status.value() == 503, (req, res) -> {
+                log.debug("Card Management service unavailable");
+                throw new ServiceUnavailableException("Card Management service unavailable");
             })
-            .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
-                return Mono
-                    .error(new CardNotFoundException(
-                        "Failed to get card. Status: " + clientResponse.statusCode()));
+            .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                log.debug("Failed to get card. Status: {}", res.getStatusCode());
+                throw new CardNotFoundException("Failed to get card. Status: " + res.getStatusCode());
             })
-            .bodyToMono(CardModel.class)
-            .block();
-        return response;
+            .body(CardModel.class);
     }
 
     /**
@@ -272,18 +266,16 @@ public class AuthService {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
         String url = cmsUrl + "/api/cards/" + pan + "/reserve";
         log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
-        String response = webClient.post()
+        restClient.post()
             .uri(url)
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(reserveRequest)
+            .body(reserveRequest)
             .retrieve()
-            .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                log.debug("Reserve failed. Status: {}", clientResponse.statusCode());
-                return Mono.error(
-                    new ReserveCardException("Failed to reserve. Status: " + clientResponse.statusCode()));
+            .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                log.debug("Reserve failed. Status: {}", res.getStatusCode());
+                throw new ReserveCardException("Failed to reserve. Status: " + res.getStatusCode());
             })
-            .bodyToMono(String.class)
-            .block();
+            .toBodilessEntity();
 
         log.debug("Reserve successful for card {}", maskPAN(pan));
     }
