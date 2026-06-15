@@ -9,7 +9,8 @@ COPY ./services/authorization/pom.xml ./authorization/pom.xml
 COPY ./services/common/src ./common/src
 COPY ./services/authorization/src ./authorization/src
 
-RUN mvn -P authorization -pl authorization -am package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -P authorization -pl authorization -am package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
