@@ -70,11 +70,11 @@ info "2. Generating test cards..."
 
 CARDS_RESPONSE=$(curl -s -X POST "$GATEWAY/api/cards/generate" \
     -H "Content-Type: application/json" \
-    -d '{"count": 20, "bins": ["400000","400001","400002","400003","400004"]}' \
+    -d '{"count": 500, "bins": ["400000","400001","400002","400003","400004"]}' \
     --connect-timeout 10)
 
 GENERATED=$(echo "$CARDS_RESPONSE" | jq -r '.generated // 0')
-if [ "$GENERATED" -ge 20 ]; then
+if [ "$GENERATED" -ge 500 ]; then
     pass "Cards generated: $GENERATED"
 else
     fail "Card generation returned $GENERATED cards (expected >= 20)"
@@ -104,8 +104,8 @@ TX_RESPONSE=$(curl -s -X POST "$GATEWAY/api/transactions" \
         \"amount\": 150000,
         \"currencyCode\": \"643\",
         \"transmissionDateTime\": \"2026-06-01T10:30:00Z\",
-        \"terminalId\": \"TERM001\",
-        \"merchantId\": \"MERCH00000000001\",
+        \"terminalId\": \"TERM0001\",
+        \"merchantId\": \"MERCH0000000001\",
         \"mcc\": \"5411\",
         \"acquirerId\": \"ACQ001\"
     }" \
