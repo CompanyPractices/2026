@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -393,5 +394,19 @@ class AuthServiceTest {
         String result = authService.maskPAN(input);
 
         assertEquals(input.length(), result.length());
+    }
+
+    @Test
+    void testAccumulatedRoundingError_withBigDecimalShouldBeExact() {
+        BigDecimal limit = new BigDecimal("1000.00");
+        BigDecimal amount = new BigDecimal("333.34");
+
+        BigDecimal firstReserve = amount;
+        BigDecimal secondReserve = amount;
+        BigDecimal thirdReserve = amount;
+        BigDecimal totalUsed = firstReserve.add(secondReserve).add(thirdReserve);
+
+        boolean isExceeded = totalUsed.compareTo(limit) > 0;
+        assertTrue(isExceeded, "Превышение лимита с типом long не было бы обнаружено");
     }
 }
