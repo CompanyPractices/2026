@@ -67,7 +67,6 @@ public class CardGeneratorService {
                     balance
             );
 
-            eventNotifier.onEvent(new CardGeneratedEvent(card.status()));
             cards.add(card);
 
             if (cards.size() == generatorOptions.batchSize()) {
@@ -79,6 +78,8 @@ public class CardGeneratorService {
         if (!cards.isEmpty()) {
             result.addAll(cardService.createCards(cards));
         }
+
+        result.forEach(c -> eventNotifier.onEvent(new CardGeneratedEvent(c.status())));
 
         log.info("Successfully generated {} cards", count);
         return result;
