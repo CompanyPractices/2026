@@ -8,6 +8,10 @@ import lombok.Data;
 
 import java.time.LocalDate;
 
+/**
+ * Параметры фильтрации и пагинации для поиска транзакций.
+ * Все поля опциональны. Ненулевые поля объединяются через AND в {@link TransactionSpecification}.
+ */
 @Data
 @ValidDateRange
 public class TransactionFilter {

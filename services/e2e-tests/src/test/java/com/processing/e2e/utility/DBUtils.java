@@ -1,4 +1,6 @@
-package com.processing.e2e.ulility;
+package com.processing.e2e.utility;
+
+import com.processing.e2e.E2EBaseTest;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -8,29 +10,14 @@ import java.sql.SQLException;
 
 public class DBUtils {
 
-    private static final String DB_URL      = "";
-    private static final String DB_USER     = "";
-    private static final String DB_PASSWORD = "";
-
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-    }
-
-    public ResultSet executeQuery(String sql, Object... params) throws SQLException {
-        Connection conn = getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql);
-        for (int i = 0; i < params.length; i++) {
-            ps.setObject(i + 1, params[i]);
-        }
-        return ps.executeQuery();
+        return DriverManager.getConnection(E2EBaseTest.jdbcUrl(), E2EBaseTest.DB_USER, E2EBaseTest.DB_PASSWORD);
     }
 
     public long queryLong(String sql, Object... params) throws SQLException {
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (int i = 0; i < params.length; i++) {
-                ps.setObject(i + 1, params[i]);
-            }
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong(1);
@@ -42,16 +29,28 @@ public class DBUtils {
 
     public String queryString(String sql, Object... params) throws SQLException {
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (int i = 0; i < params.length; i++) {
-                ps.setObject(i + 1, params[i]);
-            }
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getString(1);
                 }
                 throw new SQLException("No result for: " + sql);
             }
+        }
+    }
+
+    public int executeUpdate(String sql, Object... params) throws SQLException {
+        try (Connection conn = getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindParams(ps, params);
+            return ps.executeUpdate();
+        }
+    }
+
+    private static void bindParams(PreparedStatement ps, Object... params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            ps.setObject(i + 1, params[i]);
         }
     }
 }

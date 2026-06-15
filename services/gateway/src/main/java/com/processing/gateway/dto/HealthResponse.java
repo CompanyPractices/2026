@@ -1,10 +1,20 @@
 package com.processing.gateway.dto;
 
+import com.processing.gateway.enums.HealthStatus;
+
 import java.util.Map;
 
+/**
+ * Aggregated health-check response returned by the gateway.
+ *
+ * @param status overall gateway status
+ * @param service service name
+ * @param version gateway version
+ * @param services downstream service statuses keyed by service name
+ */
 public record HealthResponse(
-        String status,
+        HealthStatus status,
         String service,
         String version,
-        Map<String, String> services
+        Map<String, HealthStatus> services
 ) {}

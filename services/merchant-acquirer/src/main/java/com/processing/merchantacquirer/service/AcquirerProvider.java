@@ -2,7 +2,7 @@ package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeResponse;
-import com.processing.merchantacquirer.domain.entity.Merchant;
+import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.repository.AcquirerFeeRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,20 +12,27 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class AcquirerProvider {
-    public final AcquirerFeeRepository repository;
+    private final AcquirerFeeRepository repository;
+    private final MerchantProvider merchantProvider;
 
-    public void calculateFee(Merchant merchant, Long amount, String stan, String pan, String terminalId) {
-        double acquiringFee = (double) amount * merchant.getAcquiringFee().doubleValue();
+    public void calculateFee(
+            String merchantId, Long amount, String transmissionDateTime, String stan, String terminalId, String pan) {
+        Long fee = merchantProvider.getMerchantAcquirerFee(merchantId);
+        Long acquiringFee = amount * fee / 1000;
 
-        repository.save(new AcquirerFeeRequest(stan, pan, terminalId), acquiringFee);
-        log.info("Calculate acquirer fee: STAN: {} PAN: {} Acquirer fee: {} TerminalID: {}", stan, pan, acquiringFee, terminalId);
+        AcquirerFee acquirerFeeEntity = new AcquirerFee(transmissionDateTime, stan, pan, terminalId, acquiringFee, amount);
+        repository.save(acquirerFeeEntity);
+        log.info("Calculate acquirer fee: {}",
+                acquirerFeeEntity);
     }
 
     public AcquirerFeeResponse getAcquirerFee(AcquirerFeeRequest request) {
-        double acquirerFee = repository.get(request);
-        log.info("Request for get acquirer fee: STAN: {} PAN: {} Acquirer fee: {}",
-                request.stan(), request.pan(), acquirerFee);
+        Long acquirerFee = repository.findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
+                request.transmissionDateTime(), request.stan(), request.terminalId(),
+                request.amount(), request.pan()).getAcquirerFee();
+        log.info("Request for get acquirer fee: DataTime: {} STAN: {} Acquirer fee: {}",
+                request.transmissionDateTime(), request.stan(), acquirerFee);
 
-        return new AcquirerFeeResponse(request.stan(), request.pan(), acquirerFee);
+        return new AcquirerFeeResponse(acquirerFee);
     }
 }

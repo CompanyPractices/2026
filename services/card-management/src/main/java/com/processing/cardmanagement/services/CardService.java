@@ -79,7 +79,7 @@ public interface CardService {
      *
      * @return количество карт
      */
-    long countCards();
+    long countAllCards();
 
     /**
      * Считает количество карт, удовлетворяющее фильтрам
@@ -91,7 +91,7 @@ public interface CardService {
      * @param endDate   конец диапазона дат
      * @return количество карт
      */
-    long countCards(
+    long countCardsFiltered(
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,

@@ -6,32 +6,29 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.authorization.entities.LimitUsage;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
-import com.processing.authorization.exceptions.CardNotFoundException;
-import com.processing.authorization.exceptions.ReserveCardException;
-import com.processing.authorization.exceptions.ServiceUnavailableException;
+import com.processing.authorization.exceptions.*;
 import com.processing.common.dto.cardmanagement.ReserveRequest;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Calendar;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClient;
 
 /**
  * Сервис авторизации транзакций по банковским картам.
@@ -60,7 +57,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final WebClient webClient;
+    private final RestClient restClient;
 
     /**
      * Базовый URL Card Management System.
@@ -89,7 +86,7 @@ public class AuthService {
      * @see AuthorizationRequest
      * @see AuthorizationResponse
      */
-    @Transactional
+    @Transactional(rollbackFor = { Exception.class })
     public AuthorizationResponse authorize(AuthorizationRequest request, LocalDateTime requestInputTime) {
         CardModel cardResponse;
         try {
@@ -97,7 +94,7 @@ public class AuthService {
         } catch (CardNotFoundException e) {
             log.error("card not found for pan: {}", maskPAN(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.build(request, requestInputTime);
-        } catch (ServiceUnavailableException | WebClientResponseException e) {
+        } catch (ServiceUnavailableException | ResourceAccessException e) {
             log.error("service unavailable for pan: {}", maskPAN(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.build(request, requestInputTime);
         } catch (Exception e) {
@@ -118,7 +115,13 @@ public class AuthService {
             };
         }
 
-        LocalDate transmissionDate = LocalDateTime.parse(request.transmissionDateTime()).toLocalDate();
+        LocalDate transmissionDate;
+        if (request.transmissionDateTime().endsWith("Z")) {
+            transmissionDate = OffsetDateTime.parse(request.transmissionDateTime()).toLocalDate();
+        } else {
+            transmissionDate = LocalDateTime.parse(request.transmissionDateTime()).toLocalDate();
+        }
+
         LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
         if (lastValidDay.isBefore(transmissionDate)) {
             return DeclineOutcome.CARD_EXPIRED.build(request, requestInputTime);
@@ -128,7 +131,7 @@ public class AuthService {
             return DeclineOutcome.INSUFFICIENT_FUNDS.build(request, requestInputTime);
         }
 
-        Optional<LimitUsage> currLimitUsage =  limitUsageRepository
+        Optional<LimitUsage> currLimitUsage = limitUsageRepository
                 .findByPanAndUsageDate(request.pan(), transmissionDate);
 
         if (currLimitUsage.isPresent()) {
@@ -202,34 +205,28 @@ public class AuthService {
      * @see CardNotFoundException
      * @see ServiceUnavailableException
      */
-    public CardModel getCard(String pan) throws Exception {
+    public CardModel getCard(String pan) {
         String fullUrl = cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
-        String getCardhUrl = fullUrl + "/api/cards";
-        String url = getCardhUrl + "/" + pan;
+        String getCardUrl = fullUrl + "/api/cards";
+        String url = getCardUrl + "/" + pan;
         log.debug("Getting card info for pan {}", maskPAN(pan));
 
-        CardModel response = webClient.get()
-                .uri(url)
-                .retrieve()
-                .onStatus(status -> status == HttpStatus.NOT_FOUND, clientResponse -> {
-                    log.debug("Card not found: " + maskPAN(pan));
-                    return Mono.error(new CardNotFoundException("Card not found: " + maskPAN(pan)));
-                })
-                .onStatus(status -> status == HttpStatus.SERVICE_UNAVAILABLE, clientResponse -> {
-                    log.debug("Card Management service unavaliable: ", clientResponse.statusCode());
-                    return Mono
-                            .error(new ServiceUnavailableException(
-                                    "Card Management service unavaliable: " + clientResponse.statusCode()));
-                })
-                .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                    log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
-                    return Mono
-                            .error(new CardNotFoundException(
-                                    "Failed to get card. Status: " + clientResponse.statusCode()));
-                })
-                .bodyToMono(CardModel.class)
-                .block();
-        return response;
+        return restClient.get()
+            .uri(url)
+            .retrieve()
+            .onStatus(status -> status.value() == 404, (req, res) -> {
+                log.debug("Card not found: {}", maskPAN(pan));
+                throw new CardNotFoundException("Card not found: " + maskPAN(pan));
+            })
+            .onStatus(status -> status.value() == 503, (req, res) -> {
+                log.debug("Card Management service unavailable");
+                throw new ServiceUnavailableException("Card Management service unavailable");
+            })
+            .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                log.debug("Failed to get card. Status: {}", res.getStatusCode());
+                throw new CardNotFoundException("Failed to get card. Status: " + res.getStatusCode());
+            })
+            .body(CardModel.class);
     }
 
     /**
@@ -258,24 +255,20 @@ public class AuthService {
      * @see ReserveRequest
      * @see ReserveCardException
      */
-    public void reserve(long amount, String rrn, String pan) throws Exception {
+    public void reserve(long amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
         String url = cmsUrl + "/api/cards/" + pan + "/reserve";
         log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
-        String response = webClient.post()
-                .uri(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(reserveRequest)
-                .retrieve()
-                .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                    log.debug("Reserve failed. Status: {}", clientResponse.statusCode());
-                    return Mono.error(
-                            new ReserveCardException("Failed to reserve. Status: " + clientResponse.statusCode()));
-                })
-                .bodyToMono(String.class)
-                .block();
+        restClient.post()
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(reserveRequest)
+            .retrieve()
+            .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                log.debug("Reserve failed. Status: {}", res.getStatusCode());
+                throw new ReserveCardException("Failed to reserve. Status: " + res.getStatusCode());
+            })
+            .toBodilessEntity();
 
         log.debug("Reserve successful for card {}", maskPAN(pan));
     }
@@ -314,11 +307,11 @@ public class AuthService {
         Calendar calendar = Calendar.getInstance();
 
         String currentSecond = String.format("%1d%03d%02d%02d%02d",
-                calendar.get(Calendar.YEAR) % 10,
-                calendar.get(Calendar.DAY_OF_YEAR),
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                calendar.get(Calendar.SECOND));
+            calendar.get(Calendar.YEAR) % 10,
+            calendar.get(Calendar.DAY_OF_YEAR),
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            calendar.get(Calendar.SECOND));
 
         String nextValue;
         while (true) {
@@ -360,8 +353,8 @@ public class AuthService {
      */
     public String generateAuthCode() {
         return new Random().ints(6, 0, 36)
-                .mapToObj(i -> Character.toString(i < 10 ? '0' + i : 'A' + i - 10))
-                .collect(Collectors.joining());
+            .mapToObj(i -> Character.toString(i < 10 ? '0' + i : 'A' + i - 10))
+            .collect(Collectors.joining());
     }
 
     /**

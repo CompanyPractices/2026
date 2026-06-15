@@ -24,14 +24,17 @@ public class RouteService {
 
     private final RoutingService routingService;
     private final AuthorizationClient authorizationClient;
+    private final AcquiringFeeClient acquiringFeeClient;
     private final LoggerClient loggerClient;
 
     public RouteService(
             RoutingService routingService,
             AuthorizationClient authorizationClient,
+            AcquiringFeeClient acquiringFeeClient,
             LoggerClient loggerClient) {
         this.routingService = routingService;
         this.authorizationClient = authorizationClient;
+        this.acquiringFeeClient = acquiringFeeClient;
         this.loggerClient = loggerClient;
     }
 
@@ -39,6 +42,8 @@ public class RouteService {
         long startMs = System.currentTimeMillis();
         String pan = request.pan();
         String bin = pan != null && pan.length() >= 6 ? pan.substring(0, 6) : "??????";
+
+        AuthorizationRequest normalizedRequest = AuthorizationRequestNormalizer.normalize(request);
 
         String issuerId;
         try {
@@ -48,7 +53,7 @@ public class RouteService {
             return AuthorizationResponse.unknownBin(request.stan());
         }
 
-        AuthorizationRequest routedRequest = request.withIssuerId(issuerId);
+        AuthorizationRequest routedRequest = normalizedRequest.withIssuerId(issuerId);
 
         AuthorizationResponse response;
         try {
@@ -58,7 +63,15 @@ public class RouteService {
             return AuthorizationResponse.authUnavailable(request.stan());
         }
 
-        TransactionRequest transaction = buildTransaction(routedRequest, response);
+        Long acquiringFee = acquiringFeeClient.fetchAcquiringFee(
+                routedRequest.transmissionDateTime(),
+                routedRequest.stan(),
+                routedRequest.pan(),
+                routedRequest.terminalId(),
+                routedRequest.amount()
+        );
+
+        TransactionRequest transaction = buildTransaction(routedRequest, response, acquiringFee);
 
         boolean logged;
         try {
@@ -83,7 +96,8 @@ public class RouteService {
 
     private TransactionRequest buildTransaction(
             AuthorizationRequest request,
-            AuthorizationResponse response) {
+            AuthorizationResponse response,
+            Long acquiringFee) {
         return new TransactionRequest(
                 UUID.randomUUID(),
                 request.mti(),
@@ -99,7 +113,7 @@ public class RouteService {
                 request.mcc(),
                 request.acquirerId(),
                 request.issuerId(),
-                null,
+                acquiringFee,
                 toTransactionStatus(response.status()),
                 response.declineReason(),
                 response.authCode(),

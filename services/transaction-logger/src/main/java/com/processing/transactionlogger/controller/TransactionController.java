@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Контроллер публичного API для поиска транзакций.
+ * Gateway перенаправляет сюда запросы от Dashboard и CMS.
+ */
 @Tag(name = "Transactions", description = "Поиск транзакций")
 @RestController
 @RequestMapping("/api/transactions")
@@ -22,6 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransactionController {
     private final TransactionService transactionService;
 
+    /**
+     * Ищет транзакции по опциональным фильтрам с пагинацией
+     *
+     * @param filter параметры фильтрации и пагинации из query-параметров
+     * @return постраничный результат с общим счётчиком
+     */
     @Operation(
             summary = "Поиск транзакций",
             description = "Фильтр с пагинацией. Все параметры опциональны, активные объединяются через AND.",

@@ -7,12 +7,14 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TransactionSender {
-  public final GatewayClient gatewayClient;
+  private final GatewayClient gatewayClient;
 
   public SimulatorStats sendAll(List<AuthorizationRequest> requests) {
     List<AuthorizationResponse> responses = new ArrayList<>(requests.size());
@@ -29,6 +31,7 @@ public class TransactionSender {
             new AuthorizationResponse(
                 "0100", request.stan(), null, null, "505", "DECLINED", e.getMessage(), 999);
       }
+      log.info("AuthorizationResponse: {} ", response);
       responses.add(response);
 
       if (response.status().equals("APPROVED")) {

@@ -9,6 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Binds Spring Cloud Gateway MVC route definitions used by custom filters.
+ *
+ * <p>The resolver reads route predicates and {@code serviceName} metadata from
+ * this structure so filters do not duplicate route-to-service mappings.</p>
+ */
 @Component
 @ConfigurationProperties(prefix = "spring.cloud.gateway.mvc")
 @Data
@@ -16,6 +22,9 @@ public class GatewayRouteProperties {
 
     private List<RouteDefinition> routes = new ArrayList<>();
 
+    /**
+     * Minimal route definition model needed by gateway filters.
+     */
     @Data
     public static class RouteDefinition {
         private String id;

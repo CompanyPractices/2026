@@ -1,6 +1,5 @@
 package com.processing.controller;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.SwitchTestData;
@@ -14,29 +13,25 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
 class RouteControllerTest {
-
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
-
 
     @BeforeEach
     void setUp() {
         RouteService routeService = new RouteService(
                 new RoutingService(SwitchTestData.defaultProperties()),
                 new CapturingAuthorizationClient(),
+                (transmissionDateTime, stan, pan, terminalId, amount) -> null,
                 new TrackingLoggerClient(true));
         mockMvc = MockMvcBuilders.standaloneSetup(new RouteController(routeService)).build();
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
-
 
     @Test
     void route_returnsAuthorizationResponse() throws Exception {

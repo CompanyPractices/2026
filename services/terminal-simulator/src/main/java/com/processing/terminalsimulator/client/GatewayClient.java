@@ -1,10 +1,10 @@
 package com.processing.terminalsimulator.client;
 
-import com.processing.terminalsimulator.dto.Card;
-import com.processing.terminalsimulator.dto.CardsManagementResponse;
-import com.processing.terminalsimulator.model.CardStatus;
-import com.processing.terminalsimulator.dto.AuthorizationRequest;
-import com.processing.terminalsimulator.dto.AuthorizationResponse;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.cardmanagement.CardModel;
+import com.processing.common.dto.cardmanagement.CardModelStatus;
+import com.processing.common.dto.cardmanagement.GetCardsResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -33,14 +33,14 @@ public class GatewayClient {
         return response.getBody();
     }
 
-    public List<Card> getCardsFromCardManager(CardStatus status, int amount) {
+    public List<CardModel> getCardsFromCardManager(CardModelStatus status, int amount) {
         String fullUrl = UriComponentsBuilder.fromUriString(cardManagementUrl)
                 .queryParam("status", status)
                 .queryParam("limit", amount != 0 ? amount : null)
                 .build()
                 .toUriString();
-        ResponseEntity<CardsManagementResponse> response = rest.getForEntity(fullUrl, CardsManagementResponse.class);
-        CardsManagementResponse resp = response.getBody();
+        ResponseEntity<GetCardsResponse> response = rest.getForEntity(fullUrl, GetCardsResponse.class);
+        GetCardsResponse resp = response.getBody();
         if (resp == null || resp.total() == 0 || resp.cards().isEmpty()) {
             throw new IllegalStateException("No " + status + " cards available");
         }
