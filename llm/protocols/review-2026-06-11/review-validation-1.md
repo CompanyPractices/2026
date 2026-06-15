@@ -46,11 +46,11 @@ Cross-check review.md statements vs source. Inconsistencies only. OK statements 
 ## Switch
 
 ### #7 Wrong package references
-- **review.md:145**: `com.processing.switch.service.RouteService`  
+- **review.md:145**: `com.processing.switch.service.RouteService`
   **Actual**: `com.processing.service.RouteService` (no `switch` in package)
-- **review.md:166**: `client/MerchantAcquirerClient`  
+- **review.md:166**: `client/MerchantAcquirerClient`
   **Actual**: `service/MerchantAcquirerClient`
-- **review.md:170**: `client/AuthorizationClient`  
+- **review.md:170**: `client/AuthorizationClient`
   **Actual**: `service/AuthorizationClient`
 - **Fix**: update package/path references
 
@@ -141,13 +141,13 @@ Cross-check review.md statements vs source. Inconsistencies only. OK statements 
 - **Fix**: 5 → 6
 
 ### #21 Line numbers off
-- **review.md:330**: "TransactionRepository:14" — `sumAmount`  
+- **review.md:330**: "TransactionRepository:14" — `sumAmount`
   **Actual**: @Query at line 14, method `long sumAmount()` at line 15
-- **review.md:332**: "TransactionRepository:16" — `averageProcessingTimeMs`  
+- **review.md:332**: "TransactionRepository:16" — `averageProcessingTimeMs`
   **Actual**: `long countByCreatedAtAfter` at line 16, `averageProcessingTimeMs()` at lines 17-18
-- **review.md:340**: "Transaction:59" — `createdAt`  
+- **review.md:340**: "Transaction:59" — `createdAt`
   **Actual**: `private Instant createdAt` at line 61
-- **review.md:358**: "TransactionFilter:12" — `@Pattern` regex  
+- **review.md:358**: "TransactionFilter:12" — `@Pattern` regex
   **Actual**: `@Pattern` at line 15, line 12 is `@ValidDateRange`
 - **Fix**: correct line numbers
 
