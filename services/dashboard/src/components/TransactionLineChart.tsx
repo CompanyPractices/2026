@@ -11,6 +11,12 @@ type LineChartProps = {
 }
 
 export default function TransactionLineChart({transactions, loading, error} : LineChartProps) {
+    const { theme } = useContext(ThemeContext)!;
+    const isDark = theme === 'dark';
+
+    const textColor = isDark ? '#ECF6DA' : '#273338';
+    const gridColor = isDark ? '#E5E7EB' : '#344148';
+
 
     function prepareData(transactions: Transaction[]){
         const hourAgo = subHours(new Date(), 1)
@@ -47,12 +53,6 @@ export default function TransactionLineChart({transactions, loading, error} : Li
             </div>
         )
     }
-
-    const { theme } = useContext(ThemeContext)!;
-    const isDark = theme === 'dark';
-
-    const textColor = isDark ? '#ECF6DA' : '#273338';
-    const gridColor = isDark ? '#E5E7EB' : '#344148';
 
     return (
         <div className="w-full h-full">
