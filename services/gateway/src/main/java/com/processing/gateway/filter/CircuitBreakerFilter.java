@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
 import com.processing.gateway.circuitbreaker.InMemoryCircuitBreaker;
 import com.processing.gateway.service.DownstreamServiceResolver;
+import com.processing.gateway.utils.DownstreamExceptionUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,14 +17,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
-import java.net.http.HttpConnectTimeoutException;
-import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -81,21 +77,21 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } catch (Exception e) {
-            if (isDownstreamUnavailable(e)) {
+            if (DownstreamExceptionUtils.isDownstreamUnavailable(e)) {
                 circuitBreaker.recordFailure(downstreamService);
             } else {
                 circuitBreaker.releaseRequest(downstreamService);
             }
 
-            rethrow(e);
+            DownstreamExceptionUtils.rethrow(e);
         }
 
         int status = response.getStatus();
         if (status >= HttpStatus.INTERNAL_SERVER_ERROR.value()) {
             circuitBreaker.recordFailure(downstreamService);
             return;
-
-        } else if (status == HttpStatus.NOT_FOUND.value()
+        }
+        if (status == HttpStatus.NOT_FOUND.value()
                 || status == HttpStatus.METHOD_NOT_ALLOWED.value()) {
             circuitBreaker.releaseRequest(downstreamService);
             return;
@@ -103,24 +99,6 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
 
 
         circuitBreaker.recordSuccess(downstreamService);
-    }
-
-    private boolean isDownstreamUnavailable(Throwable throwable) {
-        Throwable current = throwable;
-
-        while (current != null) {
-            if (current instanceof ResourceAccessException
-                    || current instanceof ConnectException
-                    || current instanceof SocketTimeoutException
-                    || current instanceof HttpTimeoutException
-                    || current instanceof HttpConnectTimeoutException) {
-                return true;
-            }
-
-            current = current.getCause();
-        }
-
-        return false;
     }
 
     private void writeCircuitOpen(HttpServletResponse response, String serviceName) throws IOException {
@@ -135,17 +113,4 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
         ));
     }
 
-    private void rethrow(Exception exception) throws ServletException, IOException {
-        if (exception instanceof ServletException servletException) {
-            throw servletException;
-        }
-        if (exception instanceof IOException ioException) {
-            throw ioException;
-        }
-        if (exception instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-
-        throw new ServletException(exception);
-    }
 }
