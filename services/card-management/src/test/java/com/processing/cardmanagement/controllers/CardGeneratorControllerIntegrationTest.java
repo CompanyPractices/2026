@@ -55,9 +55,7 @@ public class CardGeneratorControllerIntegrationTest {
                 .when()
                 .post("/api/cards/generate")
                 .then()
-                .statusCode(201)
-                .extract()
-                .jsonPath();
+                .statusCode(201);
     }
 
     @Test
