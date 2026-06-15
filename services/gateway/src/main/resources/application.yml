@@ -157,6 +157,19 @@ gateway:
     connection-timeout: 5
     request-timeout: 3
     url: /health
+  api-keys:
+    master-key: qD83RKKzmM/jd1eZV3nUNA==
+    rules:
+      - url: /api/transactions
+        method: POST
+        role: WRITE
+      - url: /api/keys
+        method: POST
+        role: ADMIN
+    exceptions:
+      - url: /health
+        method: GET
+      - url: /docs
 
 #---
 # Swagger

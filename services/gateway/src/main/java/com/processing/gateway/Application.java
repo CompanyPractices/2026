@@ -1,5 +1,6 @@
 package com.processing.gateway;
 
+import com.processing.gateway.properties.ApiKeysProperties;
 import com.processing.gateway.properties.GatewayProperties;
 import com.processing.gateway.properties.OpenApiProperties;
 import com.processing.gateway.properties.ServiceProperties;
@@ -12,7 +13,11 @@ import org.springframework.cache.annotation.EnableCaching;
  * Spring Boot entry point for Gateway Service.
  */
 @SpringBootApplication
-@EnableConfigurationProperties({ServiceProperties.class, OpenApiProperties.class, GatewayProperties.class})
+@EnableConfigurationProperties({
+        ServiceProperties.class,
+        OpenApiProperties.class,
+        GatewayProperties.class,
+        ApiKeysProperties.class})
 @EnableCaching
 public class Application {
 

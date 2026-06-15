@@ -8,6 +8,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.AntPathMatcher;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
@@ -59,5 +60,10 @@ public class BeanConfiguration {
     @Bean
     public Cache gatewayCache(CacheManager cacheManager) {
         return cacheManager.getCache("gateway-cache");
+    }
+
+    @Bean
+    public AntPathMatcher antPathMatcher() {
+        return new AntPathMatcher();
     }
 }
