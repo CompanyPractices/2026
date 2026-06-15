@@ -52,7 +52,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                 </h2>
                 <button
                     className="
-                    px-5 py-1 text-lg rounded-3xl bg-emerald-400 dark:bg-sage-200 dark:text-sage-400 font-semibold cursor-pointer
+                    px-3 md:px-5 py-1 md:py-1 text-md md:text-lg rounded-xl md:rounded-3xl bg-emerald-400 dark:bg-sage-200 dark:text-sage-400 font-semibold cursor-pointer
                     hover:bg-emerald-500 hover:text-zinc-200 transition-colors duration-200
                     dark:hover:bg-sage-100 dark:hover:text-sage-500
                     flex items-center gap-1
@@ -82,18 +82,18 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
             }
 
             {!loading && !error && liveTransactions.length > 0 &&
-                <div className="rounded-3xl border-2 border-emerald-600 dark:border-sage-200 shadow-lg mb-5">
+                <div className="rounded-xl border-2 border-emerald-600 dark:border-sage-200 shadow-lg mb-5">
 
                 <div className="overflow-x-auto">
 
                     <table className="w-full min-w-[900px] text-sm">
                         <thead>
                         <tr className="border-b-2 border-emerald-600 dark:border-sage-200 text-center font-semibold dark:text-sage-50">
-                            <th className="px-6 py-4">Время</th>
-                            <th className="px-6 py-4">PAN</th>
-                            <th className="px-6 py-4 text-right">Сумма</th>
-                            <th className="px-6 py-4">Мерчант</th>
-                            <th className="px-6 py-4">Статус</th>
+                            <th className="px-3 md:px-6 py-2 md:py-4">Время</th>
+                            <th className="px-3 md:px-6 py-2 md:py-4">PAN</th>
+                            <th className="px-3 md:px-6 py-2 md:py-4 text-right">Сумма</th>
+                            <th className="px-3 md:px-6 py-2 md:py-4">Мерчант</th>
+                            <th className="px-3 md:px-6 py-2 md:py-4">Статус</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -106,11 +106,11 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                                     className="text-center cursor-pointer hover:bg-emerald-50 dark:hover:bg-sage-400 transition-colors border-b border-gray-100 dark:border-sage-400 last:border-0 dark:text-sage-50"
                                     onClick={() => setSelectedTx(transaction)}
                                 >
-                                    <td className="px-6 py-3">{formatTime(transaction.transmissionDateTime)}</td>
-                                    <td className="px-6 py-3">{hidePan(transaction.pan)}</td>
-                                    <td className="px-6 py-3 text-right">{convertPenniesToRubles(transaction.amount)}</td>
-                                    <td className="px-6 py-3 ">{transaction.merchantId}</td>
-                                    <td className="px-6 py-3">
+                                    <td className="px-3 md:px-6 py-2 md:py-4">{formatTime(transaction.transmissionDateTime)}</td>
+                                    <td className="px-3 md:px-6 py-2 md:py-4">{hidePan(transaction.pan)}</td>
+                                    <td className="px-3 md:px-6 py-2 md:py-4 text-right">{convertPenniesToRubles(transaction.amount)}</td>
+                                    <td className="px-3 md:px-6 py-2 md:py-4">{transaction.merchantId}</td>
+                                    <td className="px-3 md:px-6 py-2 md:py-4">
                                         <div className="flex justify-center items-center gap-2">
                                             <statusIconData.icon
                                                 className={statusIconData.color}

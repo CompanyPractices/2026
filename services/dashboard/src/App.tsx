@@ -28,7 +28,7 @@ function App() {
 
             <main className="w-[95%] md:w-[90%] xl:w-3/4 flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
 
-                <div className="bg-zinc-300 dark:bg-sage-400 rounded-lg shadow-lg flex flex-col p-4">
+                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
                     <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
                         Транзакции за последний час
                     </h2>
@@ -37,7 +37,7 @@ function App() {
                     </div>
                 </div>
 
-                <div className="bg-zinc-300 dark:bg-sage-400 rounded-lg shadow-lg flex flex-col p-4">
+                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
                     <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
                         Статистика одобрения транзакций
                     </h2>
@@ -51,7 +51,7 @@ function App() {
                 </div>
             </main>
 
-            <footer className="rounded-2xl m-4 w-5/6 h-24 grid grid-cols-3 gap-4 dark:text-sage-50">
+            <footer className="m-4 w-5/6 py-4 grid grid-cols-1 md:grid-cols-3 gap-4 dark:text-sage-50">
                 <h1 className="p-4 text-center text-xl font-mono font-bold">
                     Практика
                 </h1>

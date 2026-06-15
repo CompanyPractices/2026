@@ -24,7 +24,7 @@ export function KpiCards( { stats }: KpiCardsProps ) {
             {kpiCards.map((kpiCard) => (
                 <div
                     key={kpiCard.label}
-                    className="bg-emerald-300 rounded-xl p-3 md:p-4 text-base md:text-xl items-center shadow-lg text-center dark:bg-sage-300 dark:text-sage-50">
+                    className="bg-emerald-300 rounded-xl p-3 md:p-4 text-base md:text-xl shadow-lg text-center dark:bg-sage-300 dark:text-sage-50">
                     <p>{kpiCard.value} {kpiCard.unit}</p>
                     <p>{kpiCard.label}</p>
                 </div>

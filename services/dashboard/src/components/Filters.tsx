@@ -25,13 +25,13 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
             <div className="flex flex-wrap items-center gap-4 mb-4 dark:text-sage-50">
                 <span className="font-bold flex-grow">Фильтр по таблице</span>
                 <button
-                    className="dark:bg-sage-400 dark:border-sage-200 dark:hover:bg-sage-300 border rounded px-3 py-1 transition-colors"
+                    className="dark:bg-sage-400 dark:border-sage-200 dark:hover:bg-sage-300 border rounded-xl px-3 py-1 transition-colors"
                     type="submit"
                 >
                     Найти
                 </button>
                 <button
-                    className="dark:bg-sage-400 dark:border-sage-200 dark:hover:bg-sage-300 border rounded px-3 py-1 transition-colors"
+                    className="dark:bg-sage-400 dark:border-sage-200 dark:hover:bg-sage-300 border rounded-xl px-3 py-1 transition-colors"
                     type="button"
                     onClick={reset}
                 >
@@ -49,7 +49,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                             status: (e.target.value as FilterStatus) || undefined
                         })}
                         id="status"
-                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
+                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded-xl px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
                     >
                         <option value="">Все</option>
                         <option value="APPROVED">Одобрен</option>
@@ -66,7 +66,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                             issuerId: e.target.value || undefined
                         })}
                         id="issuer"
-                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
+                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded-xl px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
                     >
                         <option value="">Все</option>
                         {Object.keys(issuers).map((issuerId) => (
@@ -86,7 +86,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                             mcc: e.target.value || undefined
                         })}
                         id="mcc"
-                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
+                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded-xl px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
                     >
                         <option value="">Все</option>
                         {Object.keys(mccNames).map((mccCode) => (
@@ -107,7 +107,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                         })}
                         id="dateFrom"
                         type="date"
-                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
+                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded-xl px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
                     />
                 </div>
 
@@ -121,7 +121,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                         })}
                         id="dateTo"
                         type="date"
-                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
+                        className="dark:bg-sage-400 dark:text-sage-50 dark:border-sage-200 border rounded-xl px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sage-50"
                     />
                 </div>
             </div>
