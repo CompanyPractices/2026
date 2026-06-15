@@ -18,13 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -210,11 +211,16 @@ public class AuthService {
      * @see ServiceUnavailableException
      */
     public CardModel getCard(String pan) throws Exception {
-        String url = baseUrl() + "/api/cards/" + pan;
+        URI uri = UriComponentsBuilder
+            .fromUriString(cmsUrl)
+            .scheme("http")
+            .path("/api/cards/{pan}")
+            .buildAndExpand(pan)
+            .toUri();
         log.debug("Getting card info for pan {}", maskPAN(pan));
 
         CardModel response = webClient.get()
-                .uri(url)
+                .uri(uri)
                 .retrieve()
                 .onStatus(status -> status == HttpStatus.NOT_FOUND, clientResponse -> {
                     log.debug("Card not found: " + maskPAN(pan));
@@ -265,10 +271,15 @@ public class AuthService {
      */
     public void reserve(long amount, String rrn, String pan) throws Exception {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
-        String url = baseUrl() + "/api/cards/" + pan + "/reserve";
+        URI uri = UriComponentsBuilder
+            .fromUriString(cmsUrl)
+            .scheme("http")
+            .path("/api/cards/{pan}/reserve")
+            .buildAndExpand(pan)
+            .toUri();
         log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
         String response = webClient.post()
-                .uri(url)
+                .uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(reserveRequest)
                 .retrieve()
@@ -393,7 +404,5 @@ public class AuthService {
         return pan.substring(0, 4) + "*".repeat(8) + pan.substring(12);
     }
 
-    private String baseUrl() {
-        return cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
-    }
+
 }

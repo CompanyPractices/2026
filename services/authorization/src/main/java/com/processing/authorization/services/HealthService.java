@@ -1,5 +1,6 @@
 package com.processing.authorization.services;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,18 +86,22 @@ public class HealthService {
 
     private Response checkHealth(String serviceUrl) {
         try {
-            String fullUrl = serviceUrl.startsWith("http") ? serviceUrl : "http://" + serviceUrl;
-            String healthUrl = fullUrl + "/health";
-            log.debug("Checking health of {}", healthUrl);
+            log.debug("Checking health of {}", serviceUrl);
+            URI uri = UriComponentsBuilder
+            .fromUriString(serviceUrl)
+            .scheme("http")
+            .path("/health")
+            .build()
+            .toUri();
 
             Map<String, Object> body = webClient.get()
-                    .uri(healthUrl)
+                    .uri(uri)
                     .retrieve()
                     .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                        log.debug("Health check failed for {}", healthUrl);
+                        log.debug("Health check failed for {}", uri);
                         return Mono
                                 .error(new RuntimeException(
-                                        "Health check failed for {}" + healthUrl));
+                                        "Health check failed for {}" + uri));
                     })
                     .bodyToMono(Map.class)
                     .block();
