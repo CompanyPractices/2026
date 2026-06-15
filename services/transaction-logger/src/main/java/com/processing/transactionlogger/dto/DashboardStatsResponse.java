@@ -1,12 +1,14 @@
 package com.processing.transactionlogger.dto;
 
+import java.math.BigDecimal;
+
 public record DashboardStatsResponse(
     long totalTransactions,
     long approvedCount,
     long declinedCount,
     double approvalRate,
-    long totalAmount,
-    long averageAmount,
+    BigDecimal totalAmount,
+    BigDecimal averageAmount,
     double avgProcessingTimeMs,
     double transactionsPerMinute
 ) {}

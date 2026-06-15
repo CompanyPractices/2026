@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -59,7 +60,7 @@ public class InternalTransactionControllerIntegrationTest {
         assertThat(saved.getRrn()).isEqualTo(request.rrn());
         assertThat(saved.getPan()).isEqualTo(request.pan());
         assertThat(saved.getProcessingCode()).isEqualTo(request.processingCode());
-        assertThat(saved.getAmount()).isEqualTo(request.amount());
+        assertThat(saved.getAmount()).isEqualByComparingTo(request.amount());
         assertThat(saved.getCurrencyCode()).isEqualTo(request.currencyCode());
         assertThat(saved.getTerminalId()).isEqualTo(request.terminalId());
         assertThat(saved.getTerminalType()).isEqualTo(request.terminalType());
@@ -67,7 +68,7 @@ public class InternalTransactionControllerIntegrationTest {
         assertThat(saved.getMcc()).isEqualTo(request.mcc());
         assertThat(saved.getAcquirerId()).isEqualTo(request.acquirerId());
         assertThat(saved.getIssuerId()).isEqualTo(request.issuerId());
-        assertThat(saved.getAcquiringFee()).isEqualTo(request.acquiringFee());
+        assertThat(saved.getAcquiringFee()).isEqualByComparingTo(request.acquiringFee());
         assertThat(saved.getStatus()).isEqualTo(request.status());
         assertThat(saved.getDeclineReason()).isEqualTo(request.declineReason());
         assertThat(saved.getAuthCode()).isEqualTo(request.authCode());
@@ -108,7 +109,7 @@ public class InternalTransactionControllerIntegrationTest {
                 request.rrn(),
                 request.pan(),
                 request.processingCode(),
-                200000L,
+                new BigDecimal("200000"),
                 request.currencyCode(),
                 request.terminalId(),
                 request.terminalType(),
@@ -163,7 +164,7 @@ public class InternalTransactionControllerIntegrationTest {
 
     @Test
     void storeReturnsBadRequestForNegativeAmount() throws Exception {
-        TransactionRequest request = transactionRequestWithAmount(-1L);
+        TransactionRequest request = transactionRequestWithAmount(new BigDecimal("-1"));
 
         mockMvc.perform(post("/api/internal/log")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -192,15 +193,15 @@ public class InternalTransactionControllerIntegrationTest {
         assertThat(saved.getDeclineReason()).isEqualTo("INSUFFICIENT_FUNDS");
         assertThat(saved.getRrn()).isNull();
         assertThat(saved.getAuthCode()).isNull();
-        assertThat(saved.getAmount()).isEqualTo(request.amount());
+        assertThat(saved.getAmount()).isEqualByComparingTo(request.amount());
         assertThat(saved.getPan()).isEqualTo(request.pan());
     }
 
     private static TransactionRequest transactionRequest() {
-        return transactionRequestWithAmount(150000L);
+        return transactionRequestWithAmount(new BigDecimal("150000"));
     }
 
-    private static TransactionRequest transactionRequestWithAmount(long amount) {
+    private static TransactionRequest transactionRequestWithAmount(BigDecimal amount) {
         return new TransactionRequest(
                 TRANSACTION_ID,
                 "0100",
@@ -216,7 +217,7 @@ public class InternalTransactionControllerIntegrationTest {
                 "5411",
                 "ACQ001",
                 "ISS001",
-                2250L,
+                new BigDecimal("2250"),
                 TransactionStatus.APPROVED,
                 null,
                 "ABC123",
@@ -234,7 +235,7 @@ public class InternalTransactionControllerIntegrationTest {
                 null,
                 "4000001234560002",
                 "000000",
-                999999999L,
+                new BigDecimal("999999999"),
                 "643",
                 "TERM001",
                 "POS",

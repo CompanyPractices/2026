@@ -49,29 +49,29 @@ gateway.url: ${GATEWAY_URL:http://gateway:8080}
 # Scenarios
 simulation.scenarios.grocery:
   mcc: ["5411", "5499"]
-  count-lower: 100.00
-  count-upper: 3000.00
+  count-lower: 10000
+  count-upper: 300000
   time-lower: "08:00"
   time-upper: "22:00"
   avg-approved: 95
 simulation.scenarios.electronics:
   mcc: ["5732", "5045"]
-  count-lower: 5000.00
-  count-upper: 100000.00
+  count-lower: 500000
+  count-upper: 10000000
   time-lower: "10:00"
   time-upper: "22:00"
   avg-approved: 90
 simulation.scenarios.restaurant:
   mcc: ["5812", "5814"]
-  count-lower: 500.00
-  count-upper: 5000.00
+  count-lower: 50000
+  count-upper: 500000
   time-lower: "11:00"
   time-upper: "23:59"
   avg-approved: 90
 simulation.scenarios.travel:
   mcc: ["3501", "4511", "4722"]
-  count-lower: 5000.00
-  count-upper: 50000.00
+  count-lower: 500000
+  count-upper: 5000000
   time-lower: "00:00"
   time-upper: "23:59"
   avg-approved: 90

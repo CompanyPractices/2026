@@ -57,7 +57,7 @@ public class MerchantProviderTest {
             "grocery",
             "ACQ003",
             BigDecimal.valueOf(15),
-            145000);
+            BigDecimal.valueOf(145000));
     List<Merchant> expectedMerchants = List.of(merchant);
 
     when(merchantRepository.findByMccIn(scenarioMcc)).thenReturn(expectedMerchants);
@@ -80,7 +80,7 @@ public class MerchantProviderTest {
             "grocery",
             "ACQ003",
             BigDecimal.valueOf(15),
-            145000);
+            BigDecimal.valueOf(145000));
     Merchant merchant2 = new Merchant(
             "MERCH00000000007",
             "ВБ Сити",
@@ -88,7 +88,7 @@ public class MerchantProviderTest {
             "grocery",
             "ACQ003",
             BigDecimal.valueOf(15),
-            145000);
+            BigDecimal.valueOf(145000));
     List<Merchant> expectedMerchants = List.of(merchant1, merchant2);
 
     when(merchantRepository.findByMccIn(mccCodes)).thenReturn(expectedMerchants);
@@ -110,7 +110,7 @@ public class MerchantProviderTest {
             "grocery",
             "ACQ003",
             BigDecimal.valueOf(15),
-            145000);
+            BigDecimal.valueOf(145000));
     Merchant merchant2 = new Merchant(
             "MERCH00000000007",
             "ВБ Сити",
@@ -118,7 +118,7 @@ public class MerchantProviderTest {
             "grocery",
             "ACQ003",
             BigDecimal.valueOf(15),
-            145000);
+            BigDecimal.valueOf(145000));
     List<Merchant> expectedMerchants = List.of(merchant1, merchant2);
 
     when(merchantRepository.findAll()).thenReturn(List.of(merchant1, merchant2));

@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -63,7 +65,7 @@ public class RouteService {
             return AuthorizationResponse.authUnavailable(request.stan());
         }
 
-        Long acquiringFee = acquiringFeeClient.fetchAcquiringFee(
+        BigDecimal acquiringFee = acquiringFeeClient.fetchAcquiringFee(
                 routedRequest.transmissionDateTime(),
                 routedRequest.stan(),
                 routedRequest.pan(),
@@ -97,7 +99,7 @@ public class RouteService {
     private TransactionRequest buildTransaction(
             AuthorizationRequest request,
             AuthorizationResponse response,
-            Long acquiringFee) {
+            BigDecimal acquiringFee) {
         return new TransactionRequest(
                 UUID.randomUUID(),
                 request.mti(),
@@ -105,7 +107,7 @@ public class RouteService {
                 response.rrn(),
                 request.pan(),
                 request.processingCode(),
-                request.amount() != null ? request.amount().longValue() : null,
+                request.amount(),
                 request.currencyCode(),
                 request.terminalId(),
                 request.terminalType(),

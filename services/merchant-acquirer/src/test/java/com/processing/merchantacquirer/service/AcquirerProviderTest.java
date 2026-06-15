@@ -11,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,16 +39,18 @@ public class AcquirerProviderTest {
                 "grocery",
                 "ACQ003",
                 BigDecimal.valueOf(0.015),
-                145000);
+                BigDecimal.valueOf(145000));
 
         when(merchantProvider.getMerchantAcquirerFee(merchant.getAcquirerId())).thenReturn(BigDecimal.valueOf(0.015));
 
-        BigDecimal amount = BigDecimal.valueOf(1399.99);
+        BigDecimal amount = BigDecimal.valueOf(139999);
         String stan = "000004";
         String rrn = "616113423602";
         String terminalId = "TERM001";
         String pan = "4000005310852539";
-        BigDecimal expected = amount.multiply(BigDecimal.valueOf(0.015));
+        BigDecimal expected = amount
+                .multiply(BigDecimal.valueOf(0.015))
+                .setScale(0, RoundingMode.HALF_EVEN);
 
         acquirerProvider.calculateFee(merchant.getAcquirerId(), amount, rrn, stan, terminalId, pan);
         ArgumentCaptor<AcquirerFee> feeCaptor = ArgumentCaptor.forClass(AcquirerFee.class);

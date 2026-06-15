@@ -4,6 +4,7 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -13,9 +14,9 @@ public class InvalidPanStrategy implements TransactionStrategy {
         return TransactionType.INVALID_PAN;
     }
     @Override
-    public long calculateAmount(CardModel card) {
-        double randomDouble = ThreadLocalRandom.current().nextDouble();
-        return 10_000 + (long) (randomDouble * 490_000);
+    public BigDecimal calculateAmount(CardModel card) {
+        long amount = ThreadLocalRandom.current().nextLong(10_000_000L, 50_000_001L);
+        return BigDecimal.valueOf(amount);
     }
     @Override
     public String getMcc() {
