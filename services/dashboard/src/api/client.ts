@@ -7,7 +7,7 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 async function fetchApi<T>(route: string, options: FetchApiOptions = {}): Promise<T> {
     const { timeout = 5000, retries = 2 } = options;
-    let lastError: any;
+    let lastError: Error | null = null;
 
     for (let att = 0; att <= retries; att++) {
         const controller = new AbortController();
@@ -24,8 +24,9 @@ async function fetchApi<T>(route: string, options: FetchApiOptions = {}): Promis
             }
             return await response.json() as T;
         }
-        catch (error: any){
+        catch (err){
             clearTimeout(timeoutId);
+            const error = err instanceof Error ? err : new Error(String(err));
             lastError = error;
 
             if (error.message.startsWith('Client Error')){
