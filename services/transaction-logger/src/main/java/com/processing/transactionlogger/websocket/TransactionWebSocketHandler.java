@@ -7,6 +7,10 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+/**
+ * Обработчик WebSocket-соединений по адресу {@code /ws/transactions}.
+ * Делегирует управление сессиями в {@link WebSocketManager}.
+ */
 @Component
 @RequiredArgsConstructor
 public class TransactionWebSocketHandler extends TextWebSocketHandler {
