@@ -1,12 +1,14 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.CardEventListener;
+import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
 import com.processing.cardmanagement.options.CardServiceDefaults;
+import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationProperties;
 import com.processing.cardmanagement.options.CardServiceSettings;
+import com.processing.cardmanagement.options.CardServiceSettingsConfigurationProperties;
 import com.processing.cardmanagement.repositories.CardRepository;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,13 +38,13 @@ public final class CardServiceTest {
 
     private final Faker faker = new Faker(Locale.ENGLISH);
 
-    private final CardServiceSettings settings = new CardServiceSettings(
+    private final CardServiceSettings settings = new CardServiceSettingsConfigurationProperties(
         "TESTISSUER",
         3
     );
 
-    private final CardServiceDefaults defaults = new CardServiceDefaults(
-        0,
+    private final CardServiceDefaults defaults = new CardServiceDefaultsConfigurationProperties(
+        1,
         50,
         "643",
         15000000,
@@ -68,7 +71,7 @@ public final class CardServiceTest {
     private CardRepository cardRepository;
 
     @Mock
-    private CardEventListener eventListener;
+    private CardEventNotifier eventNotifier;
 
     private CardService cardService;
 
@@ -79,7 +82,7 @@ public final class CardServiceTest {
             settings,
             defaults,
             panGenerator,
-            eventListener
+            eventNotifier
         );
     }
 
@@ -173,9 +176,12 @@ public final class CardServiceTest {
         var availableBalance = faker.number().numberBetween(0L, 10000000L);
         var testCard = createTestCard(pan);
 
-        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
-        when(cardRepository.save(any(Card.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        when(cardRepository.updateWithPessimisticLock(eq(pan), any()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                var func = (UnaryOperator<Card>) invocation.getArgument(1, UnaryOperator.class);
+                return func.apply(testCard);
+            });
 
         var expected = new Card(
             testCard.id(),
@@ -240,7 +246,7 @@ public final class CardServiceTest {
         LocalDateTime startDate = LocalDateTime.now().minusDays(1);
         LocalDateTime endDate = LocalDateTime.now();
 
-        when(cardRepository.countCards(
+        when(cardRepository.countCardsFiltered(
             status,
             bin,
             issuerId,
@@ -259,10 +265,10 @@ public final class CardServiceTest {
     }
 
     @Test
-    void testCountCards() {
+    void testCountAllCards() {
         var returnValue = 1L;
-        when(cardRepository.countCards()).thenReturn(returnValue);
-        assertEquals(returnValue, cardService.countCardsFiltered());
+        when(cardRepository.countAllCards()).thenReturn(returnValue);
+        assertEquals(returnValue, cardService.countAllCards());
     }
 
     @Test
@@ -270,9 +276,12 @@ public final class CardServiceTest {
         var pan = generatePan();
         var testCard = createTestCard(pan);
         var reserveAmount = faker.number().numberBetween(0L, testCard.availableBalance());
-        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
-        when(cardRepository.save(any(Card.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        when(cardRepository.updateWithPessimisticLock(eq(pan), any()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                var func = (UnaryOperator<Card>) invocation.getArgument(1, UnaryOperator.class);
+                return func.apply(testCard);
+            });
 
         var expected = new Card(
             testCard.id(),

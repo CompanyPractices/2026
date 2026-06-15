@@ -7,10 +7,6 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-/**
- * Значения по умолчанию для CardService
- * Загружается из application.properties с префиксом app.card-service.defaults
- */
 @Validated
 @ConfigurationProperties(prefix = "app.card-service.defaults")
 public record CardServiceDefaultsConfigurationProperties(
@@ -33,16 +29,4 @@ public record CardServiceDefaultsConfigurationProperties(
 
     @NotNegative
     long balance
-) {
-
-    public CardServiceDefaults toCardServiceDefaults() {
-        return new CardServiceDefaults(
-            pageLimit,
-            pageOffset,
-            currencyCode,
-            dailyLimit,
-            monthlyLimit,
-            balance
-        );
-    }
-}
+) implements CardServiceDefaults {}
