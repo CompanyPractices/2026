@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
+
 @Builder
 public record AuthorizationRequest(
         @NotBlank
@@ -31,8 +33,8 @@ public record AuthorizationRequest(
 
         @NotNull
         @PositiveOrZero
-        @Schema(description = "Amount", example = "72472L")
-        Long amount,
+        @Schema(description = "Amount", example = "532.1940364669593")
+        BigDecimal amount,
 
         @NotBlank
         @Size(min = 3, max = 3)

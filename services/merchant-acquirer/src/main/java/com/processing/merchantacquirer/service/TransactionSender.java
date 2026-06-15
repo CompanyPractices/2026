@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionSender {
   private final GatewayClient gatewayClient;
+  private final AcquirerProvider acquirerProvider;
 
   public SimulatorStats sendAll(List<AuthorizationRequest> requests) {
     List<AuthorizationResponse> responses = new ArrayList<>(requests.size());
@@ -23,6 +24,9 @@ public class TransactionSender {
     int declined = 0;
 
     for (AuthorizationRequest request : requests) {
+      acquirerProvider.calculateFee(
+              request.merchantId(), request.amount(), request.transmissionDateTime(),
+              request.stan(), request.terminalId(), request.pan());
       AuthorizationResponse response;
       try {
         response = gatewayClient.processAuthorize(request);

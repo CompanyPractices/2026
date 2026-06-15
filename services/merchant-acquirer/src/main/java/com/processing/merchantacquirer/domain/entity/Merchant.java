@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -20,6 +22,6 @@ public class Merchant {
   private String category;
   private String acquirerId;
   @Column(name = "acquiring_fee", precision = 5, scale = 4)
-  private Long acquiringFee;
+  private BigDecimal acquiringFee;
   private int averageCheck;
 }

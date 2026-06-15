@@ -7,6 +7,7 @@ import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactory;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionBuilder {
   private final AuthorizationRequestFactory authorizationRequestFactory;
-  private final AcquirerProvider acquirerProvider;
   private final Random random = new Random();
 
   public List<AuthorizationRequest> build(
@@ -33,15 +33,13 @@ public class TransactionBuilder {
     for (int i = 0; i < count; i++) {
       CardDataResponse card = cardDataResponses.get(i % cardDataResponses.size());
       Merchant merchant = merchants.get(random.nextInt(merchants.size()));
-      Long amount = random.nextLong(scenario.getCountLower(), scenario.getCountUpper());
+      BigDecimal amount = BigDecimal.valueOf(
+              random.nextDouble(scenario.getCountLower().doubleValue(), scenario.getCountUpper().doubleValue()));
 
       AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
               card.pan(), card.currencyCode(), amount, terminal, merchant);
       requests.add(authorizationRequest);
       log.info(String.valueOf(authorizationRequest));
-      acquirerProvider.calculateFee(
-              authorizationRequest.merchantId(), authorizationRequest.amount(), authorizationRequest.transmissionDateTime(),
-              authorizationRequest.stan(), authorizationRequest.terminalId(), authorizationRequest.pan());
     }
 
     return requests;
