@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Slf4j
 @Component
@@ -20,7 +21,9 @@ public class AcquirerProvider {
     public void calculateFee(
             String merchantId, BigDecimal amount, String transmissionDateTime, String stan, String terminalId, String pan) {
         BigDecimal fee = merchantProvider.getMerchantAcquirerFee(merchantId);
-        BigDecimal acquiringFee = amount.multiply(fee);
+        BigDecimal acquiringFee = amount
+                .multiply(fee)
+                .setScale(0, RoundingMode.HALF_EVEN);
 
         AcquirerFee acquirerFeeEntity = new AcquirerFee(transmissionDateTime, stan, pan, terminalId, acquiringFee, amount);
         repository.save(acquirerFeeEntity);
