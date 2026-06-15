@@ -7,13 +7,10 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 
-
 public class HttpUtils {
-
 
     private final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
-
 
     public JsonNode httpGet(String baseUrl, String path, int expectedStatus) {
         Response response = RestAssured
@@ -48,11 +45,19 @@ public class HttpUtils {
         return response.body().as(JsonNode.class);
     }
 
+<<<<<<< test/TC-1&11(gateway)
     public JsonNode httpPost(String baseUrl, String path, String jsonBody, int expectedStatus) {
         Response response = RestAssured
                 .given()
                 .baseUri(baseUrl)
                 .contentType(ContentType.JSON)
+=======
+    public JsonNode httpPostRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
+        Response response = RestAssured
+                .given()
+                .baseUri(baseUrl)
+                .contentType("application/json")
+>>>>>>> main
                 .body(jsonBody)
                 .when()
                 .post(path)
@@ -63,6 +68,7 @@ public class HttpUtils {
         return response.body().as(JsonNode.class);
     }
 
+<<<<<<< test/TC-1&11(gateway)
     public void assertGetStatus(String baseUrl, String path, int expectedStatus) {
         RestAssured
                 .given()
@@ -71,5 +77,20 @@ public class HttpUtils {
                 .get(path)
                 .then()
                 .statusCode(expectedStatus);
+=======
+    public JsonNode httpPatchRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
+        Response response = RestAssured
+                .given()
+                .baseUri(baseUrl)
+                .contentType("application/json")
+                .body(jsonBody)
+                .when()
+                .patch(path)
+                .then()
+                .statusCode(expectedStatus)
+                .extract()
+                .response();
+        return response.body().as(JsonNode.class);
+>>>>>>> main
     }
 }

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.e2e.utility.HttpUtils;
 import io.restassured.RestAssured;
 import org.testng.annotations.BeforeClass;
-
+import com.processing.e2e.utility.DBUtils;
 
 public abstract class E2EBaseTest {
 
@@ -62,4 +62,13 @@ public abstract class E2EBaseTest {
     protected void assertGetStatus(String baseUrl, String path, int expectedStatus) {
         httpUtils.assertGetStatus(baseUrl, path, expectedStatus);
     }
+    protected JsonNode httpPostRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
+        return httpUtils.httpPostRaw(baseUrl, path, jsonBody, expectedStatus);
+    }
+
+    protected JsonNode httpPatchRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
+        return httpUtils.httpPatchRaw(baseUrl, path, jsonBody, expectedStatus);
+    }
+
+    protected DBUtils db = new DBUtils();
 }

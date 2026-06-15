@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
 
 /**
  * Record для представления ответа health-эндпоинта внешнего сервиса.
@@ -42,7 +42,7 @@ record Response(String service, String status) {
 public class HealthService {
     @Value("${services-to-health-check}")
     private List<String> toHealthCheck;
-    private final WebClient webClient;
+    private final RestClient restClient;
 
     /**
      * Выполняет проверку работоспособности всех сконфигурированных внешних
@@ -88,17 +88,14 @@ public class HealthService {
             String healthUrl = fullUrl + "/health";
             log.debug("Checking health of {}", healthUrl);
 
-            Map<String, Object> body = webClient.get()
+            Map<String, Object> body = restClient.get()
                     .uri(healthUrl)
                     .retrieve()
-                    .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                        log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
-                        return Mono
-                                .error(new RuntimeException(
-                                        "Failed to get card. Status: " + clientResponse.statusCode()));
+                    .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                        log.debug("Failed to get card. Status: {}", res.getStatusCode());
+                        throw new RuntimeException("Failed to get card. Status: " + res.getStatusCode());
                     })
-                    .bodyToMono(Map.class)
-                    .block();
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
 
             if (body == null) {
                 return new Response(serviceUrl, "unknown");
