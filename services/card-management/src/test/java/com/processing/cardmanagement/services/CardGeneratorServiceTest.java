@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
@@ -36,11 +37,11 @@ public class CardGeneratorServiceTest {
     private MeterRegistry meterRegistry;
 
     private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
-            1_000_000,
-            50_000_000,
-            5_000_000,
-            30_000_000,
-            "643"
+        BigDecimal.valueOf(1_000_000),
+        BigDecimal.valueOf(50_000_000),
+        BigDecimal.valueOf(5_000_000),
+        BigDecimal.valueOf(30_000_000),
+        "643"
     );
 
     private CardGeneratorService cardGeneratorService;
@@ -54,27 +55,27 @@ public class CardGeneratorServiceTest {
     void generateShouldReturnCorrectCount() {
         int count = 100;
         List<String> bins = List.of(
-                faker.numerify("######"),
-                faker.numerify("######"),
-                faker.numerify("######"),
-                faker.numerify("######"),
-                faker.numerify("######"));
+            faker.numerify("######"),
+            faker.numerify("######"),
+            faker.numerify("######"),
+            faker.numerify("######"),
+            faker.numerify("######"));
 
         when(cardService.createCards(anyList())).thenAnswer(inv -> {
             List<CardDraft> dtos = inv.getArgument(0);
             return dtos.stream().map(dto -> new Card(
-                    UUID.randomUUID(),
-                    faker.numerify("################"),
-                    dto.bin(),
-                    faker.name().fullName().toUpperCase(),
-                    YearMonth.now().plusYears(3),
-                    dto.status(),
-                    "643",
-                    dto.dailyLimit(),
-                    dto.monthlyLimit(),
-                    dto.initialBalance(),
-                    "ZZZZZZ",
-                    LocalDateTime.now()
+                UUID.randomUUID(),
+                faker.numerify("################"),
+                dto.bin(),
+                faker.name().fullName().toUpperCase(),
+                YearMonth.now().plusYears(3),
+                dto.status(),
+                "643",
+                dto.dailyLimit(),
+                dto.monthlyLimit(),
+                dto.initialBalance(),
+                "ZZZZZZ",
+                LocalDateTime.now()
             )).toList();
         });
 
@@ -91,18 +92,18 @@ public class CardGeneratorServiceTest {
         when(cardService.createCards(anyList())).thenAnswer(inv -> {
             List<CardDraft> dtos = inv.getArgument(0);
             return dtos.stream().map(dto -> new Card(
-                    UUID.randomUUID(),
-                    faker.numerify("################"),
-                    dto.bin(),
-                    faker.name().fullName().toUpperCase(),
-                    YearMonth.now().plusYears(3),
-                    dto.status(),
-                    "643",
-                    dto.dailyLimit(),
-                    dto.monthlyLimit(),
-                    dto.initialBalance(),
-                    "ZZZZZZ",
-                    LocalDateTime.now()
+                UUID.randomUUID(),
+                faker.numerify("################"),
+                dto.bin(),
+                faker.name().fullName().toUpperCase(),
+                YearMonth.now().plusYears(3),
+                dto.status(),
+                "643",
+                dto.dailyLimit(),
+                dto.monthlyLimit(),
+                dto.initialBalance(),
+                "ZZZZZZ",
+                LocalDateTime.now()
             )).toList();
         });
 
