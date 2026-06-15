@@ -92,10 +92,10 @@ public class HealthService {
                     .uri(healthUrl)
                     .retrieve()
                     .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                        log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
+                        log.debug("Health check failed for {}", healthUrl);
                         return Mono
                                 .error(new RuntimeException(
-                                        "Failed to get card. Status: " + clientResponse.statusCode()));
+                                        "Health check failed for {}" + healthUrl));
                     })
                     .bodyToMono(Map.class)
                     .block();
