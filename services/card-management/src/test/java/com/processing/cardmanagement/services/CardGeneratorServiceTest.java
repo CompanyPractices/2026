@@ -1,6 +1,6 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.CardEventListener;
+import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
@@ -30,7 +30,7 @@ public class CardGeneratorServiceTest {
     private CardService cardService;
 
     @Mock
-    private CardEventListener eventListener;
+    private CardEventNotifier eventNotifier;
 
     @Mock
     private MeterRegistry meterRegistry;
@@ -50,7 +50,7 @@ public class CardGeneratorServiceTest {
         cardGeneratorService = new CardGeneratorService(
             cardService,
             generatorOptions,
-            eventListener
+            eventNotifier
         );
     }
 

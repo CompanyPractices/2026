@@ -6,7 +6,9 @@ import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 public interface CardRepository {
 
@@ -31,7 +33,7 @@ public interface CardRepository {
      * Возвращает количество карт с применением фильтров
      * @return количество карт
      */
-    long countCards(
+    long countCardsFiltered(
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
@@ -42,9 +44,20 @@ public interface CardRepository {
     /**
      * @return количество хранящихся карт
      */
-    long countCards();
+    long countAllCards();
 
     Card save(Card card);
 
     List<Card> saveAll(List<Card> cards);
+
+    /**
+     * Обновляет значение в БД, используя пессимистичную блокировку
+     * Работает в рамках одной транзакции
+     *
+     * @param pan           номер карты
+     * @param businessLogic логика изменения карты
+     * @return измененная карта
+     * @throws NoSuchElementException если не была найдена карта
+     */
+    Card updateWithPessimisticLock(String pan, UnaryOperator<Card> businessLogic);
 }

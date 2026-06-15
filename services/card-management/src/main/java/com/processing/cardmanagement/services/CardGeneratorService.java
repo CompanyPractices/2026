@@ -1,6 +1,6 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.CardEventListener;
+import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.events.CardGeneratedEvent;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
@@ -26,7 +26,7 @@ public class CardGeneratorService {
 
     private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
-    private final CardEventListener eventListener;
+    private final CardEventNotifier eventNotifier;
 
     private final Faker faker = new Faker();
     private final Random random = new Random();
@@ -63,7 +63,7 @@ public class CardGeneratorService {
                 balance
             );
 
-            eventListener.onEvent(new CardGeneratedEvent(card.status()));
+            eventNotifier.onEvent(new CardGeneratedEvent(card.status()));
             cards.add(card);
         }
         log.info("Successfully generated {} cards", count);

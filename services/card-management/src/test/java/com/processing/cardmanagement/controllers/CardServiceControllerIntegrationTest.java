@@ -282,19 +282,25 @@ public class CardServiceControllerIntegrationTest {
         given()
             .port(port)
             .pathParam("PAN", pan)
-            .contentType(ContentType.JSON)
             .when()
             .delete("/api/cards/{PAN}")
             .then()
             .statusCode(204);
+
+        given()
+            .port(port)
+            .pathParam("PAN", pan)
+            .when()
+            .get("/api/cards/{PAN}")
+            .then()
+            .statusCode(404);
     }
 
     @Test
-    void cardServiceShouldDeleteNonExistentCard() {
+    void cardServiceShouldNotDeleteNonExistentCard() {
         given()
             .port(port)
             .pathParam("PAN", faker.number().digits(16))
-            .contentType(ContentType.JSON)
             .when()
             .delete("/api/cards/{PAN}")
             .then()
