@@ -26,7 +26,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
 
     if (error) {
         return (
-            <div className="text-center py-8 text-red-500">
+            <div className="text-center py-8 text-red-500 font-mono">
                 Ошибка загрузки транзакций: {error}
             </div>
         )
@@ -34,7 +34,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
 
     if (loading) {
         return (
-            <div className="text-center py-8 text-gray-500 dark:text-sage-50">
+            <div className="text-center py-8 text-gray-500 dark:text-sage-50 font-mono">
                 Загрузка транзакций...
             </div>
         )
@@ -42,7 +42,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
 
     if (!loading && !error && transactions.length === 0) {
         return (
-            <div className="text-center py-8 text-gray-500 dark:text-sage-50">
+            <div className="text-center py-8 text-gray-500 dark:text-sage-50 font-mono">
                 Транзакций не найдено
             </div>
         )

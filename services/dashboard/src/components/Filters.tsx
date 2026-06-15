@@ -33,10 +33,16 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                             ...filter,
                             status: (e.target.value as FilterStatus) || undefined
                         })}
-                        id="status">
+                        id="status"
+                        className="
+                        dark:bg-sage-400 dark:text-sage-50
+                        border dark:border-sage-200
+                        rounded px-2 py-1
+                        focus:outline-none focus:ring-2 focus:ring-sage-50"
+                >
                     <option value="">Выберите статус</option>
-                    <option value="APPROVED">Одобрен</option>
-                    <option value="DECLINED">Отклонен</option>
+                    <option value="APPROVED" className="dark:bg-sage-400 dark:text-sage-50" >Одобрен</option>
+                    <option value="DECLINED" className="dark:bg-sage-400 dark:text-sage-50" >Отклонен</option>
                 </select>
             </div>
 
@@ -47,10 +53,16 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                             ...filter,
                             issuerId: e.target.value || undefined
                         })}
-                        id="issuer">
+                        id="issuer"
+                        className="
+                        dark:bg-sage-400 dark:text-sage-50
+                        border dark:border-sage-200
+                        rounded px-2 py-1
+                        focus:outline-none focus:ring-2 focus:ring-sage-50
+                    ">
                     <option value="">Выберите эмитента</option>
                     {Object.keys(issuers).map((issuerId) => {
-                        return <option key={issuerId} value={issuerId}>{issuers[issuerId] || issuerId}</option>;
+                        return <option key={issuerId} value={issuerId} className="dark:bg-sage-400 dark:text-sage-50" >{issuers[issuerId] || issuerId}</option>;
                     })}
                 </select>
             </div>
@@ -62,10 +74,16 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                             ...filter,
                             mcc: e.target.value || undefined
                         })}
-                        id="mcc">
+                        id="mcc"
+                        className="
+                        dark:bg-sage-400 dark:text-sage-50
+                        border dark:border-sage-200
+                        rounded px-2 py-1
+                        focus:outline-none focus:ring-2 focus:ring-sage-50
+                    ">
                     <option value="">Выберите MCC</option>
                     {Object.keys(mccNames).map((mccCode) => {
-                        return <option key={mccCode} value={mccCode}>{mccNames[mccCode] || mccCode}</option>;
+                        return <option key={mccCode} value={mccCode} className="dark:bg-sage-400 dark:text-sage-50">{mccNames[mccCode] || mccCode}</option>;
                     })}
                 </select>
             </div>
@@ -78,7 +96,13 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                            dateFrom: e.target.value || undefined
                        })}
                        id="dateFrom"
-                       type="date"/>
+                       type="date"
+                       className="
+                        dark:bg-sage-400 dark:text-sage-50
+                        border dark:border-sage-200
+                        rounded px-2 py-1
+                        focus:outline-none focus:ring-2 focus:ring-sage-50"
+                />
             </div>
 
             <div className="flex flex-col dark:text-sage-50">
@@ -89,7 +113,13 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
                            dateTo: e.target.value || undefined
                        })}
                        id="dateTo"
-                       type="date"/>
+                       type="date"
+                       className="
+                        dark:bg-sage-400 dark:text-sage-50
+                        border dark:border-sage-200
+                        rounded px-2 py-1
+                        focus:outline-none focus:ring-2 focus:ring-sage-50"
+                />
             </div>
         </form>
     )
