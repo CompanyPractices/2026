@@ -210,9 +210,7 @@ public class AuthService {
      * @see ServiceUnavailableException
      */
     public CardModel getCard(String pan) throws Exception {
-        String fullUrl = cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
-        String getCardhUrl = fullUrl + "/api/cards";
-        String url = getCardhUrl + "/" + pan;
+        String url = baseUrl() + "/api/cards/" + pan;
         log.debug("Getting card info for pan {}", maskPAN(pan));
 
         CardModel response = webClient.get()
@@ -267,9 +265,7 @@ public class AuthService {
      */
     public void reserve(long amount, String rrn, String pan) throws Exception {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String url = cmsUrl + "/api/cards/" + pan + "/reserve";
+        String url = baseUrl() + "/api/cards/" + pan + "/reserve";
         log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
         String response = webClient.post()
                 .uri(url)
@@ -395,5 +391,9 @@ public class AuthService {
         }
 
         return pan.substring(0, 4) + "*".repeat(8) + pan.substring(12);
+    }
+
+    private String baseUrl() {
+        return cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
     }
 }

@@ -143,6 +143,7 @@ public class DBIntegrationTest {
         assertEquals("INSUFFICIENT_FUNDS", response.declineReason());
     }
 
+    @Test
     void authorizeShouldReturnDeclinedWhenExceededMonthlyLimit() {
         CardModel mockCard = createActiveCardModelWithLowMonthlyLimit();
         mockWebClientGetCard(mockCard);
