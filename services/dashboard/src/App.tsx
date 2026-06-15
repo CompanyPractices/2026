@@ -26,7 +26,7 @@ function App() {
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
             <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
 
-            <main className="w-[95%] md:w-[90%] lg:w-[85%] xl:w-3/4 flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
+            <main className="w-[95%] md:w-[90%] xl:w-3/4 flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
 
                 <div className="bg-zinc-300 dark:bg-sage-400 rounded-lg shadow-lg flex flex-col p-4">
                     <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">

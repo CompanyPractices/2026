@@ -20,7 +20,7 @@ export function KpiCards( { stats }: KpiCardsProps ) {
     ];
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 lg:gap-6 w-[95%] md:w-[90%] lg:w-[85%] xl:w-3/4 mx-auto my-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 w-[95%] md:w-[90%] xl:w-3/4 mx-auto my-5">
             {kpiCards.map((kpiCard) => (
                 <div
                     key={kpiCard.label}
