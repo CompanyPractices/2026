@@ -1,6 +1,5 @@
 package com.processing.cardmanagement.models;
 
-import com.processing.common.dto.cardmanagement.CardStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,8 +40,7 @@ public class CardEntity {
     private String expiryDate;
 
     @Column(length = 20, nullable = false)
-    @Enumerated(EnumType.STRING)
-    private CardStatus status = CardStatus.ACTIVE;
+    private String status;
 
     @Column(length = 3, nullable = false)
     private String currencyCode;

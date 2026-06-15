@@ -19,15 +19,16 @@ public record CardModel(
     @Schema(description = "Expiry date in MMyy format", example = "0629")
     YearMonth expiryDate,
     @Schema(
-        description = "Card status",
+        description = "Card model status",
         example = "ACTIVE",
-        allowableValues = {"ACTIVE",
+        allowableValues = {
+            "ACTIVE",
             "INACTIVE",
             "BLOCKED",
-            "EXPIRED",
-            "DELETED"}
+            "EXPIRED"
+        }
     )
-    CardStatus status,
+    CardModelStatus status,
     @Schema(description = "Currency code", example = "643")
     String currencyCode,
     @Schema(description = "Daily limit in kopecks", example = "15000000")
