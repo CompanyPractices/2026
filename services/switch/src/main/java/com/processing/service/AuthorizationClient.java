@@ -51,11 +51,14 @@ public class AuthorizationClient {
                 .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
                 .body(request)
                 .retrieve()
+                .onStatus(status -> status.is4xxClientError(), (req, res) -> { })
                 .body(AuthorizationResponse.class);
-        if (response != null) {
+        if (response != null
+                && (AuthorizationResponse.STATUS_APPROVED.equals(response.status())
+                || AuthorizationResponse.STATUS_DECLINED.equals(response.status()))) {
             return response;
         }
-        throw new IllegalStateException("Empty response from Authorization");
+        throw new IllegalStateException("Invalid response from Authorization");
     }
 
 

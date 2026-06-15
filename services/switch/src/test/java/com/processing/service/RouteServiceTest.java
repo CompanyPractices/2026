@@ -48,12 +48,38 @@ class RouteServiceTest {
         assertThat(response.status()).isEqualTo("APPROVED");
         assertThat(response.responseCode()).isEqualTo("00");
         assertThat(authorizationClient.lastRequest().issuerId()).isEqualTo("ISS001");
+        assertThat(authorizationClient.lastRequest().terminalId()).isEqualTo("TERM0010");
+        assertThat(authorizationClient.lastRequest().merchantId()).isEqualTo("MERCH1234567890");
         assertThat(authorizationClient.lastRequest().terminalType()).isEqualTo(SwitchTestData.TERMINAL_TYPE);
         assertThat(logger.wasCalled()).isTrue();
         assertThat(logger.lastTransaction().issuerId()).isEqualTo("ISS001");
         assertThat(logger.lastTransaction().status()).isEqualTo(TransactionStatus.APPROVED);
         assertThat(logger.lastTransaction().mti()).isEqualTo("0100");
         assertThat(logger.lastTransaction().pan()).isEqualTo(request.pan());
+    }
+
+    @Test
+    void route_smokeTestIds_areNormalizedBeforeAuthorization() {
+        CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
+        TrackingLoggerClient logger = new TrackingLoggerClient(true);
+        RouteService routeService = new RouteService(
+                routingService,
+                authorizationClient,
+                (transmissionDateTime, stan, pan, terminalId, amount) -> null,
+                logger);
+
+        AuthorizationRequest request = new AuthorizationRequest(
+                "0100", "000001", "4000001234560001", "000000", 150000L, "643",
+                "2026-06-01T10:30:00Z",
+                "TERM001", SwitchTestData.TERMINAL_TYPE, "MERCH00000000001", "5411", "ACQ001", null);
+
+        AuthorizationResponse response = routeService.route(request);
+
+        assertThat(response.status()).isIn("APPROVED", "DECLINED");
+        assertThat(authorizationClient.lastRequest().terminalId()).isEqualTo("TERM0010");
+        assertThat(authorizationClient.lastRequest().merchantId()).isEqualTo("MERCH0000000001");
+        assertThat(logger.lastTransaction().terminalId()).isEqualTo("TERM0010");
+        assertThat(logger.lastTransaction().merchantId()).isEqualTo("MERCH0000000001");
     }
 
     @Test
