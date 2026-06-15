@@ -58,4 +58,19 @@ public class HttpUtils {
                 .response();
         return response.body().as(JsonNode.class);
     }
+
+    public JsonNode httpPatchRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
+        Response response = RestAssured
+                .given()
+                .baseUri(baseUrl)
+                .contentType("application/json")
+                .body(jsonBody)
+                .when()
+                .patch(path)
+                .then()
+                .statusCode(expectedStatus)
+                .extract()
+                .response();
+        return response.body().as(JsonNode.class);
+    }
 }
