@@ -24,6 +24,12 @@ import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpTimeoutException;
 import java.util.Optional;
 
+/**
+ * Converts downstream connectivity failures into gateway-level HTTP 503 responses.
+ *
+ * <p>Unexpected exceptions and errors from unknown routes are rethrown so normal
+ * Spring error handling can process them.</p>
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RequiredArgsConstructor

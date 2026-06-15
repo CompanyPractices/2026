@@ -19,6 +19,12 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Rewrites proxied downstream OpenAPI documents for public gateway exposure.
+ *
+ * <p>The filter removes internal routes and maps known internal transaction
+ * paths back to their public gateway route before Swagger UI displays them.</p>
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
