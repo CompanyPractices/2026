@@ -22,12 +22,16 @@ function App() {
     }, [liveTransactions, initialTransactions]);
 
     const displayedTransactions = useMemo(() => {
-        const filtered = filteredTransactions || [];
-        const uniqueFiltered = filtered.filter((tx, index, self) =>
-            index === self.findIndex(t => t.id === tx.id)
-        );
-        return uniqueFiltered.slice(0, 20);
-    }, [filteredTransactions]);
+        const isSearch = filteredTransactions !== initialTransactions;
+        if (isSearch){
+            const filtered = filteredTransactions || [];
+            const uniqueFiltered = filtered.filter((tx, index, self) =>
+                index === self.findIndex(t => t.id === tx.id)
+            );
+            return uniqueFiltered.slice(0, 20);
+        }
+        return uniqueTransactions.slice(0, 20)
+    }, [filteredTransactions, uniqueTransactions, initialTransactions]);
 
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
