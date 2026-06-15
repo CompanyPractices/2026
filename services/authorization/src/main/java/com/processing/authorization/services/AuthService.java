@@ -136,18 +136,28 @@ public class AuthService {
         Optional<LimitUsage> currLimitUsage = limitUsageRepository
                 .findByPanAndUsageDate(request.pan(), transmissionDate);
 
+        Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
+                ? currLimitUsage
+                : limitUsageRepository
+                        .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
+                                request.pan(),
+                                transmissionDate.withDayOfMonth(1),
+                                transmissionDate);
+        if (monthLimitUsage.isPresent()) {
+            LimitUsage monthUsage = monthLimitUsage.get();
+            if (monthUsage.getMonthlyAmount() + request.amount() > cardResponse.monthlyLimit()) {
+                return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
+            }
+        } else if (request.amount() > cardResponse.monthlyLimit()) {
+            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
+        }
+
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
             if (usage.getDailyAmount() + request.amount() > cardResponse.dailyLimit()) {
                 return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
             }
         } else if (request.amount() > cardResponse.dailyLimit()) {
-            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
-        }
-
-        Long monthlyLimitUsage = limitUsageRepository
-                .sumMonthlyAmountByPanAndMonth(request.pan(), transmissionDate.withDayOfMonth(1), transmissionDate);
-        if (monthlyLimitUsage + request.amount() > cardResponse.monthlyLimit()) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
         }
 
@@ -159,12 +169,20 @@ public class AuthService {
                 usage.setMonthlyAmount(usage.getMonthlyAmount() + request.amount());
                 usage.setDailyAmount(usage.getDailyAmount() + request.amount());
                 limitUsageRepository.save(usage);
+            } else if (monthLimitUsage.isPresent()) {
+                LimitUsage monthUsage = monthLimitUsage.get();
+                LimitUsage usage = new LimitUsage();
+                usage.setPan(request.pan());
+                usage.setUsageDate(transmissionDate);
+                usage.setDailyAmount(request.amount());
+                usage.setMonthlyAmount(monthUsage.getMonthlyAmount() + request.amount());
+                limitUsageRepository.save(usage);
             } else {
                 LimitUsage usage = new LimitUsage();
                 usage.setPan(request.pan());
                 usage.setUsageDate(transmissionDate);
                 usage.setDailyAmount(request.amount());
-                usage.setMonthlyAmount(monthlyLimitUsage + request.amount());
+                usage.setMonthlyAmount(request.amount());
                 limitUsageRepository.save(usage);
             }
         } catch (Exception e) {
