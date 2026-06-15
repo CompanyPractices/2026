@@ -1,6 +1,8 @@
 package com.processing.cardmanagement.load;
 
+import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
+import com.processing.cardmanagement.services.CardService;
 import com.processing.common.dto.cardmanagement.CreateCardRequest;
 import io.restassured.http.ContentType;
 import net.datafaker.Faker;
@@ -18,6 +20,7 @@ import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -28,14 +31,20 @@ public class CardServiceLoadTest {
     @Value("${local.server.port}")
     private int port;
 
-    private final static int MAXIMUM_PARALLEL_REQUESTS = 1_000;
-    private final static int MAXIMUM_TOTAL_REQUESTS = 10_000;
+    @Value("${app.card-service.tests.load.max-parallel-requests}")
+    private int maximumParallelRequests = 1_000;
+
+    @Value("${app.card-service.tests.load.max-total-requests}")
+    private int maximumTotalRequests = 10_000;
+
     private final LoadTestEngine loadTestEngine =
-        new LoadTestEngine(MAXIMUM_PARALLEL_REQUESTS, MAXIMUM_TOTAL_REQUESTS);
+        new LoadTestEngine(maximumParallelRequests, maximumTotalRequests);
 
     @Container
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(POSTGRES_IMAGE);
+
+    private CardService cardService;
 
     private final Faker faker = new Faker();
 
@@ -50,16 +59,7 @@ public class CardServiceLoadTest {
     @Test
     void cardServiceCreationLoadTest() throws ExecutionException, InterruptedException {
         loadTestEngine.run(() -> {
-            var dailyLimit = faker.number().numberBetween(0L, 15_000_000L);
-            var postQuery = new CreateCardRequest(
-                faker.number().digits(6),
-                faker.name().fullName().toUpperCase(Locale.ROOT),
-                faker.number().digits(3),
-                dailyLimit,
-                faker.number().numberBetween(dailyLimit, 300_000_000L),
-                faker.number().numberBetween(0L, 1_000_000L)
-            );
-
+            var postQuery = randomCreateCardRequest();
             given()
                 .contentType(ContentType.JSON)
                 .body(postQuery)
@@ -69,5 +69,46 @@ public class CardServiceLoadTest {
                 .then()
                 .statusCode(201);
         }).get();
+        assertEquals(maximumTotalRequests, cardService.countAllCards());
+    }
+
+    @Test
+    void cardServiceGetLoadTest() throws ExecutionException, InterruptedException {
+        var pan = createCard(randomCreateCardRequest()).pan();
+        loadTestEngine.run(() -> {
+            given()
+                .contentType(ContentType.JSON)
+                .pathParam("PAN", pan)
+                .port(port)
+                .when()
+                .get("/api/cards/{PAN}")
+                .then()
+                .statusCode(200);
+        }).get();
+    }
+
+    private CreateCardRequest randomCreateCardRequest() {
+        var dailyLimit = faker.number().numberBetween(0L, 15_000_000L);
+        return new CreateCardRequest(
+            faker.number().digits(6),
+            faker.name().fullName().toUpperCase(Locale.ROOT),
+            faker.number().digits(3),
+            dailyLimit,
+            faker.number().numberBetween(dailyLimit, 300_000_000L),
+            faker.number().numberBetween(0L, 1_000_000L)
+        );
+    }
+
+    private Card createCard(CreateCardRequest req) {
+        return given()
+            .contentType(ContentType.JSON)
+            .body(req)
+            .port(port)
+            .when()
+            .post("/api/cards")
+            .then()
+            .statusCode(201)
+            .extract()
+            .as(Card.class);
     }
 }
