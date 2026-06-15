@@ -4,7 +4,9 @@ import com.processing.e2e.E2EBaseTest;
 
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -59,6 +61,28 @@ public class DBUtils {
 
                 return row;
             }
+        }
+    }
+
+    public List<String> queryStringList(String sql, Object... params) throws SQLException {
+        List<String> result = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(rs.getString(1));
+                }
+            }
+        }
+        return result;
+    }
+
+    public void execute(String sql, Object... params) throws SQLException {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindParams(ps, params);
+            ps.executeUpdate();
         }
     }
 
