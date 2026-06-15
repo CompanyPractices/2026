@@ -36,36 +36,36 @@ export default function TransactionPieChart({transactions, loading, error}: PieC
 
     return (
         <ResponsiveContainer width="80%" height={300} className="mx-auto my-auto" >
-            <PieChart>
-                <Pie
-                    data={[
-                        { name: 'APPROVED', value: approved },
-                        { name: 'DECLINED', value: declined },
-                    ]}
-                    dataKey="value" isAnimationActive={true}
-                    cy="40%"
-                >
-                    <Cell fill="green" />
-                    <Cell fill="red" />
-                </Pie>
-                <Legend
-                    layout="horizontal"
-                    align="center"
-                    verticalAlign="bottom"
-                    iconType="circle"
-                    formatter={(value) => {
-                        const count = value === 'APPROVED' ? approved : declined;
-                        const label = value === 'APPROVED' ? 'Одобрено' : 'Отклонено';
-                        return (
-                            <span className="text-zinc-700 font-mono">
+        <PieChart>
+            <Pie
+                data={[
+                    { name: 'APPROVED', value: approved },
+                    { name: 'DECLINED', value: declined },
+                ]}
+                dataKey="value" isAnimationActive={true}
+                cy="40%"
+            >
+                <Cell fill="green" />
+                <Cell fill="red" />
+            </Pie>
+            <Legend
+                layout="horizontal"
+                align="center"
+                verticalAlign="bottom"
+                iconType="circle"
+                formatter={(value) => {
+                    const count = value === 'APPROVED' ? approved : declined;
+                    const label = value === 'APPROVED' ? 'Одобрено' : 'Отклонено';
+                    return (
+                        <span className="text-zinc-700 font-mono dark:text-sage-50">
                                 { `${label}(${count})`}
                             </span>
-                        )
-                    }
-                    }
-                />
-                <Tooltip/>
-            </PieChart>
-        </ResponsiveContainer>
+                    )
+                }
+                }
+            />
+            <Tooltip/>
+        </PieChart>
+    </ResponsiveContainer>
     )
 }

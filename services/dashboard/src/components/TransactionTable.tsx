@@ -78,7 +78,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
             }
 
             {!loading && !error && liveTransactions.length === 0 &&
-                <div className="dark:text-sage-50">Транзакций не найдено</div>
+                <div className="text-center py-8 dark:text-sage-50">Транзакций не найдено</div>
             }
 
             {!loading && !error && liveTransactions.length > 0 &&

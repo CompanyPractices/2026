@@ -21,13 +21,13 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
         );
     } else if (loading) {
         content = (
-            <div className="text-center py-4 text-gray-500 text-lg">
+            <div className="text-center py-4 text-gray-500 text-lg dark:text-sage-100" >
                 Загрузка статистики...
             </div>
         );
     } else if (!stats) {
         content = (
-            <div className="text-center py-4 text-gray-500 text-lg">
+            <div className="text-center py-4 text-gray-500 text-lg dark:text-sage-50">
                 Данные отсутствуют
             </div>
         );
@@ -48,9 +48,9 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
                             role="switch"
                             checked={isDark}
                             onChange={() => setTheme(isDark ? 'light' : 'dark')}
-                            className="peer appearance-none w-12 h-7 bg-zinc-400 checked:bg-emerald-500 rounded-full cursor-pointer transition-colors outline-offset-4"
+                            className="peer appearance-none w-12 h-7 bg-zinc-400 checked:bg-sage-100 rounded-full cursor-pointer transition-colors outline-offset-4"
                         />
-                        <div className="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 peer-checked:translate-x-5"></div>
+                        <div className="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 peer-checked:translate-x-5 peer-checked:bg-sage-400"></div>
                     </div>
                 </label>
             </div>
@@ -64,7 +64,7 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
                 />
             </div>
 
-            <h1 className="text-5xl font-semibold drop-shadow-lg mb-6">Dashboard</h1>
+            <h1 className="text-5xl font-semibold drop-shadow-lg mb-6 dark:text-sage-50">Dashboard</h1>
             {content}
 
         </header>

@@ -26,7 +26,7 @@ export function Filters({issuers, mccNames, onSearch}: FilterProps) {
             <button className="dark:text-sage-50" type="submit">Найти</button>
             <button className="dark:text-sage-50" type="button" onClick={reset}>Сбросить</button>
 
-            <div className="flex flex-col dark:text-sage-50 "> //dark:bg-sage-400
+            <div className="flex flex-col dark:text-sage-50 ">
                 <label htmlFor="status">Статус: </label>
                 <select value={filter.status ?? ''}
                         onChange={(e) => setFilter({
