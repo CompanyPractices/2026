@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.services;
 
+import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,7 +31,7 @@ public class CardGeneratorServiceTest {
     private CardService cardService;
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private CardEventNotifier eventNotifier;
 
     @Mock
     private MeterRegistry meterRegistry;
@@ -48,7 +48,11 @@ public class CardGeneratorServiceTest {
 
     @BeforeEach
     void setUp() {
-        cardGeneratorService = new CardGeneratorService(cardService, generatorOptions, eventPublisher);
+        cardGeneratorService = new CardGeneratorService(
+            cardService,
+            generatorOptions,
+            eventNotifier
+        );
     }
 
     @Test

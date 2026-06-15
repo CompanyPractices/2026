@@ -80,7 +80,7 @@ public interface CardService {
      *
      * @return количество карт
      */
-    long countCardsFiltered();
+    long countAllCards();
 
     /**
      * Считает количество карт, удовлетворяющее фильтрам
