@@ -1,7 +1,7 @@
 package com.processing.cardmanagement.controllers;
 
-import com.processing.cardmanagement.models.HealthResponse;
-import com.processing.cardmanagement.services.CardServiceImpl;
+import com.processing.cardmanagement.models.CardManagementHealthResponse;
+import com.processing.cardmanagement.services.CardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,18 +13,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Health", description = "Health check endpoint")
-public class HealthController {
+public class CardManagementHealthController {
 
-    private final CardServiceImpl cardService;
+    private final CardService cardService;
 
     @Operation(description = "Check service health")
     @ApiResponse(responseCode = "200", description = "Service is helthy")
     @GetMapping("/health")
-    public ResponseEntity<HealthResponse> health() {
-        return ResponseEntity.ok(new HealthResponse(
+    public ResponseEntity<CardManagementHealthResponse> health() {
+        return ResponseEntity.ok(new CardManagementHealthResponse(
             "ok",
             "card-management",
-            cardService.countCardsFiltered()
+            cardService.countAllCards()
         ));
     }
 }

@@ -50,7 +50,7 @@ public record AuthorizationResponse(
     public static AuthorizationResponse unknownBin(String stan) {
         return new AuthorizationResponse(
             "0110", stan, null, null, "14", "DECLINED",
-            "Invalid card number (unknown BIN)", 0
+            "CARD_NOT_FOUND", 0
         );
     }
 

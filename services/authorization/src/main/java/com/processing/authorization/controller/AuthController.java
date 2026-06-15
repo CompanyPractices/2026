@@ -119,7 +119,7 @@ public class AuthController {
                         content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
                 @ApiResponse(
                         responseCode = "422",
-                        description = "Insufficient funds ",
+                        description = "Insufficient funds",
                         content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
                 @ApiResponse(
                         responseCode = "503",
