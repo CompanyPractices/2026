@@ -29,8 +29,10 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @SpringBootTest
 public class DBIntegrationTest {
     @Autowired
@@ -77,6 +79,8 @@ public class DBIntegrationTest {
                 "5411",
                 "A001",
                 "I001");
+
+        log.debug("Test database URL: {}", getDatabaseUrl());
     }
 
     private void mockWebClientGetCard(CardModel cardToReturn) {
@@ -99,10 +103,13 @@ public class DBIntegrationTest {
                 .thenReturn(Mono.just("RESERVED"));
     }
 
-    @Test
-    void whatDatabase() throws SQLException {
-        String url = dataSource.getConnection().getMetaData().getURL();
-        System.out.println("Database URL: " + url);
+    private String getDatabaseUrl() {
+        try {
+            return dataSource.getConnection().getMetaData().getURL();
+        } catch (SQLException e) {
+            log.warn("Could not determine database URL", e);
+            return "none";
+        }
     }
 
     @Test
