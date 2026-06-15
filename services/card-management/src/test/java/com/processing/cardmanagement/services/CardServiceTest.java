@@ -1,12 +1,14 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.domain.CardServiceEventListener;
+import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
 import com.processing.cardmanagement.options.CardServiceDefaults;
+import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationProperties;
 import com.processing.cardmanagement.options.CardServiceSettings;
+import com.processing.cardmanagement.options.CardServiceSettingsConfigurationProperties;
 import com.processing.cardmanagement.repositories.CardRepository;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,13 +39,13 @@ public final class CardServiceTest {
 
     private final Faker faker = new Faker(Locale.ENGLISH);
 
-    private final CardServiceSettings settings = new CardServiceSettings(
+    private final CardServiceSettings settings = new CardServiceSettingsConfigurationProperties(
         "TESTISSUER",
         3
     );
 
-    private final CardServiceDefaults defaults = new CardServiceDefaults(
-        0,
+    private final CardServiceDefaults defaults = new CardServiceDefaultsConfigurationProperties(
+        1,
         50,
         "643",
         BigDecimal.valueOf(15000000),
@@ -69,7 +72,7 @@ public final class CardServiceTest {
     private CardRepository cardRepository;
 
     @Mock
-    private CardServiceEventListener eventListener;
+    private CardEventNotifier eventNotifier;
 
     private CardService cardService;
 
@@ -80,7 +83,7 @@ public final class CardServiceTest {
             settings,
             defaults,
             panGenerator,
-            eventListener
+            eventNotifier
         );
     }
 
@@ -92,7 +95,7 @@ public final class CardServiceTest {
         var dailyLimit = BigDecimal.valueOf(faker.number().numberBetween(0, 10000000));
         var monthlyLimit = BigDecimal.valueOf(faker.number().numberBetween(dailyLimit.intValue(), 30000000));
         var initialBalance = BigDecimal.valueOf(faker.number().numberBetween(0, 10000000));
-        var expDate = YearMonth.now().plusYears(settings.cardYtl());
+        var expDate = YearMonth.now().plusYears(settings.cardValidityPeriod());
 
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
@@ -180,9 +183,12 @@ public final class CardServiceTest {
         );
         var testCard = createTestCard(pan);
 
-        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
-        when(cardRepository.save(any(Card.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        when(cardRepository.updateWithPessimisticLock(eq(pan), any()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                var func = (UnaryOperator<Card>) invocation.getArgument(1, UnaryOperator.class);
+                return func.apply(testCard);
+            });
 
         var expected = new Card(
             testCard.id(),
@@ -247,7 +253,7 @@ public final class CardServiceTest {
         LocalDateTime startDate = LocalDateTime.now().minusDays(1);
         LocalDateTime endDate = LocalDateTime.now();
 
-        when(cardRepository.countCards(
+        when(cardRepository.countCardsFiltered(
             status,
             bin,
             issuerId,
@@ -266,10 +272,10 @@ public final class CardServiceTest {
     }
 
     @Test
-    void testCountCards() {
+    void testCountAllCards() {
         var returnValue = 1L;
-        when(cardRepository.countCards()).thenReturn(returnValue);
-        assertEquals(returnValue, cardService.countCardsFiltered());
+        when(cardRepository.countAllCards()).thenReturn(returnValue);
+        assertEquals(returnValue, cardService.countAllCards());
     }
 
     @Test
@@ -279,9 +285,12 @@ public final class CardServiceTest {
         var reserveAmount = BigDecimal.valueOf(
             faker.number().numberBetween(0, testCard.availableBalance().intValue())
         );
-        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
-        when(cardRepository.save(any(Card.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        when(cardRepository.updateWithPessimisticLock(eq(pan), any()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                var func = (UnaryOperator<Card>) invocation.getArgument(1, UnaryOperator.class);
+                return func.apply(testCard);
+            });
 
         var expected = new Card(
             testCard.id(),
@@ -314,7 +323,7 @@ public final class CardServiceTest {
             pan,
             pan.substring(0, 6),
             faker.name().fullName().toUpperCase(Locale.ROOT),
-            YearMonth.now().plusYears(settings.cardYtl()),
+            YearMonth.now().plusYears(settings.cardValidityPeriod()),
             CardStatus.ACTIVE,
             defaults.currencyCode(),
             defaults.dailyLimit(),

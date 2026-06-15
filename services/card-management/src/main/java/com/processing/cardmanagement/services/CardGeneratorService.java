@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.services;
 
+import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.events.CardGeneratedEvent;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
@@ -8,7 +9,6 @@ import com.processing.cardmanagement.options.CardGeneratorOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -27,7 +27,7 @@ public class CardGeneratorService {
 
     private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
-    private final ApplicationEventPublisher eventPublisher;
+    private final CardEventNotifier eventNotifier;
 
     private final Faker faker = new Faker();
     private final Random random = new Random();
@@ -76,8 +76,7 @@ public class CardGeneratorService {
                 balance
             );
 
-            eventPublisher.publishEvent(new CardGeneratedEvent(card.status()));
-
+            eventNotifier.onEvent(new CardGeneratedEvent(card.status()));
             cards.add(card);
         }
         log.info("Successfully generated {} cards", count);

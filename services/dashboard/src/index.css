@@ -8,3 +8,13 @@ body {
   background: #f5f5f5;
   color: #333;
 }
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(93%) sepia(12%) saturate(250%) hue-rotate(40deg) brightness(105%) contrast(95%);
+  cursor: pointer;
+  opacity: 0.7;
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  filter: invert(93%) sepia(12%) saturate(250%) hue-rotate(40deg) brightness(115%) contrast(95%);
+}

@@ -26,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -94,7 +95,7 @@ public class TransactionService {
         long total = transactionRepository.count();
         long approved = transactionRepository.countByStatus(TransactionStatus.APPROVED);
         long declined = transactionRepository.countByStatus(TransactionStatus.DECLINED);
-        long totalAmount = total > 0 ? transactionRepository.sumAmount() : 0;
+        BigDecimal totalAmount = total > 0 ? transactionRepository.sumAmount() : BigDecimal.ZERO;
         long recentCount = transactionRepository.countByCreatedAtAfter(Instant.now().minusSeconds(60));
         double avgProcessingTimeMs = total > 0 ? transactionRepository.averageProcessingTimeMs() : 0;
         return new DashboardStatsResponse(
@@ -103,7 +104,7 @@ public class TransactionService {
                 declined,
                 total > 0 ? (double) approved / total : 0,
                 totalAmount,
-                total > 0 ? totalAmount / total : 0,
+                total > 0 ? totalAmount.divideToIntegralValue(BigDecimal.valueOf(total)) : BigDecimal.ZERO,
                 avgProcessingTimeMs,
                 recentCount
         );

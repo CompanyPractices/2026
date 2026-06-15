@@ -7,13 +7,9 @@ import jakarta.validation.constraints.Size;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-/**
- * Конфигурация сервиса управления картами
- * Загружается из application.properties с префиксом app.card-service
- */
 @Validated
 @ConfigurationProperties(prefix = "app.card-service")
-public record CardServiceConfigurationProperties(
+public record CardServiceSettingsConfigurationProperties(
     @NotBlank
     @Size(min = 1, max = 10)
     @Pattern(
@@ -22,13 +18,5 @@ public record CardServiceConfigurationProperties(
     String issuerId,
 
     @Positive
-    int cardYtl
-) {
-
-    public CardServiceSettings toCardServiceSettings() {
-        return new CardServiceSettings(
-            this.issuerId,
-            this.cardYtl
-        );
-    }
-}
+    int cardValidityPeriod
+) implements CardServiceSettings {}

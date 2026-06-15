@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -32,7 +33,7 @@ public class Transaction {
     @Column(nullable = false, length = 6)
     private String processingCode;
     @Column(nullable = false)
-    private Long amount;
+    private BigDecimal amount;
     @Column(nullable = false, length = 3)
     private String currencyCode;
     @Column(nullable = false, length = 8)
@@ -47,7 +48,7 @@ public class Transaction {
     private String acquirerId;
     @Column(length = 10)
     private String issuerId;
-    private Long acquiringFee;
+    private BigDecimal acquiringFee;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TransactionStatus status;
