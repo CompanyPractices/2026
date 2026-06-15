@@ -25,9 +25,10 @@ function App() {
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
             <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
-            <main className="w-2/3 flex-grow grid grid-cols-4 gap-4">
 
-                <div className="col-span-2 bg-zinc-300 dark:bg-sage-400 m-4 rounded-lg shadow-lg flex flex-col p-4">
+            <main className="w-[95%] md:w-[90%] lg:w-[85%] xl:w-3/4 flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
+
+                <div className="bg-zinc-300 dark:bg-sage-400 rounded-lg shadow-lg flex flex-col p-4">
                     <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
                         Транзакции за последний час
                     </h2>
@@ -36,7 +37,7 @@ function App() {
                     </div>
                 </div>
 
-                <div className="col-span-2 bg-zinc-300 dark:bg-sage-400 m-4 rounded-lg shadow-lg flex flex-col p-4">
+                <div className="bg-zinc-300 dark:bg-sage-400 rounded-lg shadow-lg flex flex-col p-4">
                     <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
                         Статистика одобрения транзакций
                     </h2>
@@ -45,7 +46,7 @@ function App() {
                     </div>
                 </div>
 
-                <div className="col-span-4 pt-6 m-4 place-content-center">
+                <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
                     <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
                 </div>
             </main>
