@@ -30,11 +30,11 @@ public class LimitUsage {
 
     @Column(name = "daily_amount", nullable = false)
     @ColumnDefault("0")
-    private BigDecimal dailyAmount = BigDecimal.ZERO;
+    private BigDecimal dailyAmount;
 
     @Column(name = "monthly_amount", nullable = false)
     @ColumnDefault("0")
-    private BigDecimal monthlyAmount = BigDecimal.ZERO;
+    private BigDecimal monthlyAmount;
 
     @Column(name = "updated_at")
     @ColumnDefault("CURRENT_TIMESTAMP")
