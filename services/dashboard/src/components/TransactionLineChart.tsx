@@ -1,6 +1,6 @@
 import { LineChart, CartesianGrid, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { Transaction } from '../types/index.ts'
-import { format, subHours } from 'date-fns';
+import { formatInTimeZone, subHours } from 'date-fns';
 import {ThemeContext} from "../contexts/ThemeContext.ts";
 import { useContext } from 'react';
 
@@ -22,7 +22,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
         const hourAgo = subHours(new Date(), 1)
         const txCount: Record<string, number> = {};
         transactions.filter((tx) => new Date(tx.transmissionDateTime) >= hourAgo).map((tr) => {
-            const time = format(tr.transmissionDateTime, 'HH:mm');
+            const time = formatInTimeZone(tr.transmissionDateTime, 'UTC', 'HH:mm');
             txCount[time] = (txCount[time] || 0) + 1;
         });
         return Object.entries(txCount).map(([name, count]) => ({name, count})).sort((a, b) => a.name.localeCompare(b.name))
@@ -59,7 +59,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                     data = {txData}
-                    margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+                    margin={{ top: 30, right: 10, left: 20, bottom: 20 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
                     <XAxis
@@ -67,6 +67,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
                         stroke={textColor}
                         tick={{ fill: textColor, fontSize: 12 }}
                         tickLine={false}
+                        label={{value: 'Время', position:"insideBottom", offset:-5 }}
                     />
                     <YAxis
                         width={30}
@@ -75,6 +76,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
                         tick={{ fill: textColor, fontSize: 12 }}
                         tickLine={false}
                         allowDecimals={false}
+                        label={{value: 'TX/min', position:"top", offset:15}}
                     />
                     <Tooltip/>
                     <Line
