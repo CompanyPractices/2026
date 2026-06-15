@@ -48,8 +48,10 @@ public class CardGeneratorService {
             String bin = bins.get(i % bins.size());
 
             String cardholderName = faker.name().fullName().toUpperCase();
-            int balance = ThreadLocalRandom.current().nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
-            int dailyLimit = ThreadLocalRandom.current().nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
+            int balance = ThreadLocalRandom.current()
+                    .nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
+            int dailyLimit = ThreadLocalRandom.current()
+                    .nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
             int monthlyLimit = dailyLimit * DAYS_IN_MONTH;
 
 
