@@ -6,9 +6,7 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.authorization.entities.LimitUsage;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
-import com.processing.authorization.exceptions.CardNotFoundException;
-import com.processing.authorization.exceptions.ReserveCardException;
-import com.processing.authorization.exceptions.ServiceUnavailableException;
+import com.processing.authorization.exceptions.*;
 import com.processing.common.dto.cardmanagement.ReserveRequest;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
@@ -17,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
@@ -29,10 +26,9 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
+
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClient;
 
 /**
  * Сервис авторизации транзакций по банковским картам.
@@ -95,17 +91,14 @@ public class AuthService {
         CardModel cardResponse;
         try {
             cardResponse = getCard(request.pan());
+        } catch (CardNotFoundException e) {
+            log.error("card not found for pan: {}", maskPAN(request.pan()), e);
+            return DeclineOutcome.CARD_NOT_FOUND.build(request, requestInputTime);
+        } catch (ServiceUnavailableException | ResourceAccessException e) {
+            log.error("service unavailable for pan: {}", maskPAN(request.pan()), e);
+            return DeclineOutcome.SERVICE_UNAVAILABLE.build(request, requestInputTime);
         } catch (Exception e) {
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            if (cause instanceof CardNotFoundException) {
-                log.error("card not found for pan: {}", maskPAN(request.pan()));
-                return DeclineOutcome.CARD_NOT_FOUND.build(request, requestInputTime);
-            }
-            if (cause instanceof ServiceUnavailableException || cause instanceof WebClientResponseException) {
-                log.error("service unavailable for pan: {}", maskPAN(request.pan()));
-                return DeclineOutcome.SERVICE_UNAVAILABLE.build(request, requestInputTime);
-            }
-            log.error("getting card failed for pan: {}", maskPAN(request.pan()), e);
+            log.error("getting card from card management service failed for pan: {}", maskPAN(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
         }
 
@@ -212,7 +205,7 @@ public class AuthService {
      * @see CardNotFoundException
      * @see ServiceUnavailableException
      */
-    public CardModel getCard(String pan) throws Exception {
+    public CardModel getCard(String pan) {
         String fullUrl = cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
         String getCardUrl = fullUrl + "/api/cards";
         String url = getCardUrl + "/" + pan;
@@ -262,7 +255,7 @@ public class AuthService {
      * @see ReserveRequest
      * @see ReserveCardException
      */
-    public void reserve(long amount, String rrn, String pan) throws Exception {
+    public void reserve(long amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
         String url = cmsUrl + "/api/cards/" + pan + "/reserve";
         log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
