@@ -73,4 +73,18 @@ public class CardGeneratorControllerIntegrationTest {
                 .then()
                 .statusCode(400);
     }
+
+    @Test
+    void generateShouldReturn400WhenBinsInvalid() throws Exception {
+        GenerateCardsRequest request = new GenerateCardsRequest(1, List.of("ABCDEF"));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(objectMapper.writeValueAsString(request))
+                .port(port)
+                .when()
+                .post("/api/cards/generate")
+                .then()
+                .statusCode(400);
+    }
 }

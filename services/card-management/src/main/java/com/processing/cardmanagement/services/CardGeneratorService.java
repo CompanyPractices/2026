@@ -35,6 +35,7 @@ public class CardGeneratorService {
      * Генерирует указанное количество тестовых карт и сохраняет их в базе данных
      * Карты равномерно распределяются по BIN-ам
      * Распределение статусов: ACTIVE - 95%, INACTIVE - 3%, BLOCKED - 2%
+     * Сохранение выполняется батчами. Размер батча задается в application.properties
      *
      * @param count количество карт для генерации
      * @param bins  список BIN-префиксов для распределения карт
@@ -43,6 +44,7 @@ public class CardGeneratorService {
     public List<Card> generate(int count, List<String> bins) {
         log.info("Generating {} cards for bins: {}", count, bins);
         List<CardDraft> cards = new ArrayList<>();
+        List<Card> result = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
@@ -56,20 +58,30 @@ public class CardGeneratorService {
 
 
             CardDraft card = new CardDraft(
-                bin,
-                cardholderName,
-                generateStatus(),
-                generatorOptions.currencyCode(),
-                dailyLimit,
-                monthlyLimit,
-                balance
+                    bin,
+                    cardholderName,
+                    generateStatus(),
+                    generatorOptions.currencyCode(),
+                    dailyLimit,
+                    monthlyLimit,
+                    balance
             );
 
             eventNotifier.onEvent(new CardGeneratedEvent(card.status()));
             cards.add(card);
+
+            if (cards.size() == generatorOptions.batchSize()) {
+                result.addAll(cardService.createCards(cards));
+                cards.clear();
+            }
         }
+
+        if (!cards.isEmpty()) {
+            result.addAll(cardService.createCards(cards));
+        }
+
         log.info("Successfully generated {} cards", count);
-        return cardService.createCards(cards);
+        return result;
     }
 
     private CardStatus generateStatus() {
