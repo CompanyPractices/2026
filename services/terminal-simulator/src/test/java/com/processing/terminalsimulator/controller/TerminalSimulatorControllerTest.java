@@ -1,8 +1,8 @@
 package com.processing.terminalsimulator.controller;
 
-import com.processing.terminalsimulator.dto.RunRequest;
-import com.processing.terminalsimulator.dto.RunResponse;
-import com.processing.terminalsimulator.model.Scenario;
+import com.processing.common.dto.terminalsimulator.TerminalRunRequest;
+import com.processing.common.dto.terminalsimulator.TerminalRunResponse;
+import com.processing.common.dto.terminalsimulator.TerminalScenario;
 import com.processing.terminalsimulator.service.TerminalSimulatorService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -29,10 +29,10 @@ class TerminalSimulatorControllerTest {
 
     @Test
     void run_shouldReturnResponseFromService() throws Exception {
-        RunRequest request = new RunRequest(10, Scenario.normal);
-        RunResponse expectedResponse = new RunResponse(10, 8, 2, 123L, null);
+        TerminalRunRequest request = new TerminalRunRequest(10, TerminalScenario.normal);
+        TerminalRunResponse expectedResponse = new TerminalRunResponse(10, 8, 2, 123L, null);
 
-        when(service.run(10, Scenario.normal)).thenReturn(expectedResponse);
+        when(service.run(10, TerminalScenario.normal)).thenReturn(expectedResponse);
 
         mockMvc.perform(post("/api/simulator/terminal/run")
                         .contentType(MediaType.APPLICATION_JSON)
