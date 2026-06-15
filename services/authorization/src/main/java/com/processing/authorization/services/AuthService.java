@@ -15,12 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.http.MediaType;
-import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.time.LocalDate;
@@ -206,29 +203,29 @@ public class AuthService {
      */
     public CardModel getCard(String pan) {
         URI uri = UriComponentsBuilder
-            .fromUriString(cmsUrl)
-            .scheme("http")
-            .path("/api/cards/{pan}")
-            .buildAndExpand(pan)
-            .toUri();
+                .fromUriString(cmsUrl)
+                .scheme("http")
+                .path("/api/cards/{pan}")
+                .buildAndExpand(pan)
+                .toUri();
         log.debug("Getting card info for pan {}", maskPAN(pan));
 
         return restClient.get()
-            .uri(uri)
-            .retrieve()
-            .onStatus(status -> status.value() == 404, (req, res) -> {
-                log.debug("Card not found: {}", maskPAN(pan));
-                throw new CardNotFoundException("Card not found: " + maskPAN(pan));
-            })
-            .onStatus(status -> status.value() == 503, (req, res) -> {
-                log.debug("Card Management service unavailable");
-                throw new ServiceUnavailableException("Card Management service unavailable");
-            })
-            .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                log.debug("Failed to get card. Status: {}", res.getStatusCode());
-                throw new CardNotFoundException("Failed to get card. Status: " + res.getStatusCode());
-            })
-            .body(CardModel.class);
+                .uri(uri)
+                .retrieve()
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    log.debug("Card not found: {}", maskPAN(pan));
+                    throw new CardNotFoundException("Card not found: " + maskPAN(pan));
+                })
+                .onStatus(status -> status.value() == 503, (req, res) -> {
+                    log.debug("Card Management service unavailable");
+                    throw new ServiceUnavailableException("Card Management service unavailable");
+                })
+                .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                    log.debug("Failed to get card. Status: {}", res.getStatusCode());
+                    throw new CardNotFoundException("Failed to get card. Status: " + res.getStatusCode());
+                })
+                .body(CardModel.class);
     }
 
     /**
@@ -260,22 +257,22 @@ public class AuthService {
     public void reserve(long amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
         URI uri = UriComponentsBuilder
-            .fromUriString(cmsUrl)
-            .scheme("http")
-            .path("/api/cards/{pan}/reserve")
-            .buildAndExpand(pan)
-            .toUri();
+                .fromUriString(cmsUrl)
+                .scheme("http")
+                .path("/api/cards/{pan}/reserve")
+                .buildAndExpand(pan)
+                .toUri();
         log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
         restClient.post()
-            .uri(uri)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(reserveRequest)
-            .retrieve()
-            .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                log.debug("Reserve failed. Status: {}", res.getStatusCode());
-                throw new ReserveCardException("Failed to reserve. Status: " + res.getStatusCode());
-            })
-            .toBodilessEntity();
+                .uri(uri)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(reserveRequest)
+                .retrieve()
+                .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                    log.debug("Reserve failed. Status: {}", res.getStatusCode());
+                    throw new ReserveCardException("Failed to reserve. Status: " + res.getStatusCode());
+                })
+                .toBodilessEntity();
 
         log.debug("Reserve successful for card {}", maskPAN(pan));
     }
@@ -314,11 +311,11 @@ public class AuthService {
         Calendar calendar = Calendar.getInstance();
 
         String currentSecond = String.format("%1d%03d%02d%02d%02d",
-            calendar.get(Calendar.YEAR) % 10,
-            calendar.get(Calendar.DAY_OF_YEAR),
-            calendar.get(Calendar.HOUR_OF_DAY),
-            calendar.get(Calendar.MINUTE),
-            calendar.get(Calendar.SECOND));
+                calendar.get(Calendar.YEAR) % 10,
+                calendar.get(Calendar.DAY_OF_YEAR),
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                calendar.get(Calendar.SECOND));
 
         String nextValue;
         while (true) {
@@ -360,8 +357,8 @@ public class AuthService {
      */
     public String generateAuthCode() {
         return new Random().ints(6, 0, 36)
-            .mapToObj(i -> Character.toString(i < 10 ? '0' + i : 'A' + i - 10))
-            .collect(Collectors.joining());
+                .mapToObj(i -> Character.toString(i < 10 ? '0' + i : 'A' + i - 10))
+                .collect(Collectors.joining());
     }
 
     /**
@@ -389,6 +386,5 @@ public class AuthService {
 
         return pan.substring(0, 4) + "*".repeat(8) + pan.substring(12);
     }
-
 
 }
