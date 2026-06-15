@@ -11,6 +11,7 @@ import net.datafaker.Faker;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -48,19 +49,31 @@ public class CardGeneratorService {
             String bin = bins.get(i % bins.size());
 
             String cardholderName = faker.name().fullName().toUpperCase();
-            int balance = random.nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
-            int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
-            int monthlyLimit = dailyLimit * 30;
+            BigDecimal balance = BigDecimal.valueOf(
+                random.nextLong(
+                    generatorOptions.minBalance().longValue(),
+                    generatorOptions.maxBalance().longValue()
+                )
+            );
+            BigDecimal dailyLimit = BigDecimal.valueOf(
+                random.nextLong(
+                    generatorOptions.minDailyLimit().longValue(),
+                    generatorOptions.maxDailyLimit().longValue()
+                )
+            );
+            BigDecimal monthlyLimit = BigDecimal.valueOf(
+                dailyLimit.longValue() * 30L
+            );
 
 
             CardDraft card = new CardDraft(
-                    bin,
-                    cardholderName,
-                    generateStatus(),
-                    generatorOptions.currencyCode(),
-                    dailyLimit,
-                    monthlyLimit,
-                    balance
+                bin,
+                cardholderName,
+                generateStatus(),
+                generatorOptions.currencyCode(),
+                dailyLimit,
+                monthlyLimit,
+                balance
             );
 
             eventPublisher.publishEvent(new CardGeneratedEvent(card.status()));

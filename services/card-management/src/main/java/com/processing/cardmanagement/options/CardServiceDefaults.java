@@ -1,5 +1,7 @@
 package com.processing.cardmanagement.options;
 
+import java.math.BigDecimal;
+
 /**
  * Значения по умолчанию для CardService
  *
@@ -14,7 +16,7 @@ public record CardServiceDefaults(
     long pageLimit,
     long pageOffset,
     String currencyCode,
-    long dailyLimit,
-    long monthlyLimit,
-    long balance
+    BigDecimal dailyLimit,
+    BigDecimal monthlyLimit,
+    BigDecimal balance
 ) {}

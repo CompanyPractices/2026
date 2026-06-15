@@ -1,3 +1,5 @@
 package com.processing.cardmanagement.events.domain;
 
-public record CardServiceReserveEvent(String pan, long amount) implements CardServiceEvent {}
+import java.math.BigDecimal;
+
+public record CardServiceReserveEvent(String pan, BigDecimal amount) implements CardServiceEvent {}
