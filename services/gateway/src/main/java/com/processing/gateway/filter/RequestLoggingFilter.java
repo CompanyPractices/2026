@@ -18,6 +18,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * Adds request correlation and writes a structured log record for every request.
+ *
+ * <p>If an incoming {@code X-Request-Id} header is present it is reused;
+ * otherwise a new UUID is generated and propagated to the response.</p>
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
