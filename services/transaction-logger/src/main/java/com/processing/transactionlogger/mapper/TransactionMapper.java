@@ -6,6 +6,7 @@ import com.processing.common.dto.transactionlogger.TransactionStoredResponse;
 import com.processing.transactionlogger.model.Transaction;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 @Component
@@ -76,7 +77,7 @@ public class TransactionMapper {
                 && Objects.equals(transaction.getRrn(), request.rrn())
                 && Objects.equals(transaction.getPan(), request.pan())
                 && Objects.equals(transaction.getProcessingCode(), request.processingCode())
-                && Objects.equals(transaction.getAmount(), request.amount())
+                && compareBigDecimal(transaction.getAmount(), request.amount())
                 && Objects.equals(transaction.getCurrencyCode(), request.currencyCode())
                 && Objects.equals(transaction.getTerminalId(), request.terminalId())
                 && Objects.equals(transaction.getTerminalType(), request.terminalType())
@@ -84,12 +85,22 @@ public class TransactionMapper {
                 && Objects.equals(transaction.getMcc(), request.mcc())
                 && Objects.equals(transaction.getAcquirerId(), request.acquirerId())
                 && Objects.equals(transaction.getIssuerId(), request.issuerId())
-                && Objects.equals(transaction.getAcquiringFee(), request.acquiringFee())
+                && compareBigDecimal(transaction.getAcquiringFee(), request.acquiringFee())
                 && Objects.equals(transaction.getStatus(), request.status())
                 && Objects.equals(transaction.getDeclineReason(), request.declineReason())
                 && Objects.equals(transaction.getAuthCode(), request.authCode())
                 && Objects.equals(transaction.getProcessingTimeMs(), request.processingTimeMs())
                 && Objects.equals(transaction.getTransmissionDateTime(), request.transmissionDateTime())
                 && Objects.equals(transaction.getCreatedAt(), request.createdAt());
+    }
+
+    private static boolean compareBigDecimal(BigDecimal a, BigDecimal b) {
+        if (a == null && b == null) {
+            return true;
+        }
+        if (a == null || b == null) {
+            return false;
+        }
+        return a.compareTo(b) == 0;
     }
 }
