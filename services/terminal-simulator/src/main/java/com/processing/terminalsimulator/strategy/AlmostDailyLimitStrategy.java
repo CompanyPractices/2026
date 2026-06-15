@@ -14,6 +14,9 @@ public class AlmostDailyLimitStrategy implements TransactionStrategy {
     }
     @Override
     public long calculateAmount(CardModel card) {
+        if (card.dailyLimit() <= 1) {
+            return 1L;
+        }
         return  card.dailyLimit() - 1;
     }
     @Override

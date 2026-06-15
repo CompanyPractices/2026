@@ -12,6 +12,7 @@ import com.processing.terminalsimulator.client.GatewayClient;
 import com.processing.terminalsimulator.model.PartofDay;
 import com.processing.terminalsimulator.model.TransactionType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -19,6 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TerminalSimulatorService {
@@ -43,15 +45,22 @@ public class TerminalSimulatorService {
                                             PartofDay partOfDay) {
         CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
         for (int i = start; i < end; i++) {
-            CardModel card = getRandomCard(requiredStatus);
-            AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card);
-            AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
-            authResps.add(authResp);
+            try {
+                CardModel card = getRandomCard(requiredStatus);
+                AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card);
+                AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
+                authResps.add(authResp);
 
-            if (TransactionStatus.APPROVED.name().equals(authResp.status())) {
-                approved.incrementAndGet();
-            } else if (TransactionStatus.DECLINED.name().equals(authResp.status())) {
-                declined.incrementAndGet();
+                if (TransactionStatus.APPROVED.name().equals(authResp.status())) {
+                    approved.incrementAndGet();
+                } else if (TransactionStatus.DECLINED.name().equals(authResp.status())) {
+                    declined.incrementAndGet();
+                }
+            } catch (Exception e) {
+                log.error("Failed to process transaction {}/{} in range [{}-{}]", i, end, start, end, e);
+                authResps.add(new AuthorizationResponse(null, null, null, null, null,
+                        null, e.getMessage(), 0));
+
             }
         }
     }

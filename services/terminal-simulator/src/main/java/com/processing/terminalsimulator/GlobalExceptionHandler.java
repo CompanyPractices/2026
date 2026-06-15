@@ -1,5 +1,6 @@
 package com.processing.terminalsimulator;
 import com.processing.common.dto.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -12,6 +13,7 @@ import org.springframework.web.client.ResourceAccessException;
 import java.time.LocalDateTime;
 
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -46,7 +48,7 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
-        ex.printStackTrace();
+        log.error("Unexpected internal server error", ex);
         ErrorResponse response = new ErrorResponse("Unexpected internal server error", ex.getMessage(),
                 LocalDateTime.now().toString(), "terminal-simulator", String.valueOf(0));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
