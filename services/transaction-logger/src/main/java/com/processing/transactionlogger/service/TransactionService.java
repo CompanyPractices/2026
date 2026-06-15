@@ -31,6 +31,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Сервис логирования транзакций.
+ * Обеспечивает идемпотентное сохранение, поиск с фильтрацией,
+ * агрегированную статистику и WebSocket-рассылку новых транзакций.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -40,6 +45,15 @@ public class TransactionService {
     private final WebSocketManager webSocketManager;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Сохраняет транзакцию в БД и рассылает её через WebSocket.
+     * Идемпотентен: повторный запрос с тем же {@code id} вернёт существующую запись.
+     *
+     * @param request данные транзакции от Switch
+     * @return {@link TransactionStoreResult} с флагом {@code created=true} если запись новая,
+     *         {@code created=false} если уже существовала
+     * @throws TransactionConflictException если {@code id} занят транзакцией с другими данными
+     */
     public TransactionStoreResult store(TransactionRequest request) {
         Optional<Transaction> existingTransaction = transactionRepository.findById(request.id());
         if (existingTransaction.isPresent()) {
@@ -81,6 +95,13 @@ public class TransactionService {
         return TransactionStoreResult.existing(response);
     }
 
+    /**
+     * Ищет транзакции по фильтрам с пагинацией.
+     * Все параметры фильтра опциональны и объединяются через AND.
+     *
+     * @param filter параметры фильтрации и пагинации
+     * @return постраничный результат с общим счётчиком
+     */
     public TransactionSearchResponse search(TransactionFilter filter) {
         Pageable pageable = new OffsetBasedPageRequest(filter.getOffset(), filter.getLimit());
         Page<Transaction> page = transactionRepository.findAll(TransactionSpecification.filter(filter), pageable);
@@ -90,6 +111,11 @@ public class TransactionService {
         return new TransactionSearchResponse(page.getTotalElements(), responses);
     }
 
+    /**
+     * Возвращает агрегированную статистику по всем транзакциям в БД
+     *
+     * @return статистика: счётчики, суммы, процент одобрения, транзакций в минуту
+     */
     @Transactional(readOnly = true)
     public DashboardStatsResponse getStats() {
         long total = transactionRepository.count();
@@ -110,6 +136,12 @@ public class TransactionService {
         );
     }
 
+    /**
+     * Возвращает последние транзакции, отсортированные по {@code createdAt DESC}
+     *
+     * @param limit максимальное число записей (1–500)
+     * @return список транзакций
+     */
     public List<TransactionResponse> getRecent(int limit) {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, Transaction_.CREATED_AT));
         return transactionRepository.findAll(pageable).getContent().stream()
