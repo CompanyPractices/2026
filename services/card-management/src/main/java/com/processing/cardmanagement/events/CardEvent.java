@@ -1,6 +1,7 @@
-package com.processing.cardmanagement.events.domain;
+package com.processing.cardmanagement.events;
 
-public sealed interface CardServiceEvent permits
+public sealed interface CardEvent permits
+    CardGeneratedEvent,
     CardServiceCreationEvent,
     CardServiceDeletionEvent,
     CardServicePatchEvent,

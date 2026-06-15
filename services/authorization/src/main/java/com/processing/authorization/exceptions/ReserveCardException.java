@@ -6,7 +6,7 @@ package com.processing.authorization.exceptions;
  *
  * @see Exception
  */
-public class ReserveCardException extends Exception {
+public class ReserveCardException extends RuntimeException {
     public ReserveCardException(String message) {
         super(message);
     }
