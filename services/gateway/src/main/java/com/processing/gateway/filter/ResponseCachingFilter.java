@@ -19,6 +19,13 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Caches successful Card Management GET responses in the gateway cache.
+ *
+ * <p>Cache hits are served directly by the gateway and marked with
+ * {@code X-Cache: HIT}. Fresh downstream responses are marked with
+ * {@code X-Cache: MISS}.</p>
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
