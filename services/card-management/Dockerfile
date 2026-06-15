@@ -9,7 +9,7 @@ COPY ./services/card-management/pom.xml ./card-management/pom.xml
 COPY ./services/common/src ./common/src
 COPY ./services/card-management/src ./card-management/src
 
-RUN --mount=type=cache,target=/root/.m2 \
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
     mvn -P card-management -pl card-management -am package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine

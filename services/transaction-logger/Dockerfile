@@ -9,7 +9,7 @@ COPY ./services/transaction-logger/pom.xml ./transaction-logger/pom.xml
 COPY ./services/common/src ./common/src
 COPY ./services/transaction-logger/src ./transaction-logger/src
 
-RUN --mount=type=cache,target=/root/.m2 \
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
     mvn -P transaction-logger -pl transaction-logger -am package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine

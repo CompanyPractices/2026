@@ -9,7 +9,7 @@ COPY ./services/merchant-acquirer/pom.xml ./merchant-acquirer/pom.xml
 COPY ./services/common/src ./common/src
 COPY ./services/merchant-acquirer/src ./merchant-acquirer/src
 
-RUN --mount=type=cache,target=/root/.m2 \
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
     mvn -P merchant-acquirer -pl merchant-acquirer -am package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine

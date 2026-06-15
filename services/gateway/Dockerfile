@@ -9,7 +9,7 @@ COPY ./services/gateway/pom.xml ./gateway/pom.xml
 COPY ./services/common/src ./common/src
 COPY ./services/gateway/src ./gateway/src
 
-RUN --mount=type=cache,target=/root/.m2 \
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
     mvn -P gateway -pl gateway -am package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
