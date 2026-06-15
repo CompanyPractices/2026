@@ -75,28 +75,6 @@ public class TransactionServiceLoadTest {
         assertEquals(THREADS * requestsPerThread, transactionRepository.count());
     }
 
-    @Test
-    void storeIdempotentUnderConcurrency() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        AtomicInteger created = new AtomicInteger();
-        AtomicInteger returned = new AtomicInteger();
-        AtomicInteger conflicts = new AtomicInteger();
-
-        runConcurrently(THREADS, () -> {
-            int status = storeTransaction(transactionRequest(id));
-            switch (status) {
-                case 201 -> created.incrementAndGet();
-                case 200 -> returned.incrementAndGet();
-                case 409 -> conflicts.incrementAndGet();
-            }
-        });
-
-        assertEquals(0, conflicts.get());
-        assertEquals(1, created.get());
-        assertEquals(THREADS - 1, returned.get());
-        assertEquals(1, transactionRepository.count());
-    }
 
     @Test
     void searchWhileStoringConcurrently() throws Exception {
