@@ -10,6 +10,7 @@ on:
       - 'docker-compose.yaml'
       - '.env.example'
       - 'docs/api/**'
+      - 'scripts/smoke-test.sh'
   pull_request:
     branches: [ main ]
     paths:
@@ -18,6 +19,7 @@ on:
       - 'docker-compose.yaml'
       - '.env.example'
       - 'docs/api/**'
+      - 'scripts/smoke-test.sh'
 
 jobs:
   base-lint:

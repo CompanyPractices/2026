@@ -27,6 +27,12 @@ import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Optional;
 
+/**
+ * Servlet filter that protects downstream routes with a per-service circuit breaker.
+ *
+ * <p>The downstream service is resolved from gateway route metadata. When the
+ * circuit is open, the filter responds with HTTP 503 without calling the route.</p>
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 3)
 public class CircuitBreakerFilter extends OncePerRequestFilter {
@@ -36,6 +42,14 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
     private final InMemoryCircuitBreaker circuitBreaker;
     private final Duration openDuration;
 
+    /**
+     * Creates the filter with its collaborators and configured open duration.
+     *
+     * @param objectMapper mapper used to write JSON error bodies
+     * @param serviceResolver resolves request paths to downstream services
+     * @param circuitBreaker in-memory circuit breaker
+     * @param openDuration duration advertised through {@code Retry-After}
+     */
     public CircuitBreakerFilter(ObjectMapper objectMapper,
                                 DownstreamServiceResolver serviceResolver,
                                 InMemoryCircuitBreaker circuitBreaker,

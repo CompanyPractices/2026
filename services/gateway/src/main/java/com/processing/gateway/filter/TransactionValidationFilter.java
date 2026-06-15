@@ -31,6 +31,13 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
+/**
+ * Validates transaction authorization requests before they are proxied to Switch.
+ *
+ * <p>The filter reads the JSON body once, validates it, and wraps the request
+ * with a cached body so Spring Cloud Gateway can still forward the original
+ * payload downstream.</p>
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 2)
 @RequiredArgsConstructor
