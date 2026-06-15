@@ -5,22 +5,29 @@ import {TransactionTable} from "./components/TransactionTable.tsx";
 import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
+import { useMemo } from 'react'
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
-    const { transactions: initialTransactions, loading, error, searchTransactions } = useTransactions();
+    const { transactions: initialTransactions, filteredTransactions, loading, error, searchTransactions } = useTransactions();
     const { stats, loading: liveLoading, error: liveError } = useLiveStats(liveTransactions);
 
-    const allTransactions = [
-        ...liveTransactions,
-        ...(initialTransactions || []),
-    ];
+    const uniqueTransactions = useMemo(() => {
+        const allTransactions = [
+            ...liveTransactions,
+            ...(initialTransactions || []),
+        ];
+        return allTransactions.filter((tx, index, self) =>
+            index === self.findIndex(t => t.id === tx.id));
+    }, [liveTransactions, initialTransactions]);
 
-    const uniqueTransactions = allTransactions.filter((tx, index, self) =>
-        index === self.findIndex(t => t.id === tx.id)
-    );
-
-    const displayedTransactions = uniqueTransactions.slice(0, 20);
+    const displayedTransactions = useMemo(() => {
+        const filtered = filteredTransactions || [];
+        const uniqueFiltered = filtered.filter((tx, index, self) =>
+            index === self.findIndex(t => t.id === tx.id)
+        );
+        return uniqueFiltered.slice(0, 20);
+    }, [filteredTransactions]);
 
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
