@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Сервис для генерации тестовых банковских карт
@@ -27,9 +27,9 @@ public class CardGeneratorService {
     private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
     private final CardEventNotifier eventNotifier;
-
     private final Faker faker = new Faker();
-    private final Random random = new Random();
+
+    private static final int DAYS_IN_MONTH = 30;
 
     /**
      * Генерирует указанное количество тестовых карт и сохраняет их в базе данных
@@ -48,9 +48,11 @@ public class CardGeneratorService {
             String bin = bins.get(i % bins.size());
 
             String cardholderName = faker.name().fullName().toUpperCase();
-            int balance = random.nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
-            int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
-            int monthlyLimit = dailyLimit * 30;
+            int balance = ThreadLocalRandom.current()
+                    .nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
+            int dailyLimit = ThreadLocalRandom.current()
+                    .nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
+            int monthlyLimit = dailyLimit * DAYS_IN_MONTH;
 
 
             CardDraft card = new CardDraft(
@@ -71,7 +73,7 @@ public class CardGeneratorService {
     }
 
     private CardStatus generateStatus() {
-        int roll = random.nextInt(100);
+        int roll = ThreadLocalRandom.current().nextInt(100);
 
         if (roll < 95) {
             return CardStatus.ACTIVE;
