@@ -1,6 +1,7 @@
 import { LineChart, CartesianGrid, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { Transaction } from '../types/index.ts'
-import { formatInTimeZone, subHours } from 'date-fns';
+import { subHours } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import {ThemeContext} from "../contexts/ThemeContext.ts";
 import { useContext } from 'react';
 

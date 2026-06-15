@@ -5,7 +5,6 @@ import {TransactionTable} from "./components/TransactionTable.tsx";
 import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
-import { MOCK_TRANSACTIONS_LINECHART } from './mockData.ts'
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
