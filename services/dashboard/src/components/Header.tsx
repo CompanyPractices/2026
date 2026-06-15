@@ -1,6 +1,7 @@
 import {KpiCards, KpiCardsStats} from "./KpiCards.tsx";
 import {ThemeContext} from "../contexts/ThemeContext.ts";
 import { useContext } from 'react';
+import { Sun, Moon } from 'lucide-react';
 
 type HeaderProps = {
     stats: KpiCardsStats,
@@ -41,7 +42,7 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
         <header className="relative flex flex-col items-center font-mono m-5 w-full">
 
             <div className="absolute top-0 left-0 ml-8 mt-3 flex items-center gap-2">
-                <label className="group flex items-center gap-4 cursor-pointer select-none">
+                <label className="group flex items-center gap-2 cursor-pointer select-none">
                     <div className="relative">
                         <input
                             type="checkbox"
@@ -50,7 +51,18 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
                             onChange={() => setTheme(isDark ? 'light' : 'dark')}
                             className="peer appearance-none w-12 h-7 bg-zinc-400 checked:bg-sage-100 rounded-full cursor-pointer transition-colors outline-offset-4"
                         />
-                        <div className="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 peer-checked:translate-x-5 peer-checked:bg-sage-400"></div>
+                        <div className="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-5 peer-checked:bg-sage-400 flex items-center justify-center">
+                            <Sun
+                                className={`absolute w-4 h-4 text-zinc-400 transition-opacity duration-300 ${
+                                    isDark ? 'opacity-0' : 'opacity-100'
+                                }`}
+                            />
+                            <Moon
+                                className={`absolute w-4 h-4 text-sage-50 transition-opacity duration-300 ${
+                                    isDark ? 'opacity-100' : 'opacity-0'
+                                }`}
+                            />
+                        </div>
                     </div>
                 </label>
             </div>
