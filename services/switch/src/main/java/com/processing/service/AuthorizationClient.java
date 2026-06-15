@@ -51,6 +51,7 @@ public class AuthorizationClient {
                 .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
                 .body(request)
                 .retrieve()
+                .onStatus(status -> status.is4xxClientError(), (req, res) -> { })
                 .body(AuthorizationResponse.class);
         if (response != null) {
             return response;

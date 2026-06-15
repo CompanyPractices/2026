@@ -95,14 +95,17 @@ public class AuthService {
         CardModel cardResponse;
         try {
             cardResponse = getCard(request.pan());
-        } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", maskPAN(request.pan()), e);
-            return DeclineOutcome.CARD_NOT_FOUND.build(request, requestInputTime);
-        } catch (ServiceUnavailableException | WebClientResponseException e) {
-            log.error("service unavailable for pan: {}", maskPAN(request.pan()), e);
-            return DeclineOutcome.SERVICE_UNAVAILABLE.build(request, requestInputTime);
         } catch (Exception e) {
-            log.error("getting card from card management service failed for pan: {}", maskPAN(request.pan()), e);
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            if (cause instanceof CardNotFoundException) {
+                log.error("card not found for pan: {}", maskPAN(request.pan()));
+                return DeclineOutcome.CARD_NOT_FOUND.build(request, requestInputTime);
+            }
+            if (cause instanceof ServiceUnavailableException || cause instanceof WebClientResponseException) {
+                log.error("service unavailable for pan: {}", maskPAN(request.pan()));
+                return DeclineOutcome.SERVICE_UNAVAILABLE.build(request, requestInputTime);
+            }
+            log.error("getting card failed for pan: {}", maskPAN(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
         }
 
@@ -211,31 +214,31 @@ public class AuthService {
      */
     public CardModel getCard(String pan) throws Exception {
         String fullUrl = cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
-        String getCardhUrl = fullUrl + "/api/cards";
-        String url = getCardhUrl + "/" + pan;
+        String getCardUrl = fullUrl + "/api/cards";
+        String url = getCardUrl + "/" + pan;
         log.debug("Getting card info for pan {}", maskPAN(pan));
 
         CardModel response = webClient.get()
-                .uri(url)
-                .retrieve()
-                .onStatus(status -> status == HttpStatus.NOT_FOUND, clientResponse -> {
-                    log.debug("Card not found: " + maskPAN(pan));
-                    return Mono.error(new CardNotFoundException("Card not found: " + maskPAN(pan)));
-                })
-                .onStatus(status -> status == HttpStatus.SERVICE_UNAVAILABLE, clientResponse -> {
-                    log.debug("Card Management service unavailable: {}", clientResponse.statusCode());
-                    return Mono
-                            .error(new ServiceUnavailableException(
-                                    "Card Management service unavailable: " + clientResponse.statusCode()));
-                })
-                .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                    log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
-                    return Mono
-                            .error(new CardNotFoundException(
-                                    "Failed to get card. Status: " + clientResponse.statusCode()));
-                })
-                .bodyToMono(CardModel.class)
-                .block();
+            .uri(url)
+            .retrieve()
+            .onStatus(status -> status == HttpStatus.NOT_FOUND, clientResponse -> {
+                log.debug("Card not found: " + maskPAN(pan));
+                return Mono.error(new CardNotFoundException("Card not found: " + maskPAN(pan)));
+            })
+            .onStatus(status -> status == HttpStatus.SERVICE_UNAVAILABLE, clientResponse -> {
+                log.debug("Card Management service unavailable: {}", clientResponse.statusCode());
+                return Mono
+                    .error(new ServiceUnavailableException(
+                        "Card Management service unavailable: " + clientResponse.statusCode()));
+            })
+            .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
+                log.debug("Failed to get card. Status: {}", clientResponse.statusCode());
+                return Mono
+                    .error(new CardNotFoundException(
+                        "Failed to get card. Status: " + clientResponse.statusCode()));
+            })
+            .bodyToMono(CardModel.class)
+            .block();
         return response;
     }
 
@@ -267,22 +270,20 @@ public class AuthService {
      */
     public void reserve(long amount, String rrn, String pan) throws Exception {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
         String url = cmsUrl + "/api/cards/" + pan + "/reserve";
         log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
         String response = webClient.post()
-                .uri(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(reserveRequest)
-                .retrieve()
-                .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
-                    log.debug("Reserve failed. Status: {}", clientResponse.statusCode());
-                    return Mono.error(
-                            new ReserveCardException("Failed to reserve. Status: " + clientResponse.statusCode()));
-                })
-                .bodyToMono(String.class)
-                .block();
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(reserveRequest)
+            .retrieve()
+            .onStatus(status -> !status.is2xxSuccessful(), clientResponse -> {
+                log.debug("Reserve failed. Status: {}", clientResponse.statusCode());
+                return Mono.error(
+                    new ReserveCardException("Failed to reserve. Status: " + clientResponse.statusCode()));
+            })
+            .bodyToMono(String.class)
+            .block();
 
         log.debug("Reserve successful for card {}", maskPAN(pan));
     }
@@ -321,11 +322,11 @@ public class AuthService {
         Calendar calendar = Calendar.getInstance();
 
         String currentSecond = String.format("%1d%03d%02d%02d%02d",
-                calendar.get(Calendar.YEAR) % 10,
-                calendar.get(Calendar.DAY_OF_YEAR),
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                calendar.get(Calendar.SECOND));
+            calendar.get(Calendar.YEAR) % 10,
+            calendar.get(Calendar.DAY_OF_YEAR),
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            calendar.get(Calendar.SECOND));
 
         String nextValue;
         while (true) {
@@ -367,8 +368,8 @@ public class AuthService {
      */
     public String generateAuthCode() {
         return new Random().ints(6, 0, 36)
-                .mapToObj(i -> Character.toString(i < 10 ? '0' + i : 'A' + i - 10))
-                .collect(Collectors.joining());
+            .mapToObj(i -> Character.toString(i < 10 ? '0' + i : 'A' + i - 10))
+            .collect(Collectors.joining());
     }
 
     /**

@@ -14,7 +14,7 @@ import static org.testng.Assert.assertTrue;
  * Goal: check reject CARD_NOT_FOUND for nonexistent PAN.
  */
 public class TC_08_CardNotFoundTest extends E2EBaseTest {
-    private static final String UNKNOWN_PAN = "9999999999999999";
+    private static final String UNKNOWN_PAN = "4000009999999999";
 
     @Test(description = "TC-08: Decline: - Invalid PAN/Card not found")
     public void declinedInvalidPan() throws SQLException {
