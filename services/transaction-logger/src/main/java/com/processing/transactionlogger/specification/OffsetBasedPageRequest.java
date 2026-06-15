@@ -4,6 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+/**
+ * Реализация {@link Pageable} на основе offset/limit.
+ * Spring Data по умолчанию работает через номер страницы — этот класс
+ * позволяет использовать прямое смещение, как требует API поиска транзакций.
+ */
 @RequiredArgsConstructor
 public class OffsetBasedPageRequest implements Pageable {
     private final int offset;

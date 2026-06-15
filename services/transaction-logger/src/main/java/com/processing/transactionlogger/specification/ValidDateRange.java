@@ -5,6 +5,10 @@ import jakarta.validation.Payload;
 
 import java.lang.annotation.*;
 
+/**
+ * Проверяет, что {@code dateFrom} не позже {@code dateTo} в {@link TransactionFilter}.
+ * Если одно из полей не задано — считается валидным.
+ */
 @Documented
 @Constraint(validatedBy = DateRangeValidator.class)
 @Target(ElementType.TYPE)

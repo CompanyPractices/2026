@@ -11,6 +11,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Реализация {@link WebSocketManager} на основе {@link ConcurrentHashMap}.
+ * Периодически отправляет ping-сообщения для поддержания соединений живыми.
+ */
 @Slf4j
 @Component
 public class DefaultWebSocketManager implements WebSocketManager {
@@ -28,6 +32,10 @@ public class DefaultWebSocketManager implements WebSocketManager {
         log.info("WebSocket disconnected: {}, total: {}", session.getId(), sessions.size());
     }
 
+    /**
+     * Рассылает текстовое сообщение всем открытым сессиям.
+     * Закрытые и недоступные сессии удаляются из пула по ходу обхода.
+     */
     @Override
     public void broadcast(String message) {
         Set<WebSocketSession> deadSessions = new HashSet<>();
@@ -46,6 +54,10 @@ public class DefaultWebSocketManager implements WebSocketManager {
         sessions.removeAll(deadSessions);
     }
 
+    /**
+     * Отправляет ping всем сессиям для проверки статуса соединений.
+     * Период задаётся свойством {@code websocket.ping-interval-ms}.
+     */
     @Scheduled(fixedDelayString = "${websocket.ping-interval-ms}")
     public void ping() {
         Set<WebSocketSession> deadSessions = new HashSet<>();
