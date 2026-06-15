@@ -32,7 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public final class CardUseCaseTest {
+public final class CardServiceTest {
 
     private final String panGeneratorCardNumber = "1234 5678 9101 1123".replace(" ", "");
 
@@ -322,21 +322,6 @@ public final class CardUseCaseTest {
             defaults.balance(),
             settings.issuerId()
         );
-    }
-
-    private String generatePan() {
-        return faker.regexify("[0-9]{16}");
-    }
-
-    private void validateCardModel(CardEntity entity, CardModel model) {
-        assertEquals(entity.getId(), model.id());
-        assertEquals(entity.getPan(), model.pan());
-        assertEquals(entity.getBin(), model.bin());
-        assertEquals(entity.getCardholderName(), model.cardholderName());
-        assertEquals(entity.getStrExpiryDate(), model.expiryDate());
-        assertEquals(entity.getStatus().name(), model.status());
-        assertEquals(entity.getCurrencyCode(), model.currencyCode());
-        assertEquals(entity.getDailyLimit(), model.dailyLimit());
     }
 
     private String generatePan() {
