@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 
 @Entity
 @Data
@@ -13,7 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AcquirerFee {
     @Id
-    private String transmissionDateTime;
+    private Instant transmissionDateTime;
     private String stan;
     private String pan;
     private String terminalId;

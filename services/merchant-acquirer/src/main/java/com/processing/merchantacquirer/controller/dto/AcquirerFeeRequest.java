@@ -1,7 +1,9 @@
 package com.processing.merchantacquirer.controller.dto;
 
+import java.time.Instant;
+
 public record AcquirerFeeRequest(
-        String transmissionDateTime,
+        Instant transmissionDateTime,
         String pan,
         String stan,
         Long amount,
