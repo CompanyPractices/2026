@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestClient;
 import static com.processing.authorization.constants.DeclineOutcome.*;
 
@@ -32,11 +33,14 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
+    @Autowired
     private AuthService authService;
 
     private AuthorizationRequest correctRequest;
 
     private CardModel activeCardResponse;
+
+    private MaskPan maskPan;
 
     @Mock
     private LimitUsageRepository limitUsageRepository;
@@ -44,7 +48,8 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         RestClient restClient = RestClient.create();
-        authService = new AuthService(restClient, limitUsageRepository);
+        maskPan = new MaskPan();
+        authService = new AuthService(restClient, maskPan, limitUsageRepository);
 
         correctRequest = new AuthorizationRequest(
                 "0100",
@@ -360,7 +365,7 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldMaskMiddleEightCharacters() {
         String input = "4000001234560001";
-        String result = MaskPan.maskPan(input);
+        String result = maskPan.maskPan(input);
 
         assertEquals("4000********0001", result);
         assertEquals(16, result.length());
@@ -369,7 +374,7 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldReturnInvalidPanOnShortString() {
         String input = "4000";
-        String result = MaskPan.maskPan(input);
+        String result = maskPan.maskPan(input);
 
         assertEquals("****", result);
     }
@@ -377,7 +382,7 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldReturnEmptyStringOnNull() {
         String input = null;
-        String result = MaskPan.maskPan(input);
+        String result = maskPan.maskPan(input);
 
         assertEquals("", result);
     }
@@ -385,10 +390,10 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldPreserveOriginalLength() {
         String input1 = "4000001234560001";
-        String result1 = MaskPan.maskPan(input1);
+        String result1 = maskPan.maskPan(input1);
 
         String input2 = "400001";
-        String result2 = MaskPan.maskPan(input2);
+        String result2 = maskPan.maskPan(input2);
 
         assertEquals(input1.length(), result1.length());
         assertEquals(input2.length(), result2.length());

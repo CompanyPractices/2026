@@ -62,6 +62,7 @@ import org.springframework.web.client.RestClient;
 @RequiredArgsConstructor
 public class AuthService {
     private final RestClient restClient;
+    private final MaskPan maskPan;
 
     /**
      * Базовый URL Card Management System.
@@ -96,13 +97,13 @@ public class AuthService {
         try {
             cardResponse = getCard(request.pan());
         } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", MaskPan.maskPan(request.pan()), e);
+            log.error("card not found for pan: {}", LogPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.build(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException e) {
-            log.error("service unavailable for pan: {}", MaskPan.maskPan(request.pan()), e);
+            log.error("service unavailable for pan: {}", LogPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.build(request, requestInputTime);
         } catch (Exception e) {
-            log.error("getting card from card management service failed for pan: {}", MaskPan.maskPan(request.pan()), e);
+            log.error("getting card from card management service failed for pan: {}", LogPan(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
         }
 
@@ -228,14 +229,14 @@ public class AuthService {
                 .path("/api/cards/{pan}")
                 .buildAndExpand(pan)
                 .toUri();
-        log.debug("Getting card info for pan {}", MaskPan.maskPan(pan));
+        log.debug("Getting card info for pan {}", LogPan(pan));
 
         return restClient.get()
                 .uri(uri)
                 .retrieve()
                 .onStatus(status -> status.value() == 404, (req, res) -> {
-                    log.debug("Card not found: {}", MaskPan.maskPan(pan));
-                    throw new CardNotFoundException("Card not found: " + MaskPan.maskPan(pan));
+                    log.debug("Card not found: {}", LogPan(pan));
+                    throw new CardNotFoundException("Card not found: " + LogPan(pan));
                 })
                 .onStatus(status -> status.value() == 503, (req, res) -> {
                     log.debug("Card Management service unavailable");
@@ -282,7 +283,7 @@ public class AuthService {
                 .path("/api/cards/{pan}/reserve")
                 .buildAndExpand(pan)
                 .toUri();
-        log.debug("Reserving amount {} for card {} with rrn {}", amount, MaskPan.maskPan(pan), rrn);
+        log.debug("Reserving amount {} for card {} with rrn {}", amount, LogPan(pan), rrn);
         restClient.post()
                 .uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -294,7 +295,7 @@ public class AuthService {
                 })
                 .toBodilessEntity();
 
-        log.debug("Reserve successful for card {}", MaskPan.maskPan(pan));
+        log.debug("Reserve successful for card {}", LogPan(pan));
     }
 
     private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
@@ -384,29 +385,7 @@ public class AuthService {
         return new String(buf, StandardCharsets.US_ASCII);
     }
 
-//     /**
-//      * Маскирует номер банковской карты (PAN) для безопасного вывода в логи.
-//      *
-//      * <p>
-//      * Формат маскирования: первые 4 цифры + 8 звездочек + последние 4 цифры.
-//      * Пример: "1234******5678"
-//      * </p>
-//      *
-//      * <p>
-//      * Если переданный PAN некорректен (null или длина не равна 16 символам),
-//      * метод возвращает строку "INVALID_PAN" и записывает предупреждение в лог.
-//      * </p>
-//      *
-//      * @param pan полный номер карты (16 цифр)
-//      * @return маскированный номер карты в формате "1234******5678"
-//      *         или "INVALID_PAN" для некорректного PAN
-//      */
-//     public String maskPAN(String pan) {
-//         if (pan == null || pan.length() != 16) {
-//             log.warn("Invalid PAN provided for masking");
-//             return "INVALID_PAN";
-//         }
-
-//         return pan.substring(0, 4) + "*".repeat(8) + pan.substring(12);
-//     }
+    public String LogPan(String pan) {
+        return maskPan.maskPan(pan);
+    }
 }
