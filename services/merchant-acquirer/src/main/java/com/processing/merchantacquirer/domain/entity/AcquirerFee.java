@@ -12,7 +12,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class AcquirerFee {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "acquirer_fee_seq")
+    @SequenceGenerator(name = "acquirer_fee_seq", sequenceName = "acquirer_fee_seq", allocationSize = 100)
     private Long id;
 
     @Column(name = "transmission_date_time", nullable = false)
@@ -24,7 +25,8 @@ public class AcquirerFee {
     private BigDecimal acquirerFee;
     private BigDecimal amount;
 
-    public AcquirerFee(String transmissionDateTime, String stan, String pan, String terminalId, BigDecimal acquirerFee, BigDecimal amount) {
+    public AcquirerFee(
+            String transmissionDateTime, String stan, String pan, String terminalId, BigDecimal acquirerFee, BigDecimal amount) {
         this.transmissionDateTime = transmissionDateTime;
         this.stan = stan;
         this.pan = pan;

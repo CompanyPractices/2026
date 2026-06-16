@@ -1,6 +1,7 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
+import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.domain.entity.Terminal;
@@ -16,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.processing.merchantacquirer.service.dto.RequestFeeData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -28,18 +30,18 @@ public class TransactionBuilder {
     private final AcquirerProvider acquirerProvider;
     private final TerminalProvider terminalProvider;
 
-    public List<AuthorizationRequest> build(
+    public List<RequestFeeData> build(
             int count,
             List<CardDataResponse> cardDataResponses,
             List<Merchant> merchants,
             Scenario scenario) {
 
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Future<AuthorizationRequest>> futures = new ArrayList<>(count);
+            List<Future<RequestFeeData>> futures = new ArrayList<>(count);
 
             for (int i = 0; i < count; i++) {
                 int finalI = i;
-                Future<AuthorizationRequest> future = executor.submit(
+                Future<RequestFeeData> future = executor.submit(
                         () -> {
                             CardDataResponse card = cardDataResponses.get(finalI % cardDataResponses.size());
                             Merchant merchant = merchants.get(ThreadLocalRandom.current().nextInt(merchants.size()));
@@ -57,21 +59,24 @@ public class TransactionBuilder {
                                     card.pan(), card.currencyCode(), amount, terminal, merchant);
 
                             log.info(String.valueOf(authorizationRequest));
-                            acquirerProvider.calculateFee(
-                                    merchant.getAcquiringFee(), authorizationRequest.amount(), authorizationRequest.transmissionDateTime(),
-                                    authorizationRequest.stan(), authorizationRequest.terminalId(), authorizationRequest.pan());
-                            return authorizationRequest;
+                            AcquirerFee fee = acquirerProvider.calculateFee(
+                                    merchant.getAcquiringFee(),
+                                    authorizationRequest.amount(),
+                                    authorizationRequest.transmissionDateTime(),
+                                    authorizationRequest.stan(),
+                                    authorizationRequest.terminalId(),
+                                    authorizationRequest.pan());
+                            return new RequestFeeData(authorizationRequest, fee);
                         }
                 );
                 futures.add(future);
             }
 
-            List<AuthorizationRequest> requests = new ArrayList<>(count);
-//            List<AcquirerFee> fees = new ArrayList<>(count);
-            for (Future<AuthorizationRequest> future : futures) {
+            List<RequestFeeData> requests = new ArrayList<>(count);
+
+            for (Future<RequestFeeData> future : futures) {
                 try {
                     requests.add(future.get());
-//                    fees.add(future.get().fee());
                 } catch (ExecutionException e) {
                     throw new IllegalStateException("Failed build authorization request", e.getCause());
                 } catch (InterruptedException e) {
@@ -79,7 +84,6 @@ public class TransactionBuilder {
                     throw new IllegalStateException("Interrupted while build auhtorization request", e);
                 }
             }
-//            acquirerFeeRepository.saveAll(fees);
             return requests;
         }
     }

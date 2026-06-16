@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -17,16 +18,21 @@ import java.math.RoundingMode;
 public class AcquirerProvider {
     private final AcquirerFeeRepository repository;
 
-    public void calculateFee(
+    public AcquirerFee calculateFee(
             BigDecimal fee, BigDecimal amount, String transmissionDateTime, String stan, String terminalId, String pan) {
         BigDecimal acquiringFee = amount
                 .multiply(fee)
                 .setScale(0, RoundingMode.HALF_EVEN);
 
         AcquirerFee acquirerFeeEntity = new AcquirerFee(transmissionDateTime, stan, pan, terminalId, acquiringFee, amount);
-        repository.save(acquirerFeeEntity);
         log.info("Calculate acquirer fee: {}",
                 acquirerFeeEntity);
+        return acquirerFeeEntity;
+    }
+
+    public void saveAll(List<AcquirerFee> fees) {
+        repository.saveAll(fees);
+        log.info("Saved {} acquiring fees", fees.size());
     }
 
     public AcquirerFeeResponse getAcquirerFee(AcquirerFeeRequest request) {

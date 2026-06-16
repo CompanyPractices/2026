@@ -4,8 +4,8 @@ import com.processing.merchantacquirer.client.dto.CardDataResponse;
 import com.processing.merchantacquirer.controller.dto.*;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
+import com.processing.merchantacquirer.service.dto.RequestFeeData;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
-import com.processing.common.dto.authorization.AuthorizationRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,10 +41,11 @@ public class SimulationService {
     log.info("Merchants with MCC({}): {}", request.mccCodes(), merchants);
 
     // Создание транакций
-    List<AuthorizationRequest> authorizationRequests =
-        transactionBuilder.build(request.count(), cards, merchants, scenario);
+    List<RequestFeeData> built = transactionBuilder.build(request.count(), cards, merchants, scenario);
 
-    SimulatorStats stats = transactionSender.sendAll(authorizationRequests);
+    acquirerProvider.saveAll(built.stream().map(RequestFeeData::fee).toList());
+
+    SimulatorStats stats = transactionSender.sendAll(built.stream().map(RequestFeeData::authorizationRequest).toList());
 
     // Формирование
     LocalDateTime endTime = LocalDateTime.now();

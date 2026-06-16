@@ -30,20 +30,26 @@ public class TransactionSender {
       List<Future<AuthorizationResponse>> futures = new ArrayList<>(requests.size());
 
       for (AuthorizationRequest request : requests) {
-        Future<AuthorizationResponse> future = executor.submit(
-                () -> {
-                  semaphore.acquire();
-                  try {
-                    AuthorizationResponse response = gatewayClient.processAuthorize(request);
-                    transactionMetrics.record(request.mcc(), response.status());
-                    log.info("AuthorizationResponse: {}", response);
-                    return response;
-                  } finally {
-                    semaphore.release();
+        semaphore.acquire();
+        try {
+          futures.add(executor.submit(
+                  () -> {
+                    try {
+                      AuthorizationResponse response = gatewayClient.processAuthorize(request);
+                      transactionMetrics.record(request.mcc(), response.status());
+                      log.info("AuthorizationResponse: {}", response);
+                      return response;
+                    } catch (ExternalServiceException e) {
+                      transactionMetrics.record(request.mcc(), "ERROR");
+                      log.warn("Gateway returned failed authorization {}: {}", request, e.getMessage());
+                      return AuthorizationResponse.systemError(request.stan());
+                    }
                   }
-                }
-        );
-        futures.add(future);
+          ));
+        } catch (RuntimeException e) {
+          semaphore.release();
+          throw e;
+        }
       }
 
       List<AuthorizationResponse> responses = new ArrayList<>(requests.size());
@@ -60,11 +66,8 @@ public class TransactionSender {
           Thread.currentThread().interrupt();
           throw new IllegalStateException("Interrupted while waiting for gateway", e);
         } catch (ExecutionException e) {
-          Throwable cause = e.getCause();
-          if (cause instanceof ExternalServiceException ese) {
-            throw ese;
-          }
-          throw new IllegalStateException("Task filed", e.getCause());
+          log.error("Unsuccessful authorization request: {}", e.getMessage());
+          continue;
         }
 
         responses.add(response);
@@ -75,6 +78,8 @@ public class TransactionSender {
         }
       }
       return new SimulatorStats(responses, approved, declined);
+    } catch (InterruptedException e) {
+        throw new RuntimeException(e);
     }
   }
 }
