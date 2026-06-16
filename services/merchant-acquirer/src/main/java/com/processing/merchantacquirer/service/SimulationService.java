@@ -27,18 +27,18 @@ public class SimulationService {
 
   public SimulatorResponse run(SimulatorRequest request) {
     LocalDateTime startTime = LocalDateTime.now();
-    log.info(String.valueOf(request));
+    log.info("Simulator request: {}", request);
 
     List<CardDataResponse> cards = cardProvider.getCards(request.count());
-    log.info(String.valueOf(cards));
+    log.info("Cards from Card Management: {}", cards);
 
     // Получение сценария
     Scenario scenario = scenarioProvider.getScenario(request.scenario());
-    log.info(String.valueOf(scenario));
+    log.info("Loaded scenario: {}", scenario);
 
     // Получение мерчантов
     List<Merchant> merchants = merchantProvider.getMerchant(request.mccCodes(), scenario);
-    log.info(String.valueOf(merchants));
+    log.info("Merchants with MCC({}): {}", request.mccCodes(), merchants);
 
     // Создание транакций
     List<AuthorizationRequest> authorizationRequests =
