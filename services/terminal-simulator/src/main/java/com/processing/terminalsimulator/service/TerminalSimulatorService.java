@@ -47,7 +47,8 @@ public class TerminalSimulatorService {
         for (int i = start; i < end; i++) {
             try {
                 CardModel card = getRandomCard(requiredStatus);
-                AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card);
+                String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
+                AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card, terminalId);
                 AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
                 authResps.add(authResp);
 

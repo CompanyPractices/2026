@@ -28,10 +28,10 @@ public class TransactionSearchTest extends E2EBaseTest {
     public void setUpTransactions() {
         knownPan = createCard();
 
-        sendTransaction(knownPan, 50000L, "190001");
-        sendTransaction(knownPan, 50000L, "190002");
-        sendTransaction(knownPan, 50000L, "190003");
-        sendTransaction(knownPan, 1000000L, "190004");
+        sendTransaction(knownPan, new BigDecimal("50000"), "190001");
+        sendTransaction(knownPan, new BigDecimal("50000"), "190002");
+        sendTransaction(knownPan, new BigDecimal("50000"), "190003");
+        sendTransaction(knownPan, new BigDecimal("1000000"), "190004");
     }
 
     @Test(description = "TC-19 - Transaction search with filters and pagination")
@@ -111,21 +111,21 @@ public class TransactionSearchTest extends E2EBaseTest {
                 "400000",
                 "SEARCH TEST USER",
                 "643",
-                BigDecimal.valueOf(15000000L),
-                BigDecimal.valueOf(300000000L),
-                BigDecimal.valueOf(400000L)
+                new BigDecimal("15000000"),
+                new BigDecimal("300000000"),
+                new BigDecimal("400000")
         );
 
         return httpPost(GATEWAY_URL, "/api/cards", cardRequest, 201).path("pan").asText();
     }
 
-    private void sendTransaction(String pan, long amount, String stan) {
+    private void sendTransaction(String pan, BigDecimal amount, String stan) {
         AuthorizationRequest request = AuthorizationRequest.builder()
                 .mti("0100")
                 .stan(stan)
                 .pan(pan)
                 .processingCode("000000")
-                .amount(BigDecimal.valueOf(amount))
+                .amount(amount)
                 .currencyCode("643")
                 .transmissionDateTime(LocalDateTime.now().toString())
                 .terminalId("TERM0001")

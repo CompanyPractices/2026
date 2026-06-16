@@ -2,12 +2,12 @@ package com.processing.transactionlogger.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.transactionlogger.TransactionResponse;
-import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.transactionlogger.dto.TransactionSearchResponse;
 import com.processing.transactionlogger.mapper.TransactionMapper;
 import com.processing.transactionlogger.model.Transaction;
 import com.processing.transactionlogger.repository.TransactionRepository;
+import com.processing.transactionlogger.repository.TransactionStats;
 import com.processing.transactionlogger.specification.TransactionFilter;
 import com.processing.transactionlogger.websocket.WebSocketManager;
 import org.instancio.Instancio;
@@ -83,12 +83,13 @@ public class TransactionServiceSearchTest {
 
     @Test
     void getStatsReturnsAggregatedData() {
-        when(transactionRepository.count()).thenReturn(100L);
-        when(transactionRepository.countByStatus(TransactionStatus.APPROVED)).thenReturn(80L);
-        when(transactionRepository.countByStatus(TransactionStatus.DECLINED)).thenReturn(20L);
-        when(transactionRepository.sumAmount()).thenReturn(new BigDecimal("500000"));
-        when(transactionRepository.countByCreatedAtAfter(any(Instant.class))).thenReturn(5L);
-        when(transactionRepository.averageProcessingTimeMs()).thenReturn(42.5);
+        when(transactionRepository.findStats())
+                .thenReturn(new StatsStub(100L,
+                        80L,
+                        20L,
+                        new BigDecimal("500000"),
+                        5L,
+                        42.5));
 
         DashboardStatsResponse stats = transactionService.getStats();
 
@@ -104,9 +105,13 @@ public class TransactionServiceSearchTest {
 
     @Test
     void getStatsReturnsZeroWhenNotTransactions() {
-        when(transactionRepository.count()).thenReturn(0L);
-        when(transactionRepository.countByStatus(any())).thenReturn(0L);
-        when(transactionRepository.countByCreatedAtAfter(any(Instant.class))).thenReturn(0L);
+        when(transactionRepository.findStats())
+                .thenReturn(new StatsStub(0L,
+                        0L,
+                        0L,
+                        BigDecimal.ZERO,
+                        0L,
+                        0.0));
 
         DashboardStatsResponse stats = transactionService.getStats();
 
@@ -143,4 +148,15 @@ public class TransactionServiceSearchTest {
         return new TransactionFilter();
     }
 
+    private record StatsStub(
+            long total, long approved, long declined,
+            BigDecimal totalAmount, long recentCount, double avgProcessingTimeMs
+    ) implements TransactionStats {
+        public long getTotal() { return total; }
+        public long getApproved() { return approved; }
+        public long getDeclined() { return declined; }
+        public BigDecimal getTotalAmount() { return totalAmount; }
+        public long getRecentCount() { return recentCount; }
+        public double getAvgProcessingTimeMs() { return avgProcessingTimeMs; }
+    }
 }
