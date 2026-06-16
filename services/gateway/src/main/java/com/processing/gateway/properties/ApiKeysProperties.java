@@ -1,6 +1,6 @@
 package com.processing.gateway.properties;
 
-import com.processing.gateway.enums.ApiKeyRoles;
+import com.processing.gateway.models.ApiKeyRoles;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @ConfigurationProperties(prefix = "gateway.api-keys")
 @Component
@@ -24,5 +25,6 @@ public class ApiKeysProperties {
     }
 
     private List<Rules> rules = new ArrayList<>();
-    private List<Rules> exceptions = new ArrayList<>();
+    private List<Rules> exclusions = new ArrayList<>();
+    private Map<String, String> keys;
 }

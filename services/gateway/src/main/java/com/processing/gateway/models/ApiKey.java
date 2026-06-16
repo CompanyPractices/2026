@@ -1,12 +1,10 @@
 package com.processing.gateway.models;
 
-import com.processing.gateway.enums.ApiKeyRoles;
-
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record ApiKey(
         String key,
         ApiKeyRoles role,
-        LocalDateTime issuedAt,
-        LocalDateTime expiresBy
+        Instant issuedAt,
+        Instant expiresBy
 ) {}

@@ -1,6 +1,6 @@
 package com.processing.gateway.filter;
 
-import com.processing.gateway.enums.ApiKeyRoles;
+import com.processing.gateway.models.ApiKeyRoles;
 import com.processing.gateway.models.ApiKey;
 import com.processing.gateway.properties.ApiKeysProperties;
 import com.processing.gateway.storage.ApiKeyStorage;
@@ -39,9 +39,9 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        for (ApiKeysProperties.Rules exception : apiKeysProperties.getExceptions()) {
-            if (antPathMatcher.match(exception.getUrl(), request.getRequestURI())
-                    && (request.getMethod().equals(exception.getMethod()) || exception.getMethod() == null)) {
+        for (ApiKeysProperties.Rules exclusion : apiKeysProperties.getExclusions()) {
+            if (antPathMatcher.match(exclusion.getUrl(), request.getRequestURI())
+                    && (request.getMethod().equals(exclusion.getMethod()) || exclusion.getMethod() == null)) {
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -82,6 +82,10 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     }
 
     private boolean isAllowed(HttpServletRequest request, ApiKeyRoles role) {
+        if (role == ApiKeyRoles.ADMIN) {
+            return true;
+        }
+
         for (ApiKeysProperties.Rules rule : apiKeysProperties.getRules()) {
             if (antPathMatcher.match(rule.getUrl(), request.getRequestURI())
                     && (request.getMethod().equals(rule.getMethod()) || rule.getMethod() == null)

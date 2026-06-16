@@ -158,15 +158,22 @@ gateway:
     request-timeout: 3
     url: /health
   api-keys:
-    master-key: qD83RKKzmM/jd1eZV3nUNA==
+    #master-key: qD83RKKzmM/jd1eZV3nUNA==
+    keys:
+      tk-r: READ
+      tk-w: WRITE
+      key-for-tests: ADMIN
     rules:
+      - url: /api/dashboard/**
+        method: GET
+        role: READ
       - url: /api/transactions
         method: POST
         role: WRITE
       - url: /api/keys
         method: POST
         role: ADMIN
-    exceptions:
+    exclusions:
       - url: /health
         method: GET
       - url: /docs
