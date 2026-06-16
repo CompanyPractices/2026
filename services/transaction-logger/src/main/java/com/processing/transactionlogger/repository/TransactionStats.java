@@ -1,5 +1,7 @@
 package com.processing.transactionlogger.repository;
 
+import java.math.BigDecimal;
+
 /**
  * Результат агрегирующего запроса {@link TransactionRepository#findStats}.
  * Должен быть интерфейсом: Spring Data создаёт JDK-прокси,
@@ -9,7 +11,7 @@ public interface TransactionStats {
     long getTotal();
     long getApproved();
     long getDeclined();
-    long getTotalAmount();
+    BigDecimal getTotalAmount();
     long getRecentCount();
     double getAvgProcessingTimeMs();
 }
