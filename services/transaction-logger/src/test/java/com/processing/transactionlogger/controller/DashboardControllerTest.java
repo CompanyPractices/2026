@@ -2,8 +2,10 @@ package com.processing.transactionlogger.controller;
 
 import com.processing.common.dto.transactionlogger.TransactionResponse;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
+import com.processing.transactionlogger.dto.ChartBucket;
 import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.transactionlogger.service.TransactionService;
+import com.processing.transactionlogger.specification.ChartsFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -56,6 +59,27 @@ public class DashboardControllerTest {
         dashboardController.getRecent(5);
 
         verify(transactionService).getRecent(5);
+    }
+
+    @Test
+    void getChartsReturnsResultFromService() {
+        List<ChartBucket> expected = List.of(
+                new ChartBucket(Instant.parse("2026-06-16T10:00:00Z"), 10, 7, 3, 500000));
+        when(transactionService.getCharts(any())).thenReturn(expected);
+
+        List<ChartBucket> result = dashboardController.getCharts(new ChartsFilter());
+
+        assertEquals(expected, result);
+    }
+    @Test
+    void getChartsPassesFilterToService() {
+        when(transactionService.getCharts(any())).thenReturn(List.of());
+        ChartsFilter filter = new ChartsFilter();
+        filter.setGranularity("day");
+
+        dashboardController.getCharts(filter);
+
+        verify(transactionService).getCharts(filter);
     }
 
     private static DashboardStatsResponse stats(long total, long approved, long declined) {

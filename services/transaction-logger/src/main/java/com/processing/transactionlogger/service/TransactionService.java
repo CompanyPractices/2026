@@ -2,6 +2,7 @@ package com.processing.transactionlogger.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.transactionlogger.dto.ChartBucket;
 import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.common.dto.transactionlogger.TransactionRequest;
 import com.processing.common.dto.transactionlogger.TransactionResponse;
@@ -12,6 +13,7 @@ import com.processing.transactionlogger.mapper.TransactionMapper;
 import com.processing.transactionlogger.model.Transaction;
 import com.processing.transactionlogger.model.Transaction_;
 import com.processing.transactionlogger.repository.TransactionRepository;
+import com.processing.transactionlogger.specification.ChartsFilter;
 import com.processing.transactionlogger.specification.OffsetBasedPageRequest;
 import com.processing.transactionlogger.specification.TransactionFilter;
 import com.processing.transactionlogger.specification.TransactionSpecification;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -39,6 +42,9 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
+    private static final String DEFAULT_GRANULARITY = "hour";
+    /** Верхняя граница диапазона по умолчанию, когда {@code to } в charts не задан */
+    private static final Instant FAR_FUTURE = Instant.parse("9999-12-31T23:59:59Z");
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
     private final WebSocketManager webSocketManager;
@@ -133,6 +139,26 @@ public class TransactionService {
                 avgProcessingTimeMs,
                 recentCount
         );
+    }
+
+
+    /**
+     * Агрегирует транзакции по временным корзинам (час или день) для графиков Dashboard.
+     * Группировка и фильтрация выполняются по {@code createdAt} в полуинтервале
+     * {@code [from, to)}. Если границы диапазона не заданы, агрегируются все транзакции.
+     *
+     * @param filter гранулярность и опциональные границы диапазона ({@code from}/{@code to})
+     * @return корзины со счётчиками и суммами, упорядоченные по времени
+     * */
+    @Transactional(readOnly = true)
+    public List<ChartBucket> getCharts(ChartsFilter filter) {
+        String granularity = Objects.requireNonNullElse(filter.getGranularity(), DEFAULT_GRANULARITY);
+        Instant from = Objects.requireNonNullElse(filter.getFrom(), Instant.EPOCH);
+        Instant to = Objects.requireNonNullElse(filter.getTo(), FAR_FUTURE);
+
+        return transactionRepository.aggregateByInterval(granularity, from, to).stream()
+                .map(ChartBucket::from)
+                .toList();
     }
 
     /**
