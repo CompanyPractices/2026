@@ -87,7 +87,7 @@ public class TransactionValidationFilter extends OncePerRequestFilter {
                 "VALIDATION_ERROR",
                 message,
                 Instant.now().toString(),
-                null,
+                "gateway",
                 null
         ));
     }

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -52,7 +53,7 @@ public class TransactionServiceIntegrationTest {
         save(transaction("4000000000000002", TransactionStatus.DECLINED));
 
         TransactionFilter filter = new TransactionFilter();
-        filter.setStatus(TransactionStatus.APPROVED.toString());
+        filter.setStatus(TransactionStatus.APPROVED);
         TransactionSearchResponse result = transactionService.search(filter);
 
 
@@ -113,7 +114,7 @@ public class TransactionServiceIntegrationTest {
 
         TransactionFilter filter = new TransactionFilter();
         filter.setPan("4000000000000001");
-        filter.setStatus("APPROVED");
+        filter.setStatus(TransactionStatus.APPROVED);
         TransactionSearchResponse result = transactionService.search(filter);
 
         assertEquals(1, result.total());
@@ -166,7 +167,7 @@ public class TransactionServiceIntegrationTest {
         t.setStan("000001");
         t.setPan(pan);
         t.setProcessingCode("000000");
-        t.setAmount(1000000L);
+        t.setAmount(new BigDecimal("1000000"));
         t.setCurrencyCode("643");
         t.setTerminalId("TERM0001");
         t.setMerchantId("MERCHANT000001");

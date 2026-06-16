@@ -9,7 +9,8 @@ COPY ./services/switch/pom.xml ./switch/pom.xml
 COPY ./services/common/src ./common/src
 COPY ./services/switch/src ./switch/src
 
-RUN mvn -P switch clean package -DskipTests
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    mvn -P switch clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

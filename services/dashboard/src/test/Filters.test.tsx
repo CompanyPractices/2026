@@ -1,39 +1,61 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Filters } from '../components/Filters'
+import { Filters } from '../components/Filters';
+
+if (typeof window !== 'undefined' && !window.ResizeObserver) {
+    window.ResizeObserver = class ResizeObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    };
+}
 
 describe('Filters', () => {
     const onSearchMock = vi.fn();
-    const issuersMock = {'ISS001': 'Сбербанк', 'ISS002': 'Т-Банк'};
-    const mccMock = {'5411': 'Супермаркеты', '5812': 'Рестораны'};
+    const issuersMock = { 'ISS001': 'Сбербанк', 'ISS002': 'Т-Банк' };
+    const mccMock = { '5411': 'Супермаркеты', '5812': 'Рестораны' };
+    const user = userEvent.setup();
 
     beforeEach(() => {
         onSearchMock.mockClear();
     });
 
-    it('all filter fields and buttons correct', () => {
-        render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock}/>)
-        expect(screen.getByLabelText('Статус:')).toBeInTheDocument();
-        expect(screen.getByLabelText('Банк эмитент:')).toBeInTheDocument();
-        expect(screen.getByLabelText('MCC:')).toBeInTheDocument();
+    it('renders all filter fields and buttons correctly', () => {
+        render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock} />);
+
+        expect(screen.getByText('Статус:')).toBeInTheDocument();
+        expect(screen.getByText('Банк эмитент:')).toBeInTheDocument();
+        expect(screen.getByText('MCC:')).toBeInTheDocument();
         expect(screen.getByLabelText('Начало даты:')).toBeInTheDocument();
         expect(screen.getByLabelText('Конец даты:')).toBeInTheDocument();
 
-        expect(screen.getByRole('button', {name: 'Найти'})).toBeInTheDocument();
-        expect(screen.getByRole('button', {name: 'Сбросить'})).toBeInTheDocument();
+        const allButtons = screen.getAllByRole('button', { name: 'Все' });
+        expect(allButtons).toHaveLength(3);
+
+        expect(screen.getByRole('button', { name: 'Найти' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Сбросить' })).toBeInTheDocument();
     });
 
-    it('call search with correct data', async () => {
-        const user = userEvent.setup();
-        render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock}/>);
-        expect(screen.getByLabelText('Статус:')).toBeInTheDocument();
-        await user.selectOptions(screen.getByLabelText('Статус:'), 'APPROVED');
-        await user.selectOptions(screen.getByLabelText('Банк эмитент:'), 'ISS001');
-        await user.clear(screen.getByLabelText('Начало даты:'));
-        await user.type(screen.getByLabelText('Начало даты:'), '2026-01-01');
+    it('calls search with correct data when form is submitted', async () => {
+        render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock} />);
 
-        await user.click(screen.getByRole('button', {name: 'Найти'}));
+        const statusLabel = screen.getByText('Статус:');
+        const statusButton = statusLabel.parentElement?.querySelector('button') as HTMLElement;
+        await user.click(statusButton);
+        await user.click(screen.getByRole('option', { name: 'Одобрен' }));
+
+        const issuerLabel = screen.getByText('Банк эмитент:');
+        const issuerButton = issuerLabel.parentElement?.querySelector('button') as HTMLElement;
+        await user.click(issuerButton);
+        await user.click(screen.getByRole('option', { name: 'Сбербанк' }));
+
+        const dateInput = screen.getByLabelText('Начало даты:');
+        await user.clear(dateInput);
+        await user.type(dateInput, '2026-01-01');
+
+        const searchButton = screen.getByRole('button', { name: 'Найти' });
+        await user.click(searchButton);
 
         expect(onSearchMock).toHaveBeenCalledTimes(1);
         expect(onSearchMock).toHaveBeenCalledWith({
@@ -43,16 +65,20 @@ describe('Filters', () => {
         });
     });
 
-    it('clear form and call search with empty filter', async() => {
-        const user = userEvent.setup();
-        render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock}/>);
-        await user.selectOptions(screen.getByLabelText('Статус:'), 'DECLINED');
-        await user.selectOptions(screen.getByLabelText('MCC:'), '5411');
+    it('clears form and calls search with empty filter on reset', async () => {
+        render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock} />);
 
-        await user.click(screen.getByRole('button', {name: 'Сбросить'}));
+        const statusLabel = screen.getByText('Статус:');
+        const statusButton = statusLabel.parentElement?.querySelector('button') as HTMLElement;
+        await user.click(statusButton);
+        await user.click(screen.getByRole('option', { name: 'Отклонен' }));
 
-        expect(screen.getByLabelText('Статус:')).toHaveValue('');
-        expect(screen.getByLabelText('MCC:')).toHaveValue('');
+        const resetButton = screen.getByRole('button', { name: 'Сбросить' });
+        await user.click(resetButton);
+
         expect(onSearchMock).toHaveBeenCalledWith({});
+
+        const allButtons = screen.getAllByRole('button', { name: 'Все' });
+        expect(allButtons).toHaveLength(3);
     });
-})
+});
