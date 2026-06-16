@@ -10,6 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
@@ -35,17 +38,19 @@ public class AcquirerProviderTest {
                 "5411",
                 "grocery",
                 "ACQ003",
-                15L,
-                145000);
+                BigDecimal.valueOf(0.015),
+                BigDecimal.valueOf(145000));
 
-        when(merchantProvider.getMerchantAcquirerFee(merchant.getAcquirerId())).thenReturn(67L);
+        when(merchantProvider.getMerchantAcquirerFee(merchant.getAcquirerId())).thenReturn(BigDecimal.valueOf(0.015));
 
-        long amount = 1399_99;
+        BigDecimal amount = BigDecimal.valueOf(139999);
         String stan = "000004";
         String rrn = "616113423602";
         String terminalId = "TERM001";
         String pan = "4000005310852539";
-        Long expected = amount * 67 / 1000;
+        BigDecimal expected = amount
+                .multiply(BigDecimal.valueOf(0.015))
+                .setScale(0, RoundingMode.HALF_EVEN);
 
         acquirerProvider.calculateFee(merchant.getAcquirerId(), amount, rrn, stan, terminalId, pan);
         ArgumentCaptor<AcquirerFee> feeCaptor = ArgumentCaptor.forClass(AcquirerFee.class);
@@ -57,12 +62,12 @@ public class AcquirerProviderTest {
 
     @Test
     void getFee(){
-        long amount = 139_999;
+        BigDecimal amount = BigDecimal.valueOf(139_999);
         String stan = "000004";
         String transmissionDateTime = "2026-06-10T18:19:25.843989500";
         String terminalId = "TERM001";
         String pan = "4000005310852539";
-        Long fee = amount * 67 / 1000;
+        BigDecimal fee = amount.multiply(BigDecimal.valueOf(67)).multiply(BigDecimal.valueOf(0.001));
 
         AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(transmissionDateTime, pan, stan, amount, terminalId);
         when(repository.findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(transmissionDateTime, stan, terminalId, amount, pan)).thenReturn(new AcquirerFee(transmissionDateTime, stan, pan, terminalId, fee, amount));

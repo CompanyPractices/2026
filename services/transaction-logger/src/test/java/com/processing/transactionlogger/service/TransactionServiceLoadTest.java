@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -294,7 +295,7 @@ public class TransactionServiceLoadTest {
                 "012345678901",
                 "4000001234560001",
                 "000000",
-                150000L,
+                new BigDecimal("150000"),
                 "643",
                 "TERM001",
                 "POS",
@@ -302,7 +303,7 @@ public class TransactionServiceLoadTest {
                 "5411",
                 "ACQ001",
                 "ISS001",
-                2250L,
+                new BigDecimal("2250"),
                 TransactionStatus.APPROVED,
                 null,
                 "ABC123",

@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 
 @Entity
 @Data
@@ -17,6 +19,6 @@ public class AcquirerFee {
     private String stan;
     private String pan;
     private String terminalId;
-    private Long acquirerFee;
-    private Long amount;
+    private BigDecimal acquirerFee;
+    private BigDecimal amount;
 }
