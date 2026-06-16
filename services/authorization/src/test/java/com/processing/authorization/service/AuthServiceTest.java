@@ -1,7 +1,6 @@
 package com.processing.authorization.service;
 
 import com.processing.authorization.exceptions.ReserveCardException;
-import com.processing.common.MaskPan;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -10,6 +9,8 @@ import com.processing.authorization.repositories.LimitUsageRepository;
 import com.processing.authorization.exceptions.ServiceUnavailableException;
 import com.processing.authorization.services.AuthService;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
+import com.processing.common.utils.MaskPan;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

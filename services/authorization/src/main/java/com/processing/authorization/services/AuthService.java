@@ -1,7 +1,6 @@
 package com.processing.authorization.services;
 
 import com.processing.authorization.constants.DeclineOutcome;
-import com.processing.common.MaskPan;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -9,7 +8,7 @@ import com.processing.authorization.entities.LimitUsage;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.authorization.exceptions.*;
 import com.processing.common.dto.cardmanagement.ReserveRequest;
-
+import com.processing.common.utils.MaskPan;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -97,13 +96,13 @@ public class AuthService {
         try {
             cardResponse = getCard(request.pan());
         } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", LogPan(request.pan()), e);
+            log.error("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.build(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException e) {
-            log.error("service unavailable for pan: {}", LogPan(request.pan()), e);
+            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.build(request, requestInputTime);
         } catch (Exception e) {
-            log.error("getting card from card management service failed for pan: {}", LogPan(request.pan()), e);
+            log.error("getting card from card management service failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
         }
 
@@ -229,14 +228,14 @@ public class AuthService {
                 .path("/api/cards/{pan}")
                 .buildAndExpand(pan)
                 .toUri();
-        log.debug("Getting card info for pan {}", LogPan(pan));
+        log.debug("Getting card info for pan {}", logPan(pan));
 
         return restClient.get()
                 .uri(uri)
                 .retrieve()
                 .onStatus(status -> status.value() == 404, (req, res) -> {
-                    log.debug("Card not found: {}", LogPan(pan));
-                    throw new CardNotFoundException("Card not found: " + LogPan(pan));
+                    log.debug("Card not found: {}", logPan(pan));
+                    throw new CardNotFoundException("Card not found: " + logPan(pan));
                 })
                 .onStatus(status -> status.value() == 503, (req, res) -> {
                     log.debug("Card Management service unavailable");
@@ -283,7 +282,7 @@ public class AuthService {
                 .path("/api/cards/{pan}/reserve")
                 .buildAndExpand(pan)
                 .toUri();
-        log.debug("Reserving amount {} for card {} with rrn {}", amount, LogPan(pan), rrn);
+        log.debug("Reserving amount {} for card {} with rrn {}", amount, logPan(pan), rrn);
         restClient.post()
                 .uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -295,10 +294,11 @@ public class AuthService {
                 })
                 .toBodilessEntity();
 
-        log.debug("Reserve successful for card {}", LogPan(pan));
+        log.debug("Reserve successful for card {}", logPan(pan));
     }
 
     private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyDDDHHmmss");
 
     /**
      * Генерирует уникальный Retrieval Reference Number (RRN) для транзакции.
@@ -329,8 +329,7 @@ public class AuthService {
      * @see #lastTimestampAndSeq
      */
     public String generateRRN() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyDDDHHmmss");
-        String currentSecond = formatter.format(LocalDateTime.now()).substring(1);
+        String currentSecond = FORMATTER.format(LocalDateTime.now()).substring(1);
         String nextValue;
         while (true) {
             String currentState = lastTimestampAndSeq.get();
@@ -385,7 +384,7 @@ public class AuthService {
         return new String(buf, StandardCharsets.US_ASCII);
     }
 
-    public String LogPan(String pan) {
+    public String logPan(String pan) {
         return maskPan.maskPan(pan);
     }
 }

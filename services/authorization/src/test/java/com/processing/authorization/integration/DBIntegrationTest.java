@@ -3,9 +3,7 @@ package com.processing.authorization.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.sql.SQLException;
@@ -30,6 +28,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
+import com.processing.common.utils.MaskPan;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +43,8 @@ public class DBIntegrationTest {
     private DataSource dataSource;
     @MockitoBean
     private RestClient restClient;
+    @MockitoBean
+    private MaskPan maskPan;
 
     @Mock
     private RestClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
