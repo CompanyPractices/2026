@@ -8,6 +8,10 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
+/**
+ * Регистрирует WebSocket-эндпоинт {@code /ws/transactions}.
+ * Список адресов, которым разрешено подключаться, задаётся свойством {@code websocket.allowed-origins}.
+ */
 @Configuration
 @EnableWebSocket
 @RequiredArgsConstructor

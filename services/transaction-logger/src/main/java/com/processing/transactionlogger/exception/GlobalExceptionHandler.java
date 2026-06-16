@@ -17,6 +17,11 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.time.Instant;
 import java.util.stream.Collectors;
 
+/**
+ * Глобальный обработчик исключений.
+ * Преобразует ошибки в единый формат {@link ErrorResponse} с полем {@code retryAfterMs}:
+ * {@code "0"} — повторять не нужно, {@code "1000"} — retry через 1 сек (недоступность БД).
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {

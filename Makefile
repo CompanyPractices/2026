@@ -4,6 +4,14 @@ MVN = mvn -f services/pom.xml
 NPM_DIR = services/dashboard
 SERVICE ?= gateway
 
+ifeq ($(OS),Windows_NT)
+    COPY_CMD = @if not exist .env cmd /c "copy /Y .env.example .env >nul"
+    SMOKE_CMD = pwsh -ExecutionPolicy Bypass -File scripts/smoke-test.ps1
+else
+    COPY_CMD = test -f .env || cp .env.example .env
+    SMOKE_CMD = ./scripts/smoke-test.sh
+endif
+
 # Специальные цели
 .PHONY: run stop clean build status logs smoke smoke-win test lint
 .PHONY: mvn-all mvn-clean mvn-test mvn-lint mvn-service
@@ -19,8 +27,7 @@ help:
 	@echo "  make build         - Rebuild all images"
 	@echo "  make status        - Containers status"
 	@echo "  make logs          - Show logs (SERVICE=gateway)"
-	@echo "  make smoke         - Run smoke tests (Linux/Mac)"
-	@echo "  make smoke-win     - Run smoke tests (Windows)"
+	@echo "  make smoke         - Run smoke tests"
 	@echo ""
 	@echo "General"
 	@echo "  make test          - Run all tests (Maven + NPM)"
@@ -44,7 +51,7 @@ help:
 
 # Docker
 .env:
-	cp .env.example .env
+	$(COPY_CMD)
 
 run: .env
 	$(DOCKER_COMPOSE) up -d
@@ -65,10 +72,7 @@ logs:
 	$(DOCKER_COMPOSE) logs -f $(SERVICE)
 
 smoke:
-	./scripts/smoke-test.sh
-
-smoke-win:
-	pwsh -ExecutionPolicy Bypass -File scripts/smoke-test.ps1
+	$(SMOKE_CMD)
 
 # Общее
 test: mvn-test npm-test

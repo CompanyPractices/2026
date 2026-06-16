@@ -1,5 +1,6 @@
 package com.processing.authorization.service;
 
+import com.processing.authorization.exceptions.ReserveCardException;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -13,9 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 import static com.processing.authorization.constants.DeclineOutcome.*;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -42,8 +42,8 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        WebClient webClient = WebClient.create();
-        authService = new AuthService(webClient, limitUsageRepository);
+        RestClient restClient = RestClient.create();
+        authService = new AuthService(restClient, limitUsageRepository);
 
         correctRequest = new AuthorizationRequest(
                 "0100",
@@ -83,8 +83,8 @@ class AuthServiceTest {
         doNothing().when(spyService).reserve(anyLong(), anyString(), anyString());
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(0L);
+        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -101,11 +101,8 @@ class AuthServiceTest {
     @Test
     void authorizeReturnServiceUnavailableWhenGetCardThrowsException() throws Exception {
         AuthService spyService = spy(authService);
-        ServiceUnavailableException cause = new ServiceUnavailableException("Card Management service unavaliable");
-        WebClientResponseException exception = new WebClientResponseException(
-                500, "Internal service error", null, null, null);
-        exception.initCause(cause);
-        doThrow(exception).when(spyService).getCard(anyString());
+        doThrow(new ServiceUnavailableException("Card Management service unavailable"))
+                .when(spyService).getCard(anyString());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -265,10 +262,10 @@ class AuthServiceTest {
     }
 
     @Test
-    void authorizeDeclineWhenReserveThrowsException() throws Exception {
+    void authorizeDeclineWhenReserveThrowsException() {
         AuthService spyService = spy(authService);
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doThrow(new Exception("Reserve failed")).when(spyService).reserve(anyLong(), anyString(), anyString());
+        doThrow(new ReserveCardException("Reserve failed")).when(spyService).reserve(anyLong(), anyString(), anyString());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -309,8 +306,7 @@ class AuthServiceTest {
         usage.setMonthlyAmount(200000L);
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(200000L);
+
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -326,7 +322,6 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(96000L);
         usage.setMonthlyAmount(200000L);
@@ -347,10 +342,11 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
 
+        LimitUsage usage = new LimitUsage();
+        usage.setDailyAmount(50000L);
+        usage.setMonthlyAmount(498000L);
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
-                .thenReturn(Optional.empty());
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(496000L);
+                .thenReturn(Optional.of(usage));
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 

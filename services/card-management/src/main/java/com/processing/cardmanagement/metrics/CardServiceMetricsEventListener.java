@@ -1,17 +1,18 @@
-package com.processing.cardmanagement.events.domain;
+package com.processing.cardmanagement.metrics;
 
+import com.processing.cardmanagement.events.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class CardServiceMetricsEventListener implements CardServiceEventListener {
+public class CardServiceMetricsEventListener implements CardEventListener {
 
     private final MeterRegistry meterRegistry;
 
     @Override
-    public void onEvent(CardServiceEvent event) {
+    public void onEvent(CardEvent event) {
         switch (event) {
             case CardServiceCreationEvent e -> meterRegistry
                 .counter("cards.operations", "type", "created")
@@ -25,8 +26,12 @@ public class CardServiceMetricsEventListener implements CardServiceEventListener
                 .counter("cards.operations", "type", "deleted")
                 .increment();
 
-            case CardServiceReserveEvent e -> meterRegistry
+            case CardServiceReserveEvent ignored -> meterRegistry
                 .counter("cards.operations", "type", "reserved")
+                .increment();
+
+            case CardGeneratedEvent e -> meterRegistry
+                .counter("cards.generated", "status", e.status().name())
                 .increment();
         }
     }

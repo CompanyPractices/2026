@@ -6,6 +6,8 @@
     <test name="Health Check">
         <classes>
             <class name="com.processing.e2e.tests.HealthCheckTest"/>
+            <class name="com.processing.e2e.tests.TC_07_InsufficientFundsTest"/>
+            <class name="com.processing.e2e.tests.TC_08_CardNotFoundTest"/>
         </classes>
     </test>
 
@@ -19,6 +21,12 @@
     <test name="Transaction search">
         <classes>
             <class name="com.processing.e2e.tests.TransactionSearchTest" />
+        </classes>
+    </test>
+
+    <test name="Dashboard stats">
+        <classes>
+            <class name="com.processing.e2e.tests.TC_20_DashboardStatsTest" />
         </classes>
     </test>
 </suite>
