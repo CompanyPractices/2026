@@ -9,7 +9,8 @@ COPY ./services/terminal-simulator/pom.xml ./terminal-simulator/pom.xml
 COPY ./services/common/src ./common/src
 COPY ./services/terminal-simulator/src ./terminal-simulator/src
 
-RUN mvn -P terminal-simulator -pl terminal-simulator -am package -DskipTests
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    mvn -P terminal-simulator -pl terminal-simulator -am package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
