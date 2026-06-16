@@ -19,7 +19,6 @@ import static com.processing.authorization.constants.DeclineOutcome.*;
 
 import java.time.Instant;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.Optional;
@@ -55,7 +54,7 @@ class AuthServiceTest {
                 "000000",
                 BigDecimal.valueOf(5000),
                 "810",
-                Instant.parse("2026-06-05T18:12:49.070"),
+                Instant.parse("2026-06-05T18:12:49.070Z"),
                 "T0000001",
                 null,
                 "M00000000000001",
@@ -86,7 +85,7 @@ class AuthServiceTest {
         doNothing().when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(Instant.class), any(LocalDate.class)))
+        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(Instant.class), any(Instant.class)))
                 .thenReturn(Optional.empty());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
@@ -269,9 +268,9 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
         doThrow(new ReserveCardException("Reserve failed")).when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
+        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(Instant.class), any(Instant.class)))
                 .thenReturn(Optional.empty());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());

@@ -16,7 +16,6 @@ import static com.processing.authorization.constants.DeclineOutcome.*;
 import java.time.Instant;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -24,7 +23,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
-import java.math.BigDecimal;
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc

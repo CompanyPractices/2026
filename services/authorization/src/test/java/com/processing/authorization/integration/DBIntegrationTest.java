@@ -73,7 +73,7 @@ public class DBIntegrationTest {
                 "000000",
                 BigDecimal.valueOf(5000),
                 "810",
-                Instant.parse("2026-06-05T18:12:49.070"),
+                Instant.parse("2026-06-05T18:12:49.070Z"),
                 "T0000001",
                 null,
                 "M00000000000001",
@@ -210,7 +210,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createBlockedCardModel() {
@@ -226,7 +226,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createExpiredCardModel() {
@@ -242,7 +242,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createInactiveCardModel() {
@@ -258,7 +258,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createCardWithLowBalance() {
@@ -274,7 +274,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(1000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createActiveCardModelWithLowMonthlyLimit() {
@@ -290,7 +290,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createCardExpiredByDate() {
@@ -306,6 +306,6 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 }

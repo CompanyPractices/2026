@@ -137,12 +137,19 @@ public class AuthService {
         Optional<LimitUsage> currLimitUsage = limitUsageRepository
                 .findByPanAndUsageDate(request.pan(), transmissionDate);
 
+        LocalDate transmissionLocalDate = request.transmissionDateTime()
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate();
+
         Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
                 ? currLimitUsage
                 : limitUsageRepository
                         .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
                                 request.pan(),
-                                transmissionDate.withDayOfMonth(1),
+                                transmissionLocalDate.withDayOfMonth(1)
+                                        .atStartOfDay()
+                                        .atZone(ZoneOffset.UTC)
+                                        .toInstant(),
                                 transmissionDate);
         if (monthLimitUsage.isPresent()) {
             LimitUsage monthUsage = monthLimitUsage.get();
