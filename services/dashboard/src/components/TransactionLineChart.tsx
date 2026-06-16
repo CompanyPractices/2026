@@ -68,7 +68,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
                         stroke={textColor}
                         tick={{ fill: textColor, fontSize: 12 }}
                         tickLine={false}
-                        label={{value: 'Время', position:"insideBottom", offset:-5 }}
+                        label={{value: 'Время (UTC)', position:"insideBottom", offset:-5 }}
                     />
                     <YAxis
                         width={30}
