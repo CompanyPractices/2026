@@ -3,8 +3,6 @@ package com.processing.e2e.tests;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.cardmanagement.CreateCardRequest;
-import com.processing.common.dto.transactionlogger.TransactionRequest;
-import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.e2e.E2EBaseTest;
 import com.processing.e2e.utility.DBUtils;
 import org.testng.annotations.AfterClass;
@@ -18,42 +16,58 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static org.testng.Assert.assertEquals;
 
 public class TC_20_DashboardStatsTest extends E2EBaseTest {
-    private static final String[] TEST_STANS = {"200001", "200002", "200003"};
+    private static final String DASHBOARD_STATS_PATH = "/api/dashboard/stats";
+    private static final String DASHBOARD_RECENT_PATH = "/api/dashboard/recent";
+    private static final int RECENT_LIMIT = 20;
+    private static final int TEST_TRANSACTION_COUNT = RECENT_LIMIT + 1;
+    private static final String TEST_STAN_PREFIX = "20";
+    private static final String[] TEST_STANS = IntStream.rangeClosed(1, TEST_TRANSACTION_COUNT)
+            .mapToObj(index -> TEST_STAN_PREFIX + String.format("%04d", index))
+            .toArray(String[]::new);
     private static final String TEST_CARDHOLDER_NAME = "DASHBOARD TEST USER";
-    private static final long APPROVED_AMOUNT_1 = 50_000L;
-    private static final long APPROVED_AMOUNT_2 = 60_000L;
-    private static final long DECLINED_AMOUNT = 10_000L;
+    private static final int EXPECTED_APPROVED_COUNT = 15;
+    private static final long EXPECTED_DECLINED_COUNT = TEST_TRANSACTION_COUNT - EXPECTED_APPROVED_COUNT;
+    private static final long START_AMOUNT = 5_000L;
+    private static final long AMOUNT_STEP = 5_000L;
+    private static final long INITIAL_BALANCE = IntStream.range(0, EXPECTED_APPROVED_COUNT)
+            .mapToLong(TC_20_DashboardStatsTest::transactionAmount)
+            .sum();
+    private static final long EXPECTED_TOTAL_AMOUNT = IntStream.range(0, TEST_TRANSACTION_COUNT)
+            .mapToLong(TC_20_DashboardStatsTest::transactionAmount)
+            .sum();
+    private static final long EXPECTED_AVERAGE_AMOUNT = EXPECTED_TOTAL_AMOUNT / TEST_TRANSACTION_COUNT;
+    private static final double EXPECTED_APPROVAL_RATE = (double) EXPECTED_APPROVED_COUNT / TEST_TRANSACTION_COUNT;
 
     private final DBUtils dbUtils = new DBUtils();
     private String testPan;
 
     @BeforeClass(alwaysRun = true)
     public void setUpDashboardTransactions() throws Exception {
-        deleteTestTransactions();
-        deleteStaleTestCards();
-        testPan = createCard(TEST_CARDHOLDER_NAME, 200_000L);
+        cleanUpDashboardTransactions();
+        testPan = createCard(TEST_CARDHOLDER_NAME, INITIAL_BALANCE);
 
-        sendTransaction(testPan, APPROVED_AMOUNT_1, TEST_STANS[0], "APPROVED");
-        sendTransaction(testPan, APPROVED_AMOUNT_2, TEST_STANS[1], "APPROVED");
-        logDeclinedTransaction(testPan, DECLINED_AMOUNT, TEST_STANS[2]);
+        for (int i = 0; i < TEST_STANS.length; i++) {
+            String expectedStatus = i < EXPECTED_APPROVED_COUNT ? "APPROVED" : "DECLINED";
+            sendTransaction(testPan, transactionAmount(i), TEST_STANS[i], expectedStatus);
+        }
     }
 
     @AfterClass(alwaysRun = true)
     public void cleanUpDashboardTransactions() throws SQLException {
-        deleteTestTransactions();
-        deleteCurrentTestCard(testPan);
+        deleteTransactions();
+        deleteStaleTestCards();
     }
 
     @Test(description = "TC-20 - Dashboard statistics and recent transactions")
     public void dashboardStatsAndRecentTransactionsMatchDatabase() throws Exception {
         SoftAssert soft = new SoftAssert();
 
-        JsonNode stats = httpGet(GATEWAY_URL, "/api/dashboard/stats", 200);
+        JsonNode stats = httpGet(GATEWAY_URL, DASHBOARD_STATS_PATH, 200);
         long totalTransactions = stats.path("totalTransactions").asLong();
         long approvedCount = stats.path("approvedCount").asLong();
         long declinedCount = stats.path("declinedCount").asLong();
@@ -61,6 +75,19 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
         long averageAmount = stats.path("averageAmount").asLong();
         double approvalRate = stats.path("approvalRate").asDouble();
         double avgProcessingTimeMs = stats.path("avgProcessingTimeMs").asDouble();
+
+        soft.assertEquals(totalTransactions, TEST_TRANSACTION_COUNT,
+                "$.totalTransactions should match prepared transaction count");
+        soft.assertEquals(approvedCount, EXPECTED_APPROVED_COUNT,
+                "$.approvedCount should match prepared approved transaction count");
+        soft.assertEquals(declinedCount, EXPECTED_DECLINED_COUNT,
+                "$.declinedCount should match prepared declined transaction count");
+        soft.assertEquals(totalAmount, EXPECTED_TOTAL_AMOUNT,
+                "$.totalAmount should match prepared transaction amount sum");
+        soft.assertEquals(averageAmount, EXPECTED_AVERAGE_AMOUNT,
+                "$.averageAmount should match prepared transaction average amount");
+        soft.assertEquals(approvalRate, EXPECTED_APPROVAL_RATE, 0.01,
+                "$.approvalRate should match prepared approved ratio");
 
         soft.assertTrue(totalTransactions > 0, "$.totalTransactions should be > 0");
         soft.assertEquals(totalTransactions, approvedCount + declinedCount,
@@ -84,35 +111,46 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
         soft.assertEquals(queryDouble("SELECT COALESCE(AVG(amount), 0) FROM transactions"), averageAmount, 1.0,
                 "DB average amount should match stats");
 
-        JsonNode recent = httpGet(GATEWAY_URL, "/api/dashboard/recent?limit=20", 200);
+        JsonNode recent = httpGet(GATEWAY_URL, DASHBOARD_RECENT_PATH + "?limit=" + RECENT_LIMIT, 200);
         soft.assertTrue(recent.isArray(), "Recent response should be an array");
-        soft.assertTrue(recent.size() <= 20, "Recent response size should not exceed limit=20");
-        soft.assertTrue(recent.size() > 0, "Recent response should not be empty");
+        soft.assertEquals(recent.size(), RECENT_LIMIT,
+                "Recent response size should match limit when more transactions exist");
 
+        String previousId = null;
         Instant previousCreatedAt = null;
-        for (JsonNode transaction : recent) {
+        for (int i = 0; i < recent.size(); i++) {
+            JsonNode transaction = recent.get(i);
             soft.assertFalse(transaction.path("id").isMissingNode(), "Recent transaction should contain id");
             soft.assertFalse(transaction.path("pan").isMissingNode(), "Recent transaction should contain pan");
             soft.assertFalse(transaction.path("status").isMissingNode(), "Recent transaction should contain status");
             soft.assertFalse(transaction.path("amount").isMissingNode(), "Recent transaction should contain amount");
             soft.assertFalse(transaction.path("createdAt").isMissingNode(), "Recent transaction should contain createdAt");
 
+            String currentId = transaction.path("id").asText();
             Instant currentCreatedAt = Instant.parse(transaction.path("createdAt").asText());
             if (previousCreatedAt != null) {
                 soft.assertFalse(currentCreatedAt.isAfter(previousCreatedAt),
-                        "Recent transactions should be sorted by createdAt DESC");
+                        "Recent transaction at index " + i
+                                + " should not be newer than previous transaction. "
+                                + "previousId=" + previousId
+                                + ", previousCreatedAt=" + previousCreatedAt
+                                + ", currentId=" + currentId
+                                + ", currentCreatedAt=" + currentCreatedAt);
             }
+            previousId = currentId;
             previousCreatedAt = currentCreatedAt;
         }
 
-        String firstRecentId = recent.get(0).path("id").asText();
-        String lastRecentId = recent.get(recent.size() - 1).path("id").asText();
-        soft.assertEquals(firstRecentId, queryRecentTransactionId(0),
-                "First recent transaction should match DB ordering");
-        soft.assertEquals(lastRecentId, queryRecentTransactionId(recent.size() - 1),
-                "Last recent transaction should match DB ordering");
+        for (int i = 0; i < recent.size(); i++) {
+            soft.assertEquals(recent.get(i).path("id").asText(), queryRecentTransactionId(i),
+                    "Recent transaction at index " + i + " should match DB ordering");
+        }
 
         soft.assertAll();
+    }
+
+    private static long transactionAmount(int index) {
+        return START_AMOUNT + AMOUNT_STEP * index;
     }
 
     private String createCard(String cardholderName, long initialBalance) {
@@ -149,41 +187,6 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
         assertEquals(waitForTransactionStatus(stan), expectedStatus);
     }
 
-    /*
-    DECLINED-транзакция записывается напрямую в transaction-logger,
-    потому что /api/transactions возвращает DECLINED клиенту,
-    но не передаёт её в transaction-logger для сохранения
-    */
-    private void logDeclinedTransaction(String pan, long amount, String stan) throws Exception {
-        Instant now = Instant.now();
-        TransactionRequest request = new TransactionRequest(
-                UUID.randomUUID(),
-                "0100",
-                stan,
-                "999999" + stan,
-                pan,
-                "000000",
-                amount,
-                "643",
-                "TERM0001",
-                "POS",
-                "MERCH0000000001",
-                "5411",
-                "ACQ001",
-                "ISS001",
-                0L,
-                TransactionStatus.DECLINED,
-                "INSUFFICIENT_FUNDS",
-                null,
-                1,
-                now,
-                now
-        );
-
-        httpPost(LOGGER_URL, "/api/internal/log", request, 201);
-        assertEquals(waitForTransactionStatus(stan), TransactionStatus.DECLINED.name());
-    }
-
     private String waitForTransactionStatus(String stan) throws Exception {
         Instant deadline = Instant.now().plusSeconds(5);
         while (Instant.now().isBefore(deadline)) {
@@ -196,14 +199,8 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
         throw new SQLException("No transaction found for stan: " + stan);
     }
 
-    private void deleteTestTransactions() throws SQLException {
-        executeUpdate("DELETE FROM transactions WHERE stan IN (?, ?, ?)", (Object[]) TEST_STANS);
-    }
-
-    private void deleteCurrentTestCard(String pan) throws SQLException {
-        if (pan != null) {
-            executeUpdate("DELETE FROM cards WHERE pan = ?", pan);
-        }
+    private void deleteTransactions() throws SQLException {
+        executeUpdate("DELETE FROM transactions");
     }
 
     private void deleteStaleTestCards() throws SQLException {
