@@ -6,17 +6,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 @RequiredArgsConstructor
 public class LoadTestEngine {
 
-    private final int maximumParallelRequests;
-    private final int maximumTotalRequests;
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final ExecutorService executor;
 
-    public CompletableFuture<Void> run(Runnable runnable) {
+    public CompletableFuture<Void> execute(
+        int maximumParallelRequests,
+        int maximumTotalRequests,
+        Runnable runnable
+    ) {
         Semaphore semaphore = new Semaphore(maximumParallelRequests);
         List<CompletableFuture<Void>> futures = new ArrayList<>(maximumTotalRequests);
 
