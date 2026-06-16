@@ -1,6 +1,7 @@
 package com.processing.authorization.service;
 
 import com.processing.authorization.exceptions.ReserveCardException;
+import com.processing.common.MaskPan;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -359,7 +360,7 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldMaskMiddleEightCharacters() {
         String input = "4000001234560001";
-        String result = authService.maskPAN(input);
+        String result = MaskPan.maskPan(input);
 
         assertEquals("4000********0001", result);
         assertEquals(16, result.length());
@@ -368,24 +369,28 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldReturnInvalidPanOnShortString() {
         String input = "4000";
-        String result = authService.maskPAN(input);
+        String result = MaskPan.maskPan(input);
 
-        assertEquals("INVALID_PAN", result);
+        assertEquals("****", result);
     }
 
     @Test
-    void maskPAN_ShouldReturnInvalidPanOnEmptyString() {
+    void maskPAN_ShouldReturnEmptyStringOnNull() {
         String input = null;
-        String result = authService.maskPAN(input);
+        String result = MaskPan.maskPan(input);
 
-        assertEquals("INVALID_PAN", result);
+        assertEquals("", result);
     }
 
     @Test
     void maskPAN_ShouldPreserveOriginalLength() {
-        String input = "4000001234560001";
-        String result = authService.maskPAN(input);
+        String input1 = "4000001234560001";
+        String result1 = MaskPan.maskPan(input1);
 
-        assertEquals(input.length(), result.length());
+        String input2 = "400001";
+        String result2 = MaskPan.maskPan(input2);
+
+        assertEquals(input1.length(), result1.length());
+        assertEquals(input2.length(), result2.length());
     }
 }
