@@ -20,6 +20,13 @@ async function fetchApi<T>(route: string, options: FetchApiOptions = {}): Promis
                 if (response.status >= 400 && response.status < 500){
                     throw new Error(`Client Error ${response.status}: ${response.statusText}`);
                 }
+                if (response.status === 503){
+                    if (att < retries){
+                        await wait(2000);
+                        continue;
+                    }
+                }
+
                 throw new Error(`Server Error ${response.status}: ${response.statusText}`);
             }
             return await response.json() as T;
@@ -33,7 +40,7 @@ async function fetchApi<T>(route: string, options: FetchApiOptions = {}): Promis
                 throw error;
 
             }
-            if (error.name === 'AbortError' || error.message.includes('Failed to fetch') || error.message.includes('503')) {
+            if (error.name === 'AbortError' || error.message.includes('Failed to fetch')) {
                 if (att < retries){
                     await wait(2000);
                     continue;
