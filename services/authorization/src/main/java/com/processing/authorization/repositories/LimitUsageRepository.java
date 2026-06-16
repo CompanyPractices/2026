@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @Repository
 public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    Optional<LimitUsage> findByPanAndUsageDate(String pan, LocalDate usageDate);
+    Optional<LimitUsage> findByPanAndUsageDate(String pan, Instant usageDate);
 
     @Query(
             "SELECT COALESCE(SUM(lu.dailyAmount), 0) "
@@ -29,7 +30,7 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
     )
     Long sumMonthlyAmountByPanAndMonth(
             @Param("pan")String pan,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate
     );
 }

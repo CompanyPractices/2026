@@ -18,9 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.Calendar;
 import java.util.Optional;
 import java.util.Random;
@@ -115,14 +113,9 @@ public class AuthService {
             };
         }
 
-        LocalDate transmissionDate;
-        if (request.transmissionDateTime().endsWith("Z")) {
-            transmissionDate = OffsetDateTime.parse(request.transmissionDateTime()).toLocalDate();
-        } else {
-            transmissionDate = LocalDateTime.parse(request.transmissionDateTime()).toLocalDate();
-        }
+        Instant transmissionDate = request.transmissionDateTime();
 
-        LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
+        Instant lastValidDay = cardResponse.expiryDate().atEndOfMonth().atStartOfDay().toInstant(ZoneOffset.UTC);
         if (lastValidDay.isBefore(transmissionDate)) {
             return DeclineOutcome.CARD_EXPIRED.build(request, requestInputTime);
         }

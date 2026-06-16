@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.time.LocalDate;
@@ -25,7 +26,7 @@ public class LimitUsage {
     private String pan;
 
     @Column(name = "usage_date", nullable = false)
-    private LocalDate usageDate;
+    private Instant usageDate;
 
     @Column(name = "daily_amount", nullable = false)
     @ColumnDefault("0")
@@ -37,5 +38,5 @@ public class LimitUsage {
 
     @Column(name = "updated_at")
     @ColumnDefault("CURRENT_TIMESTAMP")
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

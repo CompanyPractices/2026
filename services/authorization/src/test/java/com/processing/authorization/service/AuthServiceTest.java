@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestClient;
 import static com.processing.authorization.constants.DeclineOutcome.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -52,7 +53,7 @@ class AuthServiceTest {
                 "000000",
                 5000L,
                 "810",
-                "2026-06-05T18:12:49.070",
+                Instant.parse("2026-06-05T18:12:49.070"),
                 "T0000001",
                 null,
                 "M00000000000001",
@@ -72,7 +73,7 @@ class AuthServiceTest {
                 500000L,
                 10000L,
                 "I001",
-                LocalDateTime.now());
+                Instant.now());
     }
 
     @Test
@@ -81,9 +82,9 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
         doNothing().when(spyService).reserve(anyLong(), anyString(), anyString());
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
+        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(Instant.class), any(Instant.class)))
                 .thenReturn(0L);
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
@@ -304,9 +305,9 @@ class AuthServiceTest {
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(50000L);
         usage.setMonthlyAmount(200000L);
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
                 .thenReturn(Optional.of(usage));
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
+        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(Instant.class), any(Instant.class)))
                 .thenReturn(200000L);
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
@@ -327,7 +328,7 @@ class AuthServiceTest {
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(96000L);
         usage.setMonthlyAmount(200000L);
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
                 .thenReturn(Optional.of(usage));
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
@@ -344,9 +345,9 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
 
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
+        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(Instant.class), any(Instant.class)))
                 .thenReturn(496000L);
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());

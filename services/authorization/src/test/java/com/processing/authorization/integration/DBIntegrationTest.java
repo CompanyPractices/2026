@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.UUID;
@@ -68,7 +69,7 @@ public class DBIntegrationTest {
                 "000000",
                 5000L,
                 "810",
-                "2026-06-05T18:12:49.070",
+                Instant.parse("2026-06-05T18:12:49.070"),
                 "T0000001",
                 null,
                 "M00000000000001",
