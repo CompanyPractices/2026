@@ -1,11 +1,15 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.GatewayClient;
+import com.processing.merchantacquirer.exception.ExternalServiceException;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,32 +19,58 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionSender {
   private final GatewayClient gatewayClient;
+  private final int concurency = 24;
+  private final Semaphore semaphore = new Semaphore(concurency);
 
   public SimulatorStats sendAll(List<AuthorizationRequest> requests) {
-    List<AuthorizationResponse> responses = new ArrayList<>(requests.size());
 
-    int approved = 0;
-    int declined = 0;
+    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      List<Future<AuthorizationResponse>> futures = new ArrayList<>(requests.size());
 
-    for (AuthorizationRequest request : requests) {
-      AuthorizationResponse response;
-      try {
-        response = gatewayClient.processAuthorize(request);
-      } catch (Exception e) {
-        response =
-            new AuthorizationResponse(
-                "0100", request.stan(), null, null, "505", "DECLINED", e.getMessage(), 999);
+      for (AuthorizationRequest request : requests) {
+        Future<AuthorizationResponse> future = executor.submit(
+                () -> {
+                  semaphore.acquire();
+                  try {
+                    AuthorizationResponse response = gatewayClient.processAuthorize(request);
+                    log.info("AuthorizationResponse: {}", response);
+                    return response;
+                  } finally {
+                    semaphore.release();
+                  }
+                }
+        );
+        futures.add(future);
       }
-      log.info("AuthorizationResponse: {} ", response);
-      responses.add(response);
 
-      if (response.status().equals("APPROVED")) {
-        approved++;
+      List<AuthorizationResponse> responses = new ArrayList<>(requests.size());
+
+      int approved = 0;
+      int declined = 0;
+
+      for (Future<AuthorizationResponse> future : futures) {
+        AuthorizationResponse response;
+        try {
+          response = future.get();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new IllegalStateException("Interrupted while waiting for gateway", e);
+        } catch (ExecutionException e) {
+          Throwable cause = e.getCause();
+          if (cause instanceof ExternalServiceException ese) {
+            throw ese;
+          }
+          throw new IllegalStateException("Task filed", e.getCause());
+        }
+
+        responses.add(response);
+        if ("APPROVED".equals(response.status())) {
+          approved++;
+        } else if ("DECLINED".equals(response.status())) {
+          declined++;
+        }
       }
-      if (response.status().equals("DECLINED")) {
-        declined++;
-      }
+      return new SimulatorStats(responses, approved, declined);
     }
-    return new SimulatorStats(responses, approved, declined);
   }
 }

@@ -22,6 +22,9 @@ public class TerminalProvider {
         }
 
         List<Terminal> terminals = terminalsByMerchants.get(merchantId);
+        if (terminals.isEmpty()) {
+            throw new NullPointerException("Merchant not have terminals, merchant id: " + merchantId);
+        }
 
         return terminals.get(ThreadLocalRandom.current().nextInt(0, terminals.size()));
     }

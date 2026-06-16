@@ -8,6 +8,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -66,6 +67,18 @@ public class GlobalExceptionHandler {
             .body(
                     new ErrorResponse(
                             "Request processing failed",
+                            ex.getMessage(),
+                            String.valueOf(LocalDateTime.now()),
+                            "Merchant acquirer simulator",
+                            "5"));
+  }
+
+  @ExceptionHandler(HttpClientErrorException.class)
+  public ResponseEntity<ErrorResponse> handleNotReadable(HttpClientErrorException ex) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(
+                    new ErrorResponse(
+                            "Invalid request",
                             ex.getMessage(),
                             String.valueOf(LocalDateTime.now()),
                             "Merchant acquirer simulator",
