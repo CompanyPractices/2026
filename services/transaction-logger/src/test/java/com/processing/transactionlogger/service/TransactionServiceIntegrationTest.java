@@ -52,7 +52,7 @@ public class TransactionServiceIntegrationTest {
         save(transaction("4000000000000002", TransactionStatus.DECLINED));
 
         TransactionFilter filter = new TransactionFilter();
-        filter.setStatus(TransactionStatus.APPROVED.toString());
+        filter.setStatus(TransactionStatus.APPROVED);
         TransactionSearchResponse result = transactionService.search(filter);
 
 
@@ -113,7 +113,7 @@ public class TransactionServiceIntegrationTest {
 
         TransactionFilter filter = new TransactionFilter();
         filter.setPan("4000000000000001");
-        filter.setStatus("APPROVED");
+        filter.setStatus(TransactionStatus.APPROVED);
         TransactionSearchResponse result = transactionService.search(filter);
 
         assertEquals(1, result.total());
