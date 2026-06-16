@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
         info = @Info(
                 title = "Transaction Logger API",
                 version = "1.0.0",
-                description = "Поиск транзакций и статистиа для Dashboard"
+                description = "Поиск транзакций и статистика для Dashboard"
         )
 )
 public class OpenApiConfig {

@@ -32,7 +32,7 @@ public class TransactionSpecification {
                 .and(equals(Transaction_.MCC, filter.getMcc()));
     }
 
-    private static Specification<Transaction> equals(String field, String value) {
+    private static Specification<Transaction> equals(String field, Object value) {
         return (root, query, criteriaBuilder) ->
                 value == null ? null : criteriaBuilder.equal(root.get(field), value);
     }
