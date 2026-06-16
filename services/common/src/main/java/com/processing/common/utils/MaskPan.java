@@ -1,4 +1,4 @@
-package com.processing.common;
+package com.processing.common.utils;
 
 import org.springframework.stereotype.Component;
 
