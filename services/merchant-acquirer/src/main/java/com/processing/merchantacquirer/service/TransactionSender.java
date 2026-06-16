@@ -1,6 +1,7 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.GatewayClient;
+import com.processing.merchantacquirer.metrics.TransactionMetrics;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionSender {
   private final GatewayClient gatewayClient;
+  private final TransactionMetrics transactionMetrics;
   private final AcquirerProvider acquirerProvider;
 
   public SimulatorStats sendAll(List<AuthorizationRequest> requests) {
@@ -36,6 +38,9 @@ public class TransactionSender {
                 "0100", request.stan(), null, null, "505", "DECLINED", e.getMessage(), 999);
       }
       log.info("AuthorizationResponse: {} ", response);
+
+      transactionMetrics.record(request.mcc(), response.status());
+
       responses.add(response);
 
       if (response.status().equals("APPROVED")) {
