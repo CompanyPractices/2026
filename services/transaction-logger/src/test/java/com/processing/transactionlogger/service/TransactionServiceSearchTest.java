@@ -20,6 +20,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -85,7 +87,7 @@ public class TransactionServiceSearchTest {
                 .thenReturn(new StatsStub(100L,
                         80L,
                         20L,
-                        500_000L,
+                        new BigDecimal("500000"),
                         5L,
                         42.5));
 
@@ -95,8 +97,8 @@ public class TransactionServiceSearchTest {
         assertEquals(80L, stats.approvedCount());
         assertEquals(20L, stats.declinedCount());
         assertEquals(0.8, stats.approvalRate());
-        assertEquals(500000L, stats.totalAmount());
-        assertEquals(5000L, stats.averageAmount());
+        assertThat(stats.totalAmount()).isEqualByComparingTo(new BigDecimal("500000"));
+        assertThat(stats.averageAmount()).isEqualByComparingTo(new BigDecimal("5000"));
         assertEquals(42.5, stats.avgProcessingTimeMs());
         assertEquals(5.0, stats.transactionsPerMinute());
     }
@@ -107,7 +109,7 @@ public class TransactionServiceSearchTest {
                 .thenReturn(new StatsStub(0L,
                         0L,
                         0L,
-                        0L,
+                        BigDecimal.ZERO,
                         0L,
                         0.0));
 
@@ -148,12 +150,12 @@ public class TransactionServiceSearchTest {
 
     private record StatsStub(
             long total, long approved, long declined,
-            long totalAmount, long recentCount, double avgProcessingTimeMs
+            BigDecimal totalAmount, long recentCount, double avgProcessingTimeMs
     ) implements TransactionStats {
         public long getTotal() { return total; }
         public long getApproved() { return approved; }
         public long getDeclined() { return declined; }
-        public long getTotalAmount() { return totalAmount; }
+        public BigDecimal getTotalAmount() { return totalAmount; }
         public long getRecentCount() { return recentCount; }
         public double getAvgProcessingTimeMs() { return avgProcessingTimeMs; }
     }

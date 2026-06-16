@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -60,7 +61,7 @@ public class DashboardControllerTest {
 
     private static DashboardStatsResponse stats(long total, long approved, long declined) {
         double rate = total > 0 ? (double) approved / total : 0;
-        return new DashboardStatsResponse(total, approved, declined, rate, 0L, 0L, 0.0, 0.0);
+        return new DashboardStatsResponse(total, approved, declined, rate, BigDecimal.ZERO, BigDecimal.ZERO, 0.0, 0.0);
     }
 
     private static TransactionResponse transactionResponse() {
@@ -71,7 +72,7 @@ public class DashboardControllerTest {
                 "012345678901",
                 "4000001234560001",
                 "000000",
-                150000L,
+                new BigDecimal("150000"),
                 "643",
                 "TERM001",
                 "POS",
@@ -79,7 +80,7 @@ public class DashboardControllerTest {
                 "5411",
                 "ACQ001",
                 "ISS001",
-                2250L,
+                new BigDecimal("2250"),
                 TransactionStatus.APPROVED,
                 null,
                 "ABC123",

@@ -24,7 +24,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -113,18 +116,19 @@ public class TransactionService {
      *
      * @return статистика: счётчики, суммы, процент одобрения, транзакций в минуту
      */
+    @Transactional(readOnly = true)
     public DashboardStatsResponse getStats() {
         TransactionStats stats = transactionRepository.findStats();
         long total = stats.getTotal();
         long approved = stats.getApproved();
-        long totalAmount = stats.getTotalAmount();
+        BigDecimal totalAmount = stats.getTotalAmount();
         return new DashboardStatsResponse(
                 total,
                 approved,
                 stats.getDeclined(),
                 total > 0 ? (double) approved / total : 0,
                 totalAmount,
-                total > 0 ? totalAmount / total : 0,
+                total > 0 ? totalAmount.divideToIntegralValue(BigDecimal.valueOf(total)) : BigDecimal.ZERO,
                 stats.getAvgProcessingTimeMs(),
                 stats.getRecentCount()
         );

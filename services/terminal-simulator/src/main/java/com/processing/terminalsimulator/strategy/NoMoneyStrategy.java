@@ -4,6 +4,7 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -13,9 +14,9 @@ public class NoMoneyStrategy implements TransactionStrategy {
         return TransactionType.NO_MONEY;
     }
     @Override
-    public long calculateAmount(CardModel card) {
-        double randomDouble = ThreadLocalRandom.current().nextDouble();
-        return card.availableBalance() + (long) (randomDouble * 100_000);
+    public BigDecimal calculateAmount(CardModel card) {
+        long extra = ThreadLocalRandom.current().nextLong(1L, 100_001L);
+        return card.availableBalance().add(BigDecimal.valueOf(extra));
     }
     @Override
     public String getMcc() {

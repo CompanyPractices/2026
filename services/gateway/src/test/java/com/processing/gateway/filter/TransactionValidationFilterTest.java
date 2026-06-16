@@ -49,7 +49,8 @@ class TransactionValidationFilterTest {
         assertThat(response.getContentType()).isEqualTo(MediaType.APPLICATION_JSON_VALUE);
         assertThat(response.getContentAsString()).contains(
                 "\"error\":\"VALIDATION_ERROR\"",
-                "Field 'pan' must be exactly 16 digits"
+                "Field 'pan' must be exactly 16 digits",
+                "\"serviceName\":\"gateway\""
         );
     }
 
