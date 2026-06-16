@@ -3,9 +3,10 @@ package com.processing.authorization.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
+import java.net.URI;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -30,6 +31,9 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @SpringBootTest
 public class DBIntegrationTest {
     @Autowired
@@ -67,7 +71,7 @@ public class DBIntegrationTest {
                 "123456",
                 "1234567890123456",
                 "000000",
-                5000L,
+                BigDecimal.valueOf(5000),
                 "810",
                 Instant.parse("2026-06-05T18:12:49.070"),
                 "T0000001",
@@ -76,11 +80,13 @@ public class DBIntegrationTest {
                 "5411",
                 "A001",
                 "I001");
+
+        log.debug("Test database URL: {}", getDatabaseUrl());
     }
 
     private void mockGetCard(CardModel cardToReturn) {
         doReturn(requestHeadersUriSpec).when(restClient).get();
-        doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString());
+        doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(any(URI.class));
         doReturn(responseSpec).when(requestHeadersSpec).retrieve();
         doReturn(responseSpec).when(responseSpec).onStatus(any(), any());
         doReturn(cardToReturn).when(responseSpec).body(CardModel.class);
@@ -88,7 +94,7 @@ public class DBIntegrationTest {
 
     private void mockReserveSuccess() {
         doReturn(requestBodyUriSpec).when(restClient).post();
-        doReturn(requestBodySpec).when(requestBodyUriSpec).uri(anyString());
+        doReturn(requestBodySpec).when(requestBodyUriSpec).uri(any(URI.class));
         doReturn(requestBodySpec).when(requestBodySpec).contentType(any());
         doReturn(requestBodySpec).when(requestBodySpec).body(any(Object.class));
         doReturn(responseSpec).when(requestBodySpec).retrieve();
@@ -96,10 +102,13 @@ public class DBIntegrationTest {
         doReturn(null).when(responseSpec).toBodilessEntity();
     }
 
-    @Test
-    void whatDatabase() throws SQLException {
-        String url = dataSource.getConnection().getMetaData().getURL();
-        System.out.println("Database URL: " + url);
+    private String getDatabaseUrl() {
+        try {
+            return dataSource.getConnection().getMetaData().getURL();
+        } catch (SQLException e) {
+            log.warn("Could not determine database URL", e);
+            return "none";
+        }
     }
 
     @Test
@@ -140,6 +149,7 @@ public class DBIntegrationTest {
         assertEquals("INSUFFICIENT_FUNDS", response.declineReason());
     }
 
+    @Test
     void authorizeShouldReturnDeclinedWhenExceededMonthlyLimit() {
         CardModel mockCard = createActiveCardModelWithLowMonthlyLimit();
         mockGetCard(mockCard);
@@ -196,9 +206,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 CardModelStatus.ACTIVE,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -212,9 +222,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 CardModelStatus.BLOCKED,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -228,9 +238,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 1),
                 CardModelStatus.EXPIRED,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -244,9 +254,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2029, 1),
                 CardModelStatus.INACTIVE,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -260,9 +270,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 CardModelStatus.ACTIVE,
                 "810",
-                100000L,
-                500000L,
-                1000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(1000),
                 "I001",
                 now);
     }
@@ -276,9 +286,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 CardModelStatus.ACTIVE,
                 "810",
-                100000L,
-                500L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }
@@ -292,9 +302,9 @@ public class DBIntegrationTest {
                 YearMonth.of(2006, 12),
                 CardModelStatus.ACTIVE,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
                 "I001",
                 now);
     }

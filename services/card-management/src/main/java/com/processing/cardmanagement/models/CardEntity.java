@@ -8,6 +8,8 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -45,11 +47,11 @@ public class CardEntity {
     @Column(length = 3, nullable = false)
     private String currencyCode;
 
-    private long dailyLimit;
+    private BigDecimal dailyLimit;
 
-    private long monthlyLimit;
+    private BigDecimal monthlyLimit;
 
-    private long availableBalance;
+    private BigDecimal availableBalance;
 
     @Column(length = 10, nullable = false)
     private String issuerId;

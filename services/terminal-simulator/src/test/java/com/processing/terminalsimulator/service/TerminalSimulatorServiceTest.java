@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
@@ -52,12 +53,12 @@ class TerminalSimulatorServiceTest {
     @BeforeEach
     void setUp() {
         activeCard = new CardModel(UUID.randomUUID(), "4000001234560001", "400000", "IVAN IVANOV",
-                YearMonth.of(2030, 1), CardModelStatus.ACTIVE, "643", 500_002L,
-                100_000L, 20_000_000L, "ISS001",
+                YearMonth.of(2030, 1), CardModelStatus.ACTIVE, "643", new BigDecimal(500_002L),
+                new BigDecimal(100_000L), new BigDecimal(20_000_000L), "ISS001",
                 (LocalDateTime.now()).toInstant(ZoneOffset.UTC));
         blockedCard = new CardModel(UUID.randomUUID(), "4000001234560003", "400000", "PETR PETROV",
-                YearMonth.of(2029, 1), CardModelStatus.BLOCKED, "643", 700_000L,
-                200_000L, 40_000L, "ISS001",
+                YearMonth.of(2029, 1), CardModelStatus.BLOCKED, "643", new BigDecimal(700_000L),
+                new BigDecimal(200_000L), new BigDecimal(40_000L), "ISS001",
                 (LocalDateTime.now()).toInstant(ZoneOffset.UTC));
 
         when(gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70)).thenReturn(List.of(activeCard));
@@ -69,7 +70,7 @@ class TerminalSimulatorServiceTest {
         });
 
         when(transactionFactory.create(any(), any(), any())).thenReturn(new AuthorizationRequest("0100",
-                "000001", "4000001234560001", "000000", 1000L, "643",
+                "000001", "4000001234560001", "000000", new BigDecimal(1000L), "643",
                 (LocalDateTime.of(2026, 6, 5, 18, 12, 49)).toInstant(ZoneOffset.UTC)
                 , "TERM001", String.valueOf(TerminalType.POS),
                 "MERCH12345678901", "5411", "ACQ001", ""));

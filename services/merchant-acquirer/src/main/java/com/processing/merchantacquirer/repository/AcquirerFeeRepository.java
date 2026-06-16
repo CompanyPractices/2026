@@ -6,8 +6,10 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 
+import java.math.BigDecimal;
+
 @Repository
-public interface AcquirerFeeRepository extends JpaRepository<AcquirerFee, Long> {
+public interface AcquirerFeeRepository extends JpaRepository<AcquirerFee, BigDecimal> {
     AcquirerFee findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
-            Instant transmissionDateTime, String stan, String terminalId, Long amount, String pan);
+            Instant transmissionDateTime, String stan, String terminalId, BigDecimal amount, String pan);
 }

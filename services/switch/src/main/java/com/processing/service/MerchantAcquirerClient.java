@@ -8,6 +8,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.math.BigDecimal;
+
 @Service
 public class MerchantAcquirerClient implements AcquiringFeeClient {
 
@@ -22,11 +24,19 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     }
 
     @Override
-    public Long fetchAcquiringFee(String transmissionDateTime, String stan, String pan, String terminalId, Long amount) {
+    public BigDecimal fetchAcquiringFee(
+            String transmissionDateTime,
+            String stan,
+            String pan,
+            String terminalId,
+            BigDecimal amount
+    ) {
         try {
             AcquirerFeeResponse response = restClient.method(HttpMethod.GET)
-                    .uri(switchProperties.merchantAcquirerUrl() + "/api/simulator/merchant/fee")
-                    .body(new AcquirerFeeRequest(transmissionDateTime, stan, pan, terminalId, amount))
+                    .uri(switchProperties.merchantAcquirerUrl()
+                            + "/api/simulator/merchant/fee")
+                    .body(new AcquirerFeeRequest(
+                            transmissionDateTime, stan, pan, terminalId, amount))
                     .retrieve()
                     .body(AcquirerFeeResponse.class);
             if (response == null) {
@@ -44,12 +54,12 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
             String stan,
             String pan,
             @JsonProperty("terminalId") String terminalId,
-            Long amount
+            BigDecimal amount
     ) {
     }
 
     private record AcquirerFeeResponse(
-            Long acquirerFee
+            BigDecimal acquirerFee
     ) {
     }
 }

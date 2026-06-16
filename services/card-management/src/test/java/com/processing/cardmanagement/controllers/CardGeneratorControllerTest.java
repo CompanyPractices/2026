@@ -14,6 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.util.List;
@@ -55,9 +57,9 @@ public class CardGeneratorControllerTest {
             YearMonth.now().plusYears(3),
             CardStatus.ACTIVE,
             "643",
-            15_000_000L,
-            300_000_000L,
-            100_000_000,
+            BigDecimal.valueOf(15_000_000),
+            BigDecimal.valueOf(300_000_000),
+            BigDecimal.valueOf(100_000_000),
             "ZZZZZZ",
             Instant.now()
         );
@@ -70,9 +72,9 @@ public class CardGeneratorControllerTest {
             YearMonth.now().plusYears(3),
             CardStatus.ACTIVE,
             "643",
-            15_000_000L,
-            300_000_000L,
-            100_000_000,
+            BigDecimal.valueOf(15_000_000),
+            BigDecimal.valueOf(300_000_000),
+            BigDecimal.valueOf(100_000_000),
             "ZZZZZZ",
             Instant.now()
         );

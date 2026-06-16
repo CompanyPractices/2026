@@ -6,6 +6,8 @@ import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 
 import java.time.Instant;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +17,7 @@ public class AuthorizationRequestFactory {
   private final StanGenerator stanGenerator;
 
   public AuthorizationRequest build(
-          String pan, String currencyCode, Long amount, Terminal terminal, Merchant merchant) {
+          String pan, String currencyCode, BigDecimal amount, Terminal terminal, Merchant merchant) {
 
     return AuthorizationRequest.builder()
         .mti("0100")
