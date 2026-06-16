@@ -20,14 +20,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.Calendar;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -326,15 +327,8 @@ public class AuthService {
      * @see #lastTimestampAndSeq
      */
     public String generateRRN() {
-        Calendar calendar = Calendar.getInstance();
-
-        String currentSecond = String.format("%1d%03d%02d%02d%02d",
-                calendar.get(Calendar.YEAR) % 10,
-                calendar.get(Calendar.DAY_OF_YEAR),
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                calendar.get(Calendar.SECOND));
-
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyDDDHHmmss");
+        String currentSecond = formatter.format(LocalDateTime.now()).substring(1);
         String nextValue;
         while (true) {
             String currentState = lastTimestampAndSeq.get();
@@ -351,6 +345,14 @@ public class AuthService {
         }
         return nextValue;
     }
+
+    private static final Random RANDOM = new SecureRandom();
+
+    private static final byte[] ALPHABET = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
+            'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+            'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    };
 
     /**
      * Генерирует случайный код авторизации (AuthCode) для транзакции.
@@ -374,9 +376,11 @@ public class AuthService {
      * @see Random#ints(int, int, int)
      */
     public String generateAuthCode() {
-        return new Random().ints(6, 0, 36)
-                .mapToObj(i -> Character.toString(i < 10 ? '0' + i : 'A' + i - 10))
-                .collect(Collectors.joining());
+        byte[] buf = new byte[6];
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = ALPHABET[RANDOM.nextInt(ALPHABET.length)];
+        }
+        return new String(buf, StandardCharsets.US_ASCII);
     }
 
     /**
