@@ -3,7 +3,6 @@ package com.processing.cardmanagement.controllers;
 import com.processing.cardmanagement.models.BinIssuer;
 import com.processing.cardmanagement.services.BinIssuerService;
 import com.processing.common.dto.ErrorResponse;
-import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CreateBinIssuerRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -37,7 +36,7 @@ public class BinIssuerController {
     @Operation(summary = "Get Issuer ID by BIN")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Mapping found",
-                    content = @Content(schema = @Schema(implementation = CardModel.class))),
+                    content = @Content(schema = @Schema(implementation = BinIssuer.class))),
             @ApiResponse(responseCode = "404", description = "BIN not found",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
@@ -50,7 +49,7 @@ public class BinIssuerController {
     @Operation(summary = "Create BIN to Issuer ID mapping")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Mapping created",
-                    content = @Content(schema = @Schema(implementation = CardModel.class))),
+                    content = @Content(schema = @Schema(implementation = BinIssuer.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request data",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "BIN already exists",
@@ -64,8 +63,7 @@ public class BinIssuerController {
 
     @Operation(summary = "Delete BIN to Issuer ID mapping")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Mapping deleted",
-                    content = @Content(schema = @Schema(implementation = CardModel.class))),
+            @ApiResponse(responseCode = "204", description = "Mapping deleted"),
             @ApiResponse(responseCode = "404", description = "BIN not found",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })

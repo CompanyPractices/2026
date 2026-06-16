@@ -5,10 +5,7 @@ import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
-import com.processing.cardmanagement.repositories.BinIssuerJpaRepository;
-import com.processing.cardmanagement.repositories.CardJpaRepository;
-import com.processing.cardmanagement.repositories.CardRepository;
-import com.processing.cardmanagement.repositories.JavaPersistenceAdapter;
+import com.processing.cardmanagement.repositories.*;
 import com.processing.cardmanagement.services.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,8 +34,18 @@ public class AppConfig {
     }
 
     @Bean
-    public BinIssuerService binIssuerService(BinIssuerJpaRepository jpaRepository) {
-        return new BinIssuerServiceImpl(jpaRepository);
+    public BinIssuerRepository binIssuerRepository(BinIssuerJpaRepository jpaRepository) {
+        return new BinIssuerJpaAdapter(jpaRepository);
+    }
+
+    @Bean
+    public BinIssuerService binIssuerService(BinIssuerRepository repository) {
+        return new BinIssuerServiceImpl(repository);
+    }
+
+    @Bean
+    public BinIssuerInitializer binIssuerInitializer(BinIssuerRepository repository) {
+        return new BinIssuerInitializer(repository);
     }
 
     @Bean

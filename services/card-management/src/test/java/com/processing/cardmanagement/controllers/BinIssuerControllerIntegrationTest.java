@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -23,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
-@TestPropertySource(properties = "spring.sql.init.mode=never")
 public class BinIssuerControllerIntegrationTest {
 
     private static final String POSTGRES_IMAGE = "postgres:16-alpine";
@@ -43,6 +41,7 @@ public class BinIssuerControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        repository.deleteAll();
         repository.save(new BinIssuerEntity("400000", "ISS001"));
         repository.save(new BinIssuerEntity("400001", "ISS002"));
     }
