@@ -1,14 +1,20 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.*;
+import com.processing.cardmanagement.events.CardEventNotifier;
+import com.processing.cardmanagement.events.CardServiceCreationEvent;
+import com.processing.cardmanagement.events.CardServiceDeletionEvent;
+import com.processing.cardmanagement.events.CardServicePatchEvent;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.TooLargeLimitException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.models.CardStatus;
+import com.processing.cardmanagement.models.Reservation;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardRepository;
+import com.processing.cardmanagement.repositories.ReservationRepository;
+import com.processing.cardmanagement.repositories.ReservationRollbackRepository;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
@@ -19,12 +25,16 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class CardServiceImpl implements CardService {
 
+    private final TransactionService transactionService;
     private final CardRepository cardRepository;
+    private final ReservationRepository reservationRepository;
+    private final ReservationRollbackRepository reservationRollbackRepository;
     private final CardServiceSettings settings;
     private final CardServiceDefaults defaults;
     private final PanGenerator panGenerator;
     private final CardEventNotifier eventNotifier;
 
+    @Override
     public Card createCard(
         String bin,
         String cardholderName,
@@ -54,6 +64,7 @@ public class CardServiceImpl implements CardService {
         return savedCard;
     }
 
+    @Override
     public List<Card> createCards(List<CardDraft> data) {
         var entities = data
             .stream()
@@ -70,12 +81,14 @@ public class CardServiceImpl implements CardService {
         return saved;
     }
 
+    @Override
     public Card getCard(String pan) {
         return cardRepository
             .findByPan(pan)
             .orElseThrow(() -> new CardNotFoundException(pan));
     }
 
+    @Override
     public List<Card> getCards(
         @Nullable Integer limit,
         @Nullable Long offset,
@@ -99,6 +112,7 @@ public class CardServiceImpl implements CardService {
         );
     }
 
+    @Override
     public Card patchCard(
         String pan,
         @Nullable CardStatus status,
@@ -120,15 +134,18 @@ public class CardServiceImpl implements CardService {
         }
     }
 
+    @Override
     public void deleteCard(String pan) {
         cardRepository.save(getCard(pan).deleted());
         eventNotifier.onEvent(new CardServiceDeletionEvent(maskPan(pan)));
     }
 
+    @Override
     public long countAllCards() {
         return cardRepository.countAllCards();
     }
 
+    @Override
     public long countCardsFiltered(
         @Nullable CardStatus status,
         @Nullable String bin,
@@ -145,14 +162,24 @@ public class CardServiceImpl implements CardService {
         );
     }
 
-    public Card reserve(String pan, long amount) {
+    @Override
+    public Card reserve(String pan, long amount, String rrn) {
         try {
-            var reserved = cardRepository.updateWithPessimisticLock(pan, card -> card.withReserved(amount));
-            eventNotifier.onEvent(new CardServiceReserveEvent(maskPan(pan), amount));
-            return reserved;
+            return cardRepository.updateWithPessimisticLock(pan, card -> {
+                var reservation = reservationRepository.saveTransactional(
+                    new Reservation(pan, amount, rrn)
+                );
+                card.applyReservation(reservation);
+                return card;
+            });
         } catch (NoSuchElementException ex) {
             throw new CardNotFoundException(pan);
         }
+    }
+
+    @Override
+    public Card rollback(String pan, long amount, String rrn) {
+        return null;
     }
 
     private String maskPan(String pan) {

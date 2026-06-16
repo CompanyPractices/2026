@@ -4,6 +4,7 @@ import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -69,10 +70,14 @@ public record Card(
     /**
      * Создает копию карты с зарезервированным количеством средств
      *
-     * @param amount размер резервирования
+     * @param reservation информация о резервировании
      * @return карта с измененным балансом
      */
-    public Card withReserved(long amount) {
+    public Card applyReservation(Reservation reservation) {
+        if (!Objects.equals(this.pan, reservation.pan())) {
+            throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
+        }
+        long amount = reservation.reservationAmount();
         if (this.availableBalance < amount) {
             throw new InsufficientFundsException();
         }

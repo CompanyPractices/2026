@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 @RequiredArgsConstructor
-public class JavaPersistenceAdapter implements CardRepository {
+public class CardRepositoryPersistenceAdapter implements CardRepository {
 
     private final CardPersistenceMapper persistenceMapper;
     private final CardJpaRepository jpaRepository;

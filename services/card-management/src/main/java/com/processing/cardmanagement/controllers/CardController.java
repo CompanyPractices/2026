@@ -220,7 +220,8 @@ public class CardController {
         return ResponseEntity.ok(
             restMapper.toDto(cardService.reserve(
                 pan,
-                data.amount()
+                data.amount(),
+                data.rrn()
             ))
         );
     }

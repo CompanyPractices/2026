@@ -7,7 +7,7 @@ import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.cardmanagement.repositories.CardRepository;
-import com.processing.cardmanagement.repositories.JavaPersistenceAdapter;
+import com.processing.cardmanagement.repositories.CardRepositoryPersistenceAdapter;
 import com.processing.cardmanagement.services.CardService;
 import com.processing.cardmanagement.services.CardServiceImpl;
 import com.processing.cardmanagement.services.LuhnValidator;
@@ -30,7 +30,7 @@ public class AppConfig {
         CardPersistenceMapper persistenceMapper,
         CardJpaRepository jpaCardRepository
     ) {
-        return new JavaPersistenceAdapter(persistenceMapper, jpaCardRepository);
+        return new CardRepositoryPersistenceAdapter(persistenceMapper, jpaCardRepository);
     }
 
     @Bean
