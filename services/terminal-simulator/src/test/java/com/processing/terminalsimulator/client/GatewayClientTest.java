@@ -4,37 +4,51 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
-import com.processing.terminalsimulator.TransactionStatus;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
+import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+@RestClientTest
 class GatewayClientTest {
 
+    private MockWebServer mockServer;
     private GatewayClient gatewayClient;
-    private MockRestServiceServer mockServer;
-    private static final String GATEWAY_URL = "http://localhost:8080";
-    private static final String CARD_MGMT_URL = "http://localhost:8080";
+    private String baseUrl;
+    private String gatewayUrl;
+    private String cardMgmtUrl;
 
     @BeforeEach
-    void setUp() {
-        RestTemplate restTemplate = new RestTemplate();
-        gatewayClient = new GatewayClient(restTemplate, GATEWAY_URL, CARD_MGMT_URL);
-        mockServer = MockRestServiceServer.bindTo(restTemplate).build();
+    void setUp() throws IOException {
+        mockServer = new MockWebServer();
+        mockServer.start();
+        baseUrl = mockServer.url("/").toString();
+
+        gatewayUrl = baseUrl;
+        cardMgmtUrl = baseUrl;
+        RestClient restClient = RestClient.create();
+
+        gatewayClient = new GatewayClient(restClient, gatewayUrl, cardMgmtUrl);
+    }
+
+    @AfterEach
+    void tearDown() throws IOException {
+        mockServer.shutdown();
     }
 
     @Test
-    void sendToGateway_shouldReturnAuthorizationResponse() {
+    void sendToGateway_shouldReturnAuthorizationResponse() throws InterruptedException {
         AuthorizationRequest request = new AuthorizationRequest("0100", "000001", "4000001234560001",
                 "000000", 10000L, "643", "2026-06-09T10:00:00Z",
                 "TERM001", "02", "MERCH001", "5411", "ACQ001", "");
@@ -48,18 +62,19 @@ class GatewayClientTest {
                 }
                 """;
 
-        mockServer.expect(requestTo(GATEWAY_URL + "/api/transactions"))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(content().json("{\"stan\":\"000001\"}"))
-                .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+        mockServer.enqueue(new MockResponse().setResponseCode(200).setBody(responseJson)
+                .addHeader("Content-Type", "application/json"));
 
-        AuthorizationResponse response = gatewayClient.sendToGateway(request);
-        assertEquals(TransactionStatus.APPROVED.name(), response.status());
-        mockServer.verify();
+        AuthorizationResponse actual = gatewayClient.sendToGateway(request);
+        assertEquals("APPROVED", actual.status());
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals(mockServer.url("/api/transactions").toString(), recordedRequest.getRequestUrl().toString());
     }
 
     @Test
-    void getCardsFromCardManager_shouldReturnCards() {
+    void getCardsFromCardManager_shouldReturnCards() throws InterruptedException {
         String responseJson = """
                 {
                     "cards": [
@@ -75,21 +90,24 @@ class GatewayClientTest {
                 }
                 """;
 
-        mockServer.expect(requestTo(CARD_MGMT_URL + "/api/cards?status=ACTIVE&limit=70"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+        mockServer.enqueue(new MockResponse().setResponseCode(200).setBody(responseJson)
+                .addHeader("Content-Type", "application/json"));
 
         List<CardModel> cards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70);
         assertEquals(1, cards.size());
         assertEquals("4000001234560001", cards.get(0).pan());
+
+        RecordedRequest request = mockServer.takeRequest();
+        assertEquals(mockServer.url("/api/cards?status=ACTIVE&limit=70").toString(), request.getRequestUrl().toString());
+        assertEquals("GET", request.getMethod());
     }
 
     @Test
     void getCardsFromCardManager_whenResponseEmpty_shouldThrowException() {
         String responseJson = "{\"cards\":[], \"total\":0}";
 
-        mockServer.expect(requestTo(CARD_MGMT_URL + "/api/cards?status=ACTIVE&limit=70"))
-                .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+        mockServer.enqueue(new MockResponse().setResponseCode(200).setBody(responseJson)
+                .addHeader("Content-Type", "application/json"));
 
         assertThatThrownBy(() -> gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70))
                 .isInstanceOf(IllegalStateException.class)

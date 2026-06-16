@@ -5,6 +5,11 @@ gateway:
   url: ${GATEWAY_URL:http://localhost:8080}
   card-management-url: ${CARD_MGMT_URL:http://localhost:8080}
 
+spring:
+  threads:
+    virtual:
+      enabled: true
+
 # PostgreSQL (раскомментируй, если нужна БД)
 # spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:processing}
 # spring.datasource.username=${DB_USER:postgres}
