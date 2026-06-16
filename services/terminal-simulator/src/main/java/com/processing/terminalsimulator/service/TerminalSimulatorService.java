@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,9 +28,7 @@ public class TerminalSimulatorService {
     private final GatewayClient gatewayClient;
     private final TransactionFactory transactionFactory;
 
-    private volatile List<CardModel> cards = new ArrayList<>();
-
-    private CardModel getRandomCard(CardModelStatus cardStatus) {
+    private CardModel getRandomCard(CardModelStatus cardStatus, List<CardModel> cards) {
         List<CardModel> filtered = cards.stream()
                 .filter(c -> cardStatus == null || c.status() == cardStatus)
                 .toList();
@@ -40,13 +39,13 @@ public class TerminalSimulatorService {
         return filtered.get(randomIndex);
     }
 
-    private void generateTransactionHandler(int start, int end, AtomicInteger approved, AtomicInteger declined,
-                                            TransactionType transactionType, List<AuthorizationResponse> authResps,
-                                            PartofDay partOfDay) {
+    private List<AuthorizationResponse> generateTransactionHandler(int start, int end, AtomicInteger approved, AtomicInteger declined,
+                                            TransactionType transactionType, ConcurrentLinkedQueue<AuthorizationResponse> authResps,
+                                            PartofDay partOfDay, List<CardModel> cards) {
         CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
         for (int i = start; i < end; i++) {
             try {
-                CardModel card = getRandomCard(requiredStatus);
+                CardModel card = getRandomCard(requiredStatus, cards);
                 String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
                 AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card, terminalId);
                 AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
@@ -67,6 +66,8 @@ public class TerminalSimulatorService {
     }
 
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
+        List<CardModel> cards;
+
         long start = System.currentTimeMillis();
         List<CardModel> activeCards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70);
         if (activeCards == null || activeCards.isEmpty()) {
@@ -83,47 +84,47 @@ public class TerminalSimulatorService {
         }
         cards = newCards;
 
-        List<AuthorizationResponse> authResps = new ArrayList<>();
+        ConcurrentLinkedQueue<AuthorizationResponse> authResps = new ConcurrentLinkedQueue<>();
         AtomicInteger approved = new AtomicInteger(0);
         AtomicInteger declined = new AtomicInteger(0);
 
         switch (scenario) {
             case mixed -> {
                 generateTransactionHandler(0, (int) (count * 0.7), approved, declined, TransactionType.NORMAL,
-                        authResps, PartofDay.DAY);
+                        authResps, PartofDay.DAY, cards);
                 generateTransactionHandler((int) (count * 0.7), (int) (count * 0.7 + count * 0.15), approved, declined,
-                        TransactionType.HIGH_VALUE, authResps, PartofDay.DAY);
+                        TransactionType.HIGH_VALUE, authResps, PartofDay.DAY, cards);
                 generateTransactionHandler((int) (count * 0.7 + count * 0.15),
                         (int) (count * 0.7 + count * 0.15 + count * 0.1), approved, declined,
-                        TransactionType.ALMOST_DAILY_LIMIT, authResps, PartofDay.DAY);
+                        TransactionType.ALMOST_DAILY_LIMIT, authResps, PartofDay.DAY, cards);
                 generateTransactionHandler((int) (count * 0.7 + count * 0.15 + count * 0.1), (int) count, approved, declined,
-                        TransactionType.BLOCKED, authResps, PartofDay.DAY);
+                        TransactionType.BLOCKED, authResps, PartofDay.DAY, cards);
             }
             case declines_test -> {
                 generateTransactionHandler(0, (int) (count * 0.2), approved, declined,
-                        TransactionType.INVALID_PAN, authResps, PartofDay.DAY);
+                        TransactionType.INVALID_PAN, authResps, PartofDay.DAY, cards);
                 generateTransactionHandler((int) (count * 0.2), (int) (count * 0.4), approved, declined,
-                        TransactionType.BLOCKED, authResps, PartofDay.DAY);
+                        TransactionType.BLOCKED, authResps, PartofDay.DAY, cards);
                 generateTransactionHandler((int) (count * 0.4), (int) (count * 0.6), approved, declined,
-                        TransactionType.NO_MONEY, authResps, PartofDay.DAY);
+                        TransactionType.NO_MONEY, authResps, PartofDay.DAY, cards);
                 generateTransactionHandler((int) (count * 0.6), (int) (count * 0.8), approved, declined,
-                        TransactionType.MORE_THAN_DAILY_LIMIT, authResps, PartofDay.DAY);
+                        TransactionType.MORE_THAN_DAILY_LIMIT, authResps, PartofDay.DAY, cards);
                 generateTransactionHandler((int) (count * 0.8), count, approved, declined,
-                        TransactionType.NORMAL, authResps, PartofDay.DAY);
+                        TransactionType.NORMAL, authResps, PartofDay.DAY, cards);
             }
             case night_time -> {
                 generateTransactionHandler(0, count / 2, approved, declined, TransactionType.NORMAL,
-                        authResps, PartofDay.NIGHT);
+                        authResps, PartofDay.NIGHT, cards);
                 generateTransactionHandler(count / 2, count, approved, declined, TransactionType.HIGH_VALUE,
-                        authResps, PartofDay.NIGHT);
+                        authResps, PartofDay.NIGHT, cards);
             }
             case normal -> generateTransactionHandler(0, count, approved, declined, TransactionType.NORMAL,
-                    authResps, PartofDay.DAY);
+                    authResps, PartofDay.DAY, cards);
             case high_value -> generateTransactionHandler(0, count, approved, declined, TransactionType.HIGH_VALUE,
-                    authResps, PartofDay.DAY);
+                    authResps, PartofDay.DAY, cards);
         }
 
         long elapsed = System.currentTimeMillis() - start;
-        return new TerminalRunResponse(count, approved.get(), declined.get(), elapsed, authResps);
+        return new TerminalRunResponse(count, approved.get(), declined.get(), elapsed, authResps.stream().toList());
     }
 }
