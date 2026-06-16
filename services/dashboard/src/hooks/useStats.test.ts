@@ -16,7 +16,7 @@ describe('useStats', () => {
         mockedFetchApi.mockResolvedValue({} as DashboardStats);
     });
 
-    it('should return loading=true and null data in beginning render', () => {
+    it('should return loading=true and null data on initial render', () => {
         const { result } = renderHook(() => useStats());
 
         expect(result.current.loading).toBe(true);
@@ -28,8 +28,12 @@ describe('useStats', () => {
         const mockData: DashboardStats = {
             totalTransactions: 100,
             approvedCount: 80,
+            declinedCount: 20,
+            approvalRate: 80,
             totalAmount: 50000,
+            averageAmount: 500,
             avgProcessingTimeMs: 150,
+            transactionsPerMinute: 10,
         };
 
         mockedFetchApi.mockResolvedValue(mockData);
@@ -46,7 +50,7 @@ describe('useStats', () => {
         expect(mockedFetchApi).toHaveBeenCalledWith('/api/dashboard/stats');
     });
 
-    it('should handle network error and write error', async () => {
+    it('should handle network error and set error state', async () => {
         const errorMessage = 'Network Error';
 
         mockedFetchApi.mockRejectedValue(new Error(errorMessage));
