@@ -4,6 +4,7 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -13,11 +14,12 @@ public class AlmostDailyLimitStrategy implements TransactionStrategy {
         return TransactionType.ALMOST_DAILY_LIMIT;
     }
     @Override
-    public long calculateAmount(CardModel card) {
-        if (card.dailyLimit() <= 1) {
-            return 1L;
+    public BigDecimal calculateAmount(CardModel card) {
+        BigDecimal dailyLimit = card.dailyLimit();
+        if (dailyLimit.compareTo(BigDecimal.ONE) <= 0) {
+            return BigDecimal.ONE;
         }
-        return  card.dailyLimit() - 1;
+        return dailyLimit.subtract(BigDecimal.ONE);
     }
     @Override
     public String getMcc() {

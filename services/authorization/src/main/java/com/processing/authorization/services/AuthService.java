@@ -3,6 +3,8 @@ package com.processing.authorization.services;
 import com.processing.authorization.constants.DeclineOutcome;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.authorization.RollbackRequest;
+import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.authorization.entities.LimitUsage;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
@@ -19,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -84,7 +87,7 @@ public class AuthService {
      *         </ul>
      *
      * @see #getCard(String)
-     * @see #reserve(long, String, String)
+     * @see #reserve(BigDecimal, String, String)
      * @see #generateRRN()
      * @see #generateAuthCode()
      * @see AuthorizationRequest
@@ -97,25 +100,25 @@ public class AuthService {
             cardResponse = getCard(request.pan());
         } catch (CardNotFoundException e) {
             log.error("card not found for pan: {}", logPan(request.pan()), e);
-            return DeclineOutcome.CARD_NOT_FOUND.build(request, requestInputTime);
+            return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException e) {
             log.error("service unavailable for pan: {}", logPan(request.pan()), e);
-            return DeclineOutcome.SERVICE_UNAVAILABLE.build(request, requestInputTime);
+            return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
             log.error("getting card from card management service failed for pan: {}", logPan(request.pan()), e);
-            return DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
+            return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
         CardModelStatus currCardStatus = cardResponse.status();
         if (currCardStatus == null) {
-            return DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
+            return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
         if (!currCardStatus.equals(CardModelStatus.ACTIVE)) {
             return switch (currCardStatus) {
-                case CardModelStatus.EXPIRED -> DeclineOutcome.CARD_EXPIRED.build(request, requestInputTime);
-                case CardModelStatus.BLOCKED -> DeclineOutcome.CARD_BLOCKED.build(request, requestInputTime);
-                case CardModelStatus.INACTIVE -> DeclineOutcome.CARD_INACTIVE.build(request, requestInputTime);
-                default -> DeclineOutcome.UNKNOWN_REASON.build(request, requestInputTime);
+                case CardModelStatus.EXPIRED -> DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
+                case CardModelStatus.BLOCKED -> DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
+                case CardModelStatus.INACTIVE -> DeclineOutcome.CARD_INACTIVE.buildAuthorization(request, requestInputTime);
+                default -> DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
             };
         }
 
@@ -128,11 +131,11 @@ public class AuthService {
 
         LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
         if (lastValidDay.isBefore(transmissionDate)) {
-            return DeclineOutcome.CARD_EXPIRED.build(request, requestInputTime);
+            return DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
         }
 
-        if (request.amount() > cardResponse.availableBalance()) {
-            return DeclineOutcome.INSUFFICIENT_FUNDS.build(request, requestInputTime);
+        if (request.amount().compareTo(cardResponse.availableBalance()) > 0) {
+            return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         }
 
         Optional<LimitUsage> currLimitUsage = limitUsageRepository
@@ -147,20 +150,20 @@ public class AuthService {
                                 transmissionDate);
         if (monthLimitUsage.isPresent()) {
             LimitUsage monthUsage = monthLimitUsage.get();
-            if (monthUsage.getMonthlyAmount() + request.amount() > cardResponse.monthlyLimit()) {
-                return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
+            if (monthUsage.getMonthlyAmount().add(request.amount()).compareTo(cardResponse.monthlyLimit()) > 0) {
+                return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
             }
-        } else if (request.amount() > cardResponse.monthlyLimit()) {
-            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
+        } else if (request.amount().compareTo(cardResponse.monthlyLimit()) > 0) {
+            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
-            if (usage.getDailyAmount() + request.amount() > cardResponse.dailyLimit()) {
-                return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
+            if (usage.getDailyAmount().add(request.amount()).compareTo(cardResponse.dailyLimit()) > 0) {
+                return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
             }
-        } else if (request.amount() > cardResponse.dailyLimit()) {
-            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
+        } else if (request.amount().compareTo(cardResponse.dailyLimit()) > 0) {
+            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
         String rrn = generateRRN();
@@ -168,8 +171,8 @@ public class AuthService {
             reserve(request.amount(), rrn, request.pan());
             if (currLimitUsage.isPresent()) {
                 LimitUsage usage = currLimitUsage.get();
-                usage.setMonthlyAmount(usage.getMonthlyAmount() + request.amount());
-                usage.setDailyAmount(usage.getDailyAmount() + request.amount());
+                usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
+                usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
                 limitUsageRepository.save(usage);
             } else if (monthLimitUsage.isPresent()) {
                 LimitUsage monthUsage = monthLimitUsage.get();
@@ -177,7 +180,7 @@ public class AuthService {
                 usage.setPan(request.pan());
                 usage.setUsageDate(transmissionDate);
                 usage.setDailyAmount(request.amount());
-                usage.setMonthlyAmount(monthUsage.getMonthlyAmount() + request.amount());
+                usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
                 limitUsageRepository.save(usage);
             } else {
                 LimitUsage usage = new LimitUsage();
@@ -189,7 +192,7 @@ public class AuthService {
             }
         } catch (Exception e) {
             log.error("reserving failed for card {}", cardResponse.id(), e);
-            return DeclineOutcome.RESERVATION_FAILED.build(request, requestInputTime);
+            return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         }
 
         String authCode = generateAuthCode();
@@ -274,7 +277,7 @@ public class AuthService {
      * @see ReserveRequest
      * @see ReserveCardException
      */
-    public void reserve(long amount, String rrn, String pan) {
+    public void reserve(BigDecimal amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
         URI uri = UriComponentsBuilder
                 .fromUriString(cmsUrl)
@@ -386,5 +389,10 @@ public class AuthService {
 
     public String logPan(String pan) {
         return maskPan.maskPan(pan);
+    }
+
+    public RollbackResponse rollback(RollbackRequest request, LocalDateTime requestInputTime) {
+        // TODO
+        return null;
     }
 }

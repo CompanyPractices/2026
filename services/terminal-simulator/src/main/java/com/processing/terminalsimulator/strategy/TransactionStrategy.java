@@ -4,9 +4,11 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.terminalsimulator.model.TransactionType;
 
+import java.math.BigDecimal;
+
 public interface TransactionStrategy {
     TransactionType getType();
-    long calculateAmount(CardModel card);
+    BigDecimal calculateAmount(CardModel card);
     String getMcc();
     boolean isInvalidPan();
     default CardModelStatus getRequiredCardStatus() {

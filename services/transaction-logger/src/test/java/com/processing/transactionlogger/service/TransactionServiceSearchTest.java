@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -85,7 +86,7 @@ public class TransactionServiceSearchTest {
         when(transactionRepository.count()).thenReturn(100L);
         when(transactionRepository.countByStatus(TransactionStatus.APPROVED)).thenReturn(80L);
         when(transactionRepository.countByStatus(TransactionStatus.DECLINED)).thenReturn(20L);
-        when(transactionRepository.sumAmount()).thenReturn(500000L);
+        when(transactionRepository.sumAmount()).thenReturn(new BigDecimal("500000"));
         when(transactionRepository.countByCreatedAtAfter(any(Instant.class))).thenReturn(5L);
         when(transactionRepository.averageProcessingTimeMs()).thenReturn(42.5);
 
@@ -95,8 +96,8 @@ public class TransactionServiceSearchTest {
         assertEquals(80L, stats.approvedCount());
         assertEquals(20L, stats.declinedCount());
         assertEquals(0.8, stats.approvalRate());
-        assertEquals(500000L, stats.totalAmount());
-        assertEquals(5000L, stats.averageAmount());
+        assertThat(stats.totalAmount()).isEqualByComparingTo(new BigDecimal("500000"));
+        assertThat(stats.averageAmount()).isEqualByComparingTo(new BigDecimal("5000"));
         assertEquals(42.5, stats.avgProcessingTimeMs());
         assertEquals(5.0, stats.transactionsPerMinute());
     }

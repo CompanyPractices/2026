@@ -3,6 +3,8 @@ package com.processing.merchantacquirer.service;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.repository.MerchantRepository;
+
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 
@@ -25,7 +27,7 @@ public class MerchantProvider {
 
     return merchants;
   }
-  public Long getMerchantAcquirerFee(String id) {
+  public BigDecimal getMerchantAcquirerFee(String id) {
     Merchant merchant = merchantRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Merchant not found with id: " + id));
     return merchant.getAcquiringFee();
