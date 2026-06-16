@@ -22,6 +22,11 @@ function useTransactions() {
     }, []);
 
     const searchTransactions = useCallback((filter: Filter) => {
+        const isEmpty = !filter || Object.values(filter).every(v => v === undefined || v === '');
+        if (isEmpty && transactions){
+            setFilteredTransactions(transactions)
+        }
+
         setLoading(true);
         setError(null);
         const requestParams = new URLSearchParams();
@@ -50,7 +55,7 @@ function useTransactions() {
                 setLoading(false)
             });
 
-    }, []);
+    }, [transactions]);
 
     return {transactions, filteredTransactions, error, loading, searchTransactions}
 }
