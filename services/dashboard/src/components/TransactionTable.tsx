@@ -55,7 +55,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                 <button
                     className="
                     px-3 md:px-5 py-1 md:py-1 text-base md:text-lg rounded-xl md:rounded-3xl bg-emerald-400 dark:bg-sage-200 dark:text-sage-400 font-semibold cursor-pointer
-                    hover:bg-emerald-500 hover:text-zinc-200 transition-colors duration-200
+                    hover:bg-emerald-500 hover:text-zinc-200 transition-none hover:transition-colors hover:duration-200
                     dark:hover:bg-sage-100 dark:hover:text-sage-500
                     flex items-center gap-1
                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-400 disabled:hover:text-white
