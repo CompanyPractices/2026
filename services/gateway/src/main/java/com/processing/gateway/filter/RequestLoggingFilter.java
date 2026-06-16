@@ -1,6 +1,7 @@
 package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -90,20 +92,30 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                 var resBodyStr = new String(contentCachedResponse.getContentAsByteArray(), StandardCharsets.UTF_8);
                 var reqBodyStr = contentCachedRequest.getContentAsString();
 
-                if (!resBodyStr.isEmpty()) {
-                    resBodyStr = maskData(PAN_PATTERN, MASKED_PAN, resBodyStr);
-                    resBodyStr = maskData(CVV_PATTERN, MASKED_CVV, resBodyStr);
+                try {
+                    if (!resBodyStr.isEmpty()
+                            && contentCachedResponse.getContentType().equals(MediaType.APPLICATION_JSON_VALUE)) {
+                        resBodyStr = maskData(PAN_PATTERN, MASKED_PAN, resBodyStr);
+                        resBodyStr = maskData(CVV_PATTERN, MASKED_CVV, resBodyStr);
 
-                    var resBody = mapper.readValue(resBodyStr, JsonNode.class);
-                    requestLogBuilder.responseBody(resBody);
+                        var resBody = mapper.readValue(resBodyStr, JsonNode.class);
+                        requestLogBuilder.responseBody(resBody);
+                    }
+                } catch (JsonParseException e) {
+                    log.error("Error parsing response body for logging", e);
                 }
 
-                if (!reqBodyStr.isEmpty()) {
-                    reqBodyStr = maskData(PAN_PATTERN, MASKED_PAN, reqBodyStr);
-                    reqBodyStr = maskData(CVV_PATTERN, MASKED_CVV, reqBodyStr);
+                try {
+                    if (!reqBodyStr.isEmpty()
+                            && contentCachedRequest.getContentType().equals(MediaType.APPLICATION_JSON_VALUE)) {
+                        reqBodyStr = maskData(PAN_PATTERN, MASKED_PAN, reqBodyStr);
+                        reqBodyStr = maskData(CVV_PATTERN, MASKED_CVV, reqBodyStr);
 
-                    var reqBody = mapper.readValue(reqBodyStr, JsonNode.class);
-                    requestLogBuilder.requestBody(reqBody);
+                        var reqBody = mapper.readValue(reqBodyStr, JsonNode.class);
+                        requestLogBuilder.requestBody(reqBody);
+                    }
+                } catch (JsonParseException e) {
+                    log.error("Error parsing request body for logging", e);
                 }
             }
 
