@@ -85,8 +85,8 @@ class AuthServiceTest {
         doNothing().when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(BigDecimal.ZERO);
+        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -270,8 +270,8 @@ class AuthServiceTest {
         doThrow(new ReserveCardException("Reserve failed")).when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(BigDecimal.ZERO);
+        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -312,8 +312,7 @@ class AuthServiceTest {
         usage.setMonthlyAmount(BigDecimal.valueOf(200000));
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(BigDecimal.valueOf(200000));
+
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -329,7 +328,6 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(BigDecimal.valueOf(96000));
         usage.setMonthlyAmount(BigDecimal.valueOf(200000));
@@ -350,10 +348,11 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
 
+        LimitUsage usage = new LimitUsage();
+        usage.setDailyAmount(BigDecimal.valueOf(50000));
+        usage.setMonthlyAmount(BigDecimal.valueOf(498000));
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
-                .thenReturn(Optional.empty());
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(BigDecimal.valueOf(496000));
+                .thenReturn(Optional.of(usage));
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 

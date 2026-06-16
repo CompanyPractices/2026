@@ -3,6 +3,7 @@ package com.processing.authorization.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -38,5 +39,6 @@ public class LimitUsage {
 
     @Column(name = "updated_at")
     @ColumnDefault("CURRENT_TIMESTAMP")
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 }
