@@ -116,9 +116,7 @@ export function Filters({ issuers, mccNames, onSearch }: FilterProps) {
                     />
                 </div>
 
-                <div></div>
-
-                <div className="flex items-center gap-4 mb-4">
+                <div className="col-span-2 flex items-center justify-end gap-4 mb-4">
                     <button className={buttonClass} type="submit">
                         Найти
                     </button>
