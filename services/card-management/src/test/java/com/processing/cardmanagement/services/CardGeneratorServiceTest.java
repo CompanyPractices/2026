@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
@@ -36,10 +37,10 @@ public class CardGeneratorServiceTest {
     private MeterRegistry meterRegistry;
 
     private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
-        1_000_000,
-        50_000_000,
-        5_000_000,
-        30_000_000,
+        BigDecimal.valueOf(1_000_000),
+        BigDecimal.valueOf(50_000_000),
+        BigDecimal.valueOf(5_000_000),
+        BigDecimal.valueOf(30_000_000),
         "643"
     );
 

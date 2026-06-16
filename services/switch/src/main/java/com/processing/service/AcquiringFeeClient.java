@@ -1,6 +1,8 @@
 package com.processing.service;
 
+import java.math.BigDecimal;
+
 public interface AcquiringFeeClient {
 
-    Long fetchAcquiringFee(String transmissionDateTime, String stan, String pan, String terminalId, Long amount);
+    BigDecimal fetchAcquiringFee(String transmissionDateTime, String stan, String pan, String terminalId, BigDecimal amount);
 }

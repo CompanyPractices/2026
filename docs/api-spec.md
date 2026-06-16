@@ -287,21 +287,21 @@
 
 ### AuthorizationRequest
 
-| Поле | Тип | Обязательное | Описание |
-|------|-----|:---:|---|
-| `mti` | String(4) | Да | "0100" = Auth Request |
-| `stan` | String(6) | Да | System Trace Audit Number |
-| `pan` | String(16) | Да | Номер карты |
-| `processingCode` | String(6) | Да | "000000" = покупка |
-| `amount` | Integer | Да | Сумма в копейках |
-| `currencyCode` | String(3) | Да | "643" |
-| `transmissionDateTime` | DateTime | Да | Время отправки |
-| `terminalId` | String(8) | Да | ID терминала |
-| `terminalType` | Enum | Нет | POS, ATM, ECOM |
-| `merchantId` | String(15) | Да | ID мерчанта |
-| `mcc` | String(4) | Да | Merchant Category Code |
-| `acquirerId` | String | Да | ID эквайрера |
-| `issuerId` | String | Нет | ID эмитента (заполняется Switch после маршрутизации) |
+| Поле | Тип        | Обязательное | Описание                                          |
+|------|------------|:---:|---------------------------------------------------|
+| `mti` | String(4)  | Да | "0100" = Auth Request                             |
+| `stan` | String(6)  | Да | System Trace Audit Number                         |
+| `pan` | String(16) | Да | Номер карты                                       |
+| `processingCode` | String(6)  | Да | "000000" = покупка                                |
+| `amount` | BigDecimal | Да | Сумма                                             |
+| `currencyCode` | String(3)  | Да | "643"                                             |
+| `transmissionDateTime` | DateTime   | Да | Время отправки                                    |
+| `terminalId` | String(8)  | Да | ID терминала                                      |
+| `terminalType` | Enum       | Нет | POS, ATM, ECOM                                    |
+| `merchantId` | String(15) | Да | ID мерчанта                                       |
+| `mcc` | String(4)  | Да | Merchant Category Code                            |
+| `acquirerId` | String     | Да | ID эквайрера                                      |
+| `issuerId` | String     | Нет | ID эмитента (заполняется Switch после маршрутизации) |
 
 ### AuthorizationResponse
 
@@ -324,7 +324,7 @@
 |------|-----|----------|
 | `id` | UUID | Уникальный идентификатор |
 | `issuerId` | String | ID эмитента (определяется Switch) |
-| `acquiringFee` | Integer | Комиссия эквайрера в копейках (справочно, заполняется Merchant Simulator) |
+| `acquiringFee` | BigDecimal | Комиссия эквайрера (справочно, заполняется Merchant Simulator) |
 | `createdAt` | DateTime | Время записи |
 
 ### Коды ответов (responseCode)
