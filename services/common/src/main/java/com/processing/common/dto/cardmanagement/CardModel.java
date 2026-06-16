@@ -2,7 +2,7 @@ package com.processing.common.dto.cardmanagement;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.util.UUID;
 
@@ -40,5 +40,5 @@ public record CardModel(
     @Schema(description = "Issuer ID", example = "ZZZZZZ")
     String issuerId,
     @Schema(description = "Card creation date")
-    LocalDateTime createdAt
+    Instant createdAt
 ) {}
