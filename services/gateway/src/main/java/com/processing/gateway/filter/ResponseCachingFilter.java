@@ -2,6 +2,7 @@ package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
+import com.processing.gateway.utils.DownstreamExceptionUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.cache.Cache;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -44,8 +46,11 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         if (!request.getRequestURI().startsWith(CARDS_MGMT_SERVICE_PREFIX)
-                || !request.getMethod().equalsIgnoreCase(HttpMethod.GET.name())) {
+                || !isCacheableMethod(request)) {
             filterChain.doFilter(request, response);
+            if (isCardMutation(request) && isSuccessfulStatus(response.getStatus())) {
+                cache.clear();
+            }
             return;
         }
 
@@ -75,13 +80,34 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
 
             wrappedResponse.copyBodyToResponse();
         } catch (Exception e) {
-            log.error("Exception occurred while caching response", e);
-            response.setStatus(503);
-            objectMapper.writeValue(response.getWriter(), new ServiceUnavailableResponse(
-                    "SERVICE_UNAVAILABLE",
-                    "Card Management Service is temporarily unavailable",
-                    "Card Management Service"
-            ));
+            if (DownstreamExceptionUtils.isDownstreamUnavailable(e) && !response.isCommitted()) {
+                log.error("Card Management service is unavailable while caching response", e);
+                response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                objectMapper.writeValue(response.getWriter(), new ServiceUnavailableResponse(
+                        "SERVICE_UNAVAILABLE",
+                        "Card Management Service is temporarily unavailable",
+                        "cardManagement"
+                ));
+                return;
+            }
+
+            DownstreamExceptionUtils.rethrow(e);
         }
+    }
+
+    private boolean isCacheableMethod(HttpServletRequest request) {
+        return request.getMethod().equalsIgnoreCase(HttpMethod.GET.name());
+    }
+
+    private boolean isCardMutation(HttpServletRequest request) {
+        return request.getRequestURI().startsWith(CARDS_MGMT_SERVICE_PREFIX)
+                && !request.getMethod().equalsIgnoreCase(HttpMethod.GET.name());
+    }
+
+
+    private boolean isSuccessfulStatus(int status) {
+        return status >= HttpStatus.OK.value()
+                && status < HttpStatus.MULTIPLE_CHOICES.value();
     }
 }

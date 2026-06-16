@@ -83,8 +83,8 @@ class AuthServiceTest {
         doNothing().when(spyService).reserve(anyLong(), anyString(), anyString());
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(0L);
+        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -306,8 +306,7 @@ class AuthServiceTest {
         usage.setMonthlyAmount(200000L);
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(200000L);
+
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -323,7 +322,6 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(96000L);
         usage.setMonthlyAmount(200000L);
@@ -344,10 +342,11 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
 
+        LimitUsage usage = new LimitUsage();
+        usage.setDailyAmount(50000L);
+        usage.setMonthlyAmount(498000L);
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
-                .thenReturn(Optional.empty());
-        when(limitUsageRepository.sumMonthlyAmountByPanAndMonth(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(496000L);
+                .thenReturn(Optional.of(usage));
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
