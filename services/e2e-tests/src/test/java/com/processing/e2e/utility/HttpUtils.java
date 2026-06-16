@@ -28,7 +28,6 @@ public class HttpUtils {
         }
     }
 
-
     public JsonNode httpPost(String baseUrl, String path, Object body, int expectedStatus) {
         Response response = RestAssured
                 .given()
@@ -57,6 +56,16 @@ public class HttpUtils {
                 .extract()
                 .response();
         return response.body().as(JsonNode.class);
+    }
+
+    public void assertGetStatus(String baseUrl, String path, int expectedStatus) {
+        RestAssured
+                .given()
+                .baseUri(baseUrl)
+                .when()
+                .get(path)
+                .then()
+                .statusCode(expectedStatus);
     }
 
     public JsonNode httpPatchRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
