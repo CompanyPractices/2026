@@ -48,6 +48,8 @@ public class TransactionSender {
                       transactionMetrics.record(request.mcc(), "ERROR");
                       log.warn("Gateway returned failed authorization {}: {}", request, e.getMessage());
                       return AuthorizationResponse.systemError(request.stan());
+                    } finally {
+                      semaphore.release();
                     }
                   }
           ));
