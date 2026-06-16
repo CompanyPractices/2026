@@ -2,7 +2,6 @@ package com.processing.transactionlogger.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.transactionlogger.TransactionResponse;
-import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.transactionlogger.dto.TransactionSearchResponse;
 import com.processing.transactionlogger.mapper.TransactionMapper;
@@ -21,7 +20,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
