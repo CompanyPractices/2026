@@ -33,14 +33,14 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
     private static final String TEST_CARDHOLDER_NAME = "DASHBOARD TEST USER";
     private static final int EXPECTED_APPROVED_COUNT = 15;
     private static final long EXPECTED_DECLINED_COUNT = TEST_TRANSACTION_COUNT - EXPECTED_APPROVED_COUNT;
-    private static final long START_AMOUNT = 5_000L;
-    private static final long AMOUNT_STEP = 5_000L;
-    private static final BigDecimal INITIAL_BALANCE = BigDecimal.valueOf(IntStream.range(0, EXPECTED_APPROVED_COUNT)
-            .mapToLong(TC_20_DashboardStatsTest::transactionAmount)
-            .sum());
-    private static final BigDecimal EXPECTED_TOTAL_AMOUNT = BigDecimal.valueOf(IntStream.range(0, TEST_TRANSACTION_COUNT)
-            .mapToLong(TC_20_DashboardStatsTest::transactionAmount)
-            .sum());
+    private static final BigDecimal START_AMOUNT = BigDecimal.valueOf(5_000L);
+    private static final BigDecimal AMOUNT_STEP = BigDecimal.valueOf(5_000L);
+    private static final BigDecimal INITIAL_BALANCE = IntStream.range(0, EXPECTED_APPROVED_COUNT)
+            .mapToObj(TC_20_DashboardStatsTest::transactionAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    private static final BigDecimal EXPECTED_TOTAL_AMOUNT = IntStream.range(0, TEST_TRANSACTION_COUNT)
+            .mapToObj(TC_20_DashboardStatsTest::transactionAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     private static final BigDecimal EXPECTED_AVERAGE_AMOUNT = EXPECTED_TOTAL_AMOUNT.divide(BigDecimal.valueOf(TEST_TRANSACTION_COUNT));
     private static final double EXPECTED_APPROVAL_RATE = (double) EXPECTED_APPROVED_COUNT / TEST_TRANSACTION_COUNT;
 
@@ -54,7 +54,9 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
 
         for (int i = 0; i < TEST_STANS.length; i++) {
             String expectedStatus = i < EXPECTED_APPROVED_COUNT ? "APPROVED" : "DECLINED";
-            sendTransaction(testPan, BigDecimal.valueOf(transactionAmount(i)), TEST_STANS[i], expectedStatus);
+            sendTransaction(testPan, transactionAmount(i), TEST_STANS[i], expectedStatus);
+            // Small pause so adjacent transactions get different createdAt values for stable recent-order checks.
+            Thread.sleep(10);
         }
     }
 
@@ -72,8 +74,8 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
         long totalTransactions = stats.path("totalTransactions").asLong();
         long approvedCount = stats.path("approvedCount").asLong();
         long declinedCount = stats.path("declinedCount").asLong();
-        long totalAmount = stats.path("totalAmount").asLong();
-        long averageAmount = stats.path("averageAmount").asLong();
+        BigDecimal totalAmount = stats.path("totalAmount").decimalValue();
+        BigDecimal averageAmount = stats.path("averageAmount").decimalValue();
         double approvalRate = stats.path("approvalRate").asDouble();
         double avgProcessingTimeMs = stats.path("avgProcessingTimeMs").asDouble();
 
@@ -83,9 +85,9 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
                 "$.approvedCount should match prepared approved transaction count");
         soft.assertEquals(declinedCount, EXPECTED_DECLINED_COUNT,
                 "$.declinedCount should match prepared declined transaction count");
-        soft.assertEquals(totalAmount, EXPECTED_TOTAL_AMOUNT,
+        soft.assertEquals(totalAmount.compareTo(EXPECTED_TOTAL_AMOUNT), 0,
                 "$.totalAmount should match prepared transaction amount sum");
-        soft.assertEquals(averageAmount, EXPECTED_AVERAGE_AMOUNT,
+        soft.assertEquals(averageAmount.compareTo(EXPECTED_AVERAGE_AMOUNT), 0,
                 "$.averageAmount should match prepared transaction average amount");
         soft.assertEquals(approvalRate, EXPECTED_APPROVAL_RATE, 0.01,
                 "$.approvalRate should match prepared approved ratio");
@@ -95,9 +97,9 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
                 "$.totalTransactions should equal approvedCount + declinedCount");
         soft.assertEquals(approvalRate, (double) approvedCount / totalTransactions, 0.01,
                 "$.approvalRate should match approvedCount / totalTransactions");
-        soft.assertTrue(totalAmount > 0, "$.totalAmount should be > 0");
-        soft.assertTrue(averageAmount > 0, "$.averageAmount should be > 0");
-        soft.assertEquals(averageAmount, totalAmount / totalTransactions,
+        soft.assertTrue(totalAmount.compareTo(BigDecimal.ZERO) > 0, "$.totalAmount should be > 0");
+        soft.assertTrue(averageAmount.compareTo(BigDecimal.ZERO) > 0, "$.averageAmount should be > 0");
+        soft.assertEquals(averageAmount.compareTo(totalAmount.divide(BigDecimal.valueOf(totalTransactions))), 0,
                 "$.averageAmount should match totalAmount / totalTransactions");
         soft.assertTrue(avgProcessingTimeMs > 0, "$.avgProcessingTimeMs should be > 0");
 
@@ -107,9 +109,9 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
                 approvedCount, "DB APPROVED count should match stats");
         soft.assertEquals(dbUtils.queryLong("SELECT COUNT(*) FROM transactions WHERE status = 'DECLINED'"),
                 declinedCount, "DB DECLINED count should match stats");
-        soft.assertEquals(dbUtils.queryLong("SELECT COALESCE(SUM(amount), 0) FROM transactions"), totalAmount,
+        soft.assertEquals(queryBigDecimal("SELECT COALESCE(SUM(amount), 0) FROM transactions").compareTo(totalAmount), 0,
                 "DB amount sum should match stats");
-        soft.assertEquals(queryDouble("SELECT COALESCE(AVG(amount), 0) FROM transactions"), averageAmount, 1.0,
+        soft.assertEquals(queryBigDecimal("SELECT COALESCE(AVG(amount), 0) FROM transactions").compareTo(averageAmount), 0,
                 "DB average amount should match stats");
 
         JsonNode recent = httpGet(GATEWAY_URL, DASHBOARD_RECENT_PATH + "?limit=" + RECENT_LIMIT, 200);
@@ -150,8 +152,8 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
         soft.assertAll();
     }
 
-    private static long transactionAmount(int index) {
-        return START_AMOUNT + AMOUNT_STEP * index;
+    private static BigDecimal transactionAmount(int index) {
+        return START_AMOUNT.add(AMOUNT_STEP.multiply(BigDecimal.valueOf(index)));
     }
 
     private String createCard(String cardholderName, BigDecimal initialBalance) {
@@ -208,13 +210,14 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
         executeUpdate("DELETE FROM cards WHERE cardholder_name = ?", TEST_CARDHOLDER_NAME);
     }
 
-    private double queryDouble(String sql, Object... params) throws SQLException {
+    private BigDecimal queryBigDecimal(String sql, Object... params) throws SQLException {
         try (Connection connection = dbUtils.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             bindParams(statement, params);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    return resultSet.getDouble(1);
+                    BigDecimal value = resultSet.getBigDecimal(1);
+                    return value != null ? value : BigDecimal.ZERO;
                 }
             }
         }

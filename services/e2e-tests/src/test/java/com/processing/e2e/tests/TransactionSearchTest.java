@@ -9,6 +9,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -110,9 +111,9 @@ public class TransactionSearchTest extends E2EBaseTest {
                 "400000",
                 "SEARCH TEST USER",
                 "643",
-                15000000L,
-                300000000L,
-                400000L
+                BigDecimal.valueOf(15000000L),
+                BigDecimal.valueOf(300000000L),
+                BigDecimal.valueOf(400000L)
         );
 
         return httpPost(GATEWAY_URL, "/api/cards", cardRequest, 201).path("pan").asText();
@@ -124,7 +125,7 @@ public class TransactionSearchTest extends E2EBaseTest {
                 .stan(stan)
                 .pan(pan)
                 .processingCode("000000")
-                .amount(amount)
+                .amount(BigDecimal.valueOf(amount))
                 .currencyCode("643")
                 .transmissionDateTime(LocalDateTime.now().toString())
                 .terminalId("TERM0001")
