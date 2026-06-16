@@ -11,6 +11,7 @@ import com.processing.terminalsimulator.util.DateTimeGenerator;
 import com.processing.terminalsimulator.util.StanGenerator;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class TransactionFactory {
     public AuthorizationRequest create(TransactionType transactionType, PartofDay partOfDay, CardModel card,
                                        String terminalId) {
         TransactionStrategy transactionStrategy = strategies.get(transactionType);
-        long amount = transactionStrategy.calculateAmount(card);
+        BigDecimal amount = transactionStrategy.calculateAmount(card);
         String mcc = transactionStrategy.getMcc();
         String pan = transactionStrategy.isInvalidPan() ? getInvalidPan(card) : card.pan();
         String stan = stanGenerator.getNextStan(terminalId);
