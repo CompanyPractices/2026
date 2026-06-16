@@ -6,17 +6,27 @@ import com.processing.merchantacquirer.exception.ExternalServiceException;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
+
+import java.time.Duration;
 
 @Component
 public class GatewayClient {
   private final RestClient restClient;
 
   public GatewayClient(RestClient.Builder builder, @Value("${gateway.url}") String gatewayUrl) {
-      this.restClient = builder.baseUrl(gatewayUrl).build();
+      var settings = ClientHttpRequestFactorySettings.defaults()
+              .withConnectTimeout(Duration.ofSeconds(2))
+              .withReadTimeout(Duration.ofSeconds(5));
+      this.restClient = builder
+              .baseUrl(gatewayUrl)
+              .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
+              .build();
   }
 
   public CardsResponse getCards(CardsRequest request) {
