@@ -139,18 +139,16 @@ public class AuthController {
             httpStatus = HttpStatus.OK;
         } else {
             String declineReason = response.declineReason();
-            if (declineReason.equals(CARD_NOT_FOUND.reason())) {
-                httpStatus = HttpStatus.NOT_FOUND;
-            } else if (declineReason.equals(SERVICE_UNAVAILABLE.reason())
-                    || declineReason.equals(RESERVATION_FAILED.reason())) {
-                httpStatus = HttpStatus.SERVICE_UNAVAILABLE;
-            } else if (declineReason.equals(INSUFFICIENT_FUNDS.reason())) {
-                httpStatus = HttpStatus.UNPROCESSABLE_ENTITY;
-            } else if (declineReason.equals(CARD_EXPIRED.reason())) {
-                httpStatus = HttpStatus.FORBIDDEN;
-            } else {
-                httpStatus = HttpStatus.BAD_REQUEST;
-            }
+            httpStatus = switch (declineReason) {
+                case REASON_CARD_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                case REASON_SERVICE_UNAVAILABLE,
+                     REASON_RESERVATION_FAILED -> HttpStatus.SERVICE_UNAVAILABLE;
+                case REASON_INSUFFICIENT_FUNDS -> HttpStatus.UNPROCESSABLE_ENTITY;
+                case REASON_CARD_EXPIRED,
+                     REASON_CARD_BLOCKED,
+                     REASON_CARD_INACTIVE -> HttpStatus.FORBIDDEN;
+                default -> HttpStatus.BAD_REQUEST;
+            };
         }
         return ResponseEntity.status(httpStatus).body(response);
     }
@@ -193,16 +191,13 @@ public class AuthController {
             httpStatus = HttpStatus.OK;
         } else {
             String declineReason = response.declineReason();
-            if (declineReason.equals(SERVICE_UNAVAILABLE.reason())
-                    || declineReason.equals(ROLLBACK_FAILED.reason())) {
-                httpStatus = HttpStatus.SERVICE_UNAVAILABLE;
-            } else if (declineReason.equals(TRANSACTION_NOT_FOUND.reason())) {
-                httpStatus = HttpStatus.NOT_FOUND;
-            } else if (declineReason.equals(ALREADY_ROLLED_BACK.reason())) {
-                httpStatus = HttpStatus.CONFLICT;
-            } else {
-                httpStatus = HttpStatus.BAD_REQUEST;
-            }
+            httpStatus = switch (declineReason) {
+                case REASON_TRANSACTION_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                case REASON_ALREADY_ROLLED_BACK -> HttpStatus.CONFLICT;
+                case REASON_SERVICE_UNAVAILABLE,
+                     REASON_ROLLBACK_FAILED -> HttpStatus.SERVICE_UNAVAILABLE;
+                default -> HttpStatus.BAD_REQUEST;
+            };
         }
         return ResponseEntity.status(httpStatus).body(response);
     }
