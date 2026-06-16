@@ -14,7 +14,7 @@ public class CardProvider {
   private final GatewayClient gatewayClient;
 
   public List<CardDataResponse> getCards(int count) {
-    CardsRequest cardsRequest = new CardsRequest(count, 0, null, null);
+    CardsRequest cardsRequest = new CardsRequest(count, 0, "ACTIVE", null);
     CardsResponse cardsResponse = gatewayClient.getCards(cardsRequest);
 
     if (cardsResponse.cards().isEmpty()) {

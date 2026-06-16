@@ -4,13 +4,11 @@ import com.processing.merchantacquirer.client.dto.CardDataResponse;
 import com.processing.merchantacquirer.controller.dto.*;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
-import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,13 +40,9 @@ public class SimulationService {
     List<Merchant> merchants = merchantProvider.getMerchant(request.mccCodes(), scenario);
     log.info(String.valueOf(merchants));
 
-    // Создание терминала
-    String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10000));
-    Terminal terminal = new Terminal(terminalId, "POS");
-
     // Создание транакций
     List<AuthorizationRequest> authorizationRequests =
-        transactionBuilder.build(request.count(), cards, merchants, terminal, scenario);
+        transactionBuilder.build(request.count(), cards, merchants, scenario);
 
     SimulatorStats stats = transactionSender.sendAll(authorizationRequests);
 

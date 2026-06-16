@@ -10,6 +10,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,19 +21,20 @@ import org.springframework.stereotype.Component;
 public class TransactionBuilder {
   private final AuthorizationRequestFactory authorizationRequestFactory;
   private final AcquirerProvider acquirerProvider;
+  private final TerminalProvider terminalProvider;
   private final Random random = new Random();
 
   public List<AuthorizationRequest> build(
       int count,
       List<CardDataResponse> cardDataResponses,
       List<Merchant> merchants,
-      Terminal terminal,
       Scenario scenario) {
     List<AuthorizationRequest> requests = new ArrayList<>(count);
 
     for (int i = 0; i < count; i++) {
       CardDataResponse card = cardDataResponses.get(i % cardDataResponses.size());
       Merchant merchant = merchants.get(random.nextInt(merchants.size()));
+      Terminal terminal = terminalProvider.getByMerchant(merchant.getId());
       Long amount = random.nextLong(scenario.getCountLower(), scenario.getCountUpper());
 
       AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(

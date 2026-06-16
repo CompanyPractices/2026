@@ -1,7 +1,5 @@
 package com.processing.merchantacquirer.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
@@ -60,7 +58,7 @@ class SimulationServiceTest {
         when(cardProvider.getCards(3)).thenReturn(mockCards);
         when(scenarioProvider.getScenario(ScenarioType.grocery)).thenReturn(mockScenario);
         when(merchantProvider.getMerchant(null, mockScenario)).thenReturn(mockMerchants);
-        when(transactionBuilder.build(anyInt(), any(), any(), any(), any()))
+        when(transactionBuilder.build(anyInt(), any(), any(), any()))
                 .thenReturn(mockAuthRequests);
         when(transactionSender.sendAll(any())).thenReturn(mockStats);
 
@@ -89,7 +87,7 @@ class SimulationServiceTest {
         when(cardProvider.getCards(4)).thenReturn(List.of());
         when(scenarioProvider.getScenario(ScenarioType.grocery)).thenReturn(mockScenario);
         when(merchantProvider.getMerchant(null, mockScenario)).thenReturn(mockMerchants);
-        when(transactionBuilder.build(eq(4), any(), any(), any(), any())).thenReturn(List.of());
+        when(transactionBuilder.build(eq(4), any(), any(), any())).thenReturn(List.of());
         when(transactionSender.sendAll(any())).thenReturn(mockStats);
 
         SimulatorResponse respone = simulationService.run(request);
@@ -108,7 +106,7 @@ class SimulationServiceTest {
         when(cardProvider.getCards(1)).thenReturn(List.of());
         when(scenarioProvider.getScenario(ScenarioType.travel)).thenReturn(mockScenario);
         when(merchantProvider.getMerchant(null, mockScenario)).thenReturn(mockMerchants);
-        when(transactionBuilder.build(eq(1), any(), any(), any(), any())).thenReturn(List.of());
+        when(transactionBuilder.build(eq(1), any(), any(), any())).thenReturn(List.of());
 
         when(transactionSender.sendAll(any())).thenReturn(mockStats);
 

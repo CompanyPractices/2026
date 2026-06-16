@@ -34,7 +34,7 @@ public class GatewayClient {
                   uriBuilder.queryParam("status", request.status());
                 }
                 if (request.bin() != null) {
-                  uriBuilder.queryParam("bin", request.status());
+                  uriBuilder.queryParam("bin", request.bin());
                 }
                 return uriBuilder.build();
               })
