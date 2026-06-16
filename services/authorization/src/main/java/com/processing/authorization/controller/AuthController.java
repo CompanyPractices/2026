@@ -3,6 +3,9 @@ package com.processing.authorization.controller;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.authorization.services.AuthService;
+import com.processing.common.dto.authorization.RollbackRequest;
+import com.processing.common.dto.authorization.RollbackResponse;
+import com.processing.common.dto.cardmanagement.CardModel;
 import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -123,7 +126,7 @@ public class AuthController {
                         content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
                 @ApiResponse(
                         responseCode = "503",
-                        description = "Card manager unavailable",
+                        description = "Card management unavailable",
                         content = @Content(schema = @Schema(implementation = AuthorizationResponse.class)))
         })
         public ResponseEntity<AuthorizationResponse> authorize(@Valid @RequestBody AuthorizationRequest request) {
@@ -140,6 +143,53 @@ public class AuthController {
                 case "SERVICE_UNAVAILABLE", "RESERVATION_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
                 case "INSUFFICIENT_FUNDS" -> HttpStatus.UNPROCESSABLE_ENTITY;
                 case "CARD_EXPIRED", "CARD_BLOCKED", "CARD_INACTIVE" -> HttpStatus.FORBIDDEN;
+                default -> HttpStatus.BAD_REQUEST;
+            };
+        }
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    @PostMapping("/rollback")
+    @Operation(summary = "Authorization", description = "Rollbacks transaction")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Rollback success",
+                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Incorrect request or unknown error",
+                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Transaction not found",
+                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Conflict: transaction already rolled back",
+                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error: card management error",
+                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
+            @ApiResponse(
+                    responseCode = "503",
+                    description = "Card management unavailable",
+                    content = @Content(schema = @Schema(implementation = RollbackResponse.class)))
+    })
+    public ResponseEntity<RollbackResponse> rollback(@Valid @RequestBody RollbackRequest request) {
+        LocalDateTime requestInputTime = LocalDateTime.now();
+        RollbackResponse response = authService.rollback(request, requestInputTime);
+
+        boolean isApproved = response.status().equals(RollbackResponse.STATUS_APPROVED);
+        HttpStatus httpStatus;
+        if (isApproved) {
+            httpStatus = HttpStatus.OK;
+        } else {
+            httpStatus = switch (response.declineReason()) {
+                case "SERVICE_UNAVAILABLE", "ROLLBACK_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
+                case "TRANSACTION_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+                case "ALREADY_ROLLED_BACK" -> HttpStatus.CONFLICT;
                 default -> HttpStatus.BAD_REQUEST;
             };
         }

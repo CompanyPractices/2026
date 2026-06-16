@@ -1,5 +1,51 @@
 package com.processing.common.dto.authorization;
 
-public class RollbackResponse {
+import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.Duration;
+import java.time.Instant;
+
+public record RollbackResponse(
+        @Schema(description = "Retrieval reference number", example = "012345678901")
+        String rrn,
+
+        @Schema(description = "Response code", example = "00")
+        String responseCode,
+
+        @Schema(description = "Status", example = "APPROVED")
+        String status,
+
+        @Schema(description = "Reason for refusal")
+        String declineReason,
+
+        @Schema(description = "Processing time", example = "67")
+        Integer processingTimeMs
+) {
+    public static final String STATUS_APPROVED = "APPROVED";
+
+    public static final String STATUS_DECLINED = "DECLINED";
+
+    public static final String CODE_SUCCESS = "00";
+
+    public static final String CODE_FAILED = "96";
+
+    public static RollbackResponse approved(String rrn, Instant requestInputTime) {
+        return new RollbackResponse(
+                rrn,
+                CODE_SUCCESS,
+                STATUS_APPROVED,
+                null,
+                Math.toIntExact(Duration.between(requestInputTime, Instant.now()).toMillis())
+        );
+    }
+
+    public static RollbackResponse declined(String rrn, String reason, Instant requestInputTime) {
+        return new RollbackResponse(
+                rrn,
+                CODE_FAILED,
+                STATUS_DECLINED,
+                reason,
+                Math.toIntExact(Duration.between(requestInputTime, Instant.now()).toMillis())
+        );
+    }
 }

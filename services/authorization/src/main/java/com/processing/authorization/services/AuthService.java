@@ -3,6 +3,8 @@ package com.processing.authorization.services;
 import com.processing.authorization.constants.DeclineOutcome;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.authorization.RollbackRequest;
+import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.authorization.entities.LimitUsage;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
@@ -381,5 +383,10 @@ public class AuthService {
         }
 
         return pan.substring(0, 4) + "*".repeat(8) + pan.substring(12);
+    }
+
+    public RollbackResponse rollback(RollbackRequest request, LocalDateTime requestInputTime) {
+        // TODO
+        return null;
     }
 }
