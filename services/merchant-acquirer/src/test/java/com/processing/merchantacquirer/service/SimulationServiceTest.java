@@ -9,9 +9,11 @@ import static org.mockito.Mockito.when;
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
 import com.processing.merchantacquirer.controller.dto.SimulatorRequest;
 import com.processing.merchantacquirer.controller.dto.SimulatorResponse;
+import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.domain.entity.ScenarioType;
+import com.processing.merchantacquirer.service.dto.RequestFeeData;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
@@ -39,10 +41,10 @@ class SimulationServiceTest {
         List<CardDataResponse> mockCards = List.of(mock(CardDataResponse.class), mock(CardDataResponse.class));
         Scenario mockScenario = mock(Scenario.class);
         List<Merchant> mockMerchants = List.of(mock(Merchant.class));
-        List<AuthorizationRequest> mockAuthRequests = List.of(
-                mock(AuthorizationRequest.class),
-                mock(AuthorizationRequest.class),
-                mock(AuthorizationRequest.class)
+        List<RequestFeeData> mockBuilt = List.of(
+                new RequestFeeData(mock(AuthorizationRequest.class), mock(AcquirerFee.class)),
+                new RequestFeeData(mock(AuthorizationRequest.class), mock(AcquirerFee.class)),
+                new RequestFeeData(mock(AuthorizationRequest.class), mock(AcquirerFee.class))
         );
         SimulatorStats mockStats = mock(SimulatorStats.class);
         when(mockStats.approved()).thenReturn(2);
@@ -59,7 +61,7 @@ class SimulationServiceTest {
         when(scenarioProvider.getScenario(ScenarioType.grocery)).thenReturn(mockScenario);
         when(merchantProvider.getMerchant(null, mockScenario)).thenReturn(mockMerchants);
         when(transactionBuilder.build(anyInt(), any(), any(), any()))
-                .thenReturn(mockAuthRequests);
+                .thenReturn(mockBuilt);
         when(transactionSender.sendAll(any())).thenReturn(mockStats);
 
         SimulatorResponse response = simulationService.run(request);
