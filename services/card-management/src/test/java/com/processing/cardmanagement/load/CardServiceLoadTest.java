@@ -6,6 +6,7 @@ import com.processing.cardmanagement.services.CardService;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.dto.cardmanagement.CreateCardRequest;
 import com.processing.common.dto.cardmanagement.PatchCardRequest;
+import com.processing.common.dto.cardmanagement.ReserveRequest;
 import io.restassured.http.ContentType;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -50,7 +53,9 @@ public class CardServiceLoadTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(POSTGRES_IMAGE);
 
-    private final ThreadLocal<Faker> threadLocalFaker = ThreadLocal.withInitial(Faker::new);
+    private final ThreadLocal<Faker> faker = ThreadLocal.withInitial(() ->
+        new Faker(ThreadLocalRandom.current())
+    );
 
     @Autowired
     private CardService cardService;
@@ -73,7 +78,7 @@ public class CardServiceLoadTest {
             maximumParallelRequests,
             maximumTotalRequests,
             () -> {
-                var postQuery = randomCreateCardRequest(threadLocalFaker.get());
+                var postQuery = randomCreateCardRequest(faker.get());
                 given()
                     .contentType(ContentType.JSON)
                     .body(postQuery)
@@ -88,39 +93,44 @@ public class CardServiceLoadTest {
     }
 
     @Test
-    void cardServiceGetLoadTest() throws ExecutionException, InterruptedException {
-        Faker faker = threadLocalFaker.get();
-        Card seededCard = createCard(randomCreateCardRequest(faker));
-        String pan = seededCard.pan();
+    void cardServiceGetSingleCardLoadTest() throws ExecutionException, InterruptedException {
+        var cardsAmount = 500;
+        var pan = createRandomCards(cardsAmount)
+            .stream()
+            .map(Card::pan)
+            .toList()
+            .getFirst();
 
         loadTestEngine.execute(
             maximumParallelRequests,
             maximumTotalRequests,
-            () -> given()
-                .pathParam("PAN", pan)
-                .port(port)
-                .when()
-                .get("/api/cards/{PAN}")
-                .then()
-                .statusCode(200)
+            () -> testGetCard(pan)
+        ).get();
+    }
+
+    @Test
+    void cardServiceGetManyCardsLoadTest() throws ExecutionException, InterruptedException {
+        var cardsAmount = 500;
+        var pans = createRandomCards(cardsAmount)
+            .stream()
+            .map(Card::pan)
+            .toArray(String[]::new);
+
+        loadTestEngine.execute(
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testGetCard(
+                pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)]
+            )
         ).get();
     }
 
     @Test
     void cardServiceGetFilteredLoadTest() throws ExecutionException, InterruptedException {
-        int seedCount = 100;
-        Faker faker = threadLocalFaker.get();
-        List<String> binList = new ArrayList<>();
-        List<String> issuerIdList = new ArrayList<>();
-
-        for (int i = 0; i < seedCount; i++) {
-            Card c = createCard(randomCreateCardRequest(faker));
-            binList.add(c.bin());
-            issuerIdList.add(c.issuerId());
-        }
-
-        String[] bins = binList.toArray(new String[0]);
-        String[] issuerIds = issuerIdList.toArray(new String[0]);
+        int cardsAmount = 500;
+        var cards = createRandomCards(cardsAmount);
+        String[] bins = cards.stream().map(Card::bin).toArray(String[]::new);
+        String[] issuerIds = cards.stream().map(Card::issuerId).toArray(String[]::new);
         CardModelStatus[] statuses = CardModelStatus.values();
 
         loadTestEngine.execute(
@@ -135,7 +145,7 @@ public class CardServiceLoadTest {
                 int randomOffset = random.nextInt(0, 50);
 
                 given()
-                    .queryParam("limit", seedCount)
+                    .queryParam("limit", cardsAmount)
                     .queryParam("offset", randomOffset)
                     .queryParam("status", randomStatus.name())
                     .queryParam("bin", randomBin)
@@ -150,57 +160,59 @@ public class CardServiceLoadTest {
     }
 
     @Test
-    void cardServicePatchLoadTest() throws ExecutionException, InterruptedException {
-        int poolSize = 500;
+    void cardServicePatchSingleCardLoadTest() throws ExecutionException, InterruptedException {
         int maxDailyLimit = 15_000_000;
         int maxMonthlyLimit = 300_000_000;
         int maxBalance = 1_000_000;
-        var faker = threadLocalFaker.get();
-        var panPool = new ArrayList<String>();
 
-        for (int i = 0; i < poolSize; i++) {
-            Card c = createCard(randomCreateCardRequest(faker));
-            panPool.add(c.pan());
-        }
-
-        var pans = panPool.toArray(String[]::new);
+        var pan = createCard(randomCreateCardRequest(faker.get())).pan();
         var statuses = CardModelStatus.values();
 
         loadTestEngine.execute(
             maximumParallelRequests,
             maximumTotalRequests,
-            () -> {
-                ThreadLocalRandom random = ThreadLocalRandom.current();
-                String randomPan = pans[random.nextInt(pans.length)];
-                CardModelStatus randomStatus = statuses[random.nextInt(statuses.length)];
+            () -> testPatchCard(
+                pan,
+                statuses,
+                maxDailyLimit,
+                maxMonthlyLimit,
+                maxBalance
+            )
+        ).get();
+    }
 
-                var patchRequest = new PatchCardRequest(
-                    randomStatus,
-                    random.nextLong(0, maxDailyLimit),
-                    random.nextLong(maxDailyLimit, maxMonthlyLimit),
-                    random.nextLong(0, maxBalance)
-                );
+    @Test
+    void cardServicePatchManyCardsLoadTest() throws ExecutionException, InterruptedException {
+        int cardsAmount = 500;
+        int maxDailyLimit = 15_000_000;
+        int maxMonthlyLimit = 300_000_000;
+        int maxBalance = 1_000_000;
 
-                given()
-                    .contentType(ContentType.JSON)
-                    .body(patchRequest)
-                    .pathParam("pan", randomPan)
-                    .port(port)
-                    .when()
-                    .patch("/api/cards/{pan}")
-                    .then()
-                    .statusCode(200);
-            }
+        var pans = createRandomCards(cardsAmount)
+            .stream()
+            .map(Card::pan)
+            .toArray(String[]::new);
+        var statuses = CardModelStatus.values();
+
+        loadTestEngine.execute(
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testPatchCard(
+                pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)],
+                statuses,
+                maxDailyLimit,
+                maxMonthlyLimit,
+                maxBalance
+            )
         ).get();
     }
 
     @Test
     void cardServiceDeleteLoadTest() throws ExecutionException, InterruptedException {
-        Faker faker = threadLocalFaker.get();
         var pansToDelete = new ConcurrentLinkedQueue<String>();
 
         for (int i = 0; i < maximumTotalRequests; i++) {
-            Card c = createCard(randomCreateCardRequest(faker));
+            Card c = createCard(randomCreateCardRequest(faker.get()));
             pansToDelete.add(c.pan());
         }
 
@@ -223,6 +235,99 @@ public class CardServiceLoadTest {
         assertEquals(0, pansToDelete.size());
     }
 
+    @Test
+    void cardServiceReserveSingleCardTest() throws ExecutionException, InterruptedException {
+        var pan = createCard(randomCreateCardRequest(faker.get())).pan();
+
+        loadTestEngine.execute(
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testReserveCard(pan, 1)
+        ).get();
+    }
+
+    @Test
+    void cardServiceReserveManyCardsTest() throws ExecutionException, InterruptedException {
+        var cardsAmount = 500;
+        var maxReservationAmount = 1_000_000;
+        var pans = createRandomCards(cardsAmount)
+            .stream()
+            .map(Card::pan)
+            .toArray(String[]::new);
+
+        loadTestEngine.execute(
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testReserveCard(
+                pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)],
+                maxReservationAmount
+            )
+        ).get();
+    }
+
+    private void testGetCard(String pan) {
+        given()
+            .pathParam("PAN", pan)
+            .port(port)
+            .when()
+            .get("/api/cards/{PAN}")
+            .then()
+            .statusCode(200);
+    }
+
+    private void testPatchCard(
+        String pan,
+        CardModelStatus[] statuses,
+        int maxDailyLimit,
+        int maxMonthlyLimit,
+        int maxBalance
+    ) {
+        var random = ThreadLocalRandom.current();
+
+        var patchRequest = new PatchCardRequest(
+            statuses[random.nextInt(statuses.length)],
+            random.nextLong(0, maxDailyLimit),
+            random.nextLong(maxDailyLimit, maxMonthlyLimit),
+            random.nextLong(0, maxBalance)
+        );
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(patchRequest)
+            .pathParam("pan", pan)
+            .port(port)
+            .when()
+            .patch("/api/cards/{pan}")
+            .then()
+            .statusCode(200);
+    }
+
+    private void testReserveCard(String pan, long maxAmount) {
+        var f = faker.get();
+
+        var reserveRequest = new ReserveRequest(
+            f.number().numberBetween(0, maxAmount),
+            f.lorem().characters()
+        );
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(reserveRequest)
+            .pathParam("pan", pan)
+            .port(port)
+            .when()
+            .patch("/api/cards/{pan}")
+            .then()
+            .statusCode(anyOf(is(200), is(422)));
+    }
+
+    private List<Card> createRandomCards(int value) {
+        var pans = new ArrayList<Card>(value);
+        for (int i = 0; i < value; ++i) {
+            pans.add(createCard(randomCreateCardRequest(faker.get())));
+        }
+        return pans;
+    }
 
     private CreateCardRequest randomCreateCardRequest(Faker faker) {
         var dailyLimit = faker.number().numberBetween(0L, 15_000_000L);
