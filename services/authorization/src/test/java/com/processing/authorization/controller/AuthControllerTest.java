@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import static com.processing.authorization.constants.DeclineOutcome.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import static org.mockito.ArgumentMatchers.any;
@@ -61,7 +62,7 @@ class AuthControllerTest {
                 "123456",
                 TEST_PAN,
                 "000000",
-                5000L,
+                BigDecimal.valueOf(5000),
                 "810",
                 "2026-06-05T18:12:49.07",
                 "T0000001",

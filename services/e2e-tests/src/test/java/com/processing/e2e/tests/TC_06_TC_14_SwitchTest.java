@@ -11,6 +11,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -42,7 +43,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     private static final String[] EXPECTED_ISSUERS = {"ISS001", "ISS002", "ISS003", "ISS004", "ISS005"};
 
 
-    private static final int TC06_AMOUNT = 150_000;
+    private static final BigDecimal TC06_AMOUNT = new BigDecimal("150000");
     private static final String TC06_STAN = "000001";
     private static final String TERMINAL_ID = "TERM0001";
     private static final String TERMINAL_TYPE = "POS";
@@ -161,7 +162,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
 
 
         long balanceAfterDb = getCardBalanceFromDb(tc06Pan);
-        assertEquals(balanceAfterDb, balanceBeforeDb - TC06_AMOUNT,
+        assertEquals(balanceAfterDb, balanceBeforeDb - TC06_AMOUNT.longValue(),
                 "DB balance must decrease by transaction amount");
 
 
@@ -178,7 +179,8 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
             assertTrue(rs.next(), "transaction must exist in DB");
             assertEquals(rs.getString("status"), "APPROVED");
             assertEquals(rs.getString("pan"), tc06Pan);
-            assertEquals(rs.getLong("amount"), TC06_AMOUNT);
+            assertEquals(0, rs.getBigDecimal("amount").compareTo(TC06_AMOUNT),
+                    "transaction amount must match request");
             assertEquals(rs.getString("rrn"), rrn);
             assertEquals(rs.getString("auth_code"), authCode);
             assertNotNull(rs.getString("issuer_id"));
@@ -205,7 +207,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
 
             given()
                     .contentType(ContentType.JSON)
-                    .body(transactionPayload(stan, pan, 1_000))
+                    .body(transactionPayload(stan, pan, new BigDecimal("1000")))
                     .when()
                     .post("/api/transactions")
                     .then()
@@ -304,14 +306,14 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    private String transactionPayload(String stan, String pan, int amount) {
+    private String transactionPayload(String stan, String pan, BigDecimal amount) {
         return """
                 {
                   "mti": "0100",
                   "stan": "%s",
                   "pan": "%s",
                   "processingCode": "000000",
-                  "amount": %d,
+                  "amount": %s,
                   "currencyCode": "643",
                   "transmissionDateTime": "%s",
                   "terminalId": "%s",
@@ -320,7 +322,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
                   "mcc": "5411",
                   "acquirerId": "ACQ001"
                 }
-                """.formatted(stan, pan, amount, TRANSMISSION_DATE_TIME, TERMINAL_ID, TERMINAL_TYPE, MERCHANT_ID);
+                """.formatted(stan, pan, amount.toPlainString(), TRANSMISSION_DATE_TIME, TERMINAL_ID, TERMINAL_TYPE, MERCHANT_ID);
     }
 
 
@@ -358,12 +360,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    private String findActivePanWithBalance(String bin, long minBalance) throws SQLException {
+    private String findActivePanWithBalance(String bin, BigDecimal minBalance) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT pan FROM cards WHERE bin = ? AND status = 'ACTIVE' "
                         + "AND available_balance >= ? LIMIT 1")) {
             stmt.setString(1, bin);
-            stmt.setLong(2, minBalance);
+            stmt.setBigDecimal(2, minBalance);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getString("pan");

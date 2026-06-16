@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -85,7 +86,7 @@ public class AuthService {
      *         </ul>
      *
      * @see #getCard(String)
-     * @see #reserve(long, String, String)
+     * @see #reserve(BigDecimal, String, String)
      * @see #generateRRN()
      * @see #generateAuthCode()
      * @see AuthorizationRequest
@@ -132,7 +133,7 @@ public class AuthService {
             return DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
         }
 
-        if (request.amount() > cardResponse.availableBalance()) {
+        if (request.amount().compareTo(cardResponse.availableBalance()) > 0) {
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         }
 
@@ -148,19 +149,19 @@ public class AuthService {
                                 transmissionDate);
         if (monthLimitUsage.isPresent()) {
             LimitUsage monthUsage = monthLimitUsage.get();
-            if (monthUsage.getMonthlyAmount() + request.amount() > cardResponse.monthlyLimit()) {
+            if (monthUsage.getMonthlyAmount().add(request.amount()).compareTo(cardResponse.monthlyLimit()) > 0) {
                 return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
             }
-        } else if (request.amount() > cardResponse.monthlyLimit()) {
+        } else if (request.amount().compareTo(cardResponse.monthlyLimit()) > 0) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
-            if (usage.getDailyAmount() + request.amount() > cardResponse.dailyLimit()) {
+            if (usage.getDailyAmount().add(request.amount()).compareTo(cardResponse.dailyLimit()) > 0) {
                 return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
             }
-        } else if (request.amount() > cardResponse.dailyLimit()) {
+        } else if (request.amount().compareTo(cardResponse.dailyLimit()) > 0) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
@@ -169,8 +170,8 @@ public class AuthService {
             reserve(request.amount(), rrn, request.pan());
             if (currLimitUsage.isPresent()) {
                 LimitUsage usage = currLimitUsage.get();
-                usage.setMonthlyAmount(usage.getMonthlyAmount() + request.amount());
-                usage.setDailyAmount(usage.getDailyAmount() + request.amount());
+                usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
+                usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
                 limitUsageRepository.save(usage);
             } else if (monthLimitUsage.isPresent()) {
                 LimitUsage monthUsage = monthLimitUsage.get();
@@ -178,7 +179,7 @@ public class AuthService {
                 usage.setPan(request.pan());
                 usage.setUsageDate(transmissionDate);
                 usage.setDailyAmount(request.amount());
-                usage.setMonthlyAmount(monthUsage.getMonthlyAmount() + request.amount());
+                usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
                 limitUsageRepository.save(usage);
             } else {
                 LimitUsage usage = new LimitUsage();
@@ -275,7 +276,7 @@ public class AuthService {
      * @see ReserveRequest
      * @see ReserveCardException
      */
-    public void reserve(long amount, String rrn, String pan) {
+    public void reserve(BigDecimal amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
         URI uri = UriComponentsBuilder
                 .fromUriString(cmsUrl)

@@ -1,5 +1,7 @@
 package com.processing.transactionlogger.dto;
 
+import java.math.BigDecimal;
+
 /**
  * Агрегированная статистика по всем транзакциям для Dashboard.
  *
@@ -13,12 +15,12 @@ package com.processing.transactionlogger.dto;
  * @param transactionsPerMinute количество транзакций за последнюю минуту
  */
 public record DashboardStatsResponse(
-        long totalTransactions,
-        long approvedCount,
-        long declinedCount,
-        double approvalRate,
-        long totalAmount,
-        long averageAmount,
-        double avgProcessingTimeMs,
-        double transactionsPerMinute
+    long totalTransactions,
+    long approvedCount,
+    long declinedCount,
+    double approvalRate,
+    BigDecimal totalAmount,
+    BigDecimal averageAmount,
+    double avgProcessingTimeMs,
+    double transactionsPerMinute
 ) {}
