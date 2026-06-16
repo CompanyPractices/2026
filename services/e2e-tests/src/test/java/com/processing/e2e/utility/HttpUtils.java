@@ -29,7 +29,6 @@ public class HttpUtils {
         }
     }
 
-
     public JsonNode httpPost(String baseUrl, String path, Object body, int expectedStatus) {
         Response response = RestAssured
                 .given()
