@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useState } from 'react';
 import { TransactionTable } from '../components/TransactionTable';
 import { Transaction, Filter } from '../types';
 import { hidePan, convertPenniesToRubles, formatTime } from '../utils/format';
@@ -33,37 +34,37 @@ vi.mock('../components/TransactionModal', () => ({
 }));
 
 vi.mock('../components/Filters', () => {
-    const React = require('react');
-    const { useState } = React;
-
     return {
         Filters: ({ onSearch }: { onSearch: (f: Filter) => void }) => {
             const [mockStatus, setMockStatus] = useState('');
 
-            return React.createElement('div', { 'data-testid': 'filters' }, [
-                React.createElement('select', {
-                    key: 'select',
-                    'data-testid': 'mock-status-select',
-                    value: mockStatus,
-                    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => setMockStatus(e.target.value)
-                }, [
-                    React.createElement('option', { key: 'all', value: '' }, 'Все'),
-                    React.createElement('option', { key: 'approved', value: 'APPROVED' }, 'Одобрен'),
-                ]),
-                React.createElement('button', {
-                    key: 'search',
-                    'data-testid': 'mock-search-btn',
-                    onClick: () => onSearch(mockStatus ? { status: mockStatus as Filter['status'] } : {})
-                }, 'Найти'),
-                React.createElement('button', {
-                    key: 'reset',
-                    'data-testid': 'mock-reset-btn',
-                    onClick: () => {
-                        setMockStatus('');
-                        onSearch({});
-                    }
-                }, 'Сбросить')
-            ]);
+            return (
+                <div data-testid="filters">
+                    <select
+                        data-testid="mock-status-select"
+                        value={mockStatus}
+                        onChange={(e) => setMockStatus(e.target.value)}
+                    >
+                        <option value="">Все</option>
+                        <option value="APPROVED">Одобрен</option>
+                    </select>
+                    <button
+                        data-testid="mock-search-btn"
+                        onClick={() => onSearch(mockStatus ? { status: mockStatus as Filter['status'] } : {})}
+                    >
+                        Найти
+                    </button>
+                    <button
+                        data-testid="mock-reset-btn"
+                        onClick={() => {
+                            setMockStatus('');
+                            onSearch({});
+                        }}
+                    >
+                        Сбросить
+                    </button>
+                </div>
+            );
         },
     };
 });
