@@ -5,6 +5,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.support.CapturingAuthorizationClient;
+import com.processing.support.FailingAuthorizationClient;
 import com.processing.support.TrackingLoggerClient;
 import org.junit.jupiter.api.Test;
 
@@ -17,11 +18,12 @@ class RouteServiceTest {
     private final RoutingService routingService = new RoutingService(SwitchTestData.defaultProperties());
 
     @Test
-    void route_unknownBin_declinesWithoutCallingDownstream() {
+    void route_unknownBin_declinesAndLogsWithoutCallingAuthorization() {
+        CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
         TrackingLoggerClient logger = new TrackingLoggerClient(true);
         RouteService routeService = new RouteService(
                 routingService,
-                new CapturingAuthorizationClient(),
+                authorizationClient,
                 (transmissionDateTime, stan, pan, terminalId, amount) -> null,
                 logger);
 
@@ -32,9 +34,30 @@ class RouteServiceTest {
 
         AuthorizationResponse response = routeService.route(request);
 
-        assertThat(response.responseCode()).isEqualTo("14");
-        assertThat(response.status()).isEqualTo("DECLINED");
-        assertThat(logger.wasCalled()).isFalse();
+        assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_CARD_NOT_FOUND);
+        assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
+        assertThat(authorizationClient.lastRequest()).isNull();
+        assertThat(logger.wasCalled()).isTrue();
+        assertThat(logger.lastTransaction().status()).isEqualTo(TransactionStatus.DECLINED);
+        assertThat(logger.lastTransaction().issuerId()).isNull();
+    }
+
+    @Test
+    void route_authUnavailable_declinesAndLogsTransaction() {
+        TrackingLoggerClient logger = new TrackingLoggerClient(true);
+        RouteService routeService = new RouteService(
+                routingService,
+                new FailingAuthorizationClient(),
+                (transmissionDateTime, stan, pan, terminalId, amount) -> null,
+                logger);
+
+        AuthorizationResponse response = routeService.route(SwitchTestData.sampleRequest());
+
+        assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_DECLINED_GENERAL);
+        assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
+        assertThat(logger.wasCalled()).isTrue();
+        assertThat(logger.lastTransaction().status()).isEqualTo(TransactionStatus.DECLINED);
+        assertThat(logger.lastTransaction().issuerId()).isEqualTo("ISS001");
     }
 
     @Test
@@ -47,8 +70,8 @@ class RouteServiceTest {
         AuthorizationRequest request = SwitchTestData.sampleRequest();
         AuthorizationResponse response = routeService.route(request);
 
-        assertThat(response.status()).isEqualTo("APPROVED");
-        assertThat(response.responseCode()).isEqualTo("00");
+        assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_APPROVED);
+        assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_APPROVED);
         assertThat(authorizationClient.lastRequest().issuerId()).isEqualTo("ISS001");
         assertThat(authorizationClient.lastRequest().terminalId()).isEqualTo("TERM0010");
         assertThat(authorizationClient.lastRequest().merchantId()).isEqualTo("MERCH1234567890");
@@ -79,7 +102,8 @@ class RouteServiceTest {
 
         AuthorizationResponse response = routeService.route(request);
 
-        assertThat(response.status()).isIn("APPROVED", "DECLINED");
+        assertThat(response.status()).isIn(
+                AuthorizationResponse.STATUS_APPROVED, AuthorizationResponse.STATUS_DECLINED);
         assertThat(authorizationClient.lastRequest().terminalId()).isEqualTo("TERM0010");
         assertThat(authorizationClient.lastRequest().merchantId()).isEqualTo("MERCH0000000001");
         assertThat(logger.lastTransaction().terminalId()).isEqualTo("TERM0010");
@@ -110,8 +134,8 @@ class RouteServiceTest {
 
         AuthorizationResponse response = routeService.route(SwitchTestData.sampleRequest());
 
-        assertThat(response.status()).isEqualTo("DECLINED");
-        assertThat(response.responseCode()).isEqualTo("96");
+        assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
+        assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_SERVICE_UNAVAILABLE);
         assertThat(logger.wasCalled()).isTrue();
         assertThat(authorizationClient.reverseCalled()).isTrue();
         assertThat(authorizationClient.lastReverseRrn()).isEqualTo("012345678901");
@@ -120,7 +144,9 @@ class RouteServiceTest {
     @Test
     void route_declinedByAuth_stillLogsAndReturnsDecline() {
         AuthorizationResponse declined = new AuthorizationResponse(
-                "0110", "000001", null, null, "51", "DECLINED",
+                "0110", "000001", null, null,
+                AuthorizationResponse.CODE_INSUFFICIENT_FUNDS,
+                AuthorizationResponse.STATUS_DECLINED,
                 "Insufficient funds", 10);
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient(declined);
         TrackingLoggerClient logger = new TrackingLoggerClient(true);
@@ -129,8 +155,8 @@ class RouteServiceTest {
 
         AuthorizationResponse response = routeService.route(SwitchTestData.sampleRequest());
 
-        assertThat(response.responseCode()).isEqualTo("51");
-        assertThat(response.status()).isEqualTo("DECLINED");
+        assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_INSUFFICIENT_FUNDS);
+        assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(logger.wasCalled()).isTrue();
         assertThat(logger.lastTransaction().status()).isEqualTo(TransactionStatus.DECLINED);
         assertThat(authorizationClient.reverseCalled()).isFalse();
