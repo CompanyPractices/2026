@@ -11,7 +11,7 @@ import com.processing.cardmanagement.repositories.CardRepository;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -81,8 +81,8 @@ public class CardServiceImpl implements CardService {
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         return cardRepository.findCards(
             limit != null ? limit : defaults.pageLimit(),
@@ -129,8 +129,8 @@ public class CardServiceImpl implements CardService {
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         return cardRepository.countCardsFiltered(
             status,

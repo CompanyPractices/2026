@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
@@ -78,7 +78,7 @@ public class CardGeneratorServiceTest {
                 dto.monthlyLimit(),
                 dto.initialBalance(),
                 "ZZZZZZ",
-                LocalDateTime.now()
+                Instant.now()
             )).toList();
         });
 
@@ -106,7 +106,7 @@ public class CardGeneratorServiceTest {
                 dto.monthlyLimit(),
                 dto.initialBalance(),
                 "ZZZZZZ",
-                LocalDateTime.now()
+                Instant.now()
             )).toList();
         });
 

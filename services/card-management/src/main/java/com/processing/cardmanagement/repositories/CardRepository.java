@@ -4,7 +4,7 @@ import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
 import jakarta.annotation.Nullable;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -26,8 +26,8 @@ public interface CardRepository {
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     );
 
     /**
@@ -39,8 +39,8 @@ public interface CardRepository {
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     );
 
     /**
