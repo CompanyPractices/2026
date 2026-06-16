@@ -1,16 +1,14 @@
 package com.processing.transactionlogger.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.transactionlogger.TransactionRequest;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,11 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class TransactionServiceLoadTest {
     private static final int THREADS = 20;
     private static final int STORE_REQUESTS_PER_THREAD = 5;
@@ -42,11 +37,9 @@ public class TransactionServiceLoadTest {
     private static final long RECENT_P99_LIMIT_MS = 500;
     private static final long STORE_P99_LIMIT_MS = 2000;
     @Autowired
-    private MockMvc mockMvc;
+    private WebTestClient webTestClient;
     @Autowired
     private TransactionRepository transactionRepository;
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
@@ -232,26 +225,38 @@ public class TransactionServiceLoadTest {
         assertThat(percentile(latenciesMs, 99)).isLessThanOrEqualTo(RECENT_P99_LIMIT_MS);
     }
 
-    private int getStats() throws Exception {
-        return mockMvc.perform(get("/api/dashboard/stats"))
-                .andReturn().getResponse().getStatus();
+    private int getStats() {
+        return webTestClient.get().uri("/api/dashboard/stats")
+                .exchange()
+                .returnResult(Void.class)
+                .getStatus()
+                .value();
     }
 
-    private int getRecent() throws Exception {
-        return mockMvc.perform(get("/api/dashboard/recent"))
-                .andReturn().getResponse().getStatus();
+    private int getRecent() {
+        return webTestClient.get().uri("/api/dashboard/recent")
+                .exchange()
+                .returnResult(Void.class)
+                .getStatus()
+                .value();
     }
 
-    private int storeTransaction(TransactionRequest request) throws Exception {
-        return mockMvc.perform(post("/api/internal/log")
+    private int storeTransaction(TransactionRequest request) {
+        return webTestClient.post().uri("/api/internal/log")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andReturn().getResponse().getStatus();
+                .bodyValue(request)
+                .exchange()
+                .returnResult(Void.class)
+                .getStatus()
+                .value();
     }
 
-    private int searchTransactions() throws Exception {
-        return mockMvc.perform(get("/api/transactions/search"))
-                .andReturn().getResponse().getStatus();
+    private int searchTransactions() {
+        return webTestClient.get().uri("/api/transactions/search")
+                .exchange()
+                .returnResult(Void.class)
+                .getStatus()
+                .value();
     }
 
     private void runConcurrently(int threads, ThrowingRunnable task) throws Exception {
