@@ -6,6 +6,7 @@ import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
 import { useMemo } from 'react'
+import TransactionHistogram from './components/TransactionHistogram.tsx'
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
@@ -44,7 +45,7 @@ function App() {
                         Распределение сумм транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionHistogram transactions={uniqueTransactions} error={error} loading={loading} />
+                        <TransactionHistogram transactions={uniqueTransactions} loading={loading} error={error} />
                     </div>
                 </div>
 
@@ -57,12 +58,14 @@ function App() {
                     </div>
                 </div>
 
-                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
-                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                        Транзакции за последний час
-                    </h2>
-                    <div className="flex-grow min-h-[300px]">
-                        <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
+                <div className="col-span-1 md:col-span-2 flex justify-center p-4">
+                    <div className="w-full max-w-[800px] bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                        <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                            Транзакции за последний час
+                        </h2>
+                        <div className="flex-grow min-h-[300px]">
+                            <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
+                        </div>
                     </div>
                 </div>
 
