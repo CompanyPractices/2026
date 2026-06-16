@@ -36,14 +36,14 @@ function App() {
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
             <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
-            <main className="w-2/3 flex-grow grid grid-cols-4 gap-4">
+            <main className="w-3/4 flex-grow grid grid-cols-4 gap-4">
 
                 <div className="col-span-2 bg-zinc-300 dark:bg-sage-400 m-4 rounded-lg shadow-lg flex flex-col p-4">
                     <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                        Транзакции за последний час
+                        Распределение сумм транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
+                        <TransactionHistogram transactions={uniqueTransactions} error={error} loading={loading} />
                     </div>
                 </div>
 
@@ -53,6 +53,15 @@ function App() {
                     </h2>
                     <div className="flex-grow min-h-[300px]">
                         <TransactionPieChart transactions={uniqueTransactions} loading={loading} error={error} />
+                    </div>
+                </div>
+
+                <div className="col-span-3 bg-zinc-300 dark:bg-sage-400 m-4 rounded-lg shadow-lg flex flex-col p-4">
+                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                        Транзакции за последний час
+                    </h2>
+                    <div className="flex-grow min-h-[400px]">
+                        <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
                     </div>
                 </div>
 
