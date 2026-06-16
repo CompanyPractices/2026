@@ -40,7 +40,8 @@ public class TerminalSimulatorService {
     }
 
     private void generateTransactionHandler(int start, int end, AtomicInteger approved, AtomicInteger declined,
-                                            TransactionType transactionType, ConcurrentLinkedQueue<AuthorizationResponse> authResps,
+                                            TransactionType transactionType,
+                                            ConcurrentLinkedQueue<AuthorizationResponse> authResps,
                                             PartofDay partOfDay, List<CardModel> cards) {
         CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
         for (int i = start; i < end; i++) {
