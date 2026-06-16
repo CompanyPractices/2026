@@ -66,7 +66,7 @@ class TerminalSimulatorServiceTest {
             return type == TransactionType.BLOCKED ? CardModelStatus.BLOCKED : CardModelStatus.ACTIVE;
         });
 
-        when(transactionFactory.create(any(), any(), any())).thenReturn(new AuthorizationRequest("0100",
+        when(transactionFactory.create(any(), any(), any(), any())).thenReturn(new AuthorizationRequest("0100",
                 "000001", "4000001234560001", "000000", new BigDecimal(1000L), "643",
                 "2026-06-05T18:12:49.07", "TERM001", String.valueOf(TerminalType.POS),
                 "MERCH12345678901", "5411", "ACQ001", ""));
