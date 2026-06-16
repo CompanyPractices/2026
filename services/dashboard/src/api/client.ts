@@ -33,13 +33,15 @@ async function fetchApi<T>(route: string, options: FetchApiOptions = {}): Promis
                 throw error;
 
             }
-            if (error.name === 'AbortError' || error.message.includes('Failed to fetch')) {
+            if (error.name === 'AbortError' || error.message.includes('Failed to fetch') || error.message.includes('503')) {
                 if (att < retries){
                     await wait(2000);
                     continue;
                 }
             }
-
+            if (!lastError){
+                throw new Error('Unknown error in fetchApi')
+            }
             throw error;
         }
     }
