@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import static com.processing.authorization.constants.DeclineOutcome.*;
 
 /**
  * REST-контроллер для обработки запросов на авторизацию банковских карт.
@@ -104,29 +105,29 @@ public class AuthController {
     @Operation(summary = "Authorization", description = "Approves or declines card by pan")
     @ApiResponses(value = {
             @ApiResponse(
-                responseCode = "200",
-                description = "Authorization success",
-                content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                    responseCode = "200",
+                    description = "Authorization success",
+                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
             @ApiResponse(
-                responseCode = "400",
-                description = "Incorrect request or unknown error",
-                content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                    responseCode = "400",
+                    description = "Incorrect request or unknown error",
+                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
             @ApiResponse(
-                responseCode = "403",
-                description = "Card blocked, inactive or expired",
-                content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                    responseCode = "403",
+                    description = "Card blocked, inactive or expired",
+                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
             @ApiResponse(
-                responseCode = "404",
-                description = "Card not found",
-                content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                    responseCode = "404",
+                    description = "Card not found",
+                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
             @ApiResponse(
-                responseCode = "422",
-                description = "Insufficient funds ",
-                content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
+                    responseCode = "422",
+                    description = "Insufficient funds ",
+                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
             @ApiResponse(
-                responseCode = "503",
-                description = "Card manager unavailable",
-                content = @Content(schema = @Schema(implementation = AuthorizationResponse.class)))
+                    responseCode = "503",
+                    description = "Card manager unavailable",
+                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class)))
     })
     public ResponseEntity<AuthorizationResponse> authorize(@Valid @RequestBody AuthorizationRequest request) {
         LocalDateTime requestInputTime = LocalDateTime.now();
@@ -137,11 +138,15 @@ public class AuthController {
         if (isApproved) {
             httpStatus = HttpStatus.OK;
         } else {
-            httpStatus = switch (response.declineReason()) {
-                case "CARD_NOT_FOUND" -> HttpStatus.NOT_FOUND;
-                case "SERVICE_UNAVAILABLE", "RESERVATION_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
-                case "INSUFFICIENT_FUNDS" -> HttpStatus.UNPROCESSABLE_ENTITY;
-                case "CARD_EXPIRED", "CARD_BLOCKED", "CARD_INACTIVE" -> HttpStatus.FORBIDDEN;
+            String declineReason = response.declineReason();
+            httpStatus = switch (declineReason) {
+                case REASON_CARD_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                case REASON_SERVICE_UNAVAILABLE,
+                     REASON_RESERVATION_FAILED -> HttpStatus.SERVICE_UNAVAILABLE;
+                case REASON_INSUFFICIENT_FUNDS -> HttpStatus.UNPROCESSABLE_ENTITY;
+                case REASON_CARD_EXPIRED,
+                     REASON_CARD_BLOCKED,
+                     REASON_CARD_INACTIVE -> HttpStatus.FORBIDDEN;
                 default -> HttpStatus.BAD_REQUEST;
             };
         }
@@ -185,10 +190,12 @@ public class AuthController {
         if (isApproved) {
             httpStatus = HttpStatus.OK;
         } else {
-            httpStatus = switch (response.declineReason()) {
-                case "SERVICE_UNAVAILABLE", "ROLLBACK_FAILED" -> HttpStatus.SERVICE_UNAVAILABLE;
-                case "TRANSACTION_NOT_FOUND" -> HttpStatus.NOT_FOUND;
-                case "ALREADY_ROLLED_BACK" -> HttpStatus.CONFLICT;
+            String declineReason = response.declineReason();
+            httpStatus = switch (declineReason) {
+                case REASON_TRANSACTION_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                case REASON_ALREADY_ROLLED_BACK -> HttpStatus.CONFLICT;
+                case REASON_SERVICE_UNAVAILABLE,
+                     REASON_ROLLBACK_FAILED -> HttpStatus.SERVICE_UNAVAILABLE;
                 default -> HttpStatus.BAD_REQUEST;
             };
         }

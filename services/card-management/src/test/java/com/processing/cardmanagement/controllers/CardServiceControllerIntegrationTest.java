@@ -17,6 +17,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.math.BigDecimal;
 import java.util.Locale;
 import java.util.Map;
 
@@ -72,9 +73,9 @@ public class CardServiceControllerIntegrationTest {
                 .body("pan", startsWith(postQuery.bin()))
                 .body("bin", equalTo(postQuery.bin()))
                 .body("cardholderName", equalTo(postQuery.cardholderName()))
-                .body("dailyLimit", equalTo((int) postQuery.dailyLimit()))
-                .body("monthlyLimit", equalTo((int) postQuery.monthlyLimit()))
-                .body("availableBalance", equalTo((int) postQuery.initialBalance()));
+                .body("dailyLimit", equalTo(postQuery.dailyLimit().intValue()))
+                .body("monthlyLimit", equalTo(postQuery.monthlyLimit().intValue()))
+                .body("availableBalance", equalTo(postQuery.initialBalance().intValue()));
 
         assertEquals(1, cardJpaRepository.count());
     }
@@ -83,9 +84,15 @@ public class CardServiceControllerIntegrationTest {
     void cardServiceShouldNotCreateCardWithInvalidBin() {
         var cardholderName = faker.name().fullName().toUpperCase(Locale.ROOT);
         var currencyCode = faker.number().digits(3);
-        var dailyLimit = faker.number().numberBetween(0, 15_000_000);
-        var monthlyLimit = faker.number().numberBetween(dailyLimit, 300_000_000);
-        var initialBalance = faker.number().numberBetween(0, 1_000_000);
+        var dailyLimit = BigDecimal.valueOf(
+                faker.number().numberBetween(0, 15_000_000)
+        );
+        var monthlyLimit = BigDecimal.valueOf(
+                faker.number().numberBetween(dailyLimit.intValue(), 300_000_000)
+        );
+        var initialBalance = BigDecimal.valueOf(
+                faker.number().numberBetween(0, 1_000_000)
+        );
 
         var request = new CreateCardRequest(
                 faker.number().digits(5),
@@ -197,12 +204,13 @@ public class CardServiceControllerIntegrationTest {
     @Test
     void cardServiceShouldPathValidCardWithValidData() {
         var pan = createRandomCard(createRandomValidCreationRequest()).pan();
-        var dailyLimit = faker.number().numberBetween(0L, 15_000_000L);
+        var dailyLimit = faker.number().numberBetween(0, 15_000_000);
         var patchRequest = new PatchCardRequest(
+
                 faker.random().nextEnum(CardModelStatus.class),
-                dailyLimit,
-                faker.number().numberBetween(dailyLimit, 300_000_000L),
-                faker.number().numberBetween(0L, 1_000_000L)
+                BigDecimal.valueOf(dailyLimit),
+                BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 300_000_000)),
+                BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000))
         );
         assertNotNull(patchRequest.status());
         assertNotNull(patchRequest.dailyLimit());
@@ -269,7 +277,7 @@ public class CardServiceControllerIntegrationTest {
     @Test
     void cardServiceCantReserveMoreMoneyThanOnTheBalanceItself() {
         var pan = createRandomCard(createRandomValidCreationRequest()).pan();
-        var amount = Long.MAX_VALUE;
+        var amount = BigDecimal.valueOf(Long.MAX_VALUE);
         var reserveRequest = new ReserveRequest(
                 amount,
                 faker.lorem().characters()
@@ -319,14 +327,14 @@ public class CardServiceControllerIntegrationTest {
     }
 
     private CreateCardRequest createRandomValidCreationRequest() {
-        var dailyLimit = faker.number().numberBetween(0L, 15_000_000L);
+        var dailyLimit = faker.number().numberBetween(0, 15_000_000);
         return new CreateCardRequest(
-                TEST_BIN,
+                faker.number().digits(6),
                 faker.name().fullName().toUpperCase(Locale.ROOT),
                 faker.number().digits(3),
-                dailyLimit,
-                faker.number().numberBetween(dailyLimit, 300_000_000L),
-                faker.number().numberBetween(0L, 1_000_000L)
+                BigDecimal.valueOf(dailyLimit),
+                BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 300_000_000)),
+                BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000))
         );
     }
 

@@ -27,7 +27,11 @@ public record RollbackResponse(
 
     public static final String CODE_SUCCESS = "00";
 
-    public static final String CODE_FAILED = "96";
+    public static final String CODE_DECLINED_GENERAL = "05";
+
+    public static final String CODE_TRANSACTION_NOT_FOUND = "14";
+
+    public static final String CODE_SERVICE_UNAVAILABLE = "96";
 
     public static RollbackResponse approved(String rrn, Instant requestInputTime) {
         return new RollbackResponse(
@@ -39,10 +43,10 @@ public record RollbackResponse(
         );
     }
 
-    public static RollbackResponse declined(String rrn, String reason, Instant requestInputTime) {
+    public static RollbackResponse declined(String rrn, String reason, String code, Instant requestInputTime) {
         return new RollbackResponse(
                 rrn,
-                CODE_FAILED,
+                code,
                 STATUS_DECLINED,
                 reason,
                 Math.toIntExact(Duration.between(requestInputTime, Instant.now()).toMillis())

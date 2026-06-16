@@ -12,6 +12,7 @@ import com.processing.cardmanagement.repositories.CardRepository;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -26,13 +27,14 @@ public class CardServiceImpl implements CardService {
     private final CardEventNotifier eventNotifier;
     private final BinIssuerService binIssuerService;
 
+    @Override
     public Card createCard(
             String bin,
             String cardholderName,
             String currencyCode,
-            long dailyLimit,
-            long monthlyLimit,
-            long initialBalance
+            BigDecimal dailyLimit,
+            BigDecimal monthlyLimit,
+            BigDecimal initialBalance
     ) {
         var draft = new CardDraft(
                 bin,
@@ -55,6 +57,7 @@ public class CardServiceImpl implements CardService {
         return savedCard;
     }
 
+    @Override
     public List<Card> createCards(List<CardDraft> data) {
         var entities = data
                 .stream()
@@ -71,20 +74,22 @@ public class CardServiceImpl implements CardService {
         return saved;
     }
 
+    @Override
     public Card getCard(String pan) {
         return cardRepository
                 .findByPan(pan)
                 .orElseThrow(() -> new CardNotFoundException(pan));
     }
 
+    @Override
     public List<Card> getCards(
-        @Nullable Integer limit,
-        @Nullable Long offset,
-        @Nullable CardStatus status,
-        @Nullable String bin,
-        @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+            @Nullable Integer limit,
+            @Nullable Long offset,
+            @Nullable CardStatus status,
+            @Nullable String bin,
+            @Nullable String issuerId,
+            @Nullable LocalDateTime startDate,
+            @Nullable LocalDateTime endDate
     ) {
         if (limit != null && limit > settings.maxPageLimit()) {
             throw new TooLargeLimitException(limit, settings.maxPageLimit());
@@ -100,12 +105,13 @@ public class CardServiceImpl implements CardService {
         );
     }
 
+    @Override
     public Card patchCard(
             String pan,
             @Nullable CardStatus status,
-            @Nullable Long dailyLimit,
-            @Nullable Long monthlyLimit,
-            @Nullable Long availableBalance
+            @Nullable BigDecimal dailyLimit,
+            @Nullable BigDecimal monthlyLimit,
+            @Nullable BigDecimal availableBalance
     ) {
         try {
             var updated = cardRepository.updateWithPessimisticLock(pan, card -> card.withData(
@@ -121,15 +127,18 @@ public class CardServiceImpl implements CardService {
         }
     }
 
+    @Override
     public void deleteCard(String pan) {
         cardRepository.save(getCard(pan).deleted());
         eventNotifier.onEvent(new CardServiceDeletionEvent(maskPan(pan)));
     }
 
+    @Override
     public long countAllCards() {
         return cardRepository.countAllCards();
     }
 
+    @Override
     public long countCardsFiltered(
             @Nullable CardStatus status,
             @Nullable String bin,
@@ -146,7 +155,8 @@ public class CardServiceImpl implements CardService {
         );
     }
 
-    public Card reserve(String pan, long amount) {
+    @Override
+    public Card reserve(String pan, BigDecimal amount) {
         try {
             var reserved = cardRepository.updateWithPessimisticLock(pan, card -> card.withReserved(amount));
             eventNotifier.onEvent(new CardServiceReserveEvent(maskPan(pan), amount));
