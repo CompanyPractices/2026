@@ -31,15 +31,9 @@ export function Filters({ issuers, mccNames, onSearch }: FilterProps) {
                 <span className="text-lg font-bold drop-shadow-lg dark:text-sage-50 flex-grow">
                     Фильтр по таблице
                 </span>
-                <button className={buttonClass} type="submit">
-                    Найти
-                </button>
-                <button className={buttonClass} type="button" onClick={reset}>
-                    Сбросить
-                </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-4">
 
                 <div className="flex flex-col relative w-full">
                     <label htmlFor="status" className={labelClass}>Статус:</label>
@@ -120,6 +114,17 @@ export function Filters({ issuers, mccNames, onSearch }: FilterProps) {
                         id="dateTo"
                         type="date"
                     />
+                </div>
+
+                <div></div>
+
+                <div className="flex items-center gap-4 mb-4">
+                    <button className={buttonClass} type="submit">
+                        Найти
+                    </button>
+                    <button className={buttonClass} type="button" onClick={reset}>
+                        Сбросить
+                    </button>
                 </div>
 
             </div>
