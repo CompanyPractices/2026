@@ -22,6 +22,7 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,13 +40,16 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     private final ObjectMapper mapper;
 
     private static final String ID_HEADER_NAME = "X-Request-Id";
-    private static final String TRANSACTION_PUBLIC_ROUTE = "/api/transactions";
 
     private static final Pattern PAN_PATTERN = Pattern.compile("(?i)\"pan\"\\s*:\\s*\"(\\d{6})\\d{6,9}(\\d{4})\"");
     private static final Pattern CVV_PATTERN = Pattern.compile("(?i)\"cvv\"\\s*:\\s*\"\\d{3,4}\"");
 
     private static final String MASKED_PAN = "\"pan\":\"$1****$2\"";
     private static final String MASKED_CVV = "\"cvv\":\"***\"";
+
+    private static final List<String> BODY_LOG_EXCLUDED_ROUTES = List.of(
+            "/actuator/prometheus"
+    );
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -82,20 +86,25 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                     .responseCode(response.getStatus())
                     .responseTime(responseTime);
 
-            if (request.getRequestURI().contains(TRANSACTION_PUBLIC_ROUTE)) {
+            if (!BODY_LOG_EXCLUDED_ROUTES.contains(request.getRequestURI())) {
                 var resBodyStr = new String(contentCachedResponse.getContentAsByteArray(), StandardCharsets.UTF_8);
                 var reqBodyStr = contentCachedRequest.getContentAsString();
 
-                resBodyStr = maskData(PAN_PATTERN, MASKED_PAN, resBodyStr);
-                resBodyStr = maskData(CVV_PATTERN, MASKED_CVV, resBodyStr);
+                if (!resBodyStr.isEmpty()) {
+                    resBodyStr = maskData(PAN_PATTERN, MASKED_PAN, resBodyStr);
+                    resBodyStr = maskData(CVV_PATTERN, MASKED_CVV, resBodyStr);
 
-                reqBodyStr = maskData(PAN_PATTERN, MASKED_PAN, reqBodyStr);
-                reqBodyStr = maskData(CVV_PATTERN, MASKED_CVV, reqBodyStr);
+                    var resBody = mapper.readValue(resBodyStr, JsonNode.class);
+                    requestLogBuilder.responseBody(resBody);
+                }
 
-                var resBody = mapper.readValue(resBodyStr, JsonNode.class);
-                var reqBody = mapper.readValue(reqBodyStr, JsonNode.class);
+                if (!reqBodyStr.isEmpty()) {
+                    reqBodyStr = maskData(PAN_PATTERN, MASKED_PAN, reqBodyStr);
+                    reqBodyStr = maskData(CVV_PATTERN, MASKED_CVV, reqBodyStr);
 
-                requestLogBuilder.requestBody(reqBody).responseBody(resBody);
+                    var reqBody = mapper.readValue(reqBodyStr, JsonNode.class);
+                    requestLogBuilder.requestBody(reqBody);
+                }
             }
 
             contentCachedResponse.copyBodyToResponse();
