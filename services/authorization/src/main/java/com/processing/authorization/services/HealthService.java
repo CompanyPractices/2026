@@ -88,20 +88,21 @@ public class HealthService {
         try {
             log.debug("Checking health of {}", serviceUrl);
             URI uri = UriComponentsBuilder
-            .fromUriString(serviceUrl)
-            .scheme("http")
-            .path("/health")
-            .build()
-            .toUri();
+                    .fromUriString(serviceUrl)
+                    .scheme("http")
+                    .path("/health")
+                    .build()
+                    .toUri();
 
             Map<String, Object> body = restClient.get()
                     .uri(uri)
                     .retrieve()
                     .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                        log.debug("Failed to get card. Status: {}", res.getStatusCode());
-                        throw new RuntimeException("Failed to get card. Status: " + res.getStatusCode());
+                        log.debug("Health check failed for {}", uri);
+                        throw new RuntimeException("Health check failed for " + uri);
                     })
-                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
 
             if (body == null) {
                 return new Response(serviceUrl, "unknown");
