@@ -3,12 +3,14 @@ package com.processing.merchantacquirer.service;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.repository.TerminalRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TerminalProvider {
@@ -19,6 +21,7 @@ public class TerminalProvider {
     public Terminal getByMerchant(String merchantId) {
         if (!terminalsByMerchants.containsKey(merchantId)) {
             terminalsByMerchants.put(merchantId, terminalRepository.findByMerchantId(merchantId));
+            log.info("Loaded terminals for merchantdID: {}", merchantId);
         }
 
         List<Terminal> terminals = terminalsByMerchants.get(merchantId);

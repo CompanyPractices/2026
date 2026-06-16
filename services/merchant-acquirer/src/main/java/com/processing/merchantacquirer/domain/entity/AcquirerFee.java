@@ -23,4 +23,13 @@ public class AcquirerFee {
     private String terminalId;
     private BigDecimal acquirerFee;
     private BigDecimal amount;
+
+    public AcquirerFee(String transmissionDateTime, String stan, String pan, String terminalId, BigDecimal acquirerFee, BigDecimal amount) {
+        this.transmissionDateTime = transmissionDateTime;
+        this.stan = stan;
+        this.pan = pan;
+        this.terminalId = terminalId;
+        this.acquirerFee = acquirerFee;
+        this.amount = amount;
+    }
 }

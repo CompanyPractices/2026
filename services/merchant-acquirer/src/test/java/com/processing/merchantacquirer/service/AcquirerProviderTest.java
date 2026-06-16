@@ -27,7 +27,7 @@ public class AcquirerProviderTest {
     void setUp() {
         merchantProvider = Mockito.mock(MerchantProvider.class);
         repository = Mockito.mock(AcquirerFeeRepository.class);
-        acquirerProvider = new AcquirerProvider(repository, merchantProvider);
+        acquirerProvider = new AcquirerProvider(repository);
     }
 
     @Test
@@ -52,7 +52,7 @@ public class AcquirerProviderTest {
                 .multiply(BigDecimal.valueOf(0.015))
                 .setScale(0, RoundingMode.HALF_EVEN);
 
-        acquirerProvider.calculateFee(merchant.getAcquirerId(), amount, rrn, stan, terminalId, pan);
+        acquirerProvider.calculateFee(merchant.getAcquiringFee(), amount, rrn, stan, terminalId, pan);
         ArgumentCaptor<AcquirerFee> feeCaptor = ArgumentCaptor.forClass(AcquirerFee.class);
 
         verify(repository).save(feeCaptor.capture());

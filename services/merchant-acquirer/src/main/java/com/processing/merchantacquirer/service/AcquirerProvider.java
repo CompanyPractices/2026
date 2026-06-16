@@ -8,25 +8,25 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 @Slf4j
 @Component
 @AllArgsConstructor
 public class AcquirerProvider {
     private final AcquirerFeeRepository repository;
-    private final MerchantProvider merchantProvider;
 
     public void calculateFee(
-            String merchantId, BigDecimal amount, String transmissionDateTime, String stan, String terminalId, String pan) {
-        BigDecimal fee = merchantProvider.getMerchantAcquirerFee(merchantId);
+            BigDecimal fee, BigDecimal amount, String transmissionDateTime, String stan, String terminalId, String pan) {
         BigDecimal acquiringFee = amount
                 .multiply(fee)
                 .setScale(0, RoundingMode.HALF_EVEN);
 
         AcquirerFee acquirerFeeEntity = new AcquirerFee(transmissionDateTime, stan, pan, terminalId, acquiringFee, amount);
-//        repository.save(acquirerFeeEntity);
+        repository.save(acquirerFeeEntity);
         log.info("Calculate acquirer fee: {}",
                 acquirerFeeEntity);
-        return acquirerFeeEntity;
     }
 
     public AcquirerFeeResponse getAcquirerFee(AcquirerFeeRequest request) {
