@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 
 public record RollbackRequest(
     @NotBlank
+    @Size(min = 12, max = 12)
     @Schema(description = "Retrieval reference number", example = "012345678901")
     String rrn,
 

@@ -55,17 +55,17 @@ public record DeclineOutcome(String reason, String code) {
 
     public static final DeclineOutcome TRANSACTION_NOT_FOUND = new DeclineOutcome(
             "TRANSACTION_NOT_FOUND",
-            AuthorizationResponse.CODE_DECLINED_GENERAL
+            RollbackResponse.CODE_DECLINED_GENERAL
     );
 
     public static final DeclineOutcome ALREADY_ROLLED_BACK = new DeclineOutcome(
             "ALREADY_ROLLED_BACK",
-            AuthorizationResponse.CODE_DECLINED_GENERAL
+            RollbackResponse.CODE_DECLINED_GENERAL
     );
 
     public static final DeclineOutcome ROLLBACK_FAILED = new DeclineOutcome(
             "ROLLBACK_FAILED",
-            AuthorizationResponse.CODE_SERVICE_UNAVAILABLE
+            RollbackResponse.CODE_SERVICE_UNAVAILABLE
     );
 
     public AuthorizationResponse buildAuthorization(AuthorizationRequest request, LocalDateTime requestInputTime) {
@@ -73,6 +73,6 @@ public record DeclineOutcome(String reason, String code) {
     }
 
     public RollbackResponse buildRollback(String rrn, Instant requestInputTime) {
-        return RollbackResponse.declined(rrn, reason, requestInputTime);
+        return RollbackResponse.declined(rrn, reason, code, requestInputTime);
     }
 }
