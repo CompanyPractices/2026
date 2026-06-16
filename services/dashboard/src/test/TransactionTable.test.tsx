@@ -32,15 +32,41 @@ vi.mock('../components/TransactionModal', () => ({
     ),
 }));
 
-vi.mock('../components/Filters', () => ({
-    Filters: ({ onSearch }: { onSearch: (f: Filter) => void }) => (
-        <div data-testid="filters">
-            <button data-testid="mock-search-btn" onClick={() => onSearch({ status: 'APPROVED' })}>
-                Search
-            </button>
-        </div>
-    ),
-}));
+vi.mock('../components/Filters', () => {
+    const React = require('react');
+    const { useState } = React;
+
+    return {
+        Filters: ({ onSearch }: { onSearch: (f: Filter) => void }) => {
+            const [mockStatus, setMockStatus] = useState('');
+
+            return React.createElement('div', { 'data-testid': 'filters' }, [
+                React.createElement('select', {
+                    key: 'select',
+                    'data-testid': 'mock-status-select',
+                    value: mockStatus,
+                    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => setMockStatus(e.target.value)
+                }, [
+                    React.createElement('option', { key: 'all', value: '' }, 'Все'),
+                    React.createElement('option', { key: 'approved', value: 'APPROVED' }, 'Одобрен'),
+                ]),
+                React.createElement('button', {
+                    key: 'search',
+                    'data-testid': 'mock-search-btn',
+                    onClick: () => onSearch(mockStatus ? { status: mockStatus as Filter['status'] } : {})
+                }, 'Найти'),
+                React.createElement('button', {
+                    key: 'reset',
+                    'data-testid': 'mock-reset-btn',
+                    onClick: () => {
+                        setMockStatus('');
+                        onSearch({});
+                    }
+                }, 'Сбросить')
+            ]);
+        },
+    };
+});
 
 vi.mock('../mockData', () => ({
     ISSUERS_NAMES: ['Issuer A', 'Issuer B'],
@@ -209,7 +235,11 @@ describe('TransactionTable', () => {
             />
         );
 
-        fireEvent.click(screen.getByTestId('mock-search-btn'));
+        const statusSelect = screen.getByTestId('mock-status-select');
+        fireEvent.change(statusSelect, { target: { value: 'APPROVED' } });
+
+        const searchBtn = screen.getByTestId('mock-search-btn');
+        fireEvent.click(searchBtn);
 
         expect(mockSearch).toHaveBeenCalledTimes(1);
         expect(mockSearch).toHaveBeenCalledWith({ status: 'APPROVED' });
@@ -260,5 +290,71 @@ describe('TransactionTable', () => {
             'Issuer ID': 'ISS-1',
             'Time': '10:00:00',
         });
+    });
+
+    it('should handle full user flow: live data -> filter search -> reset -> back to live data', () => {
+        const initialLiveTxs = [
+            createMockTransaction({ id: 'live-1', amount: 10000, status: 'APPROVED' }),
+            createMockTransaction({ id: 'live-2', amount: 5000, status: 'DECLINED' })
+        ];
+
+        const { rerender } = render(
+            <TransactionTable
+                liveTransactions={initialLiveTxs}
+                error={null}
+                loading={false}
+                search={mockSearch}
+            />
+        );
+
+        expect(screen.getByText('100.00 ₽')).toBeInTheDocument();
+        expect(screen.getByText('50.00 ₽')).toBeInTheDocument();
+
+        const statusSelect = screen.getByTestId('mock-status-select');
+        fireEvent.change(statusSelect, { target: { value: 'APPROVED' } });
+
+        const searchBtn = screen.getByTestId('mock-search-btn');
+        fireEvent.click(searchBtn);
+
+        expect(mockSearch).toHaveBeenCalledTimes(1);
+        expect(mockSearch).toHaveBeenCalledWith({ status: 'APPROVED' });
+
+        const filteredTxs = [
+            createMockTransaction({ id: 'history-1', amount: 99900, status: 'APPROVED' })
+        ];
+
+        rerender(
+            <TransactionTable
+                liveTransactions={filteredTxs}
+                error={null}
+                loading={false}
+                search={mockSearch}
+            />
+        );
+
+        expect(screen.getByText('999.00 ₽')).toBeInTheDocument();
+        expect(screen.queryByText('100.00 ₽')).not.toBeInTheDocument();
+
+        const resetBtn = screen.getByTestId('mock-reset-btn');
+        fireEvent.click(resetBtn);
+
+        expect(mockSearch).toHaveBeenCalledTimes(2);
+        expect(mockSearch).toHaveBeenLastCalledWith({});
+
+        const newLiveTxs = [
+            createMockTransaction({ id: 'live-3', amount: 15000, status: 'APPROVED' })
+        ];
+
+        rerender(
+            <TransactionTable
+                liveTransactions={newLiveTxs}
+                error={null}
+                loading={false}
+                search={mockSearch}
+            />
+        );
+
+        expect(screen.getByText('150.00 ₽')).toBeInTheDocument();
+        expect(screen.queryByText('999.00 ₽')).not.toBeInTheDocument();
     });
 });
