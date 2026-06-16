@@ -2,6 +2,7 @@ package com.processing.e2e.tests;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.e2e.E2EBaseTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -145,8 +146,8 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
                 .post("/api/transactions")
                 .then()
                 .statusCode(200)
-                .body("status", equalTo("APPROVED"))
-                .body("responseCode", equalTo("00"))
+                .body("status", equalTo(AuthorizationResponse.STATUS_APPROVED))
+                .body("responseCode", equalTo(AuthorizationResponse.CODE_APPROVED))
                 .body("mti", equalTo("0100"))
                 .body("stan", equalTo(TC06_STAN))
                 .body("rrn", matchesPattern("\\d{12}"))
@@ -177,7 +178,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
             stmt.setString(1, TC06_STAN);
             ResultSet rs = stmt.executeQuery();
             assertTrue(rs.next(), "transaction must exist in DB");
-            assertEquals(rs.getString("status"), "APPROVED");
+            assertEquals(rs.getString("status"), AuthorizationResponse.STATUS_APPROVED);
             assertEquals(rs.getString("pan"), tc06Pan);
             assertEquals(0, rs.getBigDecimal("amount").compareTo(TC06_AMOUNT),
                     "transaction amount must match request");
@@ -212,7 +213,8 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
                     .post("/api/transactions")
                     .then()
                     .statusCode(200)
-                    .body("status", oneOf("APPROVED", "DECLINED"));
+                    .body("status", oneOf(
+                            AuthorizationResponse.STATUS_APPROVED, AuthorizationResponse.STATUS_DECLINED));
 
 
             String issuerIdDb = getIssuerIdFromDbByStan(stan);

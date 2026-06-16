@@ -54,7 +54,10 @@ class AuthorizationClientTest {
     @Test
     void authorize_whenAuthReturnsApproved_returnsResponse() throws Exception {
         AuthorizationResponse authResponse = new AuthorizationResponse(
-                "0110", "000001", "012345678901", "ABC123", "00", "APPROVED", null, 42);
+                "0110", "000001", "012345678901", "ABC123",
+                AuthorizationResponse.CODE_APPROVED,
+                AuthorizationResponse.STATUS_APPROVED,
+                null, 42);
         mockServer.expect(requestTo("http://localhost:8083/api/internal/authorize"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess(objectMapper.writeValueAsString(authResponse), MediaType.APPLICATION_JSON));
@@ -64,8 +67,8 @@ class AuthorizationClientTest {
                 SwitchTestData.sampleRequest().withIssuerId("ISS001"));
 
 
-        assertThat(response.status()).isEqualTo("APPROVED");
-        assertThat(response.responseCode()).isEqualTo("00");
+        assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_APPROVED);
+        assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_APPROVED);
         assertThat(response.rrn()).isEqualTo("012345678901");
     }
 
