@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 
 public class HttpUtils {
@@ -44,19 +43,11 @@ public class HttpUtils {
         return response.body().as(JsonNode.class);
     }
 
-<<<<<<< test/TC-1&11(gateway)
-    public JsonNode httpPost(String baseUrl, String path, String jsonBody, int expectedStatus) {
-        Response response = RestAssured
-                .given()
-                .baseUri(baseUrl)
-                .contentType(ContentType.JSON)
-=======
     public JsonNode httpPostRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
         Response response = RestAssured
                 .given()
                 .baseUri(baseUrl)
                 .contentType("application/json")
->>>>>>> main
                 .body(jsonBody)
                 .when()
                 .post(path)
@@ -67,7 +58,6 @@ public class HttpUtils {
         return response.body().as(JsonNode.class);
     }
 
-<<<<<<< test/TC-1&11(gateway)
     public void assertGetStatus(String baseUrl, String path, int expectedStatus) {
         RestAssured
                 .given()
@@ -76,7 +66,8 @@ public class HttpUtils {
                 .get(path)
                 .then()
                 .statusCode(expectedStatus);
-=======
+    }
+
     public JsonNode httpPatchRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
         Response response = RestAssured
                 .given()
@@ -90,6 +81,5 @@ public class HttpUtils {
                 .extract()
                 .response();
         return response.body().as(JsonNode.class);
->>>>>>> main
     }
 }
