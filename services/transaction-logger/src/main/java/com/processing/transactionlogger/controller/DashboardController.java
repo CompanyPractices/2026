@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Контроллер Dashboard API — статистика и последние транзакции.
+ * Gateway перенаправляет сюда запросы от Web Dashboard.
+ */
 @Validated
 @Tag(name = "Dashboard", description = "Статистика и последние транзакции")
 @RestController
@@ -25,6 +29,11 @@ import java.util.List;
 public class DashboardController {
     private final TransactionService transactionService;
 
+    /**
+     * Возвращает агрегированную статистику по всем транзакциям
+     *
+     * @return счётчики, суммы, процент одобрения, транзакций в минуту
+     */
     @Operation(summary = "Агрегированная статистика", responses = {
             @ApiResponse(responseCode = "200", description = "Статистика по всем транзакциям")
     })
@@ -33,13 +42,19 @@ public class DashboardController {
         return transactionService.getStats();
     }
 
+    /**
+     * Возвращает последние транзакции, отсортированные по {@code createdAt DESC}
+     *
+     * @param limit максимальное число записей (1–500, по умолчанию 20)
+     * @return список транзакций
+     */
     @Operation(summary = "Последние транзакции", responses = {
             @ApiResponse(responseCode = "200", description = "Список транзакций, отсортированных по createdAt DESC")
     })
     @GetMapping("/recent")
     public List<TransactionResponse> getRecent(@Positive(message = "limit must be positive")
-                                           @Max(value = 500, message = "limit must not exceed 500")
-                                           @RequestParam(defaultValue = "20") int limit) {
+                                               @Max(value = 500, message = "limit must not exceed 500")
+                                               @RequestParam(defaultValue = "20") int limit) {
         return transactionService.getRecent(limit);
     }
 }

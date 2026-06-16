@@ -44,7 +44,9 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
 
     return (
         <div className="font-mono w-full">
-            <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={search}/>
+            <div className="m-8">
+                <Filters issuers={ISSUERS_NAMES} mccNames={MCC_NAMES} onSearch={search}/>
+            </div>
 
             <div className="flex items-center justify-center gap-3 m-4">
                 <h2 className="text-2xl font-bold text-center drop-shadow-lg dark:text-sage-50">

@@ -8,8 +8,19 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 
+/**
+ * Фабрика JPA Specification для динамической фильтрации транзакций.
+ * Каждый предикат применяется только при наличии соответствующего значения в фильтре.
+ */
 public class TransactionSpecification {
 
+    /**
+     * Собирает составной предикат из параметров фильтра.
+     * Отсутствующие параметры игнорируются (не добавляют условие в запрос).
+     *
+     * @param filter параметры фильтрации
+     * @return Specification для передачи в репозиторий
+     */
     public static Specification<Transaction> filter(TransactionFilter filter) {
         return Specification
                 .where(equals(Transaction_.PAN, filter.getPan()))

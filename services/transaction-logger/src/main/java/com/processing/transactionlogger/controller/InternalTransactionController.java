@@ -20,6 +20,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Внутренний контроллер для приёма транзакций от Switch.
+ * Доступен только для внутренних вызовов от Switch.
+ */
 @RestController
 @RequestMapping("/api/internal")
 @RequiredArgsConstructor
@@ -27,6 +31,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalTransactionController {
     private final TransactionService transactionService;
 
+    /**
+     * Сохраняет транзакцию, полученную от Switch.
+     * Идемпотентен: повторный запрос с тем же {@code id} и теми же данными вернёт HTTP 200.
+     *
+     * @param request данные транзакции
+     * @return HTTP 201 с {@link TransactionStoredResponse} при новой записи,
+     *         HTTP 200 с {@link TransactionResponse} при уже существующей
+     */
     @PostMapping("/log")
     @Operation(
             summary = "Сохранение транзакции",
