@@ -51,7 +51,9 @@ management:
           - 0.99
 
 gateway.url: ${GATEWAY_URL:http://gateway:8080}
-
+simulation:
+  sender:
+    concurrency: 24
 # Scenarios
 simulation.scenarios.grocery:
   mcc: ["5411", "5499"]

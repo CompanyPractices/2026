@@ -13,16 +13,23 @@ import java.util.concurrent.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class TransactionSender {
   private final GatewayClient gatewayClient;
   private final TransactionMetrics transactionMetrics;
-  private final int concurency = 24;
-  private final Semaphore semaphore = new Semaphore(concurency);
+  private final Semaphore semaphore;
+
+  public TransactionSender(GatewayClient gatewayClient,
+                           TransactionMetrics transactionMetrics,
+                           @Value("${simulation.sender.concurrency:24}") int concurrency) {
+    this.gatewayClient = gatewayClient;
+    this.transactionMetrics = transactionMetrics;
+    this.semaphore = new Semaphore(concurrency);
+  }
 
   public SimulatorStats sendAll(List<AuthorizationRequest> requests) {
 
