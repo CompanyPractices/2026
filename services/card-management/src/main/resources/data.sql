@@ -1,0 +1,1 @@
+INSERT INTO bin_issuers (bin, issuer_id) VALUES ('400000', 'ISS001'), ('400001', 'ISS002'), ('400002', 'ISS003'), ('400003', 'ISS004'), ('400004', 'ISS005') ON CONFLICT (bin) DO NOTHING
