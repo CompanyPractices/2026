@@ -8,6 +8,8 @@ import com.processing.support.CapturingAuthorizationClient;
 import com.processing.support.TrackingLoggerClient;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RouteServiceTest {
@@ -24,7 +26,7 @@ class RouteServiceTest {
                 logger);
 
         AuthorizationRequest request = new AuthorizationRequest(
-                "0100", "000002", "9999991234560001", "000000", 150000L, "643",
+                "0100", "000002", "9999991234560001", "000000", new BigDecimal("150000"), "643",
                 SwitchTestData.sampleRequest().transmissionDateTime(),
                 "TERM001", SwitchTestData.TERMINAL_TYPE, "MERCH12345678901", "5411", "ACQ001", null);
 
@@ -56,6 +58,8 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().status()).isEqualTo(TransactionStatus.APPROVED);
         assertThat(logger.lastTransaction().mti()).isEqualTo("0100");
         assertThat(logger.lastTransaction().pan()).isEqualTo(request.pan());
+        assertThat(logger.lastTransaction().amount()).isEqualByComparingTo(new BigDecimal("150000"));
+        assertThat(authorizationClient.lastRequest().amount()).isEqualByComparingTo(new BigDecimal("150000"));
     }
 
     @Test
@@ -69,7 +73,7 @@ class RouteServiceTest {
                 logger);
 
         AuthorizationRequest request = new AuthorizationRequest(
-                "0100", "000001", "4000001234560001", "000000", 150000L, "643",
+                "0100", "000001", "4000001234560001", "000000", new BigDecimal("150000"), "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001", SwitchTestData.TERMINAL_TYPE, "MERCH00000000001", "5411", "ACQ001", null);
 
@@ -89,12 +93,12 @@ class RouteServiceTest {
         RouteService routeService = new RouteService(
                 routingService,
                 authorizationClient,
-                (transmissionDateTime, stan, pan, terminalId, amount) -> 2_250L,
+                (transmissionDateTime, stan, pan, terminalId, amount) -> new BigDecimal("2250"),
                 logger);
 
         routeService.route(SwitchTestData.sampleRequest());
 
-        assertThat(logger.lastTransaction().acquiringFee()).isEqualTo(2_250L);
+        assertThat(logger.lastTransaction().acquiringFee()).isEqualByComparingTo(new BigDecimal("2250"));
     }
 
     @Test

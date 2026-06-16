@@ -2,6 +2,7 @@ package com.processing.common.dto.cardmanagement;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.UUID;
@@ -32,11 +33,11 @@ public record CardModel(
     @Schema(description = "Currency code", example = "643")
     String currencyCode,
     @Schema(description = "Daily limit in kopecks", example = "15000000")
-    long dailyLimit,
+    BigDecimal dailyLimit,
     @Schema(description = "Monthly limit in kopecks", example = "300000000")
-    long monthlyLimit,
+    BigDecimal monthlyLimit,
     @Schema(description = "Available balance in kopecks", example = "1000000000")
-    long availableBalance,
+    BigDecimal availableBalance,
     @Schema(description = "Issuer ID", example = "ZZZZZZ")
     String issuerId,
     @Schema(description = "Card creation date")

@@ -1,5 +1,6 @@
 package com.processing.authorization.services;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.client.RestClient;
 
 import lombok.RequiredArgsConstructor;
@@ -84,18 +86,23 @@ public class HealthService {
 
     private Response checkHealth(String serviceUrl) {
         try {
-            String fullUrl = serviceUrl.startsWith("http") ? serviceUrl : "http://" + serviceUrl;
-            String healthUrl = fullUrl + "/health";
-            log.debug("Checking health of {}", healthUrl);
+            log.debug("Checking health of {}", serviceUrl);
+            URI uri = UriComponentsBuilder
+                    .fromUriString(serviceUrl)
+                    .scheme("http")
+                    .path("/health")
+                    .build()
+                    .toUri();
 
             Map<String, Object> body = restClient.get()
-                    .uri(healthUrl)
+                    .uri(uri)
                     .retrieve()
                     .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                        log.debug("Failed to get card. Status: {}", res.getStatusCode());
-                        throw new RuntimeException("Failed to get card. Status: " + res.getStatusCode());
+                        log.debug("Health check failed for {}", uri);
+                        throw new RuntimeException("Health check failed for " + uri);
                     })
-                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
 
             if (body == null) {
                 return new Response(serviceUrl, "unknown");

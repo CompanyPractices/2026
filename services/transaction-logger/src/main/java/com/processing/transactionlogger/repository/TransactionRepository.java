@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     /** @return суммарный объём всех транзакций в минорных единицах */
     @Query("SELECT SUM(t.amount) FROM Transaction t")
-    long sumAmount();
+    BigDecimal sumAmount();
 
     /**
      * Считает транзакции, созданные после указанного момента.
