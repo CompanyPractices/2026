@@ -43,16 +43,13 @@ class AuthServiceTest {
 
     private CardModel activeCardResponse;
 
-    private MaskPan maskPan;
-
     @Mock
     private LimitUsageRepository limitUsageRepository;
 
     @BeforeEach
     void setUp() {
         RestClient restClient = RestClient.create();
-        maskPan = new MaskPan();
-        authService = new AuthService(restClient, maskPan, limitUsageRepository);
+        authService = new AuthService(restClient, limitUsageRepository);
 
         correctRequest = new AuthorizationRequest(
                 "0100",
@@ -372,7 +369,7 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldMaskMiddleEightCharacters() {
         String input = "4000001234560001";
-        String result = maskPan.maskPan(input);
+        String result = MaskPan.maskPan(input);
 
         assertEquals("4000********0001", result);
         assertEquals(16, result.length());
@@ -381,7 +378,7 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldReturnInvalidPanOnShortString() {
         String input = "4000";
-        String result = maskPan.maskPan(input);
+        String result = MaskPan.maskPan(input);
 
         assertEquals("****", result);
     }
@@ -389,7 +386,7 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldReturnEmptyStringOnNull() {
         String input = null;
-        String result = maskPan.maskPan(input);
+        String result = MaskPan.maskPan(input);
 
         assertEquals("", result);
     }
@@ -397,10 +394,10 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldPreserveOriginalLength() {
         String input1 = "4000001234560001";
-        String result1 = maskPan.maskPan(input1);
+        String result1 = MaskPan.maskPan(input1);
 
         String input2 = "400001";
-        String result2 = maskPan.maskPan(input2);
+        String result2 = MaskPan.maskPan(input2);
 
         assertEquals(input1.length(), result1.length());
         assertEquals(input2.length(), result2.length());

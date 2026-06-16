@@ -29,7 +29,6 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
-import com.processing.common.utils.MaskPan;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,8 +43,6 @@ public class DBIntegrationTest {
     private DataSource dataSource;
     @MockitoBean
     private RestClient restClient;
-    @MockitoBean
-    private MaskPan maskPan;
 
     @Mock
     private RestClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;

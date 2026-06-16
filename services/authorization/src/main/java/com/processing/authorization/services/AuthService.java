@@ -64,7 +64,6 @@ import org.springframework.web.client.RestClient;
 @RequiredArgsConstructor
 public class AuthService {
     private final RestClient restClient;
-    private final MaskPan maskPan;
 
     /**
      * Базовый URL Card Management System.
@@ -388,7 +387,7 @@ public class AuthService {
     }
 
     public String logPan(String pan) {
-        return maskPan.maskPan(pan);
+        return MaskPan.maskPan(pan);
     }
 
     public RollbackResponse rollback(RollbackRequest request, LocalDateTime requestInputTime) {
