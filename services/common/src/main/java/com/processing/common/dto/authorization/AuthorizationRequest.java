@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
+import java.time.Instant;
+
 @Builder
 public record AuthorizationRequest(
         @NotBlank
@@ -41,7 +43,7 @@ public record AuthorizationRequest(
 
         @NotBlank
         @Schema(description = "Transaction time", example = "2026-06-05T18:12:49.07")
-        String transmissionDateTime,
+        Instant transmissionDateTime,
 
         @NotBlank
         @Size(min = 8, max = 8)

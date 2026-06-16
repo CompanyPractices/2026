@@ -5,7 +5,7 @@ import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +16,6 @@ public class AuthorizationRequestFactory {
 
   public AuthorizationRequest build(
           String pan, String currencyCode, Long amount, Terminal terminal, Merchant merchant) {
-    LocalDateTime time = LocalDateTime.now();
 
     return AuthorizationRequest.builder()
         .mti("0100")
@@ -25,7 +24,7 @@ public class AuthorizationRequestFactory {
         .processingCode("000000")
         .amount(amount)
         .currencyCode(currencyCode)
-        .transmissionDateTime(time.toString())
+        .transmissionDateTime(Instant.now())
         .terminalId(terminal.getId())
         .terminalType(terminal.getType())
         .merchantId(merchant.getId())
