@@ -5,7 +5,6 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.authorization.services.AuthService;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
-import com.processing.common.dto.cardmanagement.CardModel;
 import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.Operation;
