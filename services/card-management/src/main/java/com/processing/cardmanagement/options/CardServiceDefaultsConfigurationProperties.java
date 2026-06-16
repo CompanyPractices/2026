@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+import java.math.BigDecimal;
+
 @Validated
 @ConfigurationProperties(prefix = "app.card-service.defaults")
 public record CardServiceDefaultsConfigurationProperties(
@@ -22,11 +24,11 @@ public record CardServiceDefaultsConfigurationProperties(
     String currencyCode,
 
     @NotNegative
-    long dailyLimit,
+    BigDecimal dailyLimit,
 
     @NotNegative
-    long monthlyLimit,
+    BigDecimal monthlyLimit,
 
     @NotNegative
-    long balance
+    BigDecimal balance
 ) implements CardServiceDefaults {}

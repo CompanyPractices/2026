@@ -7,6 +7,7 @@ import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.model.Transaction;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -98,7 +99,7 @@ class TransactionMapperTest {
     void matchesReturnsFalseWhenTransactionDiffersFromRequest() {
         TransactionRequest request = transactionRequest();
         Transaction transaction = transaction();
-        transaction.setAmount(200000L);
+        transaction.setAmount(new BigDecimal("200000"));
 
         boolean matches = mapper.matches(transaction, request);
 
@@ -124,7 +125,7 @@ class TransactionMapperTest {
                 "012345678901",
                 "4000001234560001",
                 "000000",
-                150000L,
+                new BigDecimal("150000"),
                 "643",
                 "TERM001",
                 "POS",
@@ -132,7 +133,7 @@ class TransactionMapperTest {
                 "5411",
                 "ACQ001",
                 "ISS001",
-                2250L,
+                new BigDecimal("2250"),
                 TransactionStatus.APPROVED,
                 null,
                 "ABC123",

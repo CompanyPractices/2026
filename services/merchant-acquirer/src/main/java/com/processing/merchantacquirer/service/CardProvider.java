@@ -16,6 +16,7 @@ public class CardProvider {
   public List<CardDataResponse> getCards(int count) {
     CardsRequest cardsRequest = new CardsRequest(count, 0, "ACTIVE", null);
     CardsResponse cardsResponse = gatewayClient.getCards(cardsRequest);
+    System.out.println(cardsResponse);
 
     if (cardsResponse.cards().isEmpty()) {
       throw new IllegalArgumentException("Cards not found");

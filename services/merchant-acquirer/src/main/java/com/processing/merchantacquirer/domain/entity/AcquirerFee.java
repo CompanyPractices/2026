@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 
 @Entity
 @Data
@@ -19,16 +21,6 @@ public class AcquirerFee {
     private String pan;
     @Column(name = "terminal_id")
     private String terminalId;
-    @Column(name = "acquirer_fee")
-    private Long acquirerFee;
-    private Long amount;
-
-    public AcquirerFee(String transmissionDateTime, String stan, String pan, String terminalId, Long acquirerFee, Long amount) {
-        this.transmissionDateTime = transmissionDateTime;
-        this.stan = stan;
-        this.pan = pan;
-        this.terminalId = terminalId;
-        this.acquirerFee = acquirerFee;
-        this.amount = amount;
-    }
+    private BigDecimal acquirerFee;
+    private BigDecimal amount;
 }

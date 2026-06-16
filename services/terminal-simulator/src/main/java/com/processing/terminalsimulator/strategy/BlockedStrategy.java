@@ -5,6 +5,7 @@ import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -14,9 +15,9 @@ public class BlockedStrategy implements TransactionStrategy {
         return TransactionType.BLOCKED;
     }
     @Override
-    public long calculateAmount(CardModel card) {
-        double randomDouble = ThreadLocalRandom.current().nextDouble();
-        return 10_000 + (long) (randomDouble * 490_000);
+    public BigDecimal calculateAmount(CardModel card) {
+        long randomAmount = ThreadLocalRandom.current().nextLong(10_000L, 500_001L);
+        return BigDecimal.valueOf(randomAmount);
     }
     @Override
     public String getMcc() {
