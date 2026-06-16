@@ -2,6 +2,7 @@ package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.events.*;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
+import com.processing.cardmanagement.exceptions.TooLargeLimitException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.models.CardStatus;
@@ -77,13 +78,16 @@ public class CardServiceImpl implements CardService {
 
     public List<Card> getCards(
         @Nullable Integer limit,
-        @Nullable Integer offset,
+        @Nullable Long offset,
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
     ) {
+        if (limit != null && limit > settings.maxPageLimit()) {
+            throw new TooLargeLimitException(limit, settings.maxPageLimit());
+        }
         return cardRepository.findCards(
             limit != null ? limit : defaults.pageLimit(),
             offset != null ? offset : defaults.pageOffset(),

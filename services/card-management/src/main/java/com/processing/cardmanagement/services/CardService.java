@@ -39,7 +39,7 @@ public interface CardService {
      */
     List<Card> getCards(
         @Nullable Integer limit,
-        @Nullable Integer offset,
+        @Nullable Long offset,
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,

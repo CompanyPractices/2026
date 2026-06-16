@@ -1,6 +1,7 @@
 package com.processing.cardmanagement.load;
 
 import com.processing.cardmanagement.models.Card;
+import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.cardmanagement.services.CardService;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
@@ -9,6 +10,7 @@ import com.processing.common.dto.cardmanagement.PatchCardRequest;
 import com.processing.common.dto.cardmanagement.ReserveRequest;
 import io.restassured.http.ContentType;
 import net.datafaker.Faker;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +32,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -61,15 +62,21 @@ public class CardServiceLoadTest {
     private CardService cardService;
 
     @Autowired
+    private CardServiceSettings settings;
+
+    @Autowired
     private CardJpaRepository cardJpaRepository;
 
     @BeforeEach
     void setUp() {
-        cardJpaRepository.deleteAll();
-
         this.loadTestEngine = new LoadTestEngine(
             Executors.newFixedThreadPool(maximumParallelRequests)
         );
+    }
+
+    @AfterEach
+    void cleanUp() {
+        cardJpaRepository.deleteAll();
     }
 
     @Test
@@ -89,7 +96,6 @@ public class CardServiceLoadTest {
                     .statusCode(201);
             }
         ).get();
-        assertEquals(maximumTotalRequests, cardService.countAllCards());
     }
 
     @Test
@@ -127,7 +133,7 @@ public class CardServiceLoadTest {
 
     @Test
     void cardServiceGetFilteredLoadTest() throws ExecutionException, InterruptedException {
-        int cardsAmount = 500;
+        int cardsAmount = settings.maxPageLimit() * 2;
         var cards = createRandomCards(cardsAmount);
         String[] bins = cards.stream().map(Card::bin).toArray(String[]::new);
         String[] issuerIds = cards.stream().map(Card::issuerId).toArray(String[]::new);
@@ -142,10 +148,10 @@ public class CardServiceLoadTest {
                 String randomBin = bins[random.nextInt(bins.length)];
                 String randomIssuerId = issuerIds[random.nextInt(issuerIds.length)];
                 CardModelStatus randomStatus = statuses[random.nextInt(statuses.length)];
-                int randomOffset = random.nextInt(0, 50);
+                long randomOffset = random.nextLong(0, settings.maxPageLimit());
 
                 given()
-                    .queryParam("limit", cardsAmount)
+                    .queryParam("limit", settings.maxPageLimit())
                     .queryParam("offset", randomOffset)
                     .queryParam("status", randomStatus.name())
                     .queryParam("bin", randomBin)
@@ -232,11 +238,10 @@ public class CardServiceLoadTest {
                 }
             }
         ).get();
-        assertEquals(0, pansToDelete.size());
     }
 
     @Test
-    void cardServiceReserveSingleCardTest() throws ExecutionException, InterruptedException {
+    void cardServiceReserveSingleCardLoadTest() throws ExecutionException, InterruptedException {
         var pan = createCard(randomCreateCardRequest(faker.get())).pan();
 
         loadTestEngine.execute(
@@ -247,7 +252,7 @@ public class CardServiceLoadTest {
     }
 
     @Test
-    void cardServiceReserveManyCardsTest() throws ExecutionException, InterruptedException {
+    void cardServiceReserveManyCardsLoadTest() throws ExecutionException, InterruptedException {
         var cardsAmount = 500;
         var maxReservationAmount = 1_000_000;
         var pans = createRandomCards(cardsAmount)

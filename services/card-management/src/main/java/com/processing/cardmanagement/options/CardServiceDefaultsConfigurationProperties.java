@@ -12,7 +12,7 @@ import org.springframework.validation.annotation.Validated;
 public record CardServiceDefaultsConfigurationProperties(
 
     @Positive
-    long pageLimit,
+    int pageLimit,
 
     @NotNegative
     long pageOffset,

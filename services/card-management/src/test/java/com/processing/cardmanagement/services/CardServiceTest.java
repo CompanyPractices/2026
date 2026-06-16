@@ -40,7 +40,8 @@ public final class CardServiceTest {
 
     private final CardServiceSettings settings = new CardServiceSettingsConfigurationProperties(
         "TESTISSUER",
-        3
+        3,
+        10000
     );
 
     private final CardServiceDefaults defaults = new CardServiceDefaultsConfigurationProperties(
@@ -145,7 +146,7 @@ public final class CardServiceTest {
         var testCard = createTestCard(generatePan());
 
         int limit = faker.number().numberBetween(1, 100);
-        int offset = faker.number().numberBetween(0, 100);
+        long offset = faker.number().numberBetween(0, 100);
         CardStatus status = CardStatus.ACTIVE;
         String bin = faker.number().digits(6);
         String issuerId = faker.regexify("[A-Z0-9]{1,10}");

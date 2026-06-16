@@ -8,7 +8,7 @@ public interface CardServiceDefaults {
     /**
      * @return значение лимита для пагинации
      */
-    long pageLimit();
+    int pageLimit();
 
     /**
      * @return значение сдвига для пагинации
