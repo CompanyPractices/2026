@@ -17,15 +17,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.Calendar;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -134,18 +137,28 @@ public class AuthService {
         Optional<LimitUsage> currLimitUsage = limitUsageRepository
                 .findByPanAndUsageDate(request.pan(), transmissionDate);
 
+        Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
+                ? currLimitUsage
+                : limitUsageRepository
+                        .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
+                                request.pan(),
+                                transmissionDate.withDayOfMonth(1),
+                                transmissionDate);
+        if (monthLimitUsage.isPresent()) {
+            LimitUsage monthUsage = monthLimitUsage.get();
+            if (monthUsage.getMonthlyAmount() + request.amount() > cardResponse.monthlyLimit()) {
+                return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
+            }
+        } else if (request.amount() > cardResponse.monthlyLimit()) {
+            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
+        }
+
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
             if (usage.getDailyAmount() + request.amount() > cardResponse.dailyLimit()) {
                 return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
             }
         } else if (request.amount() > cardResponse.dailyLimit()) {
-            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
-        }
-
-        Long monthlyLimitUsage = limitUsageRepository
-                .sumMonthlyAmountByPanAndMonth(request.pan(), transmissionDate.withDayOfMonth(1), transmissionDate);
-        if (monthlyLimitUsage + request.amount() > cardResponse.monthlyLimit()) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.build(request, requestInputTime);
         }
 
@@ -157,12 +170,20 @@ public class AuthService {
                 usage.setMonthlyAmount(usage.getMonthlyAmount() + request.amount());
                 usage.setDailyAmount(usage.getDailyAmount() + request.amount());
                 limitUsageRepository.save(usage);
+            } else if (monthLimitUsage.isPresent()) {
+                LimitUsage monthUsage = monthLimitUsage.get();
+                LimitUsage usage = new LimitUsage();
+                usage.setPan(request.pan());
+                usage.setUsageDate(transmissionDate);
+                usage.setDailyAmount(request.amount());
+                usage.setMonthlyAmount(monthUsage.getMonthlyAmount() + request.amount());
+                limitUsageRepository.save(usage);
             } else {
                 LimitUsage usage = new LimitUsage();
                 usage.setPan(request.pan());
                 usage.setUsageDate(transmissionDate);
                 usage.setDailyAmount(request.amount());
-                usage.setMonthlyAmount(monthlyLimitUsage + request.amount());
+                usage.setMonthlyAmount(request.amount());
                 limitUsageRepository.save(usage);
             }
         } catch (Exception e) {
@@ -194,39 +215,36 @@ public class AuthService {
      * @param pan номер карты (Primary Account Number) - 16-значный номер
      * @return {@link CardModel} объект с полной информацией о карте:
      *         статус, срок действия, доступный баланс и другие атрибуты
-     * @throws Exception если карта не найдена, сервис недоступен или произошла
-     *                   другая ошибка.
-     *                   Конкретный тип исключения можно получить через
-     *                   {@link Exception#getCause()}:
-     *                   {@link CardNotFoundException} или
-     *                   {@link ServiceUnavailableException}
      *
      * @see CardModel
      * @see CardNotFoundException
      * @see ServiceUnavailableException
      */
     public CardModel getCard(String pan) {
-        String fullUrl = cmsUrl.startsWith("http") ? cmsUrl : "http://" + cmsUrl;
-        String getCardUrl = fullUrl + "/api/cards";
-        String url = getCardUrl + "/" + pan;
+        URI uri = UriComponentsBuilder
+                .fromUriString(cmsUrl)
+                .scheme("http")
+                .path("/api/cards/{pan}")
+                .buildAndExpand(pan)
+                .toUri();
         log.debug("Getting card info for pan {}", maskPAN(pan));
 
         return restClient.get()
-            .uri(url)
-            .retrieve()
-            .onStatus(status -> status.value() == 404, (req, res) -> {
-                log.debug("Card not found: {}", maskPAN(pan));
-                throw new CardNotFoundException("Card not found: " + maskPAN(pan));
-            })
-            .onStatus(status -> status.value() == 503, (req, res) -> {
-                log.debug("Card Management service unavailable");
-                throw new ServiceUnavailableException("Card Management service unavailable");
-            })
-            .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                log.debug("Failed to get card. Status: {}", res.getStatusCode());
-                throw new CardNotFoundException("Failed to get card. Status: " + res.getStatusCode());
-            })
-            .body(CardModel.class);
+                .uri(uri)
+                .retrieve()
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    log.debug("Card not found: {}", maskPAN(pan));
+                    throw new CardNotFoundException("Card not found: " + maskPAN(pan));
+                })
+                .onStatus(status -> status.value() == 503, (req, res) -> {
+                    log.debug("Card Management service unavailable");
+                    throw new ServiceUnavailableException("Card Management service unavailable");
+                })
+                .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                    log.debug("Failed to get card. Status: {}", res.getStatusCode());
+                    throw new CardNotFoundException("Failed to get card. Status: " + res.getStatusCode());
+                })
+                .body(CardModel.class);
     }
 
     /**
@@ -257,18 +275,23 @@ public class AuthService {
      */
     public void reserve(long amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
-        String url = cmsUrl + "/api/cards/" + pan + "/reserve";
+        URI uri = UriComponentsBuilder
+                .fromUriString(cmsUrl)
+                .scheme("http")
+                .path("/api/cards/{pan}/reserve")
+                .buildAndExpand(pan)
+                .toUri();
         log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
         restClient.post()
-            .uri(url)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(reserveRequest)
-            .retrieve()
-            .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                log.debug("Reserve failed. Status: {}", res.getStatusCode());
-                throw new ReserveCardException("Failed to reserve. Status: " + res.getStatusCode());
-            })
-            .toBodilessEntity();
+                .uri(uri)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(reserveRequest)
+                .retrieve()
+                .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                    log.debug("Reserve failed. Status: {}", res.getStatusCode());
+                    throw new ReserveCardException("Failed to reserve. Status: " + res.getStatusCode());
+                })
+                .toBodilessEntity();
 
         log.debug("Reserve successful for card {}", maskPAN(pan));
     }
@@ -304,15 +327,8 @@ public class AuthService {
      * @see #lastTimestampAndSeq
      */
     public String generateRRN() {
-        Calendar calendar = Calendar.getInstance();
-
-        String currentSecond = String.format("%1d%03d%02d%02d%02d",
-            calendar.get(Calendar.YEAR) % 10,
-            calendar.get(Calendar.DAY_OF_YEAR),
-            calendar.get(Calendar.HOUR_OF_DAY),
-            calendar.get(Calendar.MINUTE),
-            calendar.get(Calendar.SECOND));
-
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyDDDHHmmss");
+        String currentSecond = formatter.format(LocalDateTime.now()).substring(1);
         String nextValue;
         while (true) {
             String currentState = lastTimestampAndSeq.get();
@@ -329,6 +345,14 @@ public class AuthService {
         }
         return nextValue;
     }
+
+    private static final Random RANDOM = new SecureRandom();
+
+    private static final byte[] ALPHABET = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
+            'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+            'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    };
 
     /**
      * Генерирует случайный код авторизации (AuthCode) для транзакции.
@@ -352,9 +376,11 @@ public class AuthService {
      * @see Random#ints(int, int, int)
      */
     public String generateAuthCode() {
-        return new Random().ints(6, 0, 36)
-            .mapToObj(i -> Character.toString(i < 10 ? '0' + i : 'A' + i - 10))
-            .collect(Collectors.joining());
+        byte[] buf = new byte[6];
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = ALPHABET[RANDOM.nextInt(ALPHABET.length)];
+        }
+        return new String(buf, StandardCharsets.US_ASCII);
     }
 
     /**
@@ -382,4 +408,5 @@ public class AuthService {
 
         return pan.substring(0, 4) + "*".repeat(8) + pan.substring(12);
     }
+
 }
