@@ -329,7 +329,7 @@ public class CardServiceControllerIntegrationTest {
     private CreateCardRequest createRandomValidCreationRequest() {
         var dailyLimit = faker.number().numberBetween(0, 15_000_000);
         return new CreateCardRequest(
-                faker.number().digits(6),
+                TEST_BIN,
                 faker.name().fullName().toUpperCase(Locale.ROOT),
                 faker.number().digits(3),
                 BigDecimal.valueOf(dailyLimit),
