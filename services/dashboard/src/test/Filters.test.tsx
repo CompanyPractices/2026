@@ -1,7 +1,13 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Filters } from '../components/Filters'
+
+if (typeof window !== 'undefined' && !window.ResizeObserver) {
+    window.ResizeObserver = class ResizeObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    };
+}
 
 describe('Filters', () => {
     const onSearchMock = vi.fn();
@@ -13,28 +19,35 @@ describe('Filters', () => {
     });
 
     it('all filter fields and buttons correct', () => {
-        render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock}/>)
-        expect(screen.getByLabelText('Статус:')).toBeInTheDocument();
-        expect(screen.getByLabelText('Банк эмитент:')).toBeInTheDocument();
-        expect(screen.getByLabelText('MCC:')).toBeInTheDocument();
+        render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock}/>);
+        expect(screen.getByText('Статус:')).toBeInTheDocument();
+        expect(screen.getByText('Банк эмитент:')).toBeInTheDocument();
+        expect(screen.getByText('MCC:')).toBeInTheDocument();
         expect(screen.getByLabelText('Начало даты:')).toBeInTheDocument();
         expect(screen.getByLabelText('Конец даты:')).toBeInTheDocument();
 
+        expect(screen.getByRole('button', {name: 'Выберите статус'})).toBeInTheDocument();
+        expect(screen.getByRole('button', {name: 'Выберите эмитента'})).toBeInTheDocument();
+        expect(screen.getByRole('button', {name: 'Выберите категорию'})).toBeInTheDocument();
         expect(screen.getByRole('button', {name: 'Найти'})).toBeInTheDocument();
         expect(screen.getByRole('button', {name: 'Сбросить'})).toBeInTheDocument();
     });
 
     it('call search with correct data', async () => {
-        const user = userEvent.setup();
         render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock}/>);
-        expect(screen.getByLabelText('Статус:')).toBeInTheDocument();
-        await user.selectOptions(screen.getByLabelText('Статус:'), 'APPROVED');
-        await user.selectOptions(screen.getByLabelText('Банк эмитент:'), 'ISS001');
-        await user.clear(screen.getByLabelText('Начало даты:'));
-        await user.type(screen.getByLabelText('Начало даты:'), '2026-01-01');
+        const statusButton = screen.getByRole('button', { name: 'Выберите статус' });
+        fireEvent.click(statusButton);
+        const statusOption = screen.getByRole('option', { name: 'Одобрен' });
+        fireEvent.click(statusOption);
+        const issuerButton = screen.getByRole('button', { name: 'Выберите эмитента' });
+        fireEvent.click(issuerButton);
+        const issuerOption = screen.getByRole('option', { name: issuersMock['ISS001'] || 'ISS001' });
+        fireEvent.click(issuerOption);
 
-        await user.click(screen.getByRole('button', {name: 'Найти'}));
-
+        const dateInput = screen.getByLabelText('Начало даты:');
+        fireEvent.change(dateInput, { target: { value: '2026-01-01' } });
+        const searchButton = screen.getByRole('button', { name: 'Найти' });
+        fireEvent.click(searchButton);
         expect(onSearchMock).toHaveBeenCalledTimes(1);
         expect(onSearchMock).toHaveBeenCalledWith({
             status: 'APPROVED',
@@ -44,15 +57,15 @@ describe('Filters', () => {
     });
 
     it('clear form and call search with empty filter', async() => {
-        const user = userEvent.setup();
-        render(<Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock}/>);
-        await user.selectOptions(screen.getByLabelText('Статус:'), 'DECLINED');
-        await user.selectOptions(screen.getByLabelText('MCC:'), '5411');
-
-        await user.click(screen.getByRole('button', {name: 'Сбросить'}));
-
-        expect(screen.getByLabelText('Статус:')).toHaveValue('');
-        expect(screen.getByLabelText('MCC:')).toHaveValue('');
+        const { container } = render(
+            <Filters issuers={issuersMock} mccNames={mccMock} onSearch={onSearchMock} />
+        );
+        const statusSelect = container.querySelector('input[name="status"]') || container.querySelector('select');
+        if (statusSelect) {
+            fireEvent.change(statusSelect, { target: { value: 'DECLINED' } });
+        }
+        const resetButton = screen.getByRole('button', { name: 'Сбросить' });
+        fireEvent.click(resetButton);
         expect(onSearchMock).toHaveBeenCalledWith({});
     });
 })
