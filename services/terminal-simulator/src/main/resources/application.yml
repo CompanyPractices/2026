@@ -10,6 +10,9 @@ spring:
     virtual:
       enabled: true
 
+simulator:
+  tps: 100
+
 # PostgreSQL (раскомментируй, если нужна БД)
 # spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:processing}
 # spring.datasource.username=${DB_USER:postgres}
@@ -17,8 +20,11 @@ spring:
 # spring.jpa.hibernate.ddl-auto=update
 ---
 # Logging
-logging.level.com.processing=INFO
-logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+logging:
+  level:
+    com.processing: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 ---
 # Actuator
 management:
@@ -31,10 +37,11 @@ management:
       show-details: always
     prometheus:
       enabled: true
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
+  metrics:
     tags:
       application: terminal-simulator
     distribution:

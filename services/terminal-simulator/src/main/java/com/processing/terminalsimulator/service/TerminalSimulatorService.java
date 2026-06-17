@@ -11,8 +11,8 @@ import com.processing.terminalsimulator.factory.TransactionFactory;
 import com.processing.terminalsimulator.client.GatewayClient;
 import com.processing.terminalsimulator.model.PartofDay;
 import com.processing.terminalsimulator.model.TransactionType;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -24,10 +24,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class TerminalSimulatorService {
     private final GatewayClient gatewayClient;
     private final TransactionFactory transactionFactory;
+    private final int tps;
+
+    public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
+                                     @Value("${simulator.tps:100}") int tps) {
+        this.gatewayClient = gatewayClient;
+        this.transactionFactory = transactionFactory;
+        this.tps = tps;
+    }
 
     private record TransactionTask(TransactionType type, PartofDay partOfDay) {}
 
@@ -122,6 +129,7 @@ public class TerminalSimulatorService {
         ConcurrentLinkedQueue<AuthorizationResponse> authResponses = new ConcurrentLinkedQueue<>();
         AtomicInteger approved = new AtomicInteger(0);
         AtomicInteger declined = new AtomicInteger(0);
+        long delayMs = 1000 / tps;
 
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             // главный поток заходит и раздает задачи экзекутору
@@ -133,16 +141,17 @@ public class TerminalSimulatorService {
                         AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay, cards,
                                 approved, declined, terminalId);
                         authResponses.add(resp);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         log.error("Transaction failed", e);
                         authResponses.add(new AuthorizationResponse(null, null, null, null, null,
                                 null, e.getMessage(), 0));
                     }
                 });
+
+                Thread.sleep(delayMs);
             }
-        } // тут вызывается executor.close() и ждет завершения всех задач(!!) без allOf().join()
-        catch (Exception e) {
+            // тут вызывается executor.close() и ждет завершения всех задач(!!) без allOf().join()
+        } catch (Exception e) {
             log.error("Execution error", e);
             authResponses.add(new AuthorizationResponse(null, null, null, null, null,
                     null, e.getMessage(), 0));
