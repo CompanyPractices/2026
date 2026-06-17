@@ -21,8 +21,10 @@ spring.jpa.properties.hibernate.order_inserts: true
 spring.jpa.properties.hibernate.generate_statistics: false
 logging.level.org.hibernate.engine.jdbc.batch.internal.BatchingBatch: WARN
 
+# Настройки параллельности
 spring.threads.virtual.enabled: true
 spring.datasource.hikari.maximum-pool-size: 30
+simulation.sender.concurrency: ${CONCURRENCY:100}
 
 # Actuator
 management:
@@ -51,9 +53,7 @@ management:
           - 0.99
 
 gateway.url: ${GATEWAY_URL:http://gateway:8080}
-simulation:
-  sender:
-    concurrency: 24
+
 # Scenarios
 simulation.scenarios.grocery:
   mcc: ["5411", "5499"]
