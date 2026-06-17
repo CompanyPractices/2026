@@ -31,7 +31,7 @@ public class TC_08_CardNotFoundTest extends E2EBaseTest {
                   "processingCode": "000000",
                   "amount": 5000,
                   "currencyCode": "643",
-                  "transmissionDateTime": "2026-06-05T18:12:49.070",
+                  "transmissionDateTime": "2026-06-05T18:12:49.070Z",
                   "terminalId": "TERM0001",
                   "merchantId": "MERCH0000000001",
                   "mcc": "5411",
