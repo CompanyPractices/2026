@@ -10,7 +10,7 @@ import TransactionHistogram from './components/TransactionHistogram.tsx'
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
-    const { transactions: initialTransactions, filteredTransactions, loading, error, searchTransactions } = useTransactions();
+    const { transactions: initialTransactions, filteredTransactions, isFiltered, loading, error, searchTransactions } = useTransactions();
     const { stats, loading: liveLoading, error: liveError } = useLiveStats(liveTransactions);
 
     const uniqueTransactions = useMemo(() => {
@@ -23,16 +23,14 @@ function App() {
     }, [liveTransactions, initialTransactions]);
 
     const displayedTransactions = useMemo(() => {
-        const isSearch = filteredTransactions !== initialTransactions;
-        if (isSearch){
+        if (isFiltered){
             const filtered = filteredTransactions || [];
-            const uniqueFiltered = filtered.filter((tx, index, self) =>
-                index === self.findIndex(t => t.id === tx.id)
-            );
-            return uniqueFiltered.slice(0, 20);
+            return filtered
+                .filter((tx, index, self) => index === self.findIndex(t => t.id === tx.id))
+                .slice(0, 20);
         }
         return uniqueTransactions.slice(0, 20)
-    }, [filteredTransactions, uniqueTransactions, initialTransactions]);
+    }, [isFiltered, filteredTransactions, uniqueTransactions]);
 
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">

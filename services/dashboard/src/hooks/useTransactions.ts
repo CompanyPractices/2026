@@ -9,6 +9,8 @@ function useTransactions() {
     const [filteredTransactions, setFilteredTransactions] = useState<Transaction[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isFiltered, setIsFiltered] = useState(false)
+
     useEffect(() => {
         fetchApi<Transaction[]>("/api/dashboard/recent?limit=20")
             .then((data) => {
@@ -22,13 +24,15 @@ function useTransactions() {
     }, []);
 
     const searchTransactions = useCallback((filter: Filter) => {
-        const isEmpty = !filter || Object.values(filter).every(v => v === undefined || v === '');
-        if (isEmpty && transactions){
-            setFilteredTransactions(transactions)
+        const hasFilter = Object.values(filter).some(v => v);
+        if (!hasFilter) {
+            setIsFiltered(false);
+            return;
         }
-
+        setIsFiltered(true)
         setLoading(true);
         setError(null);
+
         const requestParams = new URLSearchParams();
         if (filter.status){
             requestParams.append('status', filter.status);
@@ -55,9 +59,9 @@ function useTransactions() {
                 setLoading(false)
             });
 
-    }, [transactions]);
+    }, []);
 
-    return {transactions, filteredTransactions, error, loading, searchTransactions}
+    return {transactions, filteredTransactions, isFiltered, error, loading, searchTransactions}
 }
 
 export default useTransactions;
