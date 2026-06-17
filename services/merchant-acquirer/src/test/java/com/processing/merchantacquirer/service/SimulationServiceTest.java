@@ -13,6 +13,7 @@ import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.domain.entity.ScenarioType;
+import com.processing.merchantacquirer.exception.ResourceNotFoundException;
 import com.processing.merchantacquirer.service.dto.RequestFeeData;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
 import com.processing.common.dto.authorization.AuthorizationRequest;
@@ -32,6 +33,7 @@ class SimulationServiceTest {
     @Mock private TransactionBuilder transactionBuilder;
     @Mock private TransactionSender transactionSender;
     @Mock private ScenarioProvider scenarioProvider;
+    @Mock private AcquirerProvider acquirerProvider;
 
     @InjectMocks private SimulationService simulationService;
 
@@ -139,9 +141,9 @@ class SimulationServiceTest {
 
         when(cardProvider.getCards(1)).thenReturn(List.of());
         when(scenarioProvider.getScenario(ScenarioType.grocery)).thenReturn(mockScenario);
-        when(merchantProvider.getMerchant(any(), any())).thenThrow(new IllegalArgumentException("Merchants with given mcc not found"));
+        when(merchantProvider.getMerchant(any(), any())).thenThrow(new ResourceNotFoundException("Merchants with given mcc not found"));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> simulationService.run(request));
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> simulationService.run(request));
         assertEquals("Merchants with given mcc not found", exception.getMessage());
     }
 
@@ -149,9 +151,9 @@ class SimulationServiceTest {
     void noCards_throws() {
         SimulatorRequest request = new SimulatorRequest(1, ScenarioType.grocery, null);
 
-        when(cardProvider.getCards(1)).thenThrow(new IllegalArgumentException("Cards not found"));
+        when(cardProvider.getCards(1)).thenThrow(new ResourceNotFoundException("Cards not found"));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> simulationService.run(request));
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> simulationService.run(request));
         assertEquals("Cards not found", exception.getMessage());
     }
 }
