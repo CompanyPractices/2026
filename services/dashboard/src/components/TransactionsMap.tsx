@@ -1,10 +1,22 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, useContext } from 'react';
 import { CityCluster, useLocations } from '../hooks/useLocations';
 import { Transaction } from '../types';
 import { getStatusIcon } from '../utils/statusIcon';
 import 'leaflet/dist/leaflet.css';
+import { convertPenniesToRublesDirect, formatAmount } from "../utils/format.ts";
+import { ThemeContext } from "../contexts/ThemeContext.ts";
+
+const LIGHT_TILES = {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+};
+
+const DARK_TILES = {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+};
 
 type TransactionMapProps = {
     transactions: Transaction[];
@@ -35,7 +47,7 @@ function getClusterStyle(count: number) {
     }
 }
 
-function createClusterIcon(count: number) {
+function createClusterIcon(count: number, isDark: boolean) {
     const style = getClusterStyle(count);
 
     return L.divIcon({
@@ -82,10 +94,6 @@ function FitBoundsToClusters({ clusters }: { clusters: CityCluster[] }) {
     return null;
 }
 
-function formatAmount(amount: number, currencyCode: string): string {
-    return `${amount.toLocaleString('ru-RU')} ${currencyCode}`;
-}
-
 function getClusterStats(transactions: Transaction[]) {
     const approved = transactions.filter(t => t.status === 'APPROVED').length;
     const declined = transactions.length - approved;
@@ -97,6 +105,10 @@ function getClusterStats(transactions: Transaction[]) {
 
 export function TransactionMap({ transactions }: TransactionMapProps) {
     const clusters = useLocations(transactions);
+    const { theme } = useContext(ThemeContext)!;
+
+    const isDark = theme === 'dark';
+    const tiles = isDark ? DARK_TILES : LIGHT_TILES;
 
     const initialCenter: [number, number] = [61.5240, 105.3188];
     const initialZoom = 3;
@@ -120,88 +132,58 @@ export function TransactionMap({ transactions }: TransactionMapProps) {
                 scrollWheelZoom={true}
             >
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    key={theme}
+                    attribution={tiles.attribution}
+                    url={tiles.url}
                 />
 
                 <FitBoundsToClusters clusters={clusters} />
 
                 {clusters.map((cluster) => {
-                    const icon = createClusterIcon(cluster.count);
+                    const icon = createClusterIcon(cluster.count, isDark);
                     const stats = getClusterStats(cluster.transactions);
 
                     return (
                         <Marker
-                            key={cluster.city}
+                            key={`${cluster.city}-${theme}`}
                             position={cluster.coordinates}
                             icon={icon}
                         >
-                            <Popup>
-                                <div style={{ minWidth: '280px', fontSize: '13px' }}>
-                                    <div style={{
-                                        fontWeight: 'bold',
-                                        fontSize: '16px',
-                                        marginBottom: '10px',
-                                        borderBottom: '2px solid #e5e7eb',
-                                        paddingBottom: '6px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between'
-                                    }}>
+                            <Popup className={isDark ? 'dark-popup' : ''}>
+                                <div className="min-w-[280px] text-[13px] text-zinc-900 dark:text-zinc-200">
+                                    <div className="font-bold text-[16px] mb-2.5 pb-1.5 border-b-2 border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
                                         <span>{cluster.city}</span>
-                                        <span style={{
-                                            background: getClusterStyle(cluster.count).color,
-                                            color: 'white',
-                                            padding: '2px 8px',
-                                            borderRadius: '12px',
-                                            fontSize: '12px'
-                                        }}>
+                                        <span
+                                            className="text-white px-2 py-0.5 rounded-xl text-[12px]"
+                                            style={{ background: getClusterStyle(cluster.count).color }}
+                                        >
                                             {cluster.count} транз.
                                         </span>
                                     </div>
 
-                                    <div style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '1fr 1fr',
-                                        gap: '8px',
-                                        marginBottom: '10px',
-                                        padding: '8px',
-                                        background: '#f9fafb',
-                                        borderRadius: '6px'
-                                    }}>
+                                    <div className="grid grid-cols-2 gap-2 mb-2.5 p-2 bg-zinc-50 dark:bg-zinc-800 rounded-md">
                                         <div>
-                                            <div style={{ fontSize: '11px', color: '#6b7280' }}>Одобрено</div>
-                                            <div style={{ fontWeight: 'bold', color: '#16a34a' }}>
-                                                {stats.approved}
+                                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400">Одобрено</div>
+                                            <div className="font-bold text-green-600">{stats.approved}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400">Отклонено</div>
+                                            <div className="font-bold text-red-600">{stats.declined}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400">Общая сумма</div>
+                                            <div className="font-bold">
+                                                {formatAmount(convertPenniesToRublesDirect(stats.totalAmount)) + ' ₽'}
                                             </div>
                                         </div>
                                         <div>
-                                            <div style={{ fontSize: '11px', color: '#6b7280' }}>Отклонено</div>
-                                            <div style={{ fontWeight: 'bold', color: '#dc2626' }}>
-                                                {stats.declined}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '11px', color: '#6b7280' }}>Общая сумма</div>
-                                            <div style={{ fontWeight: 'bold' }}>
-                                                {formatAmount(stats.totalAmount, cluster.transactions[0]?.currencyCode ?? 'RUB')}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '11px', color: '#6b7280' }}>Одобрение</div>
-                                            <div style={{ fontWeight: 'bold' }}>
-                                                {stats.approvalRate.toFixed(1)}%
-                                            </div>
+                                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400">Одобрение</div>
+                                            <div className="font-bold">{stats.approvalRate.toFixed(1)}%</div>
                                         </div>
                                     </div>
 
-                                    <div style={{
-                                        maxHeight: '200px',
-                                        overflowY: 'auto',
-                                        borderTop: '1px solid #e5e7eb',
-                                        paddingTop: '8px'
-                                    }}>
-                                        <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px' }}>
+                                    <div className="max-h-[200px] overflow-y-auto border-t border-zinc-200 dark:border-zinc-700 pt-2">
+                                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-1.5">
                                             Транзакции:
                                         </div>
                                         {cluster.transactions.map((tx) => {
@@ -209,13 +191,12 @@ export function TransactionMap({ transactions }: TransactionMapProps) {
                                             const StatusIcon = statusIconData.icon;
 
                                             return (
-                                                <div key={tx.id} style={{
-                                                    padding: '4px 0',
-                                                    borderBottom: '1px solid #f3f4f6',
-                                                    fontSize: '12px'
-                                                }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <span style={{ color: '#6b7280' }}>
+                                                <div
+                                                    key={tx.id}
+                                                    className="py-1 border-b border-zinc-100 dark:border-zinc-700 text-[12px]"
+                                                >
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-zinc-500 dark:text-zinc-400">
                                                             {tx.terminalId}
                                                         </span>
                                                         <StatusIcon
@@ -224,8 +205,8 @@ export function TransactionMap({ transactions }: TransactionMapProps) {
                                                             aria-hidden="true"
                                                         />
                                                     </div>
-                                                    <div style={{ color: '#374151' }}>
-                                                        {formatAmount(tx.amount, tx.currencyCode)}
+                                                    <div className="text-zinc-700 dark:text-zinc-300">
+                                                        {formatAmount(convertPenniesToRublesDirect(tx.amount)) + ' ₽'}
                                                     </div>
                                                 </div>
                                             );
