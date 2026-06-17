@@ -37,11 +37,11 @@ public class ProxyingToCardsTest extends E2EBaseTest {
                     "currencyCode": "643",
                     "dailyLimit": 1000000,
                     "monthlyLimit": 10000000,
-                    "initialBalance": 5000000
+                    "initialBalance": 5000000.0
                 }
                 """;
 
-        JsonNode response = httpUtils.httpPost(GATEWAY_URL, "/api/cards", requestBody, 201);
+        JsonNode response = httpUtils.httpPostRaw(GATEWAY_URL, "/api/cards", requestBody, 201);
 
         gatewayResponse = new ResponseFieldsToCompare(
                 response.path("id"),
@@ -67,7 +67,7 @@ public class ProxyingToCardsTest extends E2EBaseTest {
         directResponseJson = response;
 
         assertEquals(response.path("cardholderName").asText(), "PROXY TEST");
-        assertEquals(response.path("availableBalance").asText(), "5000000");
+        assertEquals(response.path("availableBalance").asText(), "5000000.0");
     }
 
     @Test(priority = 1203)

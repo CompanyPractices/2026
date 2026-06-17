@@ -29,12 +29,12 @@ public class HttpUtils {
         }
     }
 
-    public JsonNode httpPost(String baseUrl, String path, String jsonBody, int expectedStatus) {
+    public JsonNode httpPost(String baseUrl, String path, Object body, int expectedStatus) {
         Response response = RestAssured
                 .given()
                     .baseUri(baseUrl)
                     .contentType(ContentType.JSON)
-                    .body(jsonBody)
+                    .body(body)
                 .when()
                     .post(path)
                 .then()
