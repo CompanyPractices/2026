@@ -2,9 +2,8 @@ package com.processing.cardmanagement.models;
 
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 
-import java.time.Instant;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.util.UUID;
 
