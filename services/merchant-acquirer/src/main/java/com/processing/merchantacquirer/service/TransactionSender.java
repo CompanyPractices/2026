@@ -1,6 +1,7 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.GatewayClient;
+import com.processing.merchantacquirer.domain.MaskerPan;
 import com.processing.merchantacquirer.exception.ExternalServiceException;
 import com.processing.merchantacquirer.metrics.TransactionMetrics;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
@@ -46,7 +47,16 @@ public class TransactionSender {
                       return response;
                     } catch (ExternalServiceException e) {
                       transactionMetrics.record(request.mcc(), "ERROR");
-                      log.warn("Gateway returned failed authorization {}: {}", request, e.getMessage());
+
+                      log.warn("Gateway returned failed AuthorizationRequest: [STAN: {}, PAN: {}, amount: {}, TerminalID: {}, MerchantID: {}, AcquirerID: {}, MCC: {}]: {}",
+                              request.stan(),
+                              MaskerPan.mask(request.pan()),
+                              request.amount(),
+                              request.terminalId(),
+                              request.merchantId(),
+                              request.acquirerId(),
+                              request.mcc(), e.getMessage());
+
                       return AuthorizationResponse.systemError(request.stan());
                     } finally {
                       semaphore.release();

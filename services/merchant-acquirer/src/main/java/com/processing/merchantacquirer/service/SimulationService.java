@@ -30,7 +30,7 @@ public class SimulationService {
     log.info("Simulator request: {}", request);
 
     List<CardDataResponse> cards = cardProvider.getCards(request.count());
-    log.info("Cards from Card Management: {}", cards);
+    log.info("{} cards load from card management", cards.size());
 
     // Получение сценария
     Scenario scenario = scenarioProvider.getScenario(request.scenario());

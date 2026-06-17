@@ -2,6 +2,7 @@ package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
 import com.processing.merchantacquirer.domain.FeeCalculator;
+import com.processing.merchantacquirer.domain.MaskerPan;
 import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
@@ -59,7 +60,14 @@ public class TransactionBuilder {
                             AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
                                     card.pan(), card.currencyCode(), amount, terminal, merchant);
 
-                            log.info(String.valueOf(authorizationRequest));
+                            log.info("AuthorizationRequest: STAN: {}, PAN: {}, amount: {}, TerminalID: {}, MerchantID: {}, AcquirerID: {}, MCC: {} ",
+                                    authorizationRequest.stan(),
+                                    MaskerPan.mask(authorizationRequest.pan()),
+                                    authorizationRequest.amount(),
+                                    authorizationRequest.terminalId(),
+                                    authorizationRequest.merchantId(),
+                                    authorizationRequest.acquirerId(),
+                                    authorizationRequest.mcc());
                             BigDecimal fee = feeCalculator.calculate(
                                     merchant.getAcquiringFee(),
                                     authorizationRequest.amount());
