@@ -1,7 +1,6 @@
 package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +38,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 @Slf4j
 public class RequestLoggingFilter extends OncePerRequestFilter {
-    private final ObjectMapper mapper;
+    private final ObjectMapper objectMapper;
 
     private static final String ID_HEADER_NAME = "X-Request-Id";
 
@@ -76,6 +75,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(contentCachedRequest, contentCachedResponse);
         } finally {
+            var mapper = objectMapper.copy();
             mapper.enable(SerializationFeature.INDENT_OUTPUT);
             mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
@@ -101,7 +101,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                         var resBody = mapper.readValue(resBodyStr, JsonNode.class);
                         requestLogBuilder.responseBody(resBody);
                     }
-                } catch (JsonParseException e) {
+                } catch (JsonProcessingException e) {
                     log.error("Error parsing response body for logging", e);
                 }
 
@@ -114,7 +114,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                         var reqBody = mapper.readValue(reqBodyStr, JsonNode.class);
                         requestLogBuilder.requestBody(reqBody);
                     }
-                } catch (JsonParseException e) {
+                } catch (JsonProcessingException e) {
                     log.error("Error parsing request body for logging", e);
                 }
             }
