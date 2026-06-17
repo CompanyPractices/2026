@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -43,43 +44,34 @@ public class RouteService {
         String pan = request.pan();
         String bin = pan != null && pan.length() >= 6 ? pan.substring(0, 6) : "??????";
 
-        String issuerId;
+        AuthorizationRequest normalizedRequest = AuthorizationRequestNormalizer.normalize(request);
+        AuthorizationRequest routedRequest = normalizedRequest;
+        AuthorizationResponse response;
+        BigDecimal acquiringFee = null;
+        String issuerId = null;
+
         try {
             issuerId = routingService.getIssuerIdByPan(pan);
+            routedRequest = normalizedRequest.withIssuerId(issuerId);
+            response = authorizationClient.authorize(routedRequest);
+            acquiringFee = acquiringFeeClient.fetchAcquiringFee(
+                    routedRequest.transmissionDateTime(),
+                    routedRequest.stan(),
+                    routedRequest.pan(),
+                    routedRequest.terminalId(),
+                    routedRequest.amount());
         } catch (UnknownBinException e) {
             LOG.warn("TX {} | BIN={} → unknown BIN | DECLINED", request.stan(), bin);
-            return AuthorizationResponse.unknownBin(request.stan());
-        }
-
-        AuthorizationRequest routedRequest = request.withIssuerId(issuerId);
-
-        AuthorizationResponse response;
-        try {
-            response = authorizationClient.authorize(routedRequest);
+            response = AuthorizationResponse.unknownBin(request.stan());
         } catch (AuthorizationException e) {
             LOG.error("{}", e.getMessage());
-            return AuthorizationResponse.authUnavailable(request.stan());
+            response = AuthorizationResponse.authUnavailable(request.stan());
         }
-
-        Long acquiringFee = acquiringFeeClient.fetchAcquiringFee(
-                routedRequest.transmissionDateTime(),
-                routedRequest.stan(),
-                routedRequest.pan(),
-                routedRequest.terminalId(),
-                routedRequest.amount()
-        );
 
         TransactionRequest transaction = buildTransaction(routedRequest, response, acquiringFee);
+        boolean logged = tryLog(transaction);
 
-        boolean logged;
-        try {
-            logged = loggerClient.log(transaction);
-        } catch (LoggerException e) {
-            LOG.error("{}", e.getMessage());
-            logged = false;
-        }
-
-        if (!logged && TransactionStatus.APPROVED.name().equals(response.status())) {
+        if (!logged && AuthorizationResponse.STATUS_APPROVED.equals(response.status())) {
             LOG.error("Logger unavailable for TX {} — rolling back reservation", request.stan());
             authorizationClient.reverse(routedRequest, response.rrn());
             return AuthorizationResponse.systemError(request.stan());
@@ -92,10 +84,19 @@ public class RouteService {
         return response;
     }
 
+    private boolean tryLog(TransactionRequest transaction) {
+        try {
+            return loggerClient.log(transaction);
+        } catch (LoggerException e) {
+            LOG.error("{}", e.getMessage());
+            return false;
+        }
+    }
+
     private TransactionRequest buildTransaction(
             AuthorizationRequest request,
             AuthorizationResponse response,
-            Long acquiringFee) {
+            BigDecimal acquiringFee) {
         return new TransactionRequest(
                 UUID.randomUUID(),
                 request.mti(),
@@ -103,7 +104,7 @@ public class RouteService {
                 response.rrn(),
                 request.pan(),
                 request.processingCode(),
-                request.amount() != null ? request.amount().longValue() : null,
+                request.amount(),
                 request.currencyCode(),
                 request.terminalId(),
                 request.terminalType(),

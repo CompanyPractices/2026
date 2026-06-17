@@ -74,6 +74,9 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
 
     private static AuthorizationResponse approvedResponse() {
         return new AuthorizationResponse(
-                "0110", "000001", "012345678901", "TEST01", "00", "APPROVED", null, 42);
+                "0110", "000001", "012345678901", "TEST01",
+                AuthorizationResponse.CODE_APPROVED,
+                AuthorizationResponse.STATUS_APPROVED,
+                null, 42);
     }
 }

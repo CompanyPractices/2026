@@ -1,6 +1,7 @@
 package com.processing.cardmanagement.repositories;
 
 import com.processing.cardmanagement.models.CardEntity;
+import com.processing.cardmanagement.models.CardEntity_;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -91,19 +92,19 @@ public class CardCriteriaBuilderJpaRepositoryImpl
     ) {
         var predicates = new ArrayList<Predicate>();
         if (status != null) {
-            predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            predicates.add(criteriaBuilder.equal(root.get(CardEntity_.status), status));
         }
         if (bin != null) {
-            predicates.add(criteriaBuilder.equal(root.get("bin"), bin));
+            predicates.add(criteriaBuilder.equal(root.get(CardEntity_.bin), bin));
         }
         if (issuerId != null) {
-            predicates.add(criteriaBuilder.equal(root.get("issuerId"), issuerId));
+            predicates.add(criteriaBuilder.equal(root.get(CardEntity_.issuerId), issuerId));
         }
         if (startDate != null) {
-            predicates.add(criteriaBuilder.equal(root.get("startDate"), startDate));
+            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(CardEntity_.createdAt), startDate));
         }
         if (endDate != null) {
-            predicates.add(criteriaBuilder.equal(root.get("endDate"), endDate));
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(CardEntity_.createdAt), endDate));
         }
         return predicates;
     }

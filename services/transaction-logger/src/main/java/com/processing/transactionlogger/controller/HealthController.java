@@ -8,6 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Контроллер проверки работоспособности сервиса.
+ * Используется Gateway для мониторинга состояния transaction-logger.
+ */
 @Tag(name = "Health", description = "Состояние сервиса")
 @RestController
 public class HealthController {
@@ -18,6 +22,11 @@ public class HealthController {
         this.transactionRepository = transactionRepository;
     }
 
+    /**
+     * Возвращает статус сервиса и общее количество хранящихся транзакций
+     *
+     * @return HTTP 200 с {@link HealthResponse}
+     */
     @Operation(summary = "Health-check")
     @GetMapping("/health")
     public ResponseEntity<HealthResponse> health() {

@@ -1,96 +1,128 @@
 import { FormEvent, useState } from 'react';
 import { Filter, FilterStatus } from "../types";
+import { Listbox } from '@headlessui/react';
 
 type FilterProps = {
-    issuers: Record<string, string>
-    mccNames: Record<string, string>
+    issuers: Record<string, string>;
+    mccNames: Record<string, string>;
     onSearch: (filter: Filter) => void;
-}
+};
 
-export function Filters({issuers, mccNames, onSearch}: FilterProps) {
-    const [filter, setFilter] = useState<Filter>({})
+export function Filters({ issuers, mccNames, onSearch }: FilterProps) {
+    const [filter, setFilter] = useState<Filter>({});
 
     function filterSubmit(e: FormEvent) {
         e.preventDefault();
-        onSearch(filter)
+        onSearch(filter);
     }
 
-    function reset(){
-        setFilter({})
-        onSearch({})
+    function reset() {
+        setFilter({});
+        onSearch({});
     }
+
+    const inputBaseClass = "border border-zinc-300 dark:border-sage-200 rounded-lg bg-zinc-300 dark:bg-sage-400 text-zinc-900 dark:text-sage-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-sage-50 focus:border-transparent cursor-pointer p-2 w-full text-left text-sm transition-all";
+    const labelClass = "text-base font-bold mb-1 text-zinc-900 dark:text-sage-50";
+    const buttonClass = "text-sm md:text-lg font-semibold drop-shadow-lg bg-emerald-400 dark:bg-sage-200 rounded-lg dark:text-sage-50 px-4 py-1 transition-colors hover:bg-emerald-500 hover:text-zinc-200 dark:hover:bg-sage-100";
 
     return (
-        <form onSubmit={filterSubmit} className="grid grid-cols-5 gap-4">
-            <div className="col-span-3" >Фильтр по таблице</div>
-            <button type="submit">Найти</button>
-            <button type="button" onClick={reset}>Сбросить</button>
-
-            <div className="flex flex-col">
-                <label htmlFor="status">Статус: </label>
-                <select value={filter.status ?? ''}
-                        onChange={(e) => setFilter({
-                            ...filter,
-                            status: (e.target.value as FilterStatus) || undefined
-                        })}
-                        id="status">
-                    <option value="">Выберите статус</option>
-                    <option value="APPROVED">Одобрен</option>
-                    <option value="DECLINED">Отклонен</option>
-                </select>
+        <form onSubmit={filterSubmit} className="font-mono">
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+                <span className="text-lg font-bold drop-shadow-lg dark:text-sage-50 flex-grow">
+                    Фильтр по таблице
+                </span>
+                <button className={buttonClass} type="submit">
+                    Найти
+                </button>
+                <button className={buttonClass} type="button" onClick={reset}>
+                    Сбросить
+                </button>
             </div>
 
-            <div className="flex flex-col">
-                <label htmlFor="issuer">Банк эмитент: </label>
-                <select value={filter.issuerId ?? ''}
-                        onChange={(e) => setFilter({
-                            ...filter,
-                            issuerId: e.target.value || undefined
-                        })}
-                        id="issuer">
-                    <option value="">Выберите эмитента</option>
-                    {Object.keys(issuers).map((issuerId) => {
-                        return <option key={issuerId} value={issuerId}>{issuers[issuerId] || issuerId}</option>;
-                    })}
-                </select>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
 
-            <div className="flex flex-col">
-                <label htmlFor="mcc">MCC: </label>
-                <select value={filter.mcc ?? ''}
-                        onChange={(e) => setFilter({
-                            ...filter,
-                            mcc: e.target.value || undefined
-                        })}
-                        id="mcc">
-                    <option value="">Выберите MCC</option>
-                    {Object.keys(mccNames).map((mccCode) => {
-                        return <option key={mccCode} value={mccCode}>{mccNames[mccCode] || mccCode}</option>;
-                    })}
-                </select>
-            </div>
+                <div className="flex flex-col relative w-full">
+                    <label htmlFor="status" className={labelClass}>Статус:</label>
+                    <Listbox
+                        value={filter.status ?? ''}
+                        onChange={(val) => setFilter({ ...filter, status: (val as FilterStatus) || undefined })}
+                    >
+                        <Listbox.Button className={inputBaseClass}>
+                            {filter.status === 'APPROVED' && 'Одобрен'}
+                            {filter.status === 'DECLINED' && 'Отклонен'}
+                            {!filter.status && 'Все'}
+                        </Listbox.Button>
+                        <Listbox.Options className="absolute top-full left-0 mt-1 w-full rounded-lg bg-zinc-100 dark:bg-zinc-800 p-1 shadow-lg border border-zinc-200 dark:border-zinc-700 z-50 max-h-60 overflow-y-auto focus:outline-none">
+                            <Listbox.Option className="cursor-pointer rounded-md p-2 text-zinc-400 dark:text-zinc-500 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm" value="">Все</Listbox.Option>
+                            <Listbox.Option className="cursor-pointer rounded-md p-2 text-zinc-700 dark:text-sage-100 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm" value="APPROVED">Одобрен</Listbox.Option>
+                            <Listbox.Option className="cursor-pointer rounded-md p-2 text-zinc-700 dark:text-sage-100 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm" value="DECLINED">Отклонен</Listbox.Option>
+                        </Listbox.Options>
+                    </Listbox>
+                </div>
 
-            <div className="flex flex-col">
-                <label htmlFor="dateFrom">Начало даты: </label>
-                <input value={filter.dateFrom ?? ''}
-                       onChange={(e) => setFilter({
-                           ...filter,
-                           dateFrom: e.target.value || undefined
-                       })}
-                       id="dateFrom"
-                       type="date"/>
-            </div>
+                <div className="flex flex-col relative w-full">
+                    <label htmlFor="issuer" className={labelClass}>Банк эмитент:</label>
+                    <Listbox
+                        value={filter.issuerId ?? ''}
+                        onChange={(val) => setFilter({ ...filter, issuerId: val || undefined })}
+                    >
+                        <Listbox.Button className={inputBaseClass}>
+                            {filter.issuerId ? (issuers[filter.issuerId] || filter.issuerId) : 'Все'}
+                        </Listbox.Button>
+                        <Listbox.Options className="absolute top-full left-0 mt-1 w-full rounded-lg bg-zinc-100 dark:bg-zinc-800 p-1 shadow-lg border border-zinc-200 dark:border-zinc-700 z-50 max-h-60 overflow-y-auto focus:outline-none">
+                            <Listbox.Option className="cursor-pointer rounded-md p-2 text-zinc-400 dark:text-zinc-500 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm" value="">Все</Listbox.Option>
+                            {Object.keys(issuers).map((issuerId) => (
+                                <Listbox.Option key={issuerId} value={issuerId} className="cursor-pointer rounded-md p-2 text-zinc-700 dark:text-sage-100 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm">
+                                    {issuers[issuerId] || issuerId}
+                                </Listbox.Option>
+                            ))}
+                        </Listbox.Options>
+                    </Listbox>
+                </div>
 
-            <div className="flex flex-col">
-                <label htmlFor="dateTo">Конец даты: </label>
-                <input value={filter.dateTo ?? ''}
-                       onChange={(e) => setFilter({
-                           ...filter,
-                           dateTo: e.target.value || undefined
-                       })}
-                       id="dateTo"
-                       type="date"/>
+                <div className="flex flex-col relative w-full">
+                    <label htmlFor="mcc" className={labelClass}>MCC:</label>
+                    <Listbox
+                        value={filter.mcc ?? ''}
+                        onChange={(val) => setFilter({ ...filter, mcc: val || undefined })}
+                    >
+                        <Listbox.Button className={inputBaseClass}>
+                            {filter.mcc ? (mccNames[filter.mcc] || filter.mcc) : 'Все'}
+                        </Listbox.Button>
+                        <Listbox.Options className="absolute top-full left-0 mt-1 w-full rounded-lg bg-zinc-100 dark:bg-zinc-800 p-1 shadow-lg border border-zinc-200 dark:border-zinc-700 z-50 max-h-60 overflow-y-auto focus:outline-none">
+                            <Listbox.Option className="cursor-pointer rounded-md p-2 text-zinc-400 dark:text-zinc-500 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm" value="">Все</Listbox.Option>
+                            {Object.keys(mccNames).map((mccCode) => (
+                                <Listbox.Option key={mccCode} value={mccCode} className="cursor-pointer rounded-md p-2 text-zinc-700 dark:text-sage-100 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm">
+                                    {mccNames[mccCode] || mccCode}
+                                </Listbox.Option>
+                            ))}
+                        </Listbox.Options>
+                    </Listbox>
+                </div>
+
+                <div className="flex flex-col relative w-full">
+                    <label htmlFor="dateFrom" className={labelClass}>Начало даты:</label>
+                    <input
+                        className={inputBaseClass}
+                        value={filter.dateFrom ?? ''}
+                        onChange={(e) => setFilter({ ...filter, dateFrom: e.target.value || undefined })}
+                        id="dateFrom"
+                        type="date"
+                    />
+                </div>
+
+                <div className="flex flex-col relative w-full">
+                    <label htmlFor="dateTo" className={labelClass}>Конец даты:</label>
+                    <input
+                        className={inputBaseClass}
+                        value={filter.dateTo ?? ''}
+                        onChange={(e) => setFilter({ ...filter, dateTo: e.target.value || undefined })}
+                        id="dateTo"
+                        type="date"
+                    />
+                </div>
+
             </div>
         </form>
-    )
+    );
 }

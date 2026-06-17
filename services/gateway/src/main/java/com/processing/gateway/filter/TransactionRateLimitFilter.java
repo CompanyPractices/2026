@@ -1,6 +1,7 @@
 package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.gateway.ratelimit.ClientIpResolver;
 import com.processing.gateway.ratelimit.InMemoryRateLimiter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -8,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
@@ -29,13 +29,11 @@ import java.util.Map;
 public class TransactionRateLimitFilter extends OncePerRequestFilter {
 
     private static final String TRANSACTIONS_PATH = "/api/transactions";
-    private static final String RATE_LIMIT_KEY = "POST " + TRANSACTIONS_PATH;
+    private static final String RATE_LIMIT_KEY_PREFIX = "POST " + TRANSACTIONS_PATH + ":";
 
     private final InMemoryRateLimiter rateLimiter;
+    private final ClientIpResolver clientIpResolver;
     private final ObjectMapper objectMapper;
-
-    @Value("${gateway.rate-limit.transactions-per-second:100}")
-    private int transactionsPerSecond;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -43,8 +41,11 @@ public class TransactionRateLimitFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
+        String clientIp = clientIpResolver.resolve(request);
+        String rateLimitKey = RATE_LIMIT_KEY_PREFIX + clientIp;
+
         if (!isTransactionRequest(request)
-                || rateLimiter.allowRequest(RATE_LIMIT_KEY, transactionsPerSecond)) {
+                || rateLimiter.allowRequest(rateLimitKey)) {
             filterChain.doFilter(request, response);
             return;
         }

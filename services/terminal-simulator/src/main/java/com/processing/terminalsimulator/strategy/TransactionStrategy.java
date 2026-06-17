@@ -1,15 +1,17 @@
 package com.processing.terminalsimulator.strategy;
 
-import com.processing.terminalsimulator.dto.Card;
-import com.processing.terminalsimulator.model.CardStatus;
+import com.processing.common.dto.cardmanagement.CardModel;
+import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.terminalsimulator.model.TransactionType;
+
+import java.math.BigDecimal;
 
 public interface TransactionStrategy {
     TransactionType getType();
-    long calculateAmount(Card card);
+    BigDecimal calculateAmount(CardModel card);
     String getMcc();
     boolean isInvalidPan();
-    default CardStatus getRequiredCardStatus() {
-        return CardStatus.ACTIVE;
+    default CardModelStatus getRequiredCardStatus() {
+        return CardModelStatus.ACTIVE;
     }
 }

@@ -1,8 +1,10 @@
 package com.processing.terminalsimulator.client;
 
-import com.processing.terminalsimulator.dto.AuthorizationRequest;
-import com.processing.terminalsimulator.dto.AuthorizationResponse;
-import com.processing.terminalsimulator.dto.Card;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.cardmanagement.CardModel;
+import com.processing.common.dto.cardmanagement.CardModelStatus;
+import com.processing.terminalsimulator.TransactionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -10,10 +12,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.util.List;
 
-import static com.processing.terminalsimulator.model.CardStatus.ACTIVE;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
@@ -36,7 +37,7 @@ class GatewayClientTest {
     @Test
     void sendToGateway_shouldReturnAuthorizationResponse() {
         AuthorizationRequest request = new AuthorizationRequest("0100", "000001", "4000001234560001",
-                "000000", 10000L, "643", "2026-06-09T10:00:00Z",
+                "000000", new BigDecimal(10000L), "643", "2026-06-09T10:00:00Z",
                 "TERM001", "02", "MERCH001", "5411", "ACQ001", "");
 
         String responseJson = """
@@ -54,7 +55,7 @@ class GatewayClientTest {
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         AuthorizationResponse response = gatewayClient.sendToGateway(request);
-        assertEquals("APPROVED", response.status());
+        assertEquals(TransactionStatus.APPROVED.name(), response.status());
         mockServer.verify();
     }
 
@@ -79,8 +80,8 @@ class GatewayClientTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
-        List<Card> cards = gatewayClient.getCardsFromCardManager(ACTIVE, 70);
-        assertThat(cards).hasSize(1);
+        List<CardModel> cards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70);
+        assertEquals(1, cards.size());
         assertEquals("4000001234560001", cards.get(0).pan());
     }
 
@@ -91,7 +92,7 @@ class GatewayClientTest {
         mockServer.expect(requestTo(CARD_MGMT_URL + "/api/cards?status=ACTIVE&limit=70"))
                 .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> gatewayClient.getCardsFromCardManager(ACTIVE, 70))
+        assertThatThrownBy(() -> gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("No ACTIVE cards available");
     }
