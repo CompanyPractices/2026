@@ -2,7 +2,7 @@ package com.processing.kms.controller;
 
 import com.processing.common.result.Result;
 import com.processing.kms.dto.*;
-import com.processing.kms.models.ApiKeyRoles;
+import com.processing.kms.models.ApiKeyRole;
 import com.processing.kms.models.ApiKey;
 import com.processing.kms.errors.KeyError;
 import com.processing.kms.service.ApiKeyService;
@@ -21,7 +21,7 @@ public class ApiKeyController {
     public ResponseEntity<IssueResponse> issueApiKey(@RequestBody IssueRequest request) {
         Result<ApiKey, KeyError> result = apiKeyService.issueKey(
                 request.clientId(),
-                ApiKeyRoles.valueOf(request.role().toUpperCase()));
+                ApiKeyRole.valueOf(request.role().toUpperCase()));
 
         return switch (result) {
             case Result.Success<ApiKey, KeyError>(ApiKey value) ->
@@ -40,10 +40,10 @@ public class ApiKeyController {
 
     @PostMapping("/validate")
     public ResponseEntity<ValidationResponse> validateApiKey(@RequestBody ValidateRequest request) {
-        Result<ApiKeyRoles, KeyError> result = apiKeyService.validateKey(request.key());
+        Result<ApiKeyRole, KeyError> result = apiKeyService.validateKey(request.key());
 
         return switch (result) {
-            case Result.Success(ApiKeyRoles value) ->
+            case Result.Success(ApiKeyRole value) ->
                     ResponseEntity.ok(new ValidationResponse(
                             true,
                             value,
@@ -76,7 +76,7 @@ public class ApiKeyController {
             case Result.Success(ApiKey value) ->
                     ResponseEntity.ok(new RefreshResponse(
                             true,
-                            value.key(),
+                            value.getKey(),
                             null));
             case Result.Failure(KeyError.NotFound error) ->
                     ResponseEntity.ok(new RefreshResponse(

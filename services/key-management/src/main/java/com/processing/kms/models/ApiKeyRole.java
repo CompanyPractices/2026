@@ -1,6 +1,6 @@
 package com.processing.kms.models;
 
-public enum ApiKeyRoles {
+public enum ApiKeyRole {
     READ,
     WRITE,
     ADMIN

@@ -10,7 +10,7 @@ import java.util.Base64;
 
 @Component
 public class ApiKeyGenerator {
-    @Value("${api-keys.length:128}")
+    @Value("${api-keys.length:256}")
     private int keyLength;
 
     @Value("${api-keys.algorithm:AES}")

@@ -1,9 +1,9 @@
 package com.processing.kms.dto;
 
-import com.processing.kms.models.ApiKeyRoles;
+import com.processing.kms.models.ApiKeyRole;
 
 public record ValidationResponse(
     Boolean isValid,
-    ApiKeyRoles role,
+    ApiKeyRole role,
     String invalidationReason
 ) {}
