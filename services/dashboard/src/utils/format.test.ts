@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hidePan, convertPenniesToRubles, formatTime, formatDateTime } from './format';
+import {hidePan, convertPenniesToRubles, formatTime, formatDateTime, formatDate} from './format';
 
 describe('formatAmount', () => {
     it('converts pennies to rubles with 2 decimal places', () => {
@@ -34,5 +34,11 @@ describe('formatTime', () => {
 describe('formatDateTime', () => {
     it('formats ISO string to Russian date and time', () => {
         expect(formatDateTime('2026-06-03T14:30:01Z')).toBe('03.06.2026, 14:30:01');
+    });
+});
+
+describe('formatDate', () => {
+    it('formats ISO string to Russian date', () => {
+        expect(formatDate('2026-06-03T14:30:01Z')).toBe('03.06.2026');
     });
 });

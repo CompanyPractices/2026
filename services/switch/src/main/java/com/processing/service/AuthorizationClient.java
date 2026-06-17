@@ -1,8 +1,9 @@
 package com.processing.service;
 
-
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.authorization.RollbackRequest;
+import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.config.SwitchProperties;
 import com.processing.exception.AuthorizationException;
 import io.github.resilience4j.retry.Retry;
@@ -12,18 +13,14 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-
 @Service
 public class AuthorizationClient {
 
-
     private static final Logger LOG = LoggerFactory.getLogger(AuthorizationClient.class);
-
 
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
     private final Retry authorizationRetry;
-
 
     public AuthorizationClient(
             SwitchProperties switchProperties,
@@ -33,7 +30,6 @@ public class AuthorizationClient {
         this.restClient = restClient;
         this.authorizationRetry = authorizationRetry;
     }
-
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         int maxAttempts = switchProperties.retry().maxAttempts();
@@ -45,13 +41,12 @@ public class AuthorizationClient {
         }
     }
 
-
     private AuthorizationResponse callAuthorize(AuthorizationRequest request) {
         AuthorizationResponse response = restClient.post()
                 .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
                 .body(request)
                 .retrieve()
-                .onStatus(status -> status.is4xxClientError(), (req, res) -> { })
+                .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> { })
                 .body(AuthorizationResponse.class);
         if (response != null
                 && (AuthorizationResponse.STATUS_APPROVED.equals(response.status())
@@ -61,21 +56,26 @@ public class AuthorizationClient {
         throw new IllegalStateException("Invalid response from Authorization");
     }
 
-
-    public void reverse(AuthorizationRequest original, String rrn) {
-        AuthorizationRequest reversal = original.forReversal(rrn);
+    public RollbackResponse rollback(AuthorizationRequest original, String rrn) {
+        RollbackRequest request = new RollbackRequest(rrn, original.pan(), original.amount());
         try {
-            restClient.post()
-                    .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
-                    .body(reversal)
+            RollbackResponse response = restClient.post()
+                    .uri(switchProperties.authorizationUrl() + "/api/internal/rollback")
+                    .body(request)
                     .retrieve()
-                    .toBodilessEntity();
-            LOG.info("Reversal sent for STAN={} rrn={}", original.stan(), rrn);
+                    .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> { })
+                    .body(RollbackResponse.class);
+            if (response != null
+                    && (RollbackResponse.STATUS_APPROVED.equals(response.status())
+                    || RollbackResponse.STATUS_DECLINED.equals(response.status()))) {
+                return response;
+            }
+            throw new IllegalStateException("Invalid rollback response from Authorization");
         } catch (Exception e) {
-            LOG.error("Reversal failed for STAN={} rrn={}", original.stan(), rrn, e);
+            LOG.error("Rollback failed for STAN={} rrn={}", original.stan(), rrn, e);
+            return null;
         }
     }
-
 
     public String checkHealth() {
         try {

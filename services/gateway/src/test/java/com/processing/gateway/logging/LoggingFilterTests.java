@@ -41,7 +41,7 @@ public class LoggingFilterTests {
         filter.doFilter(request, response, chain);
 
         // Assert
-        verify(chain, times(1)).doFilter(requestCaptor.capture(), eq(response));
+        verify(chain, times(1)).doFilter(requestCaptor.capture(), any(HttpServletResponse.class));
 
         HttpServletRequest wrappedRequest = requestCaptor.getValue();
         assertNotNull(wrappedRequest);

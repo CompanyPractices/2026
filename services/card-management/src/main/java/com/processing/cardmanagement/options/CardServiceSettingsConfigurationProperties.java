@@ -18,5 +18,8 @@ public record CardServiceSettingsConfigurationProperties(
     String issuerId,
 
     @Positive
-    int cardValidityPeriod
+    int cardValidityPeriod,
+
+    @Positive
+    int maxPageLimit
 ) implements CardServiceSettings {}

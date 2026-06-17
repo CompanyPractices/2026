@@ -27,7 +27,7 @@ public class JavaPersistenceAdapter implements CardRepository {
 
     @Override
     public List<Card> findCards(
-        long limit,
+        int limit,
         long offset,
         @Nullable CardStatus status,
         @Nullable String bin,

@@ -23,7 +23,7 @@ export function Filters({ issuers, mccNames, onSearch }: FilterProps) {
 
     const inputBaseClass = "border border-zinc-300 dark:border-sage-200 rounded-lg bg-zinc-300 dark:bg-sage-400 text-zinc-900 dark:text-sage-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-sage-50 focus:border-transparent cursor-pointer p-2 w-full text-left text-sm transition-all";
     const labelClass = "text-base font-bold mb-1 text-zinc-900 dark:text-sage-50";
-    const buttonClass = "text-sm md:text-lg font-bold drop-shadow-lg bg-emerald-400 dark:bg-sage-200 rounded-lg dark:text-sage-50 px-4 py-1 transition-colors hover:bg-emerald-500 dark:hover:bg-sage-300";
+    const buttonClass = "text-sm md:text-lg font-semibold drop-shadow-lg bg-emerald-400 dark:bg-sage-200 rounded-lg dark:text-sage-50 px-4 py-1 transition-colors hover:bg-emerald-500 hover:text-zinc-200 dark:hover:bg-sage-100";
 
     return (
         <form onSubmit={filterSubmit} className="font-mono">

@@ -1,7 +1,6 @@
 package com.processing.cardmanagement.configuration;
 
-import com.processing.cardmanagement.exceptions.CardNotFoundException;
-import com.processing.cardmanagement.exceptions.InsufficientFundsException;
+import com.processing.cardmanagement.exceptions.*;
 import com.processing.common.dto.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CardNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleCardNotFoundException(
-        CardNotFoundException ex
+            CardNotFoundException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
@@ -34,19 +33,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleConstraintViolationException(
-        ConstraintViolationException ex
+            ConstraintViolationException ex
     ) {
         var violation = ex.getConstraintViolations()
-            .stream()
-            .findFirst();
+                .stream()
+                .findFirst();
 
         if (violation.isEmpty()) {
             log.warn(ex.getMessage());
         } else {
             log.warn(
-                "Message: {}, Invalid value: {}",
-                ex.getMessage(),
-                violation.get().getInvalidValue()
+                    "Message: {}, Invalid value: {}",
+                    ex.getMessage(),
+                    violation.get().getInvalidValue()
             );
         }
 
@@ -56,41 +55,41 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleMethodArgumentNotValidException(
-        MethodArgumentNotValidException ex
+            MethodArgumentNotValidException ex
     ) {
         var fieldError = ex.getBindingResult()
-            .getFieldErrors()
-            .stream()
-            .findFirst();
+                .getFieldErrors()
+                .stream()
+                .findFirst();
 
         var errorMessage = fieldError
-            .map(FieldError::getDefaultMessage)
-            .orElse("Constraint violation");
+                .map(FieldError::getDefaultMessage)
+                .orElse("Constraint violation");
 
         if (fieldError.isEmpty()) {
             log.warn(ex.getMessage());
         } else {
             log.warn(
-                "Message: {}, Field: {}, Invalid value: {}",
-                fieldError.get().getDefaultMessage(),
-                fieldError.get().getField(),
-                fieldError.get().getRejectedValue()
+                    "Message: {}, Field: {}, Invalid value: {}",
+                    fieldError.get().getDefaultMessage(),
+                    fieldError.get().getField(),
+                    fieldError.get().getRejectedValue()
             );
         }
 
         return new ErrorResponse(
-            ex.getClass().getSimpleName(),
-            errorMessage,
-            LocalDateTime.now().toString(),
-            serviceName,
-            null
+                ex.getClass().getSimpleName(),
+                errorMessage,
+                LocalDateTime.now().toString(),
+                serviceName,
+                null
         );
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleIllegalArgumentException(
-        IllegalArgumentException ex
+            IllegalArgumentException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
@@ -99,7 +98,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleIllegalStateException(
-        IllegalStateException ex
+            IllegalStateException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
@@ -108,7 +107,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InsufficientFundsException.class)
     @ResponseStatus(HttpStatus.PAYMENT_REQUIRED)
     public ErrorResponse handleInsufficientFundsException(
-        InsufficientFundsException ex
+            InsufficientFundsException ex
+    ) {
+        log.warn(ex.getMessage());
+        return errorResponseFromException(ex);
+    }
+
+    @ExceptionHandler(TooLargeLimitException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public ErrorResponse handleTooLargeLimitException(
+            TooLargeLimitException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
@@ -117,19 +125,46 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleException(
-        Exception ex
+            Exception ex
     ) {
         log.error("Critical error: {}", ex.getMessage(), ex);
         return errorResponseFromException(ex);
     }
 
+    @ExceptionHandler(BinNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleBinNotFoundException(
+            BinNotFoundException ex
+    ) {
+        log.warn(ex.getMessage());
+        return errorResponseFromException(ex);
+    }
+
+    @ExceptionHandler(BinAlreadyExistException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleBinAlreadyExistException(
+            BinAlreadyExistException ex
+    ) {
+        log.warn(ex.getMessage());
+        return errorResponseFromException(ex);
+    }
+
+    @ExceptionHandler(CardGenerationLimitException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleCardGenerationLimitException(
+            CardGenerationLimitException ex
+    ) {
+        log.warn(ex.getMessage());
+        return errorResponseFromException(ex);
+    }
+
     private ErrorResponse errorResponseFromException(Exception ex) {
         return new ErrorResponse(
-            ex.getClass().getSimpleName(),
-            ex.getMessage(),
-            LocalDateTime.now().toString(),
-            serviceName,
-            null
+                ex.getClass().getSimpleName(),
+                ex.getMessage(),
+                LocalDateTime.now().toString(),
+                serviceName,
+                null
         );
     }
 }
