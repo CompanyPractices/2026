@@ -35,10 +35,10 @@ export function TransactionModal({ transaction, onClose }: TransactionModalProps
 
     return (
         <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50" onClick={onClose}>
-            <div className="bg-white dark:bg-sage-500 rounded-2xl p-6 shadow-2xl max-w-md w-full mx-4 relative"
+            <div className="bg-white dark:bg-sage-500 rounded-xl p-4 md:p-6 shadow-2xl max-w-md w-full mx-4 relative"
                  onClick={(e) => e.stopPropagation()} >
                 <h3 className="font-bold  text-xl text-gray-600 dark:text-sage-100 m-5 text-center font-mono "> Детали транзакции </h3>
-                <div className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3">
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 md:gap-x-6 gap-y-2 md:gap-y-3">
                     {rows.map((row) => (
                         <Fragment key={row.label}>
                             <dt className="font-semibold text-gray-600 dark:text-sage-100 text-left whitespace-nowrap pl-5 font-mono">
@@ -53,7 +53,7 @@ export function TransactionModal({ transaction, onClose }: TransactionModalProps
 
                 <button
                     onClick={onClose}
-                    className="mt-6 w-full py-2 bg-emerald-600 dark:bg-sage-300 hover:bg-emerald-700 dark:hover:bg-sage-200 text-white dark:text-sage-50 rounded-lg transition-colors"
+                    className="mt-6 w-full py-2 bg-emerald-600 dark:bg-sage-300 hover:bg-emerald-700 dark:hover:bg-sage-200 text-white dark:text-sage-50 rounded-xl transition-colors"
                 >
                     ✕ Закрыть
                 </button>

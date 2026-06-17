@@ -18,6 +18,7 @@ public abstract class E2EBaseTest {
     protected static final String TERMINAL_SIM_URL = env("TERMINAL_SIM_URL", "http://localhost:8085");
     protected static final String MERCHANT_SIM_URL = env("MERCHANT_SIM_URL", "http://localhost:8086");
     protected static final String LOGGER_URL = env("LOGGER_URL", "http://localhost:8088");
+    protected static final String DASHBOARD_URL = env("DASHBOARD_URL", "http://localhost:3000");
 
 
     public static final String DB_HOST = env("DB_HOST", "localhost");
@@ -58,6 +59,9 @@ public abstract class E2EBaseTest {
         return value != null && !value.isBlank() ? value : defaultValue;
     }
 
+    protected void assertGetStatus(String baseUrl, String path, int expectedStatus) {
+        httpUtils.assertGetStatus(baseUrl, path, expectedStatus);
+    }
     protected JsonNode httpPostRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
         return httpUtils.httpPostRaw(baseUrl, path, jsonBody, expectedStatus);
     }

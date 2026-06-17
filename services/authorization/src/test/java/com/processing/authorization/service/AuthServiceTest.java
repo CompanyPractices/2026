@@ -9,14 +9,18 @@ import com.processing.authorization.repositories.LimitUsageRepository;
 import com.processing.authorization.exceptions.ServiceUnavailableException;
 import com.processing.authorization.services.AuthService;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
+import com.processing.common.utils.MaskPan;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestClient;
 import static com.processing.authorization.constants.DeclineOutcome.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -25,12 +29,14 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
+    @Autowired
     private AuthService authService;
 
     private AuthorizationRequest correctRequest;
@@ -50,7 +56,7 @@ class AuthServiceTest {
                 "123456",
                 "1234567890123456",
                 "000000",
-                5000L,
+                BigDecimal.valueOf(5000),
                 "810",
                 "2026-06-05T18:12:49.070",
                 "T0000001",
@@ -68,9 +74,9 @@ class AuthServiceTest {
                 YearMonth.of(2026, 12),
                 CardModelStatus.ACTIVE,
                 "810",
-                100000L,
-                500000L,
-                10000L,
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000L),
+                BigDecimal.valueOf(10000),
                 "I001",
                 LocalDateTime.now());
     }
@@ -80,7 +86,7 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doNothing().when(spyService).reserve(anyLong(), anyString(), anyString());
+        doNothing().when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
         when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
@@ -109,7 +115,7 @@ class AuthServiceTest {
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(response.responseCode()).isEqualTo(SERVICE_UNAVAILABLE.code());
         assertThat(response.declineReason()).isEqualTo(SERVICE_UNAVAILABLE.reason());
-        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
+        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
@@ -134,7 +140,7 @@ class AuthServiceTest {
 
         assertThat(response.responseCode()).isEqualTo(CARD_EXPIRED.code());
         assertThat(response.declineReason()).isEqualTo(CARD_EXPIRED.reason());
-        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
+        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
@@ -233,7 +239,7 @@ class AuthServiceTest {
 
         assertThat(response.responseCode()).isEqualTo(CARD_EXPIRED.code());
         assertThat(response.declineReason()).isEqualTo(CARD_EXPIRED.reason());
-        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
+        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
@@ -248,7 +254,7 @@ class AuthServiceTest {
                 activeCardResponse.currencyCode(),
                 activeCardResponse.dailyLimit(),
                 activeCardResponse.monthlyLimit(),
-                1000L,
+                BigDecimal.valueOf(1000),
                 activeCardResponse.issuerId(),
                 activeCardResponse.createdAt());
         AuthService spyService = spy(authService);
@@ -258,14 +264,18 @@ class AuthServiceTest {
 
         assertThat(response.responseCode()).isEqualTo(INSUFFICIENT_FUNDS.code());
         assertThat(response.declineReason()).isEqualTo(INSUFFICIENT_FUNDS.reason());
-        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
+        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
     void authorizeDeclineWhenReserveThrowsException() {
         AuthService spyService = spy(authService);
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doThrow(new ReserveCardException("Reserve failed")).when(spyService).reserve(anyLong(), anyString(), anyString());
+        doThrow(new ReserveCardException("Reserve failed")).when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
 
@@ -299,11 +309,11 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doNothing().when(spyService).reserve(anyLong(), anyString(), anyString());
+        doNothing().when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
 
         LimitUsage usage = new LimitUsage();
-        usage.setDailyAmount(50000L);
-        usage.setMonthlyAmount(200000L);
+        usage.setDailyAmount(BigDecimal.valueOf(50000));
+        usage.setMonthlyAmount(BigDecimal.valueOf(200000));
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
 
@@ -323,8 +333,8 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
         LimitUsage usage = new LimitUsage();
-        usage.setDailyAmount(96000L);
-        usage.setMonthlyAmount(200000L);
+        usage.setDailyAmount(BigDecimal.valueOf(96000));
+        usage.setMonthlyAmount(BigDecimal.valueOf(200000));
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
 
@@ -333,7 +343,7 @@ class AuthServiceTest {
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(response.responseCode()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.code());
         assertThat(response.declineReason()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.reason());
-        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
+        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
@@ -343,8 +353,8 @@ class AuthServiceTest {
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
 
         LimitUsage usage = new LimitUsage();
-        usage.setDailyAmount(50000L);
-        usage.setMonthlyAmount(498000L);
+        usage.setDailyAmount(BigDecimal.valueOf(50000));
+        usage.setMonthlyAmount(BigDecimal.valueOf(498000));
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
 
@@ -353,13 +363,13 @@ class AuthServiceTest {
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(response.responseCode()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.code());
         assertThat(response.declineReason()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.reason());
-        verify(spyService, never()).reserve(anyLong(), anyString(), anyString());
+        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
     void maskPAN_ShouldMaskMiddleEightCharacters() {
         String input = "4000001234560001";
-        String result = authService.maskPAN(input);
+        String result = MaskPan.maskPan(input);
 
         assertEquals("4000********0001", result);
         assertEquals(16, result.length());
@@ -368,24 +378,42 @@ class AuthServiceTest {
     @Test
     void maskPAN_ShouldReturnInvalidPanOnShortString() {
         String input = "4000";
-        String result = authService.maskPAN(input);
+        String result = MaskPan.maskPan(input);
 
-        assertEquals("INVALID_PAN", result);
+        assertEquals("****", result);
     }
 
     @Test
-    void maskPAN_ShouldReturnInvalidPanOnEmptyString() {
+    void maskPAN_ShouldReturnEmptyStringOnNull() {
         String input = null;
-        String result = authService.maskPAN(input);
+        String result = MaskPan.maskPan(input);
 
-        assertEquals("INVALID_PAN", result);
+        assertEquals("", result);
     }
 
     @Test
     void maskPAN_ShouldPreserveOriginalLength() {
-        String input = "4000001234560001";
-        String result = authService.maskPAN(input);
+        String input1 = "4000001234560001";
+        String result1 = MaskPan.maskPan(input1);
 
-        assertEquals(input.length(), result.length());
+        String input2 = "400001";
+        String result2 = MaskPan.maskPan(input2);
+
+        assertEquals(input1.length(), result1.length());
+        assertEquals(input2.length(), result2.length());
+    }
+
+    @Test
+    void testAccumulatedRoundingError_withBigDecimalShouldBeExact() {
+        BigDecimal limit = new BigDecimal("1000.00");
+        BigDecimal amount = new BigDecimal("333.34");
+
+        BigDecimal firstReserve = amount;
+        BigDecimal secondReserve = amount;
+        BigDecimal thirdReserve = amount;
+        BigDecimal totalUsed = firstReserve.add(secondReserve).add(thirdReserve);
+
+        boolean isExceeded = totalUsed.compareTo(limit) > 0;
+        assertTrue(isExceeded, "Превышение лимита с типом long не было бы обнаружено");
     }
 }

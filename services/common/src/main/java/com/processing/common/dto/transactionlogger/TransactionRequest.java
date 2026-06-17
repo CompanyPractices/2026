@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -40,10 +41,10 @@ public record TransactionRequest(
         @Size(max = 6)
         String processingCode,
 
-        @Schema(description = "Сумма транзакции в минимальных единицах валюты")
+        @Schema(description = "Сумма транзакции")
         @NotNull
         @Positive
-        Long amount,
+        BigDecimal amount,
 
         @Schema(description = "Числовой код валюты по ISO 4217")
         @NotBlank
@@ -78,8 +79,8 @@ public record TransactionRequest(
         @Size(max = 10)
         String issuerId,
 
-        @Schema(description = "Комиссия эквайринга в минимальных единицах валюты")
-        Long acquiringFee,
+        @Schema(description = "Комиссия эквайринга")
+        BigDecimal acquiringFee,
 
         @Schema(description = "Статус результата авторизации")
         @NotNull

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -50,11 +51,22 @@ public class CardGeneratorService {
             String bin = bins.get(i % bins.size());
 
             String cardholderName = faker.name().fullName().toUpperCase();
-            int balance = ThreadLocalRandom.current()
-                    .nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
-            int dailyLimit = ThreadLocalRandom.current()
-                    .nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
-            int monthlyLimit = dailyLimit * DAYS_IN_MONTH;
+
+            BigDecimal balance = BigDecimal.valueOf(
+                    ThreadLocalRandom.current().nextLong(
+                            generatorOptions.minBalance().longValue(),
+                            generatorOptions.maxBalance().longValue()
+                    )
+            );
+            BigDecimal dailyLimit = BigDecimal.valueOf(
+                    ThreadLocalRandom.current().nextLong(
+                            generatorOptions.minDailyLimit().longValue(),
+                            generatorOptions.maxDailyLimit().longValue()
+                    )
+            );
+            BigDecimal monthlyLimit = BigDecimal.valueOf(
+                    dailyLimit.longValue() * 30L
+            );
 
 
             CardDraft card = new CardDraft(

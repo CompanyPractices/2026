@@ -5,13 +5,8 @@ import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
-import com.processing.cardmanagement.repositories.CardJpaRepository;
-import com.processing.cardmanagement.repositories.CardRepository;
-import com.processing.cardmanagement.repositories.CardRepositoryPersistenceAdapter;
-import com.processing.cardmanagement.services.CardService;
-import com.processing.cardmanagement.services.CardServiceImpl;
-import com.processing.cardmanagement.services.LuhnValidator;
-import com.processing.cardmanagement.services.PanGenerator;
+import com.processing.cardmanagement.repositories.*;
+import com.processing.cardmanagement.services.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,8 +22,8 @@ public class AppConfig {
 
     @Bean
     public CardRepository cardRepository(
-        CardPersistenceMapper persistenceMapper,
-        CardJpaRepository jpaCardRepository
+            CardPersistenceMapper persistenceMapper,
+            CardJpaRepository jpaCardRepository
     ) {
         return new CardRepositoryPersistenceAdapter(persistenceMapper, jpaCardRepository);
     }
@@ -39,19 +34,36 @@ public class AppConfig {
     }
 
     @Bean
+    public BinIssuerRepository binIssuerRepository(BinIssuerJpaRepository jpaRepository) {
+        return new BinIssuerJpaAdapter(jpaRepository);
+    }
+
+    @Bean
+    public BinIssuerService binIssuerService(BinIssuerRepository repository) {
+        return new BinIssuerServiceImpl(repository);
+    }
+
+    @Bean
+    public BinIssuerInitializer binIssuerInitializer(BinIssuerRepository repository) {
+        return new BinIssuerInitializer(repository);
+    }
+
+    @Bean
     public CardService cardService(
-        CardRepository cardRepository,
-        CardServiceSettings serviceConfigurationProperties,
-        CardServiceDefaults defaultsConfigurationProperties,
-        PanGenerator panGenerator,
-        CardEventNotifier cardEventNotifier
+            CardRepository cardRepository,
+            CardServiceSettings serviceConfigurationProperties,
+            CardServiceDefaults defaultsConfigurationProperties,
+            PanGenerator panGenerator,
+            CardEventNotifier cardEventNotifier,
+            BinIssuerService binIssuerService
     ) {
         return new CardServiceImpl(
-            cardRepository,
-            serviceConfigurationProperties,
-            defaultsConfigurationProperties,
-            panGenerator,
-            cardEventNotifier
+                cardRepository,
+                serviceConfigurationProperties,
+                defaultsConfigurationProperties,
+                panGenerator,
+                cardEventNotifier,
+                binIssuerService
         );
     }
 }

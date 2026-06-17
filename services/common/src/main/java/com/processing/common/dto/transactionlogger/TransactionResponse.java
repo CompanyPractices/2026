@@ -2,6 +2,7 @@ package com.processing.common.dto.transactionlogger;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -20,7 +21,7 @@ public record TransactionResponse(
         @Schema(description = "Код обработки транзакции")
         String processingCode,
         @Schema(description = "Сумма транзакции в минимальных единицах валюты")
-        Long amount,
+        BigDecimal amount,
         @Schema(description = "Числовой код валюты по ISO 4217")
         String currencyCode,
         @Schema(description = "Идентификатор терминала")
@@ -36,7 +37,7 @@ public record TransactionResponse(
         @Schema(description = "Идентификатор эмитента")
         String issuerId,
         @Schema(description = "Комиссия эквайринга в минимальных единицах валюты")
-        Long acquiringFee,
+        BigDecimal acquiringFee,
         @Schema(description = "Статус результата авторизации")
         TransactionStatus status,
         @Schema(description = "Причина отказа для отклоненной транзакции")

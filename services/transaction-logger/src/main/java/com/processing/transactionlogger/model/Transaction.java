@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -49,9 +50,7 @@ public class Transaction {
 
     /** Сумма транзакции в копейках/центах (например, 150 руб. → 15000) */
     @Column(nullable = false)
-    private Long amount;
-
-    /** Код валюты (например, {@code 643} — рубль) */
+    private BigDecimal amount;
     @Column(nullable = false, length = 3)
     private String currencyCode;
 
@@ -75,7 +74,7 @@ public class Transaction {
     private String issuerId;
 
     /** Комиссия эквайера в минорных единицах валюты */
-    private Long acquiringFee;
+    private BigDecimal acquiringFee;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -97,5 +96,6 @@ public class Transaction {
     private Instant transmissionDateTime;
 
     /** Время сохранения записи в БД логгера */
+    @Column(nullable = false)
     private Instant createdAt;
 }

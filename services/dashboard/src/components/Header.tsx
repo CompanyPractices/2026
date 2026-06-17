@@ -39,9 +39,9 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
     const isDark = theme === 'dark';
 
     return (
-        <header className="relative flex flex-col items-center font-mono m-5 w-full">
+        <header className="relative flex flex-col items-center font-mono m-4 md:m-5 w-full">
 
-            <div className="absolute top-0 left-0 ml-8 mt-3 flex items-center gap-2">
+            <div className="absolute top-0 left-0 ml-3 md:ml-8 mt-2 md:mt-3 flex items-center gap-2">
                 <label className="group flex items-center gap-2 cursor-pointer select-none">
                     <div className="relative">
                         <input
@@ -67,7 +67,7 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
                 </label>
             </div>
 
-            <div className="absolute top-0 right-0 mr-8 mt-3 flex items-center gap-2">
+            <div className="absolute top-0 right-0 mr-3 md:mr-8 mt-2 md:mt-3 flex items-center gap-2">
                 <span
                     className={`w-7 h-7 rounded-full drop-shadow-lg ${
                         isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500 animate-pulse'
@@ -76,7 +76,7 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
                 />
             </div>
 
-            <h1 className="text-5xl font-semibold drop-shadow-lg mb-6 dark:text-sage-50">Dashboard</h1>
+            <h1 className="text-3xl md:text-5xl font-semibold drop-shadow-lg mb-6 dark:text-sage-50">Dashboard</h1>
             {content}
 
         </header>

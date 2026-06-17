@@ -2,6 +2,7 @@ package com.processing.cardmanagement.models;
 
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.Objects;
@@ -31,9 +32,9 @@ public record Card(
     YearMonth expiryDate,
     CardStatus status,
     String currencyCode,
-    long dailyLimit,
-    long monthlyLimit,
-    long availableBalance,
+    BigDecimal dailyLimit,
+    BigDecimal monthlyLimit,
+    BigDecimal availableBalance,
     String issuerId,
     LocalDateTime createdAt
 ) {
@@ -46,9 +47,9 @@ public record Card(
         YearMonth expiryDate,
         CardStatus status,
         String currencyCode,
-        long dailyLimit,
-        long monthlyLimit,
-        long availableBalance,
+        BigDecimal dailyLimit,
+        BigDecimal monthlyLimit,
+        BigDecimal availableBalance,
         String issuerId
     ) {
         this(
@@ -77,8 +78,8 @@ public record Card(
         if (!Objects.equals(this.pan, reservation.pan())) {
             throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
         }
-        long amount = reservation.reservationAmount();
-        if (this.availableBalance < amount) {
+        BigDecimal amount = reservation.reservationAmount();
+        if (this.availableBalance.compareTo(amount) < 0) {
             throw new InsufficientFundsException();
         }
 
@@ -92,7 +93,7 @@ public record Card(
             currencyCode,
             dailyLimit,
             monthlyLimit,
-            availableBalance - amount,
+            availableBalance.subtract(amount),
             issuerId,
             createdAt
         );
@@ -136,14 +137,14 @@ public record Card(
      */
     public Card withData(
         CardStatus status,
-        long dailyLimit,
-        long monthlyLimit,
-        long availableBalance
+        BigDecimal dailyLimit,
+        BigDecimal monthlyLimit,
+        BigDecimal availableBalance
     ) {
-        if (dailyLimit < 0 || monthlyLimit < 0) {
+        if (dailyLimit.compareTo(BigDecimal.ZERO) < 0 || monthlyLimit.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Limit can not contain negative values");
         }
-        if (dailyLimit > monthlyLimit) {
+        if (monthlyLimit.compareTo(dailyLimit) < 0) {
             throw new IllegalArgumentException("Daily limit can not be larger than monthly limit");
         }
 

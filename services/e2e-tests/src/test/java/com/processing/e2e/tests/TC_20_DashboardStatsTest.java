@@ -10,6 +10,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,13 +35,13 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
     private static final long EXPECTED_DECLINED_COUNT = TEST_TRANSACTION_COUNT - EXPECTED_APPROVED_COUNT;
     private static final long START_AMOUNT = 5_000L;
     private static final long AMOUNT_STEP = 5_000L;
-    private static final long INITIAL_BALANCE = IntStream.range(0, EXPECTED_APPROVED_COUNT)
+    private static final BigDecimal INITIAL_BALANCE = BigDecimal.valueOf(IntStream.range(0, EXPECTED_APPROVED_COUNT)
             .mapToLong(TC_20_DashboardStatsTest::transactionAmount)
-            .sum();
-    private static final long EXPECTED_TOTAL_AMOUNT = IntStream.range(0, TEST_TRANSACTION_COUNT)
+            .sum());
+    private static final BigDecimal EXPECTED_TOTAL_AMOUNT = BigDecimal.valueOf(IntStream.range(0, TEST_TRANSACTION_COUNT)
             .mapToLong(TC_20_DashboardStatsTest::transactionAmount)
-            .sum();
-    private static final long EXPECTED_AVERAGE_AMOUNT = EXPECTED_TOTAL_AMOUNT / TEST_TRANSACTION_COUNT;
+            .sum());
+    private static final BigDecimal EXPECTED_AVERAGE_AMOUNT = EXPECTED_TOTAL_AMOUNT.divide(BigDecimal.valueOf(TEST_TRANSACTION_COUNT));
     private static final double EXPECTED_APPROVAL_RATE = (double) EXPECTED_APPROVED_COUNT / TEST_TRANSACTION_COUNT;
 
     private final DBUtils dbUtils = new DBUtils();
@@ -53,7 +54,7 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
 
         for (int i = 0; i < TEST_STANS.length; i++) {
             String expectedStatus = i < EXPECTED_APPROVED_COUNT ? "APPROVED" : "DECLINED";
-            sendTransaction(testPan, transactionAmount(i), TEST_STANS[i], expectedStatus);
+            sendTransaction(testPan, BigDecimal.valueOf(transactionAmount(i)), TEST_STANS[i], expectedStatus);
         }
     }
 
@@ -153,20 +154,20 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
         return START_AMOUNT + AMOUNT_STEP * index;
     }
 
-    private String createCard(String cardholderName, long initialBalance) {
+    private String createCard(String cardholderName, BigDecimal initialBalance) {
         CreateCardRequest request = new CreateCardRequest(
                 "400000",
                 cardholderName,
                 "643",
-                1_000_000L,
-                1_000_000L,
+                BigDecimal.valueOf(1_000_000L),
+                BigDecimal.valueOf(1_000_000L),
                 initialBalance
         );
 
         return httpPost(GATEWAY_URL, "/api/cards", request, 201).path("pan").asText();
     }
 
-    private void sendTransaction(String pan, long amount, String stan, String expectedStatus) throws Exception {
+    private void sendTransaction(String pan, BigDecimal amount, String stan, String expectedStatus) throws Exception {
         AuthorizationRequest request = AuthorizationRequest.builder()
                 .mti("0100")
                 .stan(stan)

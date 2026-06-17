@@ -11,6 +11,7 @@ import com.processing.terminalsimulator.util.DateTimeGenerator;
 import com.processing.terminalsimulator.util.StanGenerator;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +34,13 @@ public class TransactionFactory {
         }
     }
 
-    public AuthorizationRequest create(TransactionType transactionType, PartofDay partOfDay, CardModel card) {
+    public AuthorizationRequest create(TransactionType transactionType, PartofDay partOfDay, CardModel card,
+                                       String terminalId) {
         TransactionStrategy transactionStrategy = strategies.get(transactionType);
-        long amount = transactionStrategy.calculateAmount(card);
+        BigDecimal amount = transactionStrategy.calculateAmount(card);
         String mcc = transactionStrategy.getMcc();
         String pan = transactionStrategy.isInvalidPan() ? getInvalidPan(card) : card.pan();
-        String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
+        String stan = stanGenerator.getNextStan(terminalId);
         TerminalType[] types = TerminalType.values();
         String terminalType = types[ThreadLocalRandom.current().nextInt(types.length)].name();
         String merchantId = String.format("MERCH%10d", ThreadLocalRandom.current().nextLong(1, 10_000_000_000L));
@@ -46,7 +48,7 @@ public class TransactionFactory {
 
         return AuthorizationRequest.builder()
                 .mti("0100")
-                .stan(stanGenerator.getNextStan())
+                .stan(stan)
                 .pan(pan)
                 .processingCode("000000")
                 .amount(amount)

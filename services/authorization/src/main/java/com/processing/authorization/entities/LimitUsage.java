@@ -5,6 +5,7 @@ import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.time.LocalDate;
@@ -30,11 +31,11 @@ public class LimitUsage {
 
     @Column(name = "daily_amount", nullable = false)
     @ColumnDefault("0")
-    private Long dailyAmount;
+    private BigDecimal dailyAmount;
 
     @Column(name = "monthly_amount", nullable = false)
     @ColumnDefault("0")
-    private Long monthlyAmount;
+    private BigDecimal monthlyAmount;
 
     @Column(name = "updated_at")
     @ColumnDefault("CURRENT_TIMESTAMP")
