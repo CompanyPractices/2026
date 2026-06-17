@@ -1,6 +1,8 @@
 package com.processing.merchantacquirer.exception;
 
 import com.processing.common.dto.ErrorResponse;
+
+import java.time.Instant;
 import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +21,7 @@ public class GlobalExceptionHandler {
             new ErrorResponse(
                 "External Service Error",
                 ex.getMessage(),
-                String.valueOf(LocalDateTime.now()),
+                Instant.now(),
                 ex.getServiceName(),
                 ex.getRetryAfterMs()));
   }
@@ -31,7 +33,7 @@ public class GlobalExceptionHandler {
             new ErrorResponse(
                 "Invalid request",
                 ex.getMessage(),
-                String.valueOf(LocalDateTime.now()),
+                Instant.now(),
                 "Merchant acquirer simulator",
                 "5"));
   }
@@ -43,7 +45,7 @@ public class GlobalExceptionHandler {
             new ErrorResponse(
                 "Invalid request",
                 ex.getMessage(),
-                String.valueOf(LocalDateTime.now()),
+                Instant.now(),
                 "Merchant acquirer simulator",
                 "5"));
   }
@@ -55,7 +57,7 @@ public class GlobalExceptionHandler {
             new ErrorResponse(
                 "Invalid request",
                 ex.getMessage(),
-                String.valueOf(LocalDateTime.now()),
+                Instant.now(),
                 "Merchant acquirer simulator",
                 "5"));
   }
@@ -67,7 +69,7 @@ public class GlobalExceptionHandler {
                     new ErrorResponse(
                             "Request processing failed",
                             ex.getMessage(),
-                            String.valueOf(LocalDateTime.now()),
+                            Instant.now(),
                             "Merchant acquirer simulator",
                             "5"));
   }
