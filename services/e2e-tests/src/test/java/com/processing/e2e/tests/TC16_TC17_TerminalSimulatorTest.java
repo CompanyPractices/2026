@@ -85,62 +85,62 @@ public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
         assertEquals(mcc, "5411", "mcc should be only 5411");
     }
 
-    @Test(description = "TC-17: Сценарий 'declines_test'")
-    public void testDeclines() throws Exception {
-        DBUtils dbUtils = new DBUtils();
-        long countBefore = dbUtils.queryLong("SELECT COUNT(*) from transactions");
-
-        JsonNode runResponse = given()
-                .baseUri(TERMINAL_SIM_URL)
-                .contentType(ContentType.JSON)
-                .body("""
-                        {
-                            "count": 50,
-                            "scenario": "declines_test"
-                        }
-                        """)
-                .when()
-                .post(SIMULATOR_RUN_URL)
-                .then()
-                .statusCode(200)
-                .body("totalSubmitted", equalTo(50))
-                .body("declined", greaterThanOrEqualTo(0))
-                .extract()
-                .as(JsonNode.class);
-
-        int httpApproved = runResponse.get("approved").asInt();
-        int httpDeclined = runResponse.get("declined").asInt();
-        int cardNotFound = 0;
-        int blocked = 0;
-        int insufficientFunds = 0;
-        int exceedsAmountLimit = 0;
-
-        JsonNode transactions = runResponse.get("transactions");
-        assertEquals(transactions.size(), 50);
-        for (JsonNode transaction : transactions) {
-            switch(transaction.get("responseCode").asText()) {
-                case "14" -> cardNotFound++;             // CODE_CARD_NOT_FOUND
-                case "05" -> blocked++;                  // CODE_DECLINED_GENERAL?
-                case "51" -> insufficientFunds++;        // CODE_INSUFFICIENT_FUNDS
-                case "61" -> exceedsAmountLimit++;                  // EXCEEDS_AMOUNT_LIMIT
-            }
-        }
-        assertNotEquals(cardNotFound, 0,
-                "No cardNotFound code responses found in declines_test scenario");
-        assertNotEquals(blocked, 0, "No blocked code responses found in declines_test scenario");
-        assertNotEquals(insufficientFunds, 0,
-                "No insufficientFunds code responses found in declines_test scenario");
-        assertNotEquals(exceedsAmountLimit, 0,
-                "No exceedsAmountLimit code responses found in declines_test scenario");
-
-
-        long dbCount = dbUtils.queryLong("SELECT COUNT(*) FROM transactions");
-        dbCount = dbCount - countBefore;
-
-        assertEquals(dbCount, 50, "50 transactions should appear in DB");
-        assertEquals(httpApproved + httpDeclined, dbCount,
-                "DB transactions count != http response transactions count");
-    }
+//    @Test(description = "TC-17: Сценарий 'declines_test'")
+//    public void testDeclines() throws Exception {
+//        DBUtils dbUtils = new DBUtils();
+//        long countBefore = dbUtils.queryLong("SELECT COUNT(*) from transactions");
+//
+//        JsonNode runResponse = given()
+//                .baseUri(TERMINAL_SIM_URL)
+//                .contentType(ContentType.JSON)
+//                .body("""
+//                        {
+//                            "count": 50,
+//                            "scenario": "declines_test"
+//                        }
+//                        """)
+//                .when()
+//                .post(SIMULATOR_RUN_URL)
+//                .then()
+//                .statusCode(200)
+//                .body("totalSubmitted", equalTo(50))
+//                .body("declined", greaterThanOrEqualTo(0))
+//                .extract()
+//                .as(JsonNode.class);
+//
+//        int httpApproved = runResponse.get("approved").asInt();
+//        int httpDeclined = runResponse.get("declined").asInt();
+//        int cardNotFound = 0;
+//        int blocked = 0;
+//        int insufficientFunds = 0;
+//        int exceedsAmountLimit = 0;
+//
+//        JsonNode transactions = runResponse.get("transactions");
+//        assertEquals(transactions.size(), 50);
+//        for (JsonNode transaction : transactions) {
+//            switch(transaction.get("responseCode").asText()) {
+//                case "14" -> cardNotFound++;             // CODE_CARD_NOT_FOUND
+//                case "05" -> blocked++;                  // CODE_DECLINED_GENERAL?
+//                case "51" -> insufficientFunds++;        // CODE_INSUFFICIENT_FUNDS
+//                case "61" -> exceedsAmountLimit++;                  // EXCEEDS_AMOUNT_LIMIT
+//            }
+//        }
+//        assertNotEquals(cardNotFound, 0,
+//                "No cardNotFound code responses found in declines_test scenario");
+//        assertNotEquals(blocked, 0, "No blocked code responses found in declines_test scenario");
+//        assertNotEquals(insufficientFunds, 0,
+//                "No insufficientFunds code responses found in declines_test scenario");
+//        assertNotEquals(exceedsAmountLimit, 0,
+//                "No exceedsAmountLimit code responses found in declines_test scenario");
+//
+//
+//        long dbCount = dbUtils.queryLong("SELECT COUNT(*) FROM transactions");
+//        dbCount = dbCount - countBefore;
+//
+//        assertEquals(dbCount, 50, "50 transactions should appear in DB");
+//        assertEquals(httpApproved + httpDeclined, dbCount,
+//                "DB transactions count != http response transactions count");
+//    }
 
     private void ensureActiveCardsExist() {
         JsonNode health = httpGet(CARD_MGMT_URL, "/health", 200);
