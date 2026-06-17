@@ -13,7 +13,7 @@ public class BinIssuerInitializer implements ApplicationRunner {
 
     private final BinIssuerRepository repository;
 
-    private final List<BinIssuer> BINS_ISSUERS = List.of(
+    private static final List<BinIssuer> BINS_ISSUERS = List.of(
             new BinIssuer("400000", "ISS001"),
             new BinIssuer("400001", "ISS002"),
             new BinIssuer("400002", "ISS003"),
