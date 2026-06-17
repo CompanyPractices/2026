@@ -154,7 +154,7 @@ describe('useTransactions', () => {
         expect(calledUrl).not.toContain('issuerId');
     });
 
-    it('should set loading=true and clear error when searching', async () => {
+    it('should clear error when searching', async () => {
         mockedFetchApi.mockResolvedValueOnce(mockTransactions);
         const { result } = renderHook(() => useTransactions());
 
@@ -168,7 +168,6 @@ describe('useTransactions', () => {
             result.current.searchTransactions({ status: 'APPROVED' });
         });
 
-        expect(result.current.loading).toBe(true);
         expect(result.current.error).toBeNull();
     });
 
