@@ -24,10 +24,11 @@ public class TransactionSender {
 
   public TransactionSender(GatewayClient gatewayClient,
                            TransactionMetrics transactionMetrics,
-                           @Value("${simulation.sender.concurrency:24}") int concurrency) {
+                           @Value("${simulation.sender.concurrency}") int concurrency) {
     this.gatewayClient = gatewayClient;
     this.transactionMetrics = transactionMetrics;
     this.semaphore = new Semaphore(concurrency);
+    log.info("Concurrency: {}", concurrency);
   }
 
   public SimulatorStats sendAll(List<AuthorizationRequest> requests) {
