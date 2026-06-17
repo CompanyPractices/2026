@@ -7,6 +7,7 @@ import com.processing.kms.models.ApiKey;
 import com.processing.kms.errors.KeyError;
 import com.processing.kms.service.ApiKeyService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,34 +18,51 @@ public class ApiKeyController {
     private final ApiKeyService apiKeyService;
 
     @PostMapping("/issue")
-    public ResponseEntity<ApiKey> issueApiKey(@RequestBody IssueRequest request) {
-        ApiKey apiKey = apiKeyService.issueKey(
+    public ResponseEntity<IssueResponse> issueApiKey(@RequestBody IssueRequest request) {
+        Result<ApiKey, KeyError> result = apiKeyService.issueKey(
                 request.clientId(),
                 ApiKeyRoles.valueOf(request.role().toUpperCase()));
 
-        return ResponseEntity.ok(apiKey);
+        return switch (result) {
+            case Result.Success<ApiKey, KeyError>(ApiKey value) ->
+                    ResponseEntity.ok(new IssueResponse(
+                            true,
+                            value,
+                            null));
+            case Result.Failure<ApiKey, KeyError>(KeyError.OwnerAlreadyHasKey error) ->
+                    ResponseEntity.ok(new IssueResponse(
+                            false,
+                            null,
+                            error.message()));
+            default -> throw new IllegalStateException("Unexpected value: " + result);
+        };
     }
 
     @PostMapping("/validate")
-    public ResponseEntity<ValidationResponse> validateApiKey(@RequestBody String key) {
-        Result<ApiKeyRoles, KeyError> result = apiKeyService.validateKey(key);
+    public ResponseEntity<ValidationResponse> validateApiKey(@RequestBody ValidateRequest request) {
+        Result<ApiKeyRoles, KeyError> result = apiKeyService.validateKey(request.key());
 
         return switch (result) {
             case Result.Success(ApiKeyRoles value) ->
                     ResponseEntity.ok(new ValidationResponse(
-                            ValidationOutcome.VALID,
+                            true,
                             value,
                             null));
+
             case Result.Failure(KeyError.NotFound error) ->
-                    ResponseEntity.ok(new ValidationResponse(
-                            ValidationOutcome.INVALID,
-                            null,
-                            error.message()));
+                    ResponseEntity
+                            .status(HttpStatus.NOT_FOUND)
+                            .body(new ValidationResponse(
+                                false,
+                                null,
+                                error.message()));
+
             case Result.Failure(KeyError.Expired error) ->
                     ResponseEntity.ok(new ValidationResponse(
-                            ValidationOutcome.INVALID,
-                            null,
-                            error.message()));
+                                false,
+                                null,
+                                error.message()));
+
             default -> throw new IllegalStateException("Unexpected value: " + result);
         };
     }
@@ -57,12 +75,17 @@ public class ApiKeyController {
         return switch (result) {
             case Result.Success(ApiKey value) ->
                     ResponseEntity.ok(new RefreshResponse(
-                            RefreshOutcome.SUCCESS,
+                            true,
                             value.key(),
                             null));
+            case Result.Failure(KeyError.NotFound error) ->
+                    ResponseEntity.ok(new RefreshResponse(
+                            false,
+                            null,
+                            error.message()));
             case Result.Failure(KeyError.OwnerIdMismatch error) ->
                     ResponseEntity.ok(new RefreshResponse(
-                            RefreshOutcome.FAILURE,
+                            false,
                             null,
                             error.message()));
             default -> throw new IllegalStateException("Unexpected value: " + result);

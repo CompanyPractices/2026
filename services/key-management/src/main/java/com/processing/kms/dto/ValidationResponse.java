@@ -3,7 +3,7 @@ package com.processing.kms.dto;
 import com.processing.kms.models.ApiKeyRoles;
 
 public record ValidationResponse(
-    ValidationOutcome outcome,
+    Boolean isValid,
     ApiKeyRoles role,
     String invalidationReason
 ) {}

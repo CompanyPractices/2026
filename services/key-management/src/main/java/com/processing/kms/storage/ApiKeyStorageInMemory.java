@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.util.Map;
 
+// todo: replace with proper db repository
 @Repository
 @RequiredArgsConstructor
 @Slf4j
@@ -39,5 +40,10 @@ public class ApiKeyStorageInMemory implements ApiKeyStorage {
     @Override
     public ApiKey get(String key) {
         return apiKeyMap.get(key);
+    }
+
+    @Override
+    public ApiKey getByOwnerId() {
+        return null;
     }
 }

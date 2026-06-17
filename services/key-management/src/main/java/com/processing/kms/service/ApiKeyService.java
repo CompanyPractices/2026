@@ -23,8 +23,12 @@ public class ApiKeyService {
     private final ApiKeyStorage apiKeyStorage;
     private final ApiKeyGenerator apiKeyGenerator;
 
-    public ApiKey issueKey(String ownerId, ApiKeyRoles role) {
-        return addNewKey(ownerId, role);
+    public Result<ApiKey, KeyError> issueKey(String ownerId, ApiKeyRoles role) {
+        if (apiKeyStorage.getByOwnerId() != null) {
+            return new Result.Failure<>(new KeyError.OwnerAlreadyHasKey());
+        }
+
+        return new Result.Success<>(addNewKey(ownerId, role));
     }
 
     public Result<ApiKeyRoles, KeyError> validateKey(String key) {
@@ -43,6 +47,10 @@ public class ApiKeyService {
 
     public Result<ApiKey, KeyError> refreshKey(String ownerId, String oldKey) {
         ApiKey oldApiKey = apiKeyStorage.get(oldKey);
+
+        if (oldApiKey == null) {
+            return new Result.Failure<>(new KeyError.NotFound());
+        }
 
         if (!oldApiKey.ownerId().equals(ownerId)) {
             return new Result.Failure<>(new KeyError.OwnerIdMismatch());

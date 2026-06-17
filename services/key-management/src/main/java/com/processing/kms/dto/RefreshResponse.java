@@ -1,7 +1,7 @@
 package com.processing.kms.dto;
 
 public record RefreshResponse(
-    RefreshOutcome outcome,
+    Boolean isSuccessful,
     String key,
     String failureReason
 ) {}
