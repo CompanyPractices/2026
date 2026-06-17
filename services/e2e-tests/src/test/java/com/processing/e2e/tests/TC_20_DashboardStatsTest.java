@@ -33,15 +33,15 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
     private static final String TEST_CARDHOLDER_NAME = "DASHBOARD TEST USER";
     private static final int EXPECTED_APPROVED_COUNT = 15;
     private static final long EXPECTED_DECLINED_COUNT = TEST_TRANSACTION_COUNT - EXPECTED_APPROVED_COUNT;
-    private static final BigDecimal START_AMOUNT = BigDecimal.valueOf(5_000L);
-    private static final BigDecimal AMOUNT_STEP = BigDecimal.valueOf(5_000L);
+    private static final BigDecimal START_AMOUNT = new BigDecimal("5000");
+    private static final BigDecimal AMOUNT_STEP = new BigDecimal("5000");
     private static final BigDecimal INITIAL_BALANCE = IntStream.range(0, EXPECTED_APPROVED_COUNT)
             .mapToObj(TC_20_DashboardStatsTest::transactionAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     private static final BigDecimal EXPECTED_TOTAL_AMOUNT = IntStream.range(0, TEST_TRANSACTION_COUNT)
             .mapToObj(TC_20_DashboardStatsTest::transactionAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-    private static final BigDecimal EXPECTED_AVERAGE_AMOUNT = EXPECTED_TOTAL_AMOUNT.divide(BigDecimal.valueOf(TEST_TRANSACTION_COUNT));
+    private static final BigDecimal EXPECTED_AVERAGE_AMOUNT = EXPECTED_TOTAL_AMOUNT.divide(new BigDecimal(TEST_TRANSACTION_COUNT));
     private static final double EXPECTED_APPROVAL_RATE = (double) EXPECTED_APPROVED_COUNT / TEST_TRANSACTION_COUNT;
 
     private final DBUtils dbUtils = new DBUtils();
@@ -99,7 +99,7 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
                 "$.approvalRate should match approvedCount / totalTransactions");
         soft.assertTrue(totalAmount.compareTo(BigDecimal.ZERO) > 0, "$.totalAmount should be > 0");
         soft.assertTrue(averageAmount.compareTo(BigDecimal.ZERO) > 0, "$.averageAmount should be > 0");
-        soft.assertEquals(averageAmount.compareTo(totalAmount.divide(BigDecimal.valueOf(totalTransactions))), 0,
+        soft.assertEquals(averageAmount.compareTo(totalAmount.divide(new BigDecimal(totalTransactions))), 0,
                 "$.averageAmount should match totalAmount / totalTransactions");
         soft.assertTrue(avgProcessingTimeMs > 0, "$.avgProcessingTimeMs should be > 0");
 
@@ -153,7 +153,7 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
     }
 
     private static BigDecimal transactionAmount(int index) {
-        return START_AMOUNT.add(AMOUNT_STEP.multiply(BigDecimal.valueOf(index)));
+        return START_AMOUNT.add(AMOUNT_STEP.multiply(new BigDecimal(index)));
     }
 
     private String createCard(String cardholderName, BigDecimal initialBalance) {
@@ -161,8 +161,8 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
                 "400000",
                 cardholderName,
                 "643",
-                BigDecimal.valueOf(1_000_000L),
-                BigDecimal.valueOf(1_000_000L),
+                new BigDecimal("1000000"),
+                new BigDecimal("1000000"),
                 initialBalance
         );
 
