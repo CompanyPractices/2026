@@ -96,7 +96,7 @@ spring:
             metadata:
               serviceName: cardManagement
             predicates:
-              - Path=/api/cards/**
+              - Path=/api/cards/**, /api/bins/**
 
         # OpenApi endpoints
           - id: switch-docs
