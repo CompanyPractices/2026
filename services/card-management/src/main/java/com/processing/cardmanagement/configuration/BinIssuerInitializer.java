@@ -13,17 +13,17 @@ public class BinIssuerInitializer implements ApplicationRunner {
 
     private final BinIssuerRepository repository;
 
+    private final List<BinIssuer> BINS_ISSUERS = List.of(
+            new BinIssuer("400000", "ISS001"),
+            new BinIssuer("400001", "ISS002"),
+            new BinIssuer("400002", "ISS003"),
+            new BinIssuer("400003", "ISS004"),
+            new BinIssuer("400004", "ISS005")
+    );
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        List<BinIssuer> binIssuers = List.of(
-                new BinIssuer("400000", "ISS001"),
-                new BinIssuer("400001", "ISS002"),
-                new BinIssuer("400002", "ISS003"),
-                new BinIssuer("400003", "ISS004"),
-                new BinIssuer("400004", "ISS005")
-        );
-
-        for (BinIssuer binIssuer : binIssuers) {
+        for (BinIssuer binIssuer : BINS_ISSUERS) {
             if (!repository.existsByBin(binIssuer.bin())) {
                 repository.save(binIssuer);
             }

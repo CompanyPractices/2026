@@ -1,10 +1,6 @@
 package com.processing.cardmanagement.configuration;
 
-import com.processing.cardmanagement.exceptions.BinAlreadyExistException;
-import com.processing.cardmanagement.exceptions.BinNotFoundException;
-import com.processing.cardmanagement.exceptions.CardNotFoundException;
-import com.processing.cardmanagement.exceptions.InsufficientFundsException;
-import com.processing.cardmanagement.exceptions.TooLargeLimitException;
+import com.processing.cardmanagement.exceptions.*;
 import com.processing.common.dto.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -120,7 +116,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TooLargeLimitException.class)
     @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
     public ErrorResponse handleTooLargeLimitException(
-        TooLargeLimitException ex
+            TooLargeLimitException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
@@ -148,6 +144,15 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleBinAlreadyExistException(
             BinAlreadyExistException ex
+    ) {
+        log.warn(ex.getMessage());
+        return errorResponseFromException(ex);
+    }
+
+    @ExceptionHandler(CardGenerationLimitException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleCardGenerationLimitException(
+            CardGenerationLimitException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
