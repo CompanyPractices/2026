@@ -16,7 +16,6 @@ export default function TransactionPieChart({transactions, loading, error}: PieC
 
     const approved = transactions?.filter((s) => s.status === 'APPROVED').length || 0;
     const declined = transactions?.filter((s) => s.status === 'DECLINED').length || 0;
-    const activeApproved = isDark ? 'rgb(52 211 153)' : 'oklch(0.677 0.18 151.362)'
 
     if (error) {
         return (
