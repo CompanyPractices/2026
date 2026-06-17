@@ -3,7 +3,7 @@ package com.processing.merchantacquirer.domain;
 public class MaskerPan {
     private MaskerPan() {}
 
-    public static String mask(String pan){
+    public static String mask(String pan) {
         if (pan == null || pan.length() < 10){
             return "****";
         }
