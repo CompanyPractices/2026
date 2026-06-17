@@ -106,7 +106,7 @@ class InternalTransactionControllerTest {
         private boolean storeCalled;
 
         StubTransactionService(TransactionStoreResult result) {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
             this.result = result;
         }
 

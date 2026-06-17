@@ -10,11 +10,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TransactionController.class)
 public class TransactionControllerIntegrationTest {
@@ -36,16 +36,32 @@ public class TransactionControllerIntegrationTest {
 
     @Test
     void searchReturns400WhenStatusIsInvalid() throws Exception {
-        mockMvc.perform(get("/api/transactions/search").param("status","UNKNOWN"))
+        mockMvc.perform(get("/api/transactions/search").param("status", "UNKNOWN"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void searchReturns400WhenDateFromIsAfterDateTo() throws Exception {
         mockMvc.perform(get("/api/transactions/search")
-                .param("dateFrom", "2026-06-08")
-                .param("dateTo", "2026-06-01"))
+                        .param("dateFrom", "2026-06-08")
+                        .param("dateTo", "2026-06-01"))
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void exportReturns200WithCsvFileAttachment() throws Exception {
+        when(transactionService.exportCsv(any())).thenReturn("id,mti\r\n0001,0100\r\n");
+
+        mockMvc.perform(get("/api/transactions/export"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andExpect(header().string("Content-Disposition", containsString("transactions.csv")))
+                .andExpect(content().string(startsWith("id,mti")));
+    }
+
+    @Test
+    void exportReturns400WhenStatusIsInvalid() throws Exception {
+        mockMvc.perform(get("/api/transactions/export").param("status", "UNKNOWN"))
+                .andExpect(status().isBadRequest());
+    }
 }

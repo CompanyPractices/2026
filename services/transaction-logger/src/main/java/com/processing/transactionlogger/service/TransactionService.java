@@ -9,6 +9,7 @@ import com.processing.common.dto.transactionlogger.TransactionResponse;
 import com.processing.transactionlogger.dto.TransactionSearchResponse;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.exception.TransactionConflictException;
+import com.processing.transactionlogger.export.TransactionCsvWriter;
 import com.processing.transactionlogger.mapper.TransactionMapper;
 import com.processing.transactionlogger.model.Transaction;
 import com.processing.transactionlogger.model.Transaction_;
@@ -42,6 +43,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
+    /** Верхняя граница числа строк в CSV-экспорте */
+    private static final int MAX_EXPORT_ROWS = 50_000;
     private static final String DEFAULT_GRANULARITY = "hour";
     /** Верхняя граница диапазона по умолчанию, когда {@code to } в charts не задан */
     private static final Instant FAR_FUTURE = Instant.parse("9999-12-31T23:59:59Z");
@@ -49,6 +52,7 @@ public class TransactionService {
     private final TransactionMapper transactionMapper;
     private final WebSocketManager webSocketManager;
     private final ObjectMapper objectMapper;
+    private final TransactionCsvWriter csvWriter;
 
     /**
      * Сохраняет транзакцию в БД и рассылает её через WebSocket.
@@ -172,5 +176,20 @@ public class TransactionService {
         return transactionRepository.findAll(pageable).getContent().stream()
                 .map(transactionMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public String exportCsv(TransactionFilter filter) {
+        Pageable pageable = PageRequest.of(0, MAX_EXPORT_ROWS,
+                Sort.by(Sort.Direction.DESC, Transaction_.CREATED_AT));
+        Page<Transaction> page = transactionRepository.findAll(TransactionSpecification.filter(filter), pageable);
+        if (page.getTotalElements() > MAX_EXPORT_ROWS) {
+            log.warn("CSV export truncated: {} rows match the filter, exporting first {}",
+                    page.getTotalElements(), MAX_EXPORT_ROWS);
+        }
+        List<TransactionResponse> transactions = page.getContent().stream()
+                .map(transactionMapper::toResponse)
+                .toList();
+        return csvWriter.toCsv(transactions);
     }
 }

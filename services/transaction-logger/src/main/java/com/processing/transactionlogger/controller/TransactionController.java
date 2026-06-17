@@ -10,10 +10,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * Контроллер публичного API для поиска транзакций.
@@ -45,5 +50,29 @@ public class TransactionController {
     @GetMapping("/search")
     public TransactionSearchResponse search(@Valid @ModelAttribute TransactionFilter filter) {
         return transactionService.search(filter);
+    }
+
+    /**
+     * Экспортирует транзакции, удовлетворяющие фильтру, в CSV-файл
+     *
+     * @param filter параметры фильтрации
+     * @return CSV-документ ({@code text/csv})
+     */
+    @Operation(
+            summary = "Экспорт транзакций в CSV",
+            description = "Выгружает все транзакции, удовлетворяющие фильтру, в формате CSV. "
+                    + "Параметры limit/offset не применяются.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "CSV-файл с транзакциями"),
+                    @ApiResponse(responseCode = "400", description = "Невалидные параметры фильтра")
+            }
+    )
+    @GetMapping("/export")
+    public ResponseEntity<String> export(@Valid @ModelAttribute TransactionFilter filter) {
+        String csv = transactionService.exportCsv(filter);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"transactions.csv\"")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(csv);
     }
 }

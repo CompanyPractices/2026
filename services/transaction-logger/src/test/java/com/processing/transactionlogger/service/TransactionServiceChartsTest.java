@@ -2,6 +2,7 @@ package com.processing.transactionlogger.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.transactionlogger.dto.ChartBucket;
+import com.processing.transactionlogger.export.TransactionCsvWriter;
 import com.processing.transactionlogger.mapper.TransactionMapper;
 import com.processing.transactionlogger.repository.ChartBucketRow;
 import com.processing.transactionlogger.repository.TransactionRepository;
@@ -42,7 +43,8 @@ public class TransactionServiceChartsTest {
                 transactionRepository,
                 new TransactionMapper(),
                 webSocketManager,
-                new ObjectMapper().findAndRegisterModules()
+                new ObjectMapper().findAndRegisterModules(),
+                new TransactionCsvWriter()
         );
     }
 
