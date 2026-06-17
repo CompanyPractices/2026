@@ -1,0 +1,35 @@
+# PostgreSQL (раскомментируй, если нужна БД)
+# spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:processing}
+# spring.datasource.username=${DB_USER:postgres}
+# spring.datasource.password=${DB_PASSWORD:postgres}
+# spring.jpa.hibernate.ddl-auto=update
+---
+server:
+  port: 8089
+
+---
+# Logging
+logging:
+  level:
+    com.processing.gateway: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.server.mvc: TRACE
+    org.springframework.http.client: TRACE
+    org.springframework.web.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} %X{requestId} - %msg%n"
+
+---
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - prometheus
+  endpoint:
+    health:
+      show-details: always
