@@ -86,7 +86,7 @@ public class TransactionValidationFilter extends OncePerRequestFilter {
         objectMapper.writeValue(response.getWriter(), new ErrorResponse(
                 "VALIDATION_ERROR",
                 message,
-                Instant.now().toString(),
+                Instant.now(),
                 "gateway",
                 null
         ));

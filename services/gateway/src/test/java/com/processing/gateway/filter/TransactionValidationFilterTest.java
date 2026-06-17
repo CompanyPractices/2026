@@ -1,8 +1,8 @@
 package com.processing.gateway.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.gateway.validation.TransactionRequestValidator;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TransactionValidationFilterTest {
 
     private final TransactionValidationFilter filter = new TransactionValidationFilter(
-            new ObjectMapper(),
+            Jackson2ObjectMapperBuilder.json().build(),
             new TransactionRequestValidator()
     );
 

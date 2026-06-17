@@ -16,7 +16,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.stream.IntStream;
 
 import static org.testng.Assert.assertEquals;
@@ -175,7 +174,7 @@ public class TC_20_DashboardStatsTest extends E2EBaseTest {
                 .processingCode("000000")
                 .amount(amount)
                 .currencyCode("643")
-                .transmissionDateTime(LocalDateTime.now().toString())
+                .transmissionDateTime(Instant.now())
                 .terminalId("TERM0001")
                 .terminalType("POS")
                 .merchantId("MERCH0000000001")
