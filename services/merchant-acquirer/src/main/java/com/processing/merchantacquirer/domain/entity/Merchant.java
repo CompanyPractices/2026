@@ -7,8 +7,10 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
 
 import java.math.BigDecimal;
+import java.sql.Types;
 
 @Entity
 @Data
@@ -18,6 +20,8 @@ import java.math.BigDecimal;
 public class Merchant {
   @Id private String id;
   private String name;
+  @Column(name = "mcc", length = 4)
+  @JdbcTypeCode(Types.CHAR)
   private String mcc;
   private String category;
   private String acquirerId;
