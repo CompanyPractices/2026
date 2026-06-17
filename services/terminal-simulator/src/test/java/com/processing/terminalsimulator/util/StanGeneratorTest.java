@@ -16,17 +16,17 @@ class StanGeneratorTest {
 
     @Test
     void shouldGenerateSequentialNumbersWithLeadingZeros() {
-        assertEquals("000001", generator.getNextStan());
-        assertEquals("000002", generator.getNextStan());
-        assertEquals("000003", generator.getNextStan());
+        assertEquals("000001", generator.getNextStan("TERM0000"));
+        assertEquals("000002", generator.getNextStan("TERM0000"));
+        assertEquals("000003", generator.getNextStan("TERM0000"));
     }
 
     @Test
     void shouldResetToOneAfterMAX_STAN_COUNT() {
         for (int i = 1; i <= MAX_STAN_COUNT; i++) {
-            generator.getNextStan();
+            generator.getNextStan("TERM0000");
         }
 
-        assertEquals("000001", generator.getNextStan());
+        assertEquals("000001", generator.getNextStan("TERM0000"));
     }
 }
