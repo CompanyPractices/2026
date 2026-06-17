@@ -1,7 +1,7 @@
 package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.events.CardEventNotifier;
-import com.processing.cardmanagement.events.CardGeneratedEvent;
+import com.processing.cardmanagement.events.CardsBatchGeneratedEvent;
 import com.processing.cardmanagement.exceptions.CardGenerationLimitException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -47,6 +49,8 @@ public class CardGeneratorService {
         if (count > generatorOptions.maxCount()) {
             throw new CardGenerationLimitException(generatorOptions.maxCount());
         }
+
+        Map<CardStatus, Long> statusCounts = new HashMap<>();
 
         log.info("Generating {} cards for bins: {}", count, bins);
         List<CardDraft> cards = new ArrayList<>();
@@ -82,11 +86,13 @@ public class CardGeneratorService {
                     monthlyLimit,
                     balance
             );
+
+            statusCounts.merge(card.status(), 1L, Long::sum);
             cards.add(card);
         }
 
         List<Card> result = cardService.createCards(cards);
-        result.forEach(c -> eventNotifier.onEvent(new CardGeneratedEvent(c.status())));
+        eventNotifier.onEvent(new CardsBatchGeneratedEvent(statusCounts));
 
         log.info("Successfully generated {} cards", count);
         return result;

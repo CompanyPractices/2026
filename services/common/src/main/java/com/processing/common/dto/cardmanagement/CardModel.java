@@ -44,25 +44,35 @@ public record CardModel(
         @Schema(description = "Card creation date")
         LocalDateTime createdAt
 ) {
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         CardModel cardModel = (CardModel) o;
 
-        return status == cardModel.status &&
-                Objects.equals(id, cardModel.id) &&
-                Objects.equals(pan, cardModel.pan) &&
-                Objects.equals(bin, cardModel.bin) &&
-                Objects.equals(issuerId, cardModel.issuerId) &&
-                Objects.equals(currencyCode, cardModel.currencyCode) &&
-                Objects.equals(expiryDate, cardModel.expiryDate) &&
-                Objects.equals(cardholderName, cardModel.cardholderName) &&
-                Objects.equals(createdAt, cardModel.createdAt) &&
-
-                (dailyLimit == null ? cardModel.dailyLimit == null : dailyLimit.compareTo(cardModel.dailyLimit) == 0) &&
-                (monthlyLimit == null ? cardModel.monthlyLimit == null : monthlyLimit.compareTo(cardModel.monthlyLimit) == 0) &&
-                (availableBalance == null ? cardModel.availableBalance == null : availableBalance.compareTo(cardModel.availableBalance) == 0);
+        return status == cardModel.status
+                && Objects.equals(id, cardModel.id)
+                && Objects.equals(pan, cardModel.pan)
+                && Objects.equals(bin, cardModel.bin)
+                && Objects.equals(issuerId, cardModel.issuerId)
+                && Objects.equals(currencyCode, cardModel.currencyCode)
+                && Objects.equals(expiryDate, cardModel.expiryDate)
+                && Objects.equals(cardholderName, cardModel.cardholderName)
+                && Objects.equals(createdAt, cardModel.createdAt)
+                && (dailyLimit == null
+                ? cardModel.dailyLimit == null
+                : dailyLimit.compareTo(cardModel.dailyLimit) == 0)
+                && (monthlyLimit == null
+                ? cardModel.monthlyLimit == null
+                : monthlyLimit.compareTo(cardModel.monthlyLimit) == 0)
+                && (availableBalance == null
+                ? cardModel.availableBalance == null
+                : availableBalance.compareTo(cardModel.availableBalance) == 0);
     }
 
     @Override
@@ -82,4 +92,5 @@ public record CardModel(
                 availableBalance == null ? null : availableBalance.stripTrailingZeros()
         );
     }
+
 }

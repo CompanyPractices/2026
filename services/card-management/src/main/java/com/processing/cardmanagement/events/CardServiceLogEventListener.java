@@ -14,6 +14,8 @@ public class CardServiceLogEventListener implements CardEventListener {
             case CardServicePatchEvent e -> log.info("Patched card {}", e.pan());
             case CardServiceDeletionEvent e -> log.info("Deleted card {}", e.pan());
             case CardServiceReserveEvent e -> log.info("Reserved {} from card {}", e.amount(), e.pan());
+            case CardsBatchGeneratedEvent e -> log.info("Generated {} cards: {}",
+                    e.statusCount().values().stream().mapToLong(Long::longValue).sum(), e.statusCount());
             default -> {
             }
         }
