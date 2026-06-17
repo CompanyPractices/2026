@@ -5,7 +5,6 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.authorization.RollbackResponse;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 public record DeclineOutcome(String reason, String code) {
     public static final String REASON_CARD_NOT_FOUND = "CARD_NOT_FOUND";
@@ -92,7 +91,7 @@ public record DeclineOutcome(String reason, String code) {
             RollbackResponse.CODE_SERVICE_UNAVAILABLE
     );
 
-    public AuthorizationResponse buildAuthorization(AuthorizationRequest request, LocalDateTime requestInputTime) {
+    public AuthorizationResponse buildAuthorization(AuthorizationRequest request, Instant requestInputTime) {
         return AuthorizationResponse.declined(request, reason, code, requestInputTime);
     }
 

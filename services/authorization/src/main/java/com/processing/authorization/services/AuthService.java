@@ -26,8 +26,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Random;
@@ -93,7 +91,7 @@ public class AuthService {
      * @see AuthorizationResponse
      */
     @Transactional(rollbackFor = { Exception.class })
-    public AuthorizationResponse authorize(AuthorizationRequest request, LocalDateTime requestInputTime) {
+    public AuthorizationResponse authorize(AuthorizationRequest request, Instant requestInputTime) {
         CardModel cardResponse;
         try {
             cardResponse = getCard(request.pan());

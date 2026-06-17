@@ -22,7 +22,6 @@ import static com.processing.authorization.constants.DeclineOutcome.*;
 
 import java.time.Instant;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.Optional;
 import java.util.UUID;
@@ -92,7 +91,7 @@ class AuthServiceTest {
         when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(Instant.class), any(Instant.class)))
                 .thenReturn(Optional.empty());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_APPROVED);
         assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_APPROVED);
@@ -110,7 +109,7 @@ class AuthServiceTest {
         doThrow(new ServiceUnavailableException("Card Management service unavailable"))
                 .when(spyService).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(response.responseCode()).isEqualTo(SERVICE_UNAVAILABLE.code());
@@ -136,7 +135,7 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
         doReturn(expiredCard).when(spyService).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(CARD_EXPIRED.code());
         assertThat(response.declineReason()).isEqualTo(CARD_EXPIRED.reason());
@@ -161,7 +160,7 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
         doReturn(blockedCard).when(spyService).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(CARD_BLOCKED.code());
         assertThat(response.declineReason()).isEqualTo(CARD_BLOCKED.reason());
@@ -185,7 +184,7 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
         doReturn(inactiveCard).when(spyService).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(CARD_INACTIVE.code());
         assertThat(response.declineReason()).isEqualTo(CARD_INACTIVE.reason());
@@ -209,7 +208,7 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
         doReturn(unknownStatusCard).when(spyService).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(UNKNOWN_REASON.code());
         assertThat(response.declineReason()).isEqualTo(UNKNOWN_REASON.reason());
@@ -235,7 +234,7 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
         doReturn(activeButExpiredCard).when(spyService).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(CARD_EXPIRED.code());
         assertThat(response.declineReason()).isEqualTo(CARD_EXPIRED.reason());
@@ -260,7 +259,7 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
         doReturn(lowBalanceCard).when(spyService).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(INSUFFICIENT_FUNDS.code());
         assertThat(response.declineReason()).isEqualTo(INSUFFICIENT_FUNDS.reason());
@@ -277,7 +276,7 @@ class AuthServiceTest {
         when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(Instant.class), any(Instant.class)))
                 .thenReturn(Optional.empty());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(RESERVATION_FAILED.code());
         assertThat(response.declineReason()).isEqualTo(RESERVATION_FAILED.reason());
@@ -318,7 +317,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(usage));
 
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_APPROVED);
         assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_APPROVED);
@@ -338,7 +337,7 @@ class AuthServiceTest {
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
                 .thenReturn(Optional.of(usage));
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(response.responseCode()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.code());
@@ -358,7 +357,7 @@ class AuthServiceTest {
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
                 .thenReturn(Optional.of(usage));
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, LocalDateTime.now());
+        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(response.responseCode()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.code());

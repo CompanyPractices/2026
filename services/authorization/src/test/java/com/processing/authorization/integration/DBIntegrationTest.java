@@ -9,7 +9,6 @@ import java.net.URI;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.UUID;
 
@@ -56,7 +55,7 @@ public class DBIntegrationTest {
     @Mock
     private RestClient.RequestBodySpec requestBodySpec;
 
-    private LocalDateTime now;
+    private Instant now;
     private AuthorizationRequest correctRequest;
 
     @BeforeEach
@@ -65,7 +64,7 @@ public class DBIntegrationTest {
                 requestBodyUriSpec, requestBodySpec);
 
         limitUsageRepository.deleteAll();
-        now = LocalDateTime.now();
+        now = Instant.now();
         correctRequest = new AuthorizationRequest(
                 "0100",
                 "123456",

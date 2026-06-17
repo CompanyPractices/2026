@@ -21,8 +21,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import com.processing.common.dto.authorization.RollbackRequest;
-import com.processing.common.dto.authorization.RollbackResponse;
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc
@@ -75,23 +73,23 @@ class AuthControllerTest {
 
         approvedResponse = AuthorizationResponse.approved(
                 validRequest, TEST_RRN,
-                TEST_AUTH_CODE, LocalDateTime.now()
+                TEST_AUTH_CODE, Instant.now()
         );
         declinedInsufficientFundsResponse = AuthorizationResponse.declined(
                 validRequest, INSUFFICIENT_FUNDS.reason(),
-                INSUFFICIENT_FUNDS.code(), LocalDateTime.now()
+                INSUFFICIENT_FUNDS.code(), Instant.now()
         );
         declinedCardExpiredResponse = AuthorizationResponse.declined(
                 validRequest, CARD_EXPIRED.reason(),
-                CARD_EXPIRED.code(), LocalDateTime.now()
+                CARD_EXPIRED.code(), Instant.now()
         );
         declinedCardNotFoundResponse = AuthorizationResponse.declined(
                 validRequest, CARD_NOT_FOUND.reason(),
-                CARD_NOT_FOUND.code(), LocalDateTime.now()
+                CARD_NOT_FOUND.code(), Instant.now()
         );
         declinedServiceUnavailableResponse = AuthorizationResponse.declined(
                 validRequest, SERVICE_UNAVAILABLE.reason(),
-                SERVICE_UNAVAILABLE.code(), LocalDateTime.now()
+                SERVICE_UNAVAILABLE.code(), Instant.now()
         );
 
         validRollbackRequest = new RollbackRequest(
@@ -132,7 +130,7 @@ class AuthControllerTest {
 
     @Test
     void authorizeReturn200ApprovedResponseWhenAuthServiceReturnsApproved() throws Exception {
-        when(authService.authorize(any(AuthorizationRequest.class), any(LocalDateTime.class))).thenReturn(approvedResponse);
+        when(authService.authorize(any(AuthorizationRequest.class), any(Instant.class))).thenReturn(approvedResponse);
 
         mockMvc.perform(post("/api/internal/authorize")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -148,7 +146,7 @@ class AuthControllerTest {
 
     @Test
     void authorizeReturn422WhenInsufficientFunds() throws Exception {
-        when(authService.authorize(any(AuthorizationRequest.class), any(LocalDateTime.class))).thenReturn(declinedInsufficientFundsResponse);
+        when(authService.authorize(any(AuthorizationRequest.class), any(Instant.class))).thenReturn(declinedInsufficientFundsResponse);
 
         mockMvc.perform(post("/api/internal/authorize")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -162,7 +160,7 @@ class AuthControllerTest {
 
     @Test
     void authorizeReturn403WhenCardExpired() throws Exception {
-        when(authService.authorize(any(AuthorizationRequest.class), any(LocalDateTime.class))).thenReturn(declinedCardExpiredResponse);
+        when(authService.authorize(any(AuthorizationRequest.class), any(Instant.class))).thenReturn(declinedCardExpiredResponse);
 
         mockMvc.perform(post("/api/internal/authorize")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -176,7 +174,7 @@ class AuthControllerTest {
 
     @Test
     void authorizeReturn404WhenCardNotFound() throws Exception {
-        when(authService.authorize(any(AuthorizationRequest.class), any(LocalDateTime.class))).thenReturn(declinedCardNotFoundResponse);
+        when(authService.authorize(any(AuthorizationRequest.class), any(Instant.class))).thenReturn(declinedCardNotFoundResponse);
 
         mockMvc.perform(post("/api/internal/authorize")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -190,7 +188,7 @@ class AuthControllerTest {
 
     @Test
     void authorizeReturn503WhenServiceUnavailable() throws Exception {
-        when(authService.authorize(any(AuthorizationRequest.class), any(LocalDateTime.class))).thenReturn(declinedServiceUnavailableResponse);
+        when(authService.authorize(any(AuthorizationRequest.class), any(Instant.class))).thenReturn(declinedServiceUnavailableResponse);
 
         mockMvc.perform(post("/api/internal/authorize")
                         .contentType(MediaType.APPLICATION_JSON)
