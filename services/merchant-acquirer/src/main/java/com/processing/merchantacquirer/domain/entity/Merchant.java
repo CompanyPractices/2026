@@ -21,7 +21,7 @@ public class Merchant {
   private String mcc;
   private String category;
   private String acquirerId;
-  @Column(name = "acquiring_fee", precision = 5, scale = 4)
+  @Column(name = "acquiring_fee", precision = 5)
   private BigDecimal acquiringFee;
   private BigDecimal averageCheck;
 }
