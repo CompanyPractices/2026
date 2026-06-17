@@ -1,14 +1,11 @@
 package com.processing.e2e.tests;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.e2e.E2EBaseTest;
 import com.processing.e2e.utility.DBUtils;
 import io.restassured.http.ContentType;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -76,7 +73,7 @@ public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
         dbCount = dbCount - countBefore;
 
         assertEquals(dbCount, 50, "50 transactions should appear in DB");
-        assertEquals(50, dbApprovedCount + dbDeclinedCount,
+        assertEquals(dbApprovedCount + dbDeclinedCount, 50,
                 "DB transactions count != response transactions count");
         assertEquals(dbApprovedCount, httpApproved,
                 "http approved transactions count != db approved transactions count");
@@ -116,7 +113,7 @@ public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
         int cardNotFound = 0;
         int blocked = 0;
         int insufficientFunds = 0;
-        int expired = 0;
+        int exceedsAmountLimit = 0;
 
         JsonNode transactions = runResponse.get("transactions");
         assertEquals(transactions.size(), 50);
@@ -125,7 +122,7 @@ public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
                 case "14" -> cardNotFound++;             // CODE_CARD_NOT_FOUND
                 case "05" -> blocked++;                  // CODE_DECLINED_GENERAL?
                 case "51" -> insufficientFunds++;        // CODE_INSUFFICIENT_FUNDS
-                case "54" -> expired++;                  // CODE_CARD_EXPIRED
+                case "61" -> exceedsAmountLimit++;                  // EXCEEDS_AMOUNT_LIMIT
             }
         }
         assertNotEquals(cardNotFound, 0,
@@ -133,7 +130,8 @@ public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
         assertNotEquals(blocked, 0, "No blocked code responses found in declines_test scenario");
         assertNotEquals(insufficientFunds, 0,
                 "No insufficientFunds code responses found in declines_test scenario");
-        assertNotEquals(expired, 0, "No expired code responses found in declines_test scenario");
+        assertNotEquals(exceedsAmountLimit, 0,
+                "No exceedsAmountLimit code responses found in declines_test scenario");
 
 
         long dbCount = dbUtils.queryLong("SELECT COUNT(*) FROM transactions");
@@ -155,7 +153,7 @@ public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
                 .body("""
                 {
                                 "count": 100,
-                                "bins": ["400000"]
+                                "bins": ["400000","400001","400002","400003","400004"]
                                 }""")
                 .when()
                 .post("/api/cards/generate")

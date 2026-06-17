@@ -69,7 +69,7 @@ class TerminalSimulatorServiceTest {
             return type == TransactionType.BLOCKED ? CardModelStatus.BLOCKED : CardModelStatus.ACTIVE;
         });
 
-        when(transactionFactory.create(any(), any(), any())).thenReturn(new AuthorizationRequest("0100",
+        when(transactionFactory.create(any(), any(), any(), any())).thenReturn(new AuthorizationRequest("0100",
                 "000001", "4000001234560001", "000000", new BigDecimal(1000L), "643",
                 (LocalDateTime.of(2026, 6, 5, 18, 12, 49)).toInstant(ZoneOffset.UTC)
                 , "TERM001", String.valueOf(TerminalType.POS),
@@ -95,7 +95,7 @@ class TerminalSimulatorServiceTest {
         service.run(totalCount, TerminalScenario.normal);
 
         verify(transactionFactory, times(totalCount)).create(eq(TransactionType.NORMAL), eq(PartofDay.DAY),
-                any(CardModel.class));
+                any(CardModel.class), any(String.class));
     }
 
     @Test
@@ -104,9 +104,9 @@ class TerminalSimulatorServiceTest {
         service.run(totalCount, TerminalScenario.night_time);
 
         verify(transactionFactory, times(5)).create(eq(TransactionType.NORMAL),
-                eq(PartofDay.NIGHT), any(CardModel.class));
+                eq(PartofDay.NIGHT), any(CardModel.class), any(String.class));
         verify(transactionFactory, times(5)).create(eq(TransactionType.HIGH_VALUE),
-                eq(PartofDay.NIGHT), any(CardModel.class));
+                eq(PartofDay.NIGHT), any(CardModel.class), any(String.class));
     }
 
     @Test
@@ -115,7 +115,7 @@ class TerminalSimulatorServiceTest {
         service.run(totalCount, TerminalScenario.high_value);
 
         verify(transactionFactory, times(totalCount)).create(eq(TransactionType.HIGH_VALUE), eq(PartofDay.DAY),
-                any(CardModel.class));
+                any(CardModel.class), any(String.class));
     }
 
     @Test
@@ -124,7 +124,8 @@ class TerminalSimulatorServiceTest {
         service.run(totalCount, TerminalScenario.mixed);
 
         ArgumentCaptor<TransactionType> typeCaptor = ArgumentCaptor.forClass(TransactionType.class);
-        verify(transactionFactory, times(totalCount)).create(typeCaptor.capture(), eq(PartofDay.DAY), any(CardModel.class));
+        verify(transactionFactory, times(totalCount)).create(typeCaptor.capture(), eq(PartofDay.DAY),
+                any(CardModel.class), any(String.class));
 
         List<TransactionType> calledTypes = typeCaptor.getAllValues();
 
@@ -146,7 +147,8 @@ class TerminalSimulatorServiceTest {
         service.run(totalCount, TerminalScenario.declines_test);
 
         ArgumentCaptor<TransactionType> typeCaptor = ArgumentCaptor.forClass(TransactionType.class);
-        verify(transactionFactory, times(totalCount)).create(typeCaptor.capture(), eq(PartofDay.DAY), any(CardModel.class));
+        verify(transactionFactory, times(totalCount)).create(typeCaptor.capture(), eq(PartofDay.DAY),
+                any(CardModel.class), any(String.class));
 
         List<TransactionType> calledTypes = typeCaptor.getAllValues();
 

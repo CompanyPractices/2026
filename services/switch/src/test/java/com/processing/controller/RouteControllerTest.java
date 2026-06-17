@@ -3,6 +3,7 @@ package com.processing.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.SwitchTestData;
+import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.service.RouteService;
 import com.processing.service.RoutingService;
 import com.processing.support.CapturingAuthorizationClient;
@@ -39,8 +40,8 @@ class RouteControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(SwitchTestData.sampleRequest())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("APPROVED"))
-                .andExpect(jsonPath("$.responseCode").value("00"))
+                .andExpect(jsonPath("$.status").value(AuthorizationResponse.STATUS_APPROVED))
+                .andExpect(jsonPath("$.responseCode").value(AuthorizationResponse.CODE_APPROVED))
                 .andExpect(jsonPath("$.stan").value("000001"));
     }
 }
