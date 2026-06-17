@@ -109,10 +109,6 @@ public record Card(
         if (!Objects.equals(this.pan, rollback.pan())) {
             throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
         }
-        BigDecimal amount = rollback.rollbackAmount();
-        if (this.availableBalance.compareTo(amount) < 0) {
-            throw new InsufficientFundsException();
-        }
 
         return new Card(
             id,
@@ -124,7 +120,7 @@ public record Card(
             currencyCode,
             dailyLimit,
             monthlyLimit,
-            availableBalance.add(amount),
+            availableBalance.add(rollback.rollbackAmount()),
             issuerId,
             createdAt
         );

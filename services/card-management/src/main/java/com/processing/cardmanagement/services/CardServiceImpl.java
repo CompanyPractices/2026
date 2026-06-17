@@ -1,9 +1,6 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.CardEventNotifier;
-import com.processing.cardmanagement.events.CardServiceCreationEvent;
-import com.processing.cardmanagement.events.CardServiceDeletionEvent;
-import com.processing.cardmanagement.events.CardServicePatchEvent;
+import com.processing.cardmanagement.events.*;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.RrnAlreadyExistsException;
 import com.processing.cardmanagement.exceptions.RrnNotFoundException;
@@ -172,7 +169,9 @@ public class CardServiceImpl implements CardService {
         var reservation = reservationRepository.save(
             new Reservation(pan, amount, rrn)
         );
-        return cardRepository.save(card.withReservation(reservation));
+        card = cardRepository.save(card.withReservation(reservation));
+        eventNotifier.onEvent(new CardServiceReserveEvent(pan, rrn, amount));
+        return card;
     }
 
     @Override
@@ -185,7 +184,9 @@ public class CardServiceImpl implements CardService {
             reservation.startRollback(amount)
         );
         reservationRepository.save(reservation.rolledBack(rollback));
-        return cardRepository.save(card.withRollback(rollback));
+        card = cardRepository.save(card.withRollback(rollback));
+        eventNotifier.onEvent(new CardServiceRollbackEvent(pan, rrn, amount));
+        return card;
     }
 
     private Card getCardForUpdate(String pan) {

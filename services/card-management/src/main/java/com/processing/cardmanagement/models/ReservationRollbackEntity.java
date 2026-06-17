@@ -29,10 +29,10 @@ public class ReservationRollbackEntity {
     @Column(length = 16, nullable = false)
     private String pan;
 
-    BigDecimal rollbackAmount;
+    private BigDecimal rollbackAmount;
 
     @Column(length = 12, unique = true, nullable = false)
-    String rrn;
+    private String rrn;
 
-    Instant createdAt;
+    private Instant createdAt;
 }

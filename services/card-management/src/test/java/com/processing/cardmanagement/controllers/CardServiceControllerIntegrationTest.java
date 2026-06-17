@@ -3,6 +3,7 @@ package com.processing.cardmanagement.controllers;
 import com.processing.cardmanagement.models.BinIssuer;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.cardmanagement.services.BinIssuerService;
+import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.cardmanagement.*;
 import io.restassured.http.ContentType;
 import net.datafaker.Faker;
@@ -17,6 +18,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Locale;
 import java.util.Map;
 
@@ -228,62 +230,6 @@ public class CardServiceControllerIntegrationTest {
     }
 
     @Test
-    void cardServiceShouldReserveMoneyIfBalanceIsEnough() {
-        var card = createRandomCard(createRandomValidCreationRequest());
-        var amount = card.availableBalance();
-        var reserveRequest = new ReserveRequest(
-            amount,
-            faker.number().digits(12)
-        );
-
-        given()
-            .port(port)
-            .pathParam("PAN", card.pan())
-            .contentType(ContentType.JSON)
-            .body(reserveRequest)
-            .when()
-            .post("/api/cards/{PAN}/reserve")
-            .then()
-            .statusCode(200);
-    }
-
-    @Test
-    void cardServiceCantReserveNegativeMoney() {
-        var pan = createRandomCard(createRandomValidCreationRequest()).pan();
-        var amount = -1;
-        // negative amount validator is in the ReserveRequest itself
-        var reserveRequest = Map.of(
-            "amount", amount,
-            "rrn", faker.number().digits(12)
-        );
-
-        given()
-            .port(port)
-            .pathParam("PAN", pan)
-            .contentType(ContentType.JSON)
-            .body(reserveRequest)
-            .when()
-            .post("/api/cards/{PAN}/reserve")
-            .then()
-            .statusCode(400);
-
-        reserveRequest = Map.of(
-            "amount", faker.number().numberBetween(0, 1_000_000),
-            "rrn", faker.lorem().characters()
-        );
-
-        given()
-            .port(port)
-            .pathParam("PAN", pan)
-            .contentType(ContentType.JSON)
-            .body(reserveRequest)
-            .when()
-            .post("/api/cards/{PAN}/reserve")
-            .then()
-            .statusCode(400);
-    }
-
-    @Test
     void cardServiceCantReserveMoreMoneyThanOnTheBalanceItself() {
         var pan = createRandomCard(createRandomValidCreationRequest()).pan();
         var amount = BigDecimal.valueOf(Long.MAX_VALUE);
@@ -354,6 +300,199 @@ public class CardServiceControllerIntegrationTest {
             .delete("/api/cards/{PAN}")
             .then()
             .statusCode(404);
+    }
+
+
+    @Test
+    void cardServiceShouldReserveMoneyIfBalanceIsEnough() {
+        var card = createRandomCard(createRandomValidCreationRequest());
+        var amount = card.availableBalance();
+        var reserveRequest = new ReserveRequest(
+            amount,
+            faker.number().digits(12)
+        );
+
+        given()
+            .port(port)
+            .pathParam("PAN", card.pan())
+            .contentType(ContentType.JSON)
+            .body(reserveRequest)
+            .when()
+            .post("/api/cards/{PAN}/reserve")
+            .then()
+            .statusCode(200);
+    }
+
+    @Test
+    void cardServiceCantReserveNegativeMoney() {
+        var pan = createRandomCard(createRandomValidCreationRequest()).pan();
+        var amount = -1;
+        // negative amount validator is in the ReserveRequest itself
+        var reserveRequest = Map.of(
+            "amount", amount,
+            "rrn", faker.number().digits(12)
+        );
+
+        given()
+            .port(port)
+            .pathParam("PAN", pan)
+            .contentType(ContentType.JSON)
+            .body(reserveRequest)
+            .when()
+            .post("/api/cards/{PAN}/reserve")
+            .then()
+            .statusCode(400);
+
+        reserveRequest = Map.of(
+            "amount", faker.number().numberBetween(0, 1_000_000),
+            "rrn", faker.lorem().characters()
+        );
+
+        given()
+            .port(port)
+            .pathParam("PAN", pan)
+            .contentType(ContentType.JSON)
+            .body(reserveRequest)
+            .when()
+            .post("/api/cards/{PAN}/reserve")
+            .then()
+            .statusCode(400);
+    }
+
+    @Test
+    void cardServiceShouldRollback() {
+        var rrn = faker.number().digits(12);
+        var card = createCardAndReserveAllMoney(rrn);
+        var amount = BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000));
+        var rollbackRequest = new RollbackRequest(
+            rrn,
+            card.pan(),
+            amount
+        );
+
+        var model = given()
+            .port(port)
+            .pathParam("PAN", card.pan())
+            .contentType(ContentType.JSON)
+            .body(rollbackRequest)
+            .when()
+            .post("/api/cards/{PAN}/rollback")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(CardModel.class);
+
+        assertEquals(amount, model.availableBalance().setScale(0, RoundingMode.HALF_EVEN));
+    }
+
+    @Test
+    void cardServiceShouldNotRollbackIfReservationDoesNotExist() {
+        var rrn = faker.number().digits(12);
+        var card = createRandomCard(createRandomValidCreationRequest());
+        var amount = BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000));
+        var rollbackRequest = new RollbackRequest(
+            rrn,
+            card.pan(),
+            amount
+        );
+
+        given()
+            .port(port)
+            .pathParam("PAN", faker.number().digits(16))
+            .contentType(ContentType.JSON)
+            .body(rollbackRequest)
+            .when()
+            .post("/api/cards/{PAN}/rollback")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
+    void cardServiceShouldNotRollbackIfWrongPanPassed() {
+        var rrn = faker.number().digits(12);
+        createCardAndReserveAllMoney(rrn);
+        var wrongCard = createRandomCard(createRandomValidCreationRequest());
+        var amount = BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000));
+        var rollbackRequest = new RollbackRequest(
+            rrn,
+            wrongCard.pan(),
+            amount
+        );
+
+        given()
+            .port(port)
+            .pathParam("PAN", faker.number().digits(16))
+            .contentType(ContentType.JSON)
+            .body(rollbackRequest)
+            .when()
+            .post("/api/cards/{PAN}/rollback")
+            .then()
+            .statusCode(404);
+
+        given()
+            .port(port)
+            .pathParam("PAN", wrongCard.pan())
+            .contentType(ContentType.JSON)
+            .body(rollbackRequest)
+            .when()
+            .post("/api/cards/{PAN}/rollback")
+            .then()
+            .statusCode(400);
+    }
+
+    @Test
+    void cardServiceShouldNotRollbackIfRollbackAlreadySatisfied() {
+        var rrn = faker.number().digits(12);
+        var card = createCardAndReserveAllMoney(rrn);
+        var amount = BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000));
+        var rollbackRequest = new RollbackRequest(
+            rrn,
+            card.pan(),
+            amount
+        );
+
+        given()
+            .port(port)
+            .pathParam("PAN", card.pan())
+            .contentType(ContentType.JSON)
+            .body(rollbackRequest)
+            .when()
+            .post("/api/cards/{PAN}/rollback")
+            .then()
+            .statusCode(200);
+
+        given()
+            .port(port)
+            .pathParam("PAN", card.pan())
+            .contentType(ContentType.JSON)
+            .body(rollbackRequest)
+            .when()
+            .post("/api/cards/{PAN}/rollback")
+            .then()
+            .statusCode(409);
+    }
+
+    private CardModel createCardAndReserveAllMoney(String rrn) {
+        var card = createRandomCard(createRandomValidCreationRequest());
+        var reserveRequest = new ReserveRequest(
+            card.availableBalance(),
+            rrn
+        );
+
+        var res = given()
+            .port(port)
+            .pathParam("PAN", card.pan())
+            .contentType(ContentType.JSON)
+            .body(reserveRequest)
+            .when()
+            .post("/api/cards/{PAN}/reserve")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(CardModel.class);
+
+        assertEquals(BigDecimal.ZERO, res.availableBalance().setScale(0, RoundingMode.HALF_DOWN));
+        return res;
     }
 
     private CreateCardRequest createRandomValidCreationRequest() {

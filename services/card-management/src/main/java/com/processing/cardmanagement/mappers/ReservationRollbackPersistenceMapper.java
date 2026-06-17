@@ -9,10 +9,10 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface ReservationRollbackPersistenceMapper {
 
-    @Mapping(target = "reservation", ignore = true)
+    @Mapping(target = "reservation.id", source = "reservationId")
     ReservationRollbackEntity toEntity(ReservationRollback rollback);
 
-    @Mapping(target = "reservationId", source = "entity.reservation.id")
+    @Mapping(target = "reservationId", source = "reservation.id")
     ReservationRollback toDomain(ReservationRollbackEntity entity);
 
     @Mapping(target = "id", ignore = true)

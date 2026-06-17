@@ -84,8 +84,7 @@ public final class CardServiceTest {
     @Mock
     private ReservationRollbackRepository reservationRollbackRepository;
 
-    @Mock
-    private CardEventNotifier eventNotifier;
+    private final CardEventNotifier eventNotifier = new CardEventNotifier(List.of());
 
     @Mock
     private BinIssuerService binIssuerService;
@@ -347,6 +346,89 @@ public final class CardServiceTest {
                 rrn
             )
         );
+    }
+
+    @Test
+    void testRollbackSuccess() {
+        var pan = generatePan();
+        var testCard = createTestCard(pan);
+        var reserveAmount = BigDecimal.valueOf(
+            faker.number().numberBetween(0, testCard.availableBalance().intValue())
+        );
+        var rrn = faker.number().digits(12);
+        var reservation = new Reservation(pan, reserveAmount, rrn);
+        when(cardRepository.findByPanForUpdate(pan))
+            .thenReturn(Optional.of(testCard));
+        when(reservationRepository.findByRrn(rrn)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.save(reservationCaptor.capture()))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+        when(reservationRollbackRepository.save(reservationRollbackCaptor.capture()))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+        when(cardRepository.save(any()))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var actualCard = cardService.rollback(pan, reserveAmount, rrn);
+        var expectedCard = new Card(
+            testCard.id(),
+            testCard.pan(),
+            testCard.bin(),
+            testCard.cardholderName(),
+            testCard.expiryDate(),
+            testCard.status(),
+            testCard.currencyCode(),
+            testCard.dailyLimit(),
+            testCard.monthlyLimit(),
+            testCard.availableBalance().add(reserveAmount),
+            testCard.issuerId(),
+            testCard.createdAt()
+        );
+        assertEquals(expectedCard, actualCard);
+
+        var actualReservation = reservationCaptor.getValue();
+        var expectedReservation = new Reservation(
+            reservation.id(),
+            pan,
+            reserveAmount,
+            rrn,
+            ReservationStatus.ROLLED_BACK,
+            reservation.createdAt(),
+            actualReservation.updatedAt()
+        );
+        assertEquals(expectedReservation, actualReservation);
+
+        var actualRollback = reservationRollbackCaptor.getValue();
+        var expectedRollback = new ReservationRollback(
+            actualRollback.id(),
+            reservation.id(),
+            pan,
+            reserveAmount,
+            rrn,
+            actualRollback.createdAt()
+        );
+        assertEquals(expectedRollback, actualRollback);
+    }
+
+    @Test
+    void testRollbackWrongPan() {
+        var pan = generatePan();
+        var testCard = createTestCard(pan);
+        var reserveAmount = BigDecimal.valueOf(
+            faker.number().numberBetween(0, testCard.availableBalance().intValue())
+        );
+        var rrn = faker.number().digits(12);
+        var reservation = new Reservation(
+            generatePan(),
+            reserveAmount,
+            rrn
+        );
+        when(cardRepository.findByPanForUpdate(pan)).thenReturn(Optional.of(testCard));
+        when(reservationRepository.findByRrn(rrn)).thenReturn(Optional.of(reservation));
+        when(reservationRollbackRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        assertThrows(IllegalArgumentException.class, () -> cardService.rollback(
+            pan,
+            reserveAmount,
+            rrn
+        ));
     }
 
     private Card createTestCard(String pan) {

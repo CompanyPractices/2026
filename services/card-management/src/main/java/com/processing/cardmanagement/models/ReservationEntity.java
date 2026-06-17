@@ -28,15 +28,15 @@ public class ReservationEntity {
     @Column(length = 16, nullable = false)
     private String pan;
 
-    BigDecimal reservationAmount;
+    private BigDecimal reservationAmount;
 
     @Column(length = 12, unique = true, nullable = false)
-    String rrn;
+    private String rrn;
 
     @Column(nullable = false)
-    String status;
+    private String status;
 
-    Instant createdAt;
+    private Instant createdAt;
 
-    Instant updatedAt;
+    private Instant updatedAt;
 }

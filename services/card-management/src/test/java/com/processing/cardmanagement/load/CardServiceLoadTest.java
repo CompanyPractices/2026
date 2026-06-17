@@ -8,6 +8,7 @@ import com.processing.cardmanagement.repositories.BinIssuerJpaRepository;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.cardmanagement.services.BinIssuerService;
 import com.processing.cardmanagement.services.CardService;
+import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.dto.cardmanagement.CreateCardRequest;
 import com.processing.common.dto.cardmanagement.PatchCardRequest;
@@ -38,8 +39,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -141,7 +141,7 @@ public class CardServiceLoadTest {
 
     @Test
     void cardServiceGetManyCardsLoadTest() throws ExecutionException, InterruptedException {
-        var cardsAmount = 500;
+        var cardsAmount = 1000;
         var pans = createRandomCards(cardsAmount)
             .stream()
             .map(Card::pan)
@@ -240,7 +240,7 @@ public class CardServiceLoadTest {
 
     @Test
     void cardServiceDeleteLoadTest() throws ExecutionException, InterruptedException {
-        int cardsAmount = 2000;
+        int cardsAmount = 4000;
         var pansToDelete = createRandomCards(cardsAmount)
             .stream().map(Card::pan)
             .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
@@ -277,7 +277,6 @@ public class CardServiceLoadTest {
     @Test
     void cardServiceReserveManyCardsLoadTest() throws ExecutionException, InterruptedException {
         var cardsAmount = 500;
-        var maxReservationAmount = 1_000_000;
         var pans = createRandomCards(cardsAmount)
             .stream()
             .map(Card::pan)
@@ -286,10 +285,37 @@ public class CardServiceLoadTest {
         loadTestEngine.execute(
             maximumParallelRequests,
             maximumTotalRequests,
-            () -> testReserveCard(
-                pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)],
-                maxReservationAmount
-            )
+            () -> testReserveCard(pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)], 1)
+        ).get();
+    }
+
+    @Test
+    void cardServiceReserveAndRollbackManyCardsLoadTest() throws ExecutionException, InterruptedException {
+        var cardsAmount = 500;
+        var cards = new ConcurrentLinkedQueue<>(createRandomCards(cardsAmount));
+
+        loadTestEngine.execute(
+            maximumParallelRequests,
+            Math.min(cardsAmount, maximumTotalRequests),
+            () -> {
+                var card = cards.poll();
+                assertNotNull(card);
+                var rrn = testReserveCard(card.pan(), card.availableBalance().longValue());
+                var rollbackRequest = new RollbackRequest(
+                    rrn,
+                    card.pan(),
+                    card.availableBalance()
+                );
+                given()
+                    .contentType(ContentType.JSON)
+                    .body(rollbackRequest)
+                    .pathParam("pan", card.pan())
+                    .port(port)
+                    .when()
+                    .post("/api/cards/{pan}/rollback")
+                    .then()
+                    .statusCode(200);
+            }
         ).get();
     }
 
@@ -327,14 +353,14 @@ public class CardServiceLoadTest {
             .when()
             .patch("/api/cards/{pan}")
             .then()
-            .statusCode(anyOf(is(200), is(404)));
+            .statusCode(200);
     }
 
-    private void testReserveCard(String pan, long maxAmount) {
+    private String testReserveCard(String pan, long maxAmount) {
         var f = faker.get();
 
         var reserveRequest = new ReserveRequest(
-            BigDecimal.valueOf(f.number().numberBetween(0, maxAmount)),
+            BigDecimal.valueOf(f.number().numberBetween(1, maxAmount)),
             f.number().digits(12)
         );
 
@@ -344,9 +370,11 @@ public class CardServiceLoadTest {
             .pathParam("pan", pan)
             .port(port)
             .when()
-            .patch("/api/cards/{pan}")
+            .post("/api/cards/{pan}/reserve")
             .then()
             .statusCode(200);
+
+        return reserveRequest.rrn();
     }
 
     private List<Card> createRandomCards(int value) {

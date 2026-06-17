@@ -53,7 +53,7 @@ public record Reservation(
 
         return new ReservationRollback(
             UUID.randomUUID(),
-            id,
+            this.id,
             pan,
             rollbackAmount,
             rrn,
