@@ -1,6 +1,7 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
+import com.processing.merchantacquirer.domain.FeeCalculator;
 import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
@@ -27,8 +28,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionBuilder {
     private final AuthorizationRequestFactory authorizationRequestFactory;
-    private final AcquirerProvider acquirerProvider;
     private final TerminalProvider terminalProvider;
+    private final FeeCalculator feeCalculator;
 
     public List<RequestFeeData> build(
             int count,
@@ -59,14 +60,12 @@ public class TransactionBuilder {
                                     card.pan(), card.currencyCode(), amount, terminal, merchant);
 
                             log.info(String.valueOf(authorizationRequest));
-                            AcquirerFee fee = acquirerProvider.calculateFee(
+                            BigDecimal fee = feeCalculator.calculate(
                                     merchant.getAcquiringFee(),
-                                    authorizationRequest.amount(),
-                                    authorizationRequest.transmissionDateTime(),
-                                    authorizationRequest.stan(),
-                                    authorizationRequest.terminalId(),
-                                    authorizationRequest.pan());
-                            return new RequestFeeData(authorizationRequest, fee);
+                                    authorizationRequest.amount());
+                            AcquirerFee acquirerFee = AcquirerFee.of(fee, authorizationRequest);
+
+                            return new RequestFeeData(authorizationRequest, acquirerFee);
                         }
                 );
                 futures.add(future);

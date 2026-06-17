@@ -1,5 +1,6 @@
 package com.processing.merchantacquirer.domain.entity;
 
+import com.processing.common.dto.authorization.AuthorizationRequest;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,5 +34,16 @@ public class AcquirerFee {
         this.terminalId = terminalId;
         this.acquirerFee = acquirerFee;
         this.amount = amount;
+    }
+
+    public static AcquirerFee of(BigDecimal fee, AuthorizationRequest request){
+        return new AcquirerFee(
+                request.transmissionDateTime(),
+                request.stan(),
+                request.pan(),
+                request.terminalId(),
+                fee,
+                request.amount()
+        );
     }
 }

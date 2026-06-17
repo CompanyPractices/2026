@@ -61,6 +61,18 @@ public class GlobalExceptionHandler {
                 "5"));
   }
 
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<ErrorResponse> handleNotValid(IllegalStateException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(
+                    new ErrorResponse(
+                            "Invalid request",
+                            ex.getMessage(),
+                            String.valueOf(LocalDateTime.now()),
+                            "Merchant acquirer simulator",
+                            "5"));
+  }
+
   @ExceptionHandler(NullPointerException.class)
   public ResponseEntity<ErrorResponse> handleNullPointer(NullPointerException ex) {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)

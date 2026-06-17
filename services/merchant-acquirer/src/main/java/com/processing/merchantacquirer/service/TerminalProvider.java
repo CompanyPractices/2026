@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
@@ -16,7 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class TerminalProvider {
     private final TerminalRepository terminalRepository;
 
-    private final Map<String, List<Terminal>> terminalsByMerchants;
+    private final Map<String, List<Terminal>> terminalsByMerchants = new ConcurrentHashMap<>();
 
     public Terminal getByMerchant(String merchantId) {
         if (!terminalsByMerchants.containsKey(merchantId)) {
@@ -26,7 +27,7 @@ public class TerminalProvider {
 
         List<Terminal> terminals = terminalsByMerchants.get(merchantId);
         if (terminals.isEmpty()) {
-            throw new NullPointerException("Merchant not have terminals, merchant id: " + merchantId);
+            throw new IllegalStateException("Merchant not have terminals, merchant id: " + merchantId);
         }
 
         return terminals.get(ThreadLocalRandom.current().nextInt(0, terminals.size()));
