@@ -8,10 +8,8 @@ import com.processing.support.CapturingAuthorizationClient;
 import com.processing.support.FailingAuthorizationClient;
 import com.processing.support.TrackingLoggerClient;
 import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
 import java.time.Instant;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RouteServiceTest {
