@@ -1,4 +1,4 @@
-import {hidePan, convertPenniesToRubles, formatTime, formatDate} from '../utils/format';
+import {hidePan, convertPenniesToRubles, formatTime, formatDate, formatDateTime} from '../utils/format';
 import { getStatusIcon } from '../utils/statusIcon';
 import {Filter, Transaction} from '../types';
 import { useState, useMemo } from 'react';
@@ -98,7 +98,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                     <table className="w-full min-w-[900px] text-sm">
                         <thead>
                         <tr className="border-b-2 border-emerald-600 dark:border-sage-200 text-center font-semibold dark:text-sage-50">
-                            <th className="px-3 md:px-6 py-2 md:py-4">Время</th>
+                            <th className="px-3 md:px-6 py-2 md:py-4">Дата, Время</th>
                             <th className="px-3 md:px-6 py-2 md:py-4">PAN</th>
                             <th className="px-3 md:px-6 py-2 md:py-4 text-right">Сумма</th>
                             <th className="px-3 md:px-6 py-2 md:py-4">Мерчант</th>
@@ -115,7 +115,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                                     className="text-center cursor-pointer hover:bg-emerald-50 dark:hover:bg-sage-400 transition-colors border-b border-gray-100 dark:border-sage-400 last:border-0 dark:text-sage-50"
                                     onClick={() => setSelectedTx(transaction)}
                                 >
-                                    <td className="px-3 md:px-6 py-2 md:py-4">{formatTime(transaction.createdAt) + ' ' + formatDate(transaction.createdAt)}</td>
+                                    <td className="px-3 md:px-6 py-2 md:py-4">{formatDateTime(transaction.createdAt)}</td>
                                     <td className="px-3 md:px-6 py-2 md:py-4">{hidePan(transaction.pan)}</td>
                                     <td className="px-3 md:px-6 py-2 md:py-4 text-right">{convertPenniesToRubles(transaction.amount)}</td>
                                     <td className="px-3 md:px-6 py-2 md:py-4">{transaction.merchantId}</td>

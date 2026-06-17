@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useState } from 'react';
 import { TransactionTable } from '../components/TransactionTable';
 import { Transaction, Filter } from '../types';
-import { hidePan, convertPenniesToRubles, formatTime, formatDate } from '../utils/format';
+import { hidePan, convertPenniesToRubles, formatTime, formatDate, formatDateTime } from '../utils/format';
 import { exportToCsv } from '../utils/exportToCsv';
 
 vi.mock('../utils/format', () => ({
@@ -11,6 +11,7 @@ vi.mock('../utils/format', () => ({
     convertPenniesToRubles: vi.fn((amount: number) => `${(amount / 100).toFixed(2)} ₽`),
     formatTime: vi.fn(() => '10:00:00'),
     formatDate: vi.fn(() => '27.10.2023'),
+    formatDateTime: vi.fn(() => '27.10.2023, 10:00:00'),
 }));
 
 vi.mock('../utils/statusIcon', () => ({
@@ -84,6 +85,7 @@ const mockedConvertPennies = vi.mocked(convertPenniesToRubles);
 const mockedFormatTime = vi.mocked(formatTime);
 const mockedFormatDate = vi.mocked(formatDate);
 const mockedExportToCsv = vi.mocked(exportToCsv);
+const mockedFormatDateTime = vi.mocked(formatDateTime);
 
 const createMockTransaction = (overrides: Partial<Transaction>): Transaction => ({
     id: 'tx-default',
@@ -188,7 +190,7 @@ describe('TransactionTable', () => {
         expect(screen.getByRole('table')).toBeInTheDocument();
 
         const rows = screen.getAllByRole('row');
-        expect(rows).toHaveLength(3); // 1 заголовок + 2 данных
+        expect(rows).toHaveLength(3);
 
         expect(rows[1]).toHaveTextContent('SHOP-NEW');
         expect(rows[1]).toHaveTextContent('****4444');
@@ -200,10 +202,9 @@ describe('TransactionTable', () => {
         expect(mockedHidePan).toHaveBeenCalledWith('5555555555554444');
         expect(mockedConvertPennies).toHaveBeenCalledWith(150000);
         expect(mockedConvertPennies).toHaveBeenCalledWith(250000);
-        expect(mockedFormatTime).toHaveBeenCalledWith('2023-10-26T10:00:00Z');
-        expect(mockedFormatTime).toHaveBeenCalledWith('2023-10-28T10:00:00Z');
-        expect(mockedFormatDate).toHaveBeenCalledWith('2023-10-26T10:00:00Z');
-        expect(mockedFormatDate).toHaveBeenCalledWith('2023-10-28T10:00:00Z');
+        expect(mockedFormatDateTime).toHaveBeenCalledWith('2023-10-26T10:00:00Z');
+        expect(mockedFormatDateTime).toHaveBeenCalledWith('2023-10-28T10:00:00Z');
+        expect(screen.getAllByText('27.10.2023, 10:00:00')).toHaveLength(2);
     });
 
     it('should open TransactionModal when a row is clicked', () => {
@@ -310,7 +311,8 @@ describe('TransactionTable', () => {
         const calledData = mockedExportToCsv.mock.calls[0][1];
         expect(calledData).toHaveLength(2);
 
-        // Проверяем, что formatDate вызывалась для обеих транзакций
+        expect(mockedFormatTime).toHaveBeenCalledWith('2023-10-26T10:00:00Z');
+        expect(mockedFormatTime).toHaveBeenCalledWith('2023-10-28T10:00:00Z');
         expect(mockedFormatDate).toHaveBeenCalledWith('2023-10-26T10:00:00Z');
         expect(mockedFormatDate).toHaveBeenCalledWith('2023-10-28T10:00:00Z');
 
@@ -320,6 +322,7 @@ describe('TransactionTable', () => {
         expect(calledData[0]['Terminal']).toBe('T123 (ATM)');
         expect(calledData[0]['Issuer ID']).toBe('ISS-2');
         expect(calledData[0]['Date']).toBe('27.10.2023');
+        expect(calledData[0]['Time']).toBe('10:00:00');
 
         expect(calledData[1]['STAN']).toBe('000001');
         expect(calledData[1]['RRN']).toBe('123456789012');
@@ -327,6 +330,7 @@ describe('TransactionTable', () => {
         expect(calledData[1]['Terminal']).toBe('T123 (POS)');
         expect(calledData[1]['Issuer ID']).toBe('ISS-1');
         expect(calledData[1]['Date']).toBe('27.10.2023');
+        expect(calledData[1]['Time']).toBe('10:00:00');
     });
 
     it('should handle full user flow: live data -> filter search -> reset -> back to live data', () => {
