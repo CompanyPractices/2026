@@ -62,14 +62,14 @@ export default function TransactionHistogram({transactions, loading, error}: Tra
                     <XAxis
                         dataKey="amount"
                         tickFormatter={(val) => {
-                            const min = val * range;
-                            const max = (val + 1) * range;
+                            const min = (val * range) / 100;
+                            const max = ((val + 1) * range) / 100;
                             return `${(min / 1000).toLocaleString()}k – ${(max / 1000).toLocaleString()}k`
                         }}
                         stroke={textColor}
                         tick={{ fill: textColor, fontSize: 12 }}
                         tickLine={false}
-                        label={{value: 'Диапазон суммы (в сотнях тысяч руб.)', position:"insideBottom", offset:-10 }}
+                        label={{value: 'Диапазон суммы (в тысяч руб.)', position:"insideBottom", offset:-10 }}
                     />
                     <YAxis
                         dataKey="count"
