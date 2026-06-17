@@ -1,13 +1,12 @@
 package com.processing.cardmanagement.controllers;
 
-import com.processing.cardmanagement.models.BinIssuerEntity;
-import com.processing.cardmanagement.repositories.BinIssuerJpaRepository;
+import com.processing.cardmanagement.models.BinIssuer;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
+import com.processing.cardmanagement.services.BinIssuerService;
 import com.processing.common.dto.cardmanagement.*;
 import io.restassured.http.ContentType;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,9 +32,6 @@ public class CardServiceControllerIntegrationTest {
 
     private static final String POSTGRES_IMAGE = "postgres:16-alpine";
 
-    private static final String TEST_BIN = "400000";
-    private static final String TEST_ISSUER_ID = "ISS001";
-
     @Value("${local.server.port}")
     private int port;
 
@@ -43,15 +39,13 @@ public class CardServiceControllerIntegrationTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(POSTGRES_IMAGE);
 
-    private final Faker faker = new Faker();
+    private final static Faker faker = new Faker();
+
+    @Autowired
+    private BinIssuerService binIssuerService;
 
     @Autowired
     private CardJpaRepository cardJpaRepository;
-
-    @BeforeAll
-    static void setUpBin(@Autowired BinIssuerJpaRepository binIssuerJpaRepository) {
-        binIssuerJpaRepository.save(new BinIssuerEntity(TEST_BIN, TEST_ISSUER_ID));
-    }
 
     @AfterEach
     void cleanUp() {
@@ -331,6 +325,27 @@ public class CardServiceControllerIntegrationTest {
     }
 
     @Test
+    void cardServiceShouldDeleteCardOnlyOnce() {
+        var pan = createRandomCard(createRandomValidCreationRequest()).pan();
+
+        given()
+            .port(port)
+            .pathParam("PAN", pan)
+            .when()
+            .delete("/api/cards/{PAN}")
+            .then()
+            .statusCode(204);
+
+        given()
+            .port(port)
+            .pathParam("PAN", pan)
+            .when()
+            .delete("/api/cards/{PAN}")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
     void cardServiceShouldNotDeleteNonExistentCard() {
         given()
             .port(port)
@@ -343,8 +358,14 @@ public class CardServiceControllerIntegrationTest {
 
     private CreateCardRequest createRandomValidCreationRequest() {
         var dailyLimit = faker.number().numberBetween(0, 15_000_000);
+        var bins = binIssuerService
+            .getAll()
+            .stream()
+            .map(BinIssuer::bin)
+            .toArray(String[]::new);
+
         return new CreateCardRequest(
-            TEST_BIN,
+            faker.options().option(bins),
             faker.name().fullName().toUpperCase(Locale.ROOT),
             faker.number().digits(3),
             BigDecimal.valueOf(dailyLimit),

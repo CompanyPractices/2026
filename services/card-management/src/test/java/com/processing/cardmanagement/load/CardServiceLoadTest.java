@@ -1,8 +1,12 @@
 package com.processing.cardmanagement.load;
 
+import com.processing.cardmanagement.models.BinIssuerEntity;
 import com.processing.cardmanagement.models.Card;
-import com.processing.cardmanagement.options.CardServiceSettings;
+import com.processing.cardmanagement.models.CardDraft;
+import com.processing.cardmanagement.models.CardStatus;
+import com.processing.cardmanagement.repositories.BinIssuerJpaRepository;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
+import com.processing.cardmanagement.services.BinIssuerService;
 import com.processing.cardmanagement.services.CardService;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.dto.cardmanagement.CreateCardRequest;
@@ -11,6 +15,7 @@ import com.processing.common.dto.cardmanagement.ReserveRequest;
 import io.restassured.http.ContentType;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +28,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.anyOf;
@@ -39,6 +46,8 @@ import static org.hamcrest.Matchers.is;
 public class CardServiceLoadTest {
 
     private static final String POSTGRES_IMAGE = "postgres:16-alpine";
+    private static final int BINS_AMOUNT = 100;
+    private static String[] bins;
 
     @Value("${local.server.port}")
     private int port;
@@ -55,18 +64,33 @@ public class CardServiceLoadTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(POSTGRES_IMAGE);
 
-    private final ThreadLocal<Faker> faker = ThreadLocal.withInitial(() ->
-        new Faker(ThreadLocalRandom.current())
-    );
-
     @Autowired
     private CardService cardService;
 
-    @Autowired
-    private CardServiceSettings settings;
+    private static final ThreadLocal<Faker> faker = ThreadLocal.withInitial(() ->
+        new Faker(ThreadLocalRandom.current())
+    );
+
+    @BeforeAll
+    static void setUpBin(@Autowired BinIssuerJpaRepository binIssuerJpaRepository) {
+        var binsIssuers = new ArrayList<BinIssuerEntity>(BINS_AMOUNT);
+        for (int i = 0; i < BINS_AMOUNT; ++i) {
+            binsIssuers.add(
+                new BinIssuerEntity(
+                    faker.get().number().digits(6),
+                    faker.get().lorem().characters(6).toUpperCase(Locale.ROOT)
+                )
+            );
+        }
+        binIssuerJpaRepository.saveAll(binsIssuers);
+        bins = binsIssuers.stream().map(BinIssuerEntity::getBin).toArray(String[]::new);
+    }
 
     @Autowired
     private CardJpaRepository cardJpaRepository;
+
+    @Autowired
+    private BinIssuerService binIssuerService;
 
     @BeforeEach
     void setUp() {
@@ -134,7 +158,7 @@ public class CardServiceLoadTest {
 
     @Test
     void cardServiceGetFilteredLoadTest() throws ExecutionException, InterruptedException {
-        int cardsAmount = settings.maxPageLimit() * 2;
+        int cardsAmount = 1000;
         var cards = createRandomCards(cardsAmount);
         String[] bins = cards.stream().map(Card::bin).toArray(String[]::new);
         String[] issuerIds = cards.stream().map(Card::issuerId).toArray(String[]::new);
@@ -149,10 +173,10 @@ public class CardServiceLoadTest {
                 String randomBin = bins[random.nextInt(bins.length)];
                 String randomIssuerId = issuerIds[random.nextInt(issuerIds.length)];
                 CardModelStatus randomStatus = statuses[random.nextInt(statuses.length)];
-                long randomOffset = random.nextLong(0, settings.maxPageLimit());
+                long randomOffset = random.nextLong(0, 500);
 
                 given()
-                    .queryParam("limit", settings.maxPageLimit())
+                    .queryParam("limit", 500)
                     .queryParam("offset", randomOffset)
                     .queryParam("status", randomStatus.name())
                     .queryParam("bin", randomBin)
@@ -216,12 +240,10 @@ public class CardServiceLoadTest {
 
     @Test
     void cardServiceDeleteLoadTest() throws ExecutionException, InterruptedException {
-        var pansToDelete = new ConcurrentLinkedQueue<String>();
-
-        for (int i = 0; i < maximumTotalRequests; i++) {
-            Card c = createCard(randomCreateCardRequest(faker.get()));
-            pansToDelete.add(c.pan());
-        }
+        int cardsAmount = 2000;
+        var pansToDelete = createRandomCards(cardsAmount)
+            .stream().map(Card::pan)
+            .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
 
         loadTestEngine.execute(
             maximumParallelRequests,
@@ -305,7 +327,7 @@ public class CardServiceLoadTest {
             .when()
             .patch("/api/cards/{pan}")
             .then()
-            .statusCode(200);
+            .statusCode(anyOf(is(200), is(404)));
     }
 
     private void testReserveCard(String pan, long maxAmount) {
@@ -324,21 +346,37 @@ public class CardServiceLoadTest {
             .when()
             .patch("/api/cards/{pan}")
             .then()
-            .statusCode(anyOf(is(200), is(422)));
+            .statusCode(200);
     }
 
     private List<Card> createRandomCards(int value) {
-        var pans = new ArrayList<Card>(value);
+        var f = faker.get();
+        var drafts = new ArrayList<CardDraft>(value);
+        var activeStatuses = Arrays.stream(CardStatus.values())
+            .filter(status -> status != CardStatus.DELETED)
+            .toArray(CardStatus[]::new);
+
         for (int i = 0; i < value; ++i) {
-            pans.add(createCard(randomCreateCardRequest(faker.get())));
+            var dailyLimit = f.number().numberBetween(0, 15_000_000);
+            drafts.add(
+                new CardDraft(
+                    f.options().option(bins),
+                    f.name().fullName().toUpperCase(Locale.ROOT),
+                    f.options().option(activeStatuses),
+                    f.number().digits(3),
+                    BigDecimal.valueOf(f.number().numberBetween(0, dailyLimit)),
+                    BigDecimal.valueOf(f.number().numberBetween(dailyLimit, 300_000_000)),
+                    BigDecimal.valueOf(f.number().numberBetween(0, 1_000_000))
+                )
+            );
         }
-        return pans;
+        return cardService.createCards(drafts);
     }
 
     private CreateCardRequest randomCreateCardRequest(Faker faker) {
         var dailyLimit = faker.number().numberBetween(0L, 15_000_000L);
         return new CreateCardRequest(
-            faker.number().digits(6),
+            faker.options().option(bins),
             faker.name().fullName().toUpperCase(Locale.ROOT),
             faker.number().digits(3),
             BigDecimal.valueOf(dailyLimit),

@@ -87,7 +87,7 @@ public class CardServiceImpl implements CardService {
     public Card getCard(String pan) {
         return cardRepository
             .findByPan(pan)
-            .orElseThrow(() -> new CardNotFoundException(pan));
+            .orElseThrow(() -> new CardNotFoundException(maskPan(pan)));
     }
 
     @Override
