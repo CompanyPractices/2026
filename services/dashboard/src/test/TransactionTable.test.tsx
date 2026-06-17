@@ -310,17 +310,23 @@ describe('TransactionTable', () => {
         const calledData = mockedExportToCsv.mock.calls[0][1];
         expect(calledData).toHaveLength(2);
 
+        // Проверяем, что formatDate вызывалась для обеих транзакций
+        expect(mockedFormatDate).toHaveBeenCalledWith('2023-10-26T10:00:00Z');
+        expect(mockedFormatDate).toHaveBeenCalledWith('2023-10-28T10:00:00Z');
+
         expect(calledData[0]['STAN']).toBe('000002');
         expect(calledData[0]['RRN']).toBe('987654321098');
         expect(calledData[0]['Auth code']).toBe('X9Y8Z7');
         expect(calledData[0]['Terminal']).toBe('T123 (ATM)');
         expect(calledData[0]['Issuer ID']).toBe('ISS-2');
+        expect(calledData[0]['Date']).toBe('27.10.2023');
 
         expect(calledData[1]['STAN']).toBe('000001');
         expect(calledData[1]['RRN']).toBe('123456789012');
         expect(calledData[1]['Auth code']).toBe('A1B2C3');
         expect(calledData[1]['Terminal']).toBe('T123 (POS)');
         expect(calledData[1]['Issuer ID']).toBe('ISS-1');
+        expect(calledData[1]['Date']).toBe('27.10.2023');
     });
 
     it('should handle full user flow: live data -> filter search -> reset -> back to live data', () => {

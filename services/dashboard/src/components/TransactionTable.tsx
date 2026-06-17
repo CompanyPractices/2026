@@ -20,7 +20,8 @@ const mapTransactionToCsvRow = (tx: Transaction) => ({
     'MCC': tx.mcc,
     'Acquirer ID': tx.acquirerId,
     'Issuer ID': tx.issuerId || '—',
-    'Time': formatTime(tx.createdAt)
+    'Time': formatTime(tx.createdAt),
+    'Date': formatDate(tx.createdAt)
 });
 
 type TransactionTableProps = {
