@@ -3,7 +3,6 @@ package com.processing.common.dto.cardmanagement;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.util.UUID;
