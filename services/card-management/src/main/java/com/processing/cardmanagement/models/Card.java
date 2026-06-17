@@ -5,6 +5,7 @@ import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -70,10 +71,14 @@ public record Card(
     /**
      * Создает копию карты с зарезервированным количеством средств
      *
-     * @param amount размер резервирования
+     * @param reservation информация о резервировании
      * @return карта с измененным балансом
      */
-    public Card withReserved(BigDecimal amount) {
+    public Card withReservation(Reservation reservation) {
+        if (!Objects.equals(this.pan, reservation.pan())) {
+            throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
+        }
+        BigDecimal amount = reservation.reservationAmount();
         if (this.availableBalance.compareTo(amount) < 0) {
             throw new InsufficientFundsException();
         }
@@ -89,6 +94,33 @@ public record Card(
             dailyLimit,
             monthlyLimit,
             availableBalance.subtract(amount),
+            issuerId,
+            createdAt
+        );
+    }
+
+    /**
+     * Создает копию карты с возвращенным количеством средств
+     *
+     * @param rollback информация о возврате средств
+     * @return карта с измененным балансом
+     */
+    public Card withRollback(ReservationRollback rollback) {
+        if (!Objects.equals(this.pan, rollback.pan())) {
+            throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
+        }
+
+        return new Card(
+            id,
+            pan,
+            bin,
+            cardholderName,
+            expiryDate,
+            status,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            availableBalance.add(rollback.rollbackAmount()),
             issuerId,
             createdAt
         );

@@ -2,7 +2,6 @@ package com.processing.cardmanagement.configuration;
 
 import com.processing.cardmanagement.events.CardEventListener;
 import com.processing.cardmanagement.events.CardEventNotifier;
-import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.*;
@@ -18,14 +17,6 @@ public class AppConfig {
     @Bean
     public PanGenerator panGenerator() {
         return new LuhnValidator();
-    }
-
-    @Bean
-    public CardRepository cardRepository(
-            CardPersistenceMapper persistenceMapper,
-            CardJpaRepository jpaCardRepository
-    ) {
-        return new JavaPersistenceAdapter(persistenceMapper, jpaCardRepository);
     }
 
     @Bean
@@ -50,20 +41,26 @@ public class AppConfig {
 
     @Bean
     public CardService cardService(
-            CardRepository cardRepository,
-            CardServiceSettings serviceConfigurationProperties,
-            CardServiceDefaults defaultsConfigurationProperties,
-            PanGenerator panGenerator,
-            CardEventNotifier cardEventNotifier,
-            BinIssuerService binIssuerService
+        CardRepository cardRepository,
+        ReservationRepository reservationRepository,
+        ReservationRollbackRepository reservationRollbackRepository,
+        CardServiceSettings serviceConfigurationProperties,
+        CardServiceDefaults defaultsConfigurationProperties,
+        PanGenerator panGenerator,
+        CardEventNotifier cardEventNotifier,
+        BinIssuerService binIssuerService
     ) {
-        return new CardServiceImpl(
+        return new CardServiceTransactionalDecorator(
+            new CardServiceImpl(
                 cardRepository,
+                reservationRepository,
+                reservationRollbackRepository,
                 serviceConfigurationProperties,
                 defaultsConfigurationProperties,
                 panGenerator,
                 cardEventNotifier,
                 binIssuerService
+            )
         );
     }
 }

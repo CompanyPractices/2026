@@ -46,14 +46,18 @@ public class CardEntity {
     @Column(length = 3, nullable = false)
     private String currencyCode;
 
+    @Column(nullable = false)
     private BigDecimal dailyLimit;
 
+    @Column(nullable = false)
     private BigDecimal monthlyLimit;
 
+    @Column(nullable = false)
     private BigDecimal availableBalance;
 
     @Column(length = 10, nullable = false)
     private String issuerId;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }
