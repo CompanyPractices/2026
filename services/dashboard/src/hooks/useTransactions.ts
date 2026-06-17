@@ -30,7 +30,6 @@ function useTransactions() {
             return;
         }
         setIsFiltered(true)
-        setLoading(true);
         setError(null);
 
         const requestParams = new URLSearchParams();
@@ -52,11 +51,9 @@ function useTransactions() {
         fetchApi<SearchResponse>(`/api/transactions/search?${requestParams.toString()}`)
             .then((data) => {
                 setFilteredTransactions(data.transactions);
-                setLoading(false);
             })
             .catch((error) => {
                 setError(error.message);
-                setLoading(false)
             });
 
     }, []);
