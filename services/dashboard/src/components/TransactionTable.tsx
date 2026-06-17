@@ -91,7 +91,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
             }
 
             {!loading && !error && sortedTransactions.length > 0 &&
-                <div className="rounded-xl border-2 border-emerald-600 dark:border-sage-200 shadow-lg mb-5">
+                <div className="rounded-xl border-2 border-emerald-600 dark:border-sage-200 shadow-lg mb-5 overflow-hidden">
 
                 <div className="overflow-x-auto">
 
