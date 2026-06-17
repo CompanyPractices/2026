@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 public record CardServiceDefaultsConfigurationProperties(
 
     @Positive
-    long pageLimit,
+    int pageLimit,
 
     @NotNegative
     long pageOffset,
