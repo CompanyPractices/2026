@@ -38,7 +38,7 @@ public class ProxyingToLoggerTest extends E2EBaseTest {
                 {
                   "mti": "0100",
                   "stan": "000001",
-                  "pan": %s,
+                  "pan": "%s",
                   "processingCode": "000000",
                   "amount": 150000,
                   "currencyCode": "643",
