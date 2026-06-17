@@ -2,6 +2,7 @@ package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.events.CardGeneratedEvent;
+import com.processing.cardmanagement.exceptions.CardGenerationLimitException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.models.CardStatus;
@@ -30,7 +31,7 @@ public class CardGeneratorService {
     private final CardEventNotifier eventNotifier;
     private final Faker faker = new Faker();
 
-    private static final int DAYS_IN_MONTH = 30;
+    private static final long DAYS_IN_MONTH = 30;
 
     /**
      * Генерирует указанное количество тестовых карт и сохраняет их в базе данных
@@ -43,9 +44,12 @@ public class CardGeneratorService {
      * @return список созданных карт
      */
     public List<Card> generate(int count, List<String> bins) {
+        if (count > generatorOptions.maxCount()) {
+            throw new CardGenerationLimitException(generatorOptions.maxCount());
+        }
+
         log.info("Generating {} cards for bins: {}", count, bins);
         List<CardDraft> cards = new ArrayList<>();
-        List<Card> result = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             String bin = bins.get(i % bins.size());
@@ -65,7 +69,7 @@ public class CardGeneratorService {
                     )
             );
             BigDecimal monthlyLimit = BigDecimal.valueOf(
-                    dailyLimit.longValue() * 30L
+                    dailyLimit.longValue() * DAYS_IN_MONTH
             );
 
 
@@ -78,19 +82,10 @@ public class CardGeneratorService {
                     monthlyLimit,
                     balance
             );
-
             cards.add(card);
-
-            if (cards.size() == generatorOptions.batchSize()) {
-                result.addAll(cardService.createCards(cards));
-                cards.clear();
-            }
         }
 
-        if (!cards.isEmpty()) {
-            result.addAll(cardService.createCards(cards));
-        }
-
+        List<Card> result = cardService.createCards(cards);
         result.forEach(c -> eventNotifier.onEvent(new CardGeneratedEvent(c.status())));
 
         log.info("Successfully generated {} cards", count);

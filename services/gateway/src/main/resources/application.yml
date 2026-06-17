@@ -147,7 +147,11 @@ gateway:
       auth-url: ${AUTH_URL:http://localhost:8083}
       cards-url: ${CARD_MGMT_URL:http://localhost:8081}
   rate-limit:
-    transactions-per-second: ${TRANSACTIONS_RATE_LIMIT:100}
+    transactions:
+      capacity: ${TRANSACTIONS_RATE_LIMIT_CAPACITY:${gateway.rate-limit.transactions-per-second:${TRANSACTIONS_RATE_LIMIT:100}}}
+      refill-per-second: ${TRANSACTIONS_RATE_LIMIT_REFILL_PER_SECOND:${gateway.rate-limit.transactions-per-second:${TRANSACTIONS_RATE_LIMIT:100}}}
+      bucket-expire-after-access: ${TRANSACTIONS_RATE_LIMIT_BUCKET_TTL:10m}
+      max-buckets: ${TRANSACTIONS_RATE_LIMIT_MAX_BUCKETS:10000}
   circuit-breaker:
     failure-threshold: ${CIRCUIT_BREAKER_FAILURE_THRESHOLD:3}
     open-duration: ${CIRCUIT_BREAKER_OPEN_DURATION:10s}

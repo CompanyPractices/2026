@@ -17,6 +17,6 @@ public record CardGeneratorOptions(
         BigDecimal minDailyLimit,
         BigDecimal maxDailyLimit,
         String currencyCode,
-        int batchSize
+        int maxCount
 ) {
 }
