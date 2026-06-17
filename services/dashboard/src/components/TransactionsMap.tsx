@@ -47,7 +47,7 @@ function getClusterStyle(count: number) {
     }
 }
 
-function createClusterIcon(count: number, isDark: boolean) {
+function createClusterIcon(count: number) {
     const style = getClusterStyle(count);
 
     return L.divIcon({
@@ -140,7 +140,7 @@ export function TransactionMap({ transactions }: TransactionMapProps) {
                 <FitBoundsToClusters clusters={clusters} />
 
                 {clusters.map((cluster) => {
-                    const icon = createClusterIcon(cluster.count, isDark);
+                    const icon = createClusterIcon(cluster.count);
                     const stats = getClusterStats(cluster.transactions);
 
                     return (
