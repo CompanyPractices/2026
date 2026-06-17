@@ -41,7 +41,7 @@ public class ProxyingToCardsTest extends E2EBaseTest {
                 }
                 """;
 
-        JsonNode response = httpUtils.httpPost(GATEWAY_URL, "/api/cards", requestBody, 201);
+        JsonNode response = httpUtils.httpPostRaw(GATEWAY_URL, "/api/cards", requestBody, 201);
 
         gatewayResponse = new ResponseFieldsToCompare(
                 response.path("id"),
