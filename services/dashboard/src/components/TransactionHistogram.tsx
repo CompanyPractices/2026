@@ -12,10 +12,12 @@ type TransactionHistogramProps = {
 export default function TransactionHistogram({transactions, loading, error}: TransactionHistogramProps){
     const { theme } = useContext(ThemeContext)!;
     const isDark = theme === 'dark';
+    const range = 100000;
 
     const textColor = isDark ? '#ECF6DA' : '#273338';
     const gridColor = isDark ? '#E5E7EB' : '#344148';
     const barColor = isDark ? 'oklch(79.2% 0.209 151.711)' : 'green'
+    const activeBarColor = isDark ? 'rgb(52 211 153)' : 'oklch(0.677 0.18 151.362)'
 
     if (error) {
         return (
@@ -43,24 +45,31 @@ export default function TransactionHistogram({transactions, loading, error}: Tra
 
     const histogramData: Record<number, number> = {};
     transactions.map((tx) => {
-        histogramData[tx.amount] = (histogramData[tx.amount] || 0) + 1;
+        const amountRange = Math.trunc(tx.amount / range);
+        histogramData[amountRange] = (histogramData[amountRange] || 0) + 1;
     })
-    const txData = Object.entries(histogramData).map(([amount, count]) => ({amount, count})).sort((a, b) => a.amount.localeCompare(b.amount));
+    const txData = Object.entries(histogramData).map(([amount, count]) => ({amount: Number(amount), count}))
+        .sort((a, b) => a.amount - b.amount);
 
     return (
         <div className="w-full h-full">
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                     data={txData}
-                    margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+                    margin={{ top: 30, right: 30, left: 10, bottom: 20 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
                     <XAxis
                         dataKey="amount"
+                        tickFormatter={(val) => {
+                            const min = val * range;
+                            const max = (val + 1) * range;
+                            return `${(min / 1000).toLocaleString()}k – ${(max / 1000).toLocaleString()}k`
+                        }}
                         stroke={textColor}
-                        tick={{ fill: textColor }}
+                        tick={{ fill: textColor, fontSize: 12 }}
                         tickLine={false}
-                        label={{value: 'Суммы', position:"insideBottom", offset:-10 }}
+                        label={{value: 'Диапазон суммы (в сотнях тысяч руб.)', position:"insideBottom", offset:-10 }}
                     />
                     <YAxis
                         dataKey="count"
@@ -68,17 +77,19 @@ export default function TransactionHistogram({transactions, loading, error}: Tra
                         stroke={textColor}
                         tick={{ fill: textColor, fontSize: 12 }}
                         tickLine={false}
+                        label={{value: 'Частота', position:"top", offset:15}}
                     />
                     <Bar
                         dataKey="count"
                         fill={barColor}
                         activeBar={{
-                            fill:"pink",
-                            stroke: 'blue'
+                            fill: activeBarColor,
+                            stroke: 'white',
+                            strokeWidth: 2
                         }}
                         radius={[10, 10, 0, 0]}
                     />
-                    <Tooltip cursor={{ fill: 'oklch(92.8% 0.006 264.531)' }}/>
+                    <Tooltip cursor={{ fill: 'rgb(238 238 238 / 0.3)' }}/>
                 </BarChart>
             </ResponsiveContainer>
         </div>
