@@ -43,7 +43,7 @@ public record AuthorizationRequest(
         @Schema(description = "Currency type", example = "643")
         String currencyCode,
 
-        @NotBlank
+        @NotNull
         @Schema(description = "Transaction time", example = "2026-06-05T18:12:49.07Z")
         Instant transmissionDateTime,
 
