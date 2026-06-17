@@ -229,7 +229,8 @@ jobs:
         run: |
           echo "Waiting for services to start"
           for i in {1..60}; do
-            if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+            not_ready=$(docker compose ps --format '{{.Health}}' | grep -E 'starting|unhealthy' | wc -l | tr -d ' ')
+            if [ $"not_ready" == "0" ]; then
               break
             fi
             echo "Waiting ($i/60)"
@@ -238,7 +239,7 @@ jobs:
           sleep 15
 
       - name: Run e2e tests
-        run: mvn -f services/e2e-tests/pom.xml test
+        run: mvn -f services/pom.xml -pl e2e-tests -am test -DskipE2eTests=false
 
       - name: Show logs on failure
         if: failure()
