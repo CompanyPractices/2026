@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -24,17 +23,17 @@ public class AcquirerProvider {
     }
 
     public AcquirerFeeResponse getAcquirerFee(AcquirerFeeRequest request) {
-        BigDecimal acquirerFee = repository.findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
+        AcquirerFee acquirerFee = repository.findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
                 request.transmissionDateTime(), request.stan(), request.terminalId(),
-                request.amount(), request.pan()).getAcquirerFee();
+                request.amount(), request.pan());
         if (acquirerFee == null) {
             log.warn("AcquirerFee not found for request: TransmissiontDataTime: {}, STAN: {}, TerminalId: {}",
                     request.transmissionDateTime(), request.stan(), request.terminalId());
             throw new ResourceNotFoundException("Acquirer fee not found for stan = " + request.stan());
         }
         log.info("Request for get acquirer fee: DataTime: {} STAN: {} Acquirer fee: {}",
-                request.transmissionDateTime(), request.stan(), acquirerFee);
+                request.transmissionDateTime(), request.stan(), acquirerFee.getAcquirerFee());
 
-        return new AcquirerFeeResponse(acquirerFee);
+        return new AcquirerFeeResponse(acquirerFee.getAcquirerFee());
     }
 }

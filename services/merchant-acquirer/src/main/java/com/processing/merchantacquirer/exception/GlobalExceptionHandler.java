@@ -76,8 +76,8 @@ public class GlobalExceptionHandler {
                             "External service error",
                             ex.getMessage(),
                             String.valueOf(LocalDateTime.now()),
-                            SERVICE_NAME,
-                            NO_RETRY));
+                            ex.getServiceName(),
+                            ex.getRetryAfterMs()));
   }
 
   @ExceptionHandler(Exception.class)
@@ -86,7 +86,7 @@ public class GlobalExceptionHandler {
             .body(
                     new ErrorResponse(
                             "Internal service error",
-                            ex.getMessage(),
+                            "Unexpected error in merchant acquirer simulator service",
                             String.valueOf(LocalDateTime.now()),
                             SERVICE_NAME,
                             NO_RETRY));
