@@ -28,12 +28,15 @@ public class TerminalSimulatorService {
     private final GatewayClient gatewayClient;
     private final TransactionFactory transactionFactory;
     private final int tps;
+    private final int cardsAmount;
 
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
-                                     @Value("${simulator.tps:100}") int tps) {
+                                     @Value("${simulator.tps:100}") int tps,
+                                     @Value("${simulator.cardsAmount:5000}") int cardsAmount) {
         this.gatewayClient = gatewayClient;
         this.transactionFactory = transactionFactory;
         this.tps = tps;
+        this.cardsAmount = cardsAmount;
     }
 
     private record TransactionTask(TransactionType type, PartofDay partOfDay) {}
@@ -50,14 +53,19 @@ public class TerminalSimulatorService {
     }
 
     private List<CardModel> loadCards(TerminalScenario scenario) {
-        List<CardModel> activeCards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70);
+        boolean needBlocked = scenario == TerminalScenario.mixed || scenario == TerminalScenario.declines_test;
+        int blockedPercent = 20; // 20%
+        int activePercent = (needBlocked) ? 80 : 100;
+
+        List<CardModel> activeCards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE,
+                (cardsAmount * activePercent / 100));
         if (activeCards == null || activeCards.isEmpty()) {
             throw new IllegalStateException("No ACTIVE cards available");
         }
         List<CardModel> newCards = new ArrayList<>(activeCards);
-        boolean needBlocked = scenario == TerminalScenario.mixed || scenario == TerminalScenario.declines_test;
         if (needBlocked) {
-            List<CardModel> blockedCards = gatewayClient.getCardsFromCardManager(CardModelStatus.BLOCKED, 30);
+            List<CardModel> blockedCards = gatewayClient.getCardsFromCardManager(CardModelStatus.BLOCKED,
+                    (cardsAmount * blockedPercent / 100));
             if (blockedCards == null || blockedCards.isEmpty()) {
                 throw new IllegalStateException("No BLOCKED cards available");
             }

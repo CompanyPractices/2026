@@ -45,7 +45,9 @@ class TerminalSimulatorServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TerminalSimulatorService(gatewayClient, transactionFactory, 100);
+        int cardsAmount = 5000;
+        int tps = 100;
+        service = new TerminalSimulatorService(gatewayClient, transactionFactory, tps, cardsAmount);
         CardModel activeCard = new CardModel(UUID.randomUUID(), "4000001234560001", "400000", "IVAN IVANOV",
                 YearMonth.of(2030, 1), CardModelStatus.ACTIVE, "643", new BigDecimal(500_002L),
                 new BigDecimal(100_000L), new BigDecimal(20_000_000L), "ISS001", LocalDateTime.now());
@@ -53,8 +55,10 @@ class TerminalSimulatorServiceTest {
                 YearMonth.of(2029, 1), CardModelStatus.BLOCKED, "643", new BigDecimal(700_000L),
                 new BigDecimal(200_000L), new BigDecimal(40_000L), "ISS001", LocalDateTime.now());
 
-        when(gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70)).thenReturn(List.of(activeCard));
-        when(gatewayClient.getCardsFromCardManager(CardModelStatus.BLOCKED, 30)).thenReturn(List.of(blockedCard));
+        when(gatewayClient.getCardsFromCardManager(eq(CardModelStatus.ACTIVE),
+                anyInt())).thenReturn(List.of(activeCard));
+        when(gatewayClient.getCardsFromCardManager(eq(CardModelStatus.BLOCKED),
+                anyInt())).thenReturn(List.of(blockedCard));
         when(transactionFactory.getRequiredStatus(any(TransactionType.class))).thenAnswer(invocation ->
         {
             TransactionType type = invocation.getArgument(0);
@@ -154,7 +158,7 @@ class TerminalSimulatorServiceTest {
 
     @Test
     void run_whenNoActiveCards_throwsException() {
-        when(gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, 70)).thenReturn(null);
+        when(gatewayClient.getCardsFromCardManager(eq(CardModelStatus.ACTIVE), anyInt())).thenReturn(null);
         assertThatThrownBy(() -> service.run(5, TerminalScenario.normal))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("No ACTIVE cards available");
@@ -162,7 +166,7 @@ class TerminalSimulatorServiceTest {
 
     @Test
     void run_whenNoBlockedCardsAndScenarioRequiresThem_throwsException() {
-        when(gatewayClient.getCardsFromCardManager(CardModelStatus.BLOCKED, 30)).thenReturn(null);
+        when(gatewayClient.getCardsFromCardManager(eq(CardModelStatus.BLOCKED), anyInt())).thenReturn(null);
         assertThatThrownBy(() -> service.run(5, TerminalScenario.mixed))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("No BLOCKED cards available");
