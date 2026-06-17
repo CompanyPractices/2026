@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.processing.config.SwitchProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -33,7 +32,7 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
             BigDecimal amount
     ) {
         try {
-            AcquirerFeeResponse response = restClient.method(HttpMethod.GET)
+            AcquirerFeeResponse response = restClient.post()
                     .uri(switchProperties.merchantAcquirerUrl()
                             + "/api/simulator/merchant/fee")
                     .body(new AcquirerFeeRequest(
