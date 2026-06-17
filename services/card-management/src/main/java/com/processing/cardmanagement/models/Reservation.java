@@ -1,7 +1,8 @@
 package com.processing.cardmanagement.models;
 
-import com.processing.cardmanagement.exceptions.RollbackAlreadySatisfied;
+import com.processing.cardmanagement.exceptions.RollbackAlreadySatisfiedException;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -20,14 +21,14 @@ import java.util.UUID;
 public record Reservation(
     UUID id,
     String pan,
-    long reservationAmount,
+    BigDecimal reservationAmount,
     String rrn,
     ReservationStatus status,
     Instant createdAt,
     Instant updatedAt
 ) {
 
-    public Reservation(String pan, long amount, String rrn) {
+    public Reservation(String pan, BigDecimal amount, String rrn) {
         this(
             UUID.randomUUID(),
             pan,
@@ -45,9 +46,9 @@ public record Reservation(
      * @param rollbackAmount количество возвращаемых средств
      * @return измененную сущность
      */
-    public ReservationRollback createRollback(long rollbackAmount) {
+    public ReservationRollback startRollback(BigDecimal rollbackAmount) {
         if (status == ReservationStatus.ROLLED_BACK) {
-            throw new RollbackAlreadySatisfied(rrn);
+            throw new RollbackAlreadySatisfiedException(rrn);
         }
 
         return new ReservationRollback(
@@ -66,7 +67,7 @@ public record Reservation(
      * @param rollback роллбек удержания
      * @return сущность с обновленными данными
      */
-    public Reservation markRolledBack(ReservationRollback rollback) {
+    public Reservation rolledBack(ReservationRollback rollback) {
         if (!Objects.equals(this.id, rollback.reservationId())) {
             throw new IllegalArgumentException("Rollback's reservation ID and this ID differ");
         }

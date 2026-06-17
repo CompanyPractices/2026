@@ -1,9 +1,9 @@
 package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
-import com.processing.cardmanagement.exceptions.RollbackAlreadySatisfied;
-import com.processing.cardmanagement.exceptions.RrnAlreadyExists;
-import com.processing.cardmanagement.exceptions.RrnNotFound;
+import com.processing.cardmanagement.exceptions.RollbackAlreadySatisfiedException;
+import com.processing.cardmanagement.exceptions.RrnAlreadyExistsException;
+import com.processing.cardmanagement.exceptions.RrnNotFoundException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.models.CardStatus;
@@ -110,8 +110,8 @@ public interface CardService {
      * @param amount размер резервирования
      * @param rrn    номер rrn
      * @return измененная карта
-     * @throws CardNotFoundException если карта не найдена
-     * @throws RrnAlreadyExists      если RRN уже есть в БД
+     * @throws CardNotFoundException     если карта не найдена
+     * @throws RrnAlreadyExistsException если RRN уже есть в БД
      */
     Card reserve(String pan, BigDecimal amount, String rrn);
 
@@ -122,9 +122,9 @@ public interface CardService {
      * @param amount размер резервирования
      * @param rrn    номер rrn
      * @return измененная карта
-     * @throws CardNotFoundException    если карта не найдена
-     * @throws RollbackAlreadySatisfied если возврат уже был запрошен
-     * @throws RrnNotFound              если не найдено зачисление с данным RRN
+     * @throws CardNotFoundException             если карта не найдена
+     * @throws RollbackAlreadySatisfiedException если возврат уже был запрошен
+     * @throws RrnNotFoundException              если не найдено зачисление с данным RRN
      */
     Card rollback(String pan, BigDecimal amount, String rrn);
 }

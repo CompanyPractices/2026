@@ -56,7 +56,7 @@ public class CardServiceLoadTest {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(POSTGRES_IMAGE);
 
     private final ThreadLocal<Faker> faker = ThreadLocal.withInitial(() ->
-            new Faker(ThreadLocalRandom.current())
+        new Faker(ThreadLocalRandom.current())
     );
 
     @Autowired
@@ -71,7 +71,7 @@ public class CardServiceLoadTest {
     @BeforeEach
     void setUp() {
         this.loadTestEngine = new LoadTestEngine(
-                Executors.newFixedThreadPool(maximumParallelRequests)
+            Executors.newFixedThreadPool(maximumParallelRequests)
         );
     }
 
@@ -83,19 +83,19 @@ public class CardServiceLoadTest {
     @Test
     void cardServiceCreateLoadTest() throws ExecutionException, InterruptedException {
         loadTestEngine.execute(
-                maximumParallelRequests,
-                maximumTotalRequests,
-                () -> {
-                    var postQuery = randomCreateCardRequest(faker.get());
-                    given()
-                            .contentType(ContentType.JSON)
-                            .body(postQuery)
-                            .port(port)
-                            .when()
-                            .post("/api/cards")
-                            .then()
-                            .statusCode(201);
-                }
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> {
+                var postQuery = randomCreateCardRequest(faker.get());
+                given()
+                    .contentType(ContentType.JSON)
+                    .body(postQuery)
+                    .port(port)
+                    .when()
+                    .post("/api/cards")
+                    .then()
+                    .statusCode(201);
+            }
         ).get();
     }
 
@@ -103,15 +103,15 @@ public class CardServiceLoadTest {
     void cardServiceGetSingleCardLoadTest() throws ExecutionException, InterruptedException {
         var cardsAmount = 500;
         var pan = createRandomCards(cardsAmount)
-                .stream()
-                .map(Card::pan)
-                .toList()
-                .getFirst();
+            .stream()
+            .map(Card::pan)
+            .toList()
+            .getFirst();
 
         loadTestEngine.execute(
-                maximumParallelRequests,
-                maximumTotalRequests,
-                () -> testGetCard(pan)
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testGetCard(pan)
         ).get();
     }
 
@@ -119,16 +119,16 @@ public class CardServiceLoadTest {
     void cardServiceGetManyCardsLoadTest() throws ExecutionException, InterruptedException {
         var cardsAmount = 500;
         var pans = createRandomCards(cardsAmount)
-                .stream()
-                .map(Card::pan)
-                .toArray(String[]::new);
+            .stream()
+            .map(Card::pan)
+            .toArray(String[]::new);
 
         loadTestEngine.execute(
-                maximumParallelRequests,
-                maximumTotalRequests,
-                () -> testGetCard(
-                        pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)]
-                )
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testGetCard(
+                pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)]
+            )
         ).get();
     }
 
@@ -141,28 +141,28 @@ public class CardServiceLoadTest {
         CardModelStatus[] statuses = CardModelStatus.values();
 
         loadTestEngine.execute(
-                maximumParallelRequests,
-                maximumTotalRequests,
-                () -> {
-                    ThreadLocalRandom random = ThreadLocalRandom.current();
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> {
+                ThreadLocalRandom random = ThreadLocalRandom.current();
 
-                    String randomBin = bins[random.nextInt(bins.length)];
-                    String randomIssuerId = issuerIds[random.nextInt(issuerIds.length)];
-                    CardModelStatus randomStatus = statuses[random.nextInt(statuses.length)];
-                    long randomOffset = random.nextLong(0, settings.maxPageLimit());
+                String randomBin = bins[random.nextInt(bins.length)];
+                String randomIssuerId = issuerIds[random.nextInt(issuerIds.length)];
+                CardModelStatus randomStatus = statuses[random.nextInt(statuses.length)];
+                long randomOffset = random.nextLong(0, settings.maxPageLimit());
 
-                    given()
-                            .queryParam("limit", settings.maxPageLimit())
-                            .queryParam("offset", randomOffset)
-                            .queryParam("status", randomStatus.name())
-                            .queryParam("bin", randomBin)
-                            .queryParam("issuerId", randomIssuerId)
-                            .port(port)
-                            .when()
-                            .get("/api/cards")
-                            .then()
-                            .statusCode(200);
-                }
+                given()
+                    .queryParam("limit", settings.maxPageLimit())
+                    .queryParam("offset", randomOffset)
+                    .queryParam("status", randomStatus.name())
+                    .queryParam("bin", randomBin)
+                    .queryParam("issuerId", randomIssuerId)
+                    .port(port)
+                    .when()
+                    .get("/api/cards")
+                    .then()
+                    .statusCode(200);
+            }
         ).get();
     }
 
@@ -176,15 +176,15 @@ public class CardServiceLoadTest {
         var statuses = CardModelStatus.values();
 
         loadTestEngine.execute(
-                maximumParallelRequests,
-                maximumTotalRequests,
-                () -> testPatchCard(
-                        pan,
-                        statuses,
-                        maxDailyLimit,
-                        maxMonthlyLimit,
-                        maxBalance
-                )
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testPatchCard(
+                pan,
+                statuses,
+                maxDailyLimit,
+                maxMonthlyLimit,
+                maxBalance
+            )
         ).get();
     }
 
@@ -196,21 +196,21 @@ public class CardServiceLoadTest {
         int maxBalance = 1_000_000;
 
         var pans = createRandomCards(cardsAmount)
-                .stream()
-                .map(Card::pan)
-                .toArray(String[]::new);
+            .stream()
+            .map(Card::pan)
+            .toArray(String[]::new);
         var statuses = CardModelStatus.values();
 
         loadTestEngine.execute(
-                maximumParallelRequests,
-                maximumTotalRequests,
-                () -> testPatchCard(
-                        pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)],
-                        statuses,
-                        maxDailyLimit,
-                        maxMonthlyLimit,
-                        maxBalance
-                )
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testPatchCard(
+                pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)],
+                statuses,
+                maxDailyLimit,
+                maxMonthlyLimit,
+                maxBalance
+            )
         ).get();
     }
 
@@ -224,20 +224,20 @@ public class CardServiceLoadTest {
         }
 
         loadTestEngine.execute(
-                maximumParallelRequests,
-                maximumTotalRequests,
-                () -> {
-                    var pan = pansToDelete.poll();
-                    if (pan != null) {
-                        given()
-                                .pathParam("pan", pan)
-                                .port(port)
-                                .when()
-                                .delete("/api/cards/{pan}")
-                                .then()
-                                .statusCode(204);
-                    }
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> {
+                var pan = pansToDelete.poll();
+                if (pan != null) {
+                    given()
+                        .pathParam("pan", pan)
+                        .port(port)
+                        .when()
+                        .delete("/api/cards/{pan}")
+                        .then()
+                        .statusCode(204);
                 }
+            }
         ).get();
     }
 
@@ -246,9 +246,9 @@ public class CardServiceLoadTest {
         var pan = createCard(randomCreateCardRequest(faker.get())).pan();
 
         loadTestEngine.execute(
-                maximumParallelRequests,
-                maximumTotalRequests,
-                () -> testReserveCard(pan, 1)
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testReserveCard(pan, 1)
         ).get();
     }
 
@@ -257,74 +257,74 @@ public class CardServiceLoadTest {
         var cardsAmount = 500;
         var maxReservationAmount = 1_000_000;
         var pans = createRandomCards(cardsAmount)
-                .stream()
-                .map(Card::pan)
-                .toArray(String[]::new);
+            .stream()
+            .map(Card::pan)
+            .toArray(String[]::new);
 
         loadTestEngine.execute(
-                maximumParallelRequests,
-                maximumTotalRequests,
-                () -> testReserveCard(
-                        pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)],
-                        maxReservationAmount
-                )
+            maximumParallelRequests,
+            maximumTotalRequests,
+            () -> testReserveCard(
+                pans[ThreadLocalRandom.current().nextInt(0, cardsAmount)],
+                maxReservationAmount
+            )
         ).get();
     }
 
     private void testGetCard(String pan) {
         given()
-                .pathParam("PAN", pan)
-                .port(port)
-                .when()
-                .get("/api/cards/{PAN}")
-                .then()
-                .statusCode(200);
+            .pathParam("PAN", pan)
+            .port(port)
+            .when()
+            .get("/api/cards/{PAN}")
+            .then()
+            .statusCode(200);
     }
 
     private void testPatchCard(
-            String pan,
-            CardModelStatus[] statuses,
-            int maxDailyLimit,
-            int maxMonthlyLimit,
-            int maxBalance
+        String pan,
+        CardModelStatus[] statuses,
+        int maxDailyLimit,
+        int maxMonthlyLimit,
+        int maxBalance
     ) {
         var random = ThreadLocalRandom.current();
 
         var patchRequest = new PatchCardRequest(
-                statuses[random.nextInt(statuses.length)],
-                BigDecimal.valueOf(random.nextLong(0, maxDailyLimit)),
-                BigDecimal.valueOf(random.nextLong(maxDailyLimit, maxMonthlyLimit)),
-                BigDecimal.valueOf(random.nextLong(0, maxBalance))
+            statuses[random.nextInt(statuses.length)],
+            BigDecimal.valueOf(random.nextLong(0, maxDailyLimit)),
+            BigDecimal.valueOf(random.nextLong(maxDailyLimit, maxMonthlyLimit)),
+            BigDecimal.valueOf(random.nextLong(0, maxBalance))
         );
 
         given()
-                .contentType(ContentType.JSON)
-                .body(patchRequest)
-                .pathParam("pan", pan)
-                .port(port)
-                .when()
-                .patch("/api/cards/{pan}")
-                .then()
-                .statusCode(200);
+            .contentType(ContentType.JSON)
+            .body(patchRequest)
+            .pathParam("pan", pan)
+            .port(port)
+            .when()
+            .patch("/api/cards/{pan}")
+            .then()
+            .statusCode(200);
     }
 
     private void testReserveCard(String pan, long maxAmount) {
         var f = faker.get();
 
         var reserveRequest = new ReserveRequest(
-                BigDecimal.valueOf(f.number().numberBetween(0, maxAmount)),
-                f.lorem().characters()
+            BigDecimal.valueOf(f.number().numberBetween(0, maxAmount)),
+            f.number().digits(12)
         );
 
         given()
-                .contentType(ContentType.JSON)
-                .body(reserveRequest)
-                .pathParam("pan", pan)
-                .port(port)
-                .when()
-                .patch("/api/cards/{pan}")
-                .then()
-                .statusCode(anyOf(is(200), is(422)));
+            .contentType(ContentType.JSON)
+            .body(reserveRequest)
+            .pathParam("pan", pan)
+            .port(port)
+            .when()
+            .patch("/api/cards/{pan}")
+            .then()
+            .statusCode(anyOf(is(200), is(422)));
     }
 
     private List<Card> createRandomCards(int value) {
@@ -338,25 +338,25 @@ public class CardServiceLoadTest {
     private CreateCardRequest randomCreateCardRequest(Faker faker) {
         var dailyLimit = faker.number().numberBetween(0L, 15_000_000L);
         return new CreateCardRequest(
-                faker.number().digits(6),
-                faker.name().fullName().toUpperCase(Locale.ROOT),
-                faker.number().digits(3),
-                BigDecimal.valueOf(dailyLimit),
-                BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 300_000_000L)),
-                BigDecimal.valueOf(faker.number().numberBetween(0L, 1_000_000L))
+            faker.number().digits(6),
+            faker.name().fullName().toUpperCase(Locale.ROOT),
+            faker.number().digits(3),
+            BigDecimal.valueOf(dailyLimit),
+            BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 300_000_000L)),
+            BigDecimal.valueOf(faker.number().numberBetween(0L, 1_000_000L))
         );
     }
 
     private Card createCard(CreateCardRequest req) {
         return given()
-                .contentType(ContentType.JSON)
-                .body(req)
-                .port(port)
-                .when()
-                .post("/api/cards")
-                .then()
-                .statusCode(201)
-                .extract()
-                .as(Card.class);
+            .contentType(ContentType.JSON)
+            .body(req)
+            .port(port)
+            .when()
+            .post("/api/cards")
+            .then()
+            .statusCode(201)
+            .extract()
+            .as(Card.class);
     }
 }

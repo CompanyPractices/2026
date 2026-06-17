@@ -1,8 +1,8 @@
 package com.processing.cardmanagement.exceptions;
 
-public final class RrnNotFound extends CardManagementException {
+public final class RrnNotFoundException extends CardManagementException {
 
-    public RrnNotFound(String rrn) {
+    public RrnNotFoundException(String rrn) {
         super("Can not find reservation with RRN \"" + rrn + "\"");
     }
 }

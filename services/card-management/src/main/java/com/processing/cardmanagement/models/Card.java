@@ -74,7 +74,7 @@ public record Card(
      * @param reservation информация о резервировании
      * @return карта с измененным балансом
      */
-    public Card applyReservation(Reservation reservation) {
+    public Card withReservation(Reservation reservation) {
         if (!Objects.equals(this.pan, reservation.pan())) {
             throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
         }
@@ -94,6 +94,37 @@ public record Card(
             dailyLimit,
             monthlyLimit,
             availableBalance.subtract(amount),
+            issuerId,
+            createdAt
+        );
+    }
+
+    /**
+     * Создает копию карты с возвращенным количеством средств
+     *
+     * @param rollback информация о возврате средств
+     * @return карта с измененным балансом
+     */
+    public Card withRollback(ReservationRollback rollback) {
+        if (!Objects.equals(this.pan, rollback.pan())) {
+            throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
+        }
+        BigDecimal amount = rollback.rollbackAmount();
+        if (this.availableBalance.compareTo(amount) < 0) {
+            throw new InsufficientFundsException();
+        }
+
+        return new Card(
+            id,
+            pan,
+            bin,
+            cardholderName,
+            expiryDate,
+            status,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            availableBalance.add(amount),
             issuerId,
             createdAt
         );

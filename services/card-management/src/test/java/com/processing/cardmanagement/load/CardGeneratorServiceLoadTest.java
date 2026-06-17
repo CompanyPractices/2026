@@ -1,6 +1,8 @@
 package com.processing.cardmanagement.load;
 
+import com.processing.cardmanagement.models.BinIssuer;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
+import com.processing.cardmanagement.services.BinIssuerService;
 import com.processing.common.dto.cardmanagement.GenerateCardsRequest;
 import io.restassured.http.ContentType;
 import net.datafaker.Faker;
@@ -15,7 +17,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -48,6 +49,9 @@ public class CardGeneratorServiceLoadTest {
     );
 
     @Autowired
+    private BinIssuerService binIssuerService;
+
+    @Autowired
     private CardJpaRepository cardJpaRepository;
 
     @BeforeEach
@@ -65,42 +69,39 @@ public class CardGeneratorServiceLoadTest {
     @Test
     void cardGenerationConcurrentLoadTest() throws ExecutionException, InterruptedException {
         int count = 1;
-        int beansAmount = 100;
         int totalRequests = 5000;
 
         loadTestEngine.execute(
             maximumParallelRequests,
             totalRequests,
-            () -> testCardGeneration(count, beansAmount)
+            () -> testCardGeneration(count)
         ).get();
     }
 
     @Test
     void cardGenerationManyLargeDataLoadTest() throws ExecutionException, InterruptedException {
         int count = 1000;
-        int beansAmount = 100;
         int totalRequests = 10;
 
         loadTestEngine.execute(
             Math.min(maximumParallelRequests, totalRequests),
             totalRequests,
-            () -> testCardGeneration(count, beansAmount)
+            () -> testCardGeneration(count)
         ).get();
     }
 
     @Test
     void cardGenerationSingleLargeDataLoadTest() {
         int count = 10000;
-        int beansAmount = 100;
-        testCardGeneration(count, beansAmount);
+        testCardGeneration(count);
     }
 
-    private void testCardGeneration(int count, int beansAmount) {
-        var f = faker.get();
-        var bins = new ArrayList<String>(beansAmount);
-        for (int i = 0; i < beansAmount; i++) {
-            bins.add(f.number().digits(6));
-        }
+    private void testCardGeneration(int count) {
+        var bins = binIssuerService
+            .getAll()
+            .stream()
+            .map(BinIssuer::bin)
+            .toList();
         var request = new GenerateCardsRequest(count, bins);
         given()
             .contentType(ContentType.JSON)

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -22,19 +23,16 @@ public class ReservationRollbackEntity {
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "reservation_id", unique = true)
+    @JoinColumn(name = "reservation_id", referencedColumnName = "id")
     private ReservationEntity reservation;
 
     @Column(length = 16, nullable = false)
     private String pan;
 
-    long reservationAmount;
+    BigDecimal rollbackAmount;
 
     @Column(length = 12, unique = true, nullable = false)
     String rrn;
-
-    @Column(nullable = false)
-    String status;
 
     Instant createdAt;
 }

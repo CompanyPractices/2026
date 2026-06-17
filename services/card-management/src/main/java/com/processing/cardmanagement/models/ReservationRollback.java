@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.models;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -17,7 +18,7 @@ public record ReservationRollback(
     UUID id,
     UUID reservationId,
     String pan,
-    long rollbackAmount,
+    BigDecimal rollbackAmount,
     String rrn,
     Instant createdAt
 ) {}

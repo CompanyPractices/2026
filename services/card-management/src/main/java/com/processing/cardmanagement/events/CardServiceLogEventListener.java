@@ -13,7 +13,10 @@ public class CardServiceLogEventListener implements CardEventListener {
             case CardServiceCreationEvent e -> log.info("Created {} cards", e.amount());
             case CardServicePatchEvent e -> log.info("Patched card {}", e.pan());
             case CardServiceDeletionEvent e -> log.info("Deleted card {}", e.pan());
-            case CardServiceReserveEvent e -> log.info("Reserved {} from card {}", e.amount(), e.pan());
+            case CardServiceReserveEvent e ->
+                log.info("Reserved {} from card {} with RRN {}", e.amount(), e.pan(), e.rrn());
+            case CardServiceRollbackEvent e ->
+                log.warn("Rolled back {} from card {} with RRN {}", e.amount(), e.pan(), e.rrn());
             default -> {
             }
         }

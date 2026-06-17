@@ -10,6 +10,7 @@ public interface CardRestMapper {
 
     CardModel toDto(Card card);
 
-    @Mapping(target = "withReserved", ignore = true)
+    @Mapping(target = "withReservation", ignore = true)
+    @Mapping(target = "withRollback", ignore = true)
     Card toDomain(CardModel model);
 }

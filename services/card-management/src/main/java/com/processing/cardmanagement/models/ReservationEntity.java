@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -27,7 +28,7 @@ public class ReservationEntity {
     @Column(length = 16, nullable = false)
     private String pan;
 
-    long reservationAmount;
+    BigDecimal reservationAmount;
 
     @Column(length = 12, unique = true, nullable = false)
     String rrn;
