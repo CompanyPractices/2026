@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Service
 public class MerchantAcquirerClient implements AcquiringFeeClient {
@@ -25,7 +26,7 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
 
     @Override
     public BigDecimal fetchAcquiringFee(
-            String transmissionDateTime,
+            Instant transmissionDateTime,
             String stan,
             String pan,
             String terminalId,
@@ -50,7 +51,7 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     }
 
     private record AcquirerFeeRequest(
-            String transmissionDateTime,
+            Instant transmissionDateTime,
             String stan,
             String pan,
             @JsonProperty("terminalId") String terminalId,

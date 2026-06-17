@@ -10,6 +10,7 @@ import com.processing.support.TrackingLoggerClient;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -97,7 +98,7 @@ class RouteServiceTest {
 
         AuthorizationRequest request = new AuthorizationRequest(
                 "0100", "000001", "4000001234560001", "000000", new BigDecimal("150000"), "643",
-                "2026-06-01T10:30:00Z",
+                Instant.parse("2026-06-01T10:30:00Z"),
                 "TERM001", SwitchTestData.TERMINAL_TYPE, "MERCH00000000001", "5411", "ACQ001", null);
 
         AuthorizationResponse response = routeService.route(request);
