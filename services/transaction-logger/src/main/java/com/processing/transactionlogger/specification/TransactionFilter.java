@@ -1,7 +1,7 @@
 package com.processing.transactionlogger.specification;
 
+import com.processing.common.dto.transactionlogger.TransactionStatus;
 import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
@@ -16,8 +16,7 @@ import java.time.LocalDate;
 @ValidDateRange
 public class TransactionFilter {
     private String pan;
-    @Pattern(regexp = "APPROVED|DECLINED", message = "status must be APPROVED or DECLINED")
-    private String status;
+    private TransactionStatus status;
     private LocalDate dateFrom;
     private LocalDate dateTo;
     private String merchantId;
