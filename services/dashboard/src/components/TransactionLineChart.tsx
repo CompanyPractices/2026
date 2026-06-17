@@ -23,8 +23,8 @@ export default function TransactionLineChart({transactions, loading, error} : Li
     function prepareData(transactions: Transaction[]){
         const hourAgo = subHours(new Date(), 1)
         const txCount: Record<string, number> = {};
-        transactions.filter((tx) => new Date(tx.transmissionDateTime) >= hourAgo).map((tr) => {
-            const time = formatInTimeZone(tr.transmissionDateTime, 'UTC', 'HH:mm');
+        transactions.filter((tx) => new Date(tx.createdAt) >= hourAgo).map((tr) => {
+            const time = formatInTimeZone(tr.createdAt, 'UTC', 'HH:mm');
             txCount[time] = (txCount[time] || 0) + 1;
         });
         return Object.entries(txCount).map(([name, count]) => ({name, count})).sort((a, b) => a.name.localeCompare(b.name))

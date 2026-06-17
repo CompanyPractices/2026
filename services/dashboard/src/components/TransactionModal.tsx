@@ -1,6 +1,6 @@
 import {Transaction} from "../types";
 import {getStatusIcon} from "../utils/statusIcon.ts";
-import {convertPenniesToRubles, formatTime, hidePan} from "../utils/format.ts";
+import {convertPenniesToRubles, formatDate, formatTime, hidePan} from "../utils/format.ts";
 import { Fragment } from 'react';
 
 type TransactionModalProps = {
@@ -30,7 +30,8 @@ export function TransactionModal({ transaction, onClose }: TransactionModalProps
         {label: "MCC", value: transaction.mcc },
         {label: "ID экваера", value: transaction.acquirerId},
         {label: "ID эмитента", value: transaction.issuerId || "—" },
-        {label: "Время", value: formatTime(transaction.transmissionDateTime) }
+        {label: "Время", value: formatTime(transaction.createdAt) },
+        {label: "Дата", value: formatDate(transaction.createdAt) }
     ];
 
     return (

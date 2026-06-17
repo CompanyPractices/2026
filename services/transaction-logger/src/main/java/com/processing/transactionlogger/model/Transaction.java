@@ -96,5 +96,6 @@ public class Transaction {
     private Instant transmissionDateTime;
 
     /** Время сохранения записи в БД логгера */
+    @Column(nullable = false)
     private Instant createdAt;
 }

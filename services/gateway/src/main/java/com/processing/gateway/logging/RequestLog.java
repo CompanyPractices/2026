@@ -1,5 +1,6 @@
 package com.processing.gateway.logging;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,6 +13,8 @@ public class RequestLog {
     private String requestId;
     private String method;
     private String path;
+    private JsonNode requestBody;
     private Integer responseCode;
     private Long responseTime;
+    private JsonNode responseBody;
 }
