@@ -39,8 +39,9 @@ public final class CardServiceTest {
 
     private final Faker faker = new Faker(Locale.ENGLISH);
 
+    private final String testIssuerId = "TEST_ISSUER";
+
     private final CardServiceSettings settings = new CardServiceSettingsConfigurationProperties(
-        "TESTISSUER",
         3,
         10000
     );
@@ -118,7 +119,7 @@ public final class CardServiceTest {
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(binIssuerService.getIssuerId(bin)).thenReturn(settings.issuerId());
+        when(binIssuerService.getIssuerId(bin)).thenReturn(testIssuerId);
 
         var response = cardService.createCard(
             bin,
@@ -140,7 +141,7 @@ public final class CardServiceTest {
             dailyLimit,
             monthlyLimit,
             initialBalance,
-            settings.issuerId(),
+            testIssuerId,
             response.createdAt()
         );
 
@@ -443,7 +444,7 @@ public final class CardServiceTest {
             defaults.dailyLimit(),
             defaults.monthlyLimit(),
             defaults.balance(),
-            settings.issuerId()
+            testIssuerId
         );
     }
 

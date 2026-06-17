@@ -6,11 +6,6 @@ package com.processing.cardmanagement.options;
 public interface CardServiceSettings {
 
     /**
-     * @return номер банка эмитента
-     */
-    String issuerId();
-
-    /**
      * @return срок действия карты
      */
     int cardValidityPeriod();
