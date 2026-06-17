@@ -1,12 +1,12 @@
-import {hidePan, convertPenniesToRubles, formatTime} from '../utils/format.ts';
-import { getStatusIcon } from '../utils/statusIcon.ts';
-import {Filter, Transaction} from "../types";
+import {hidePan, convertPenniesToRubles, formatTime} from '../utils/format';
+import { getStatusIcon } from '../utils/statusIcon';
+import {Filter, Transaction} from '../types';
 import { useState } from 'react';
 import { TransactionModal } from './TransactionModal';
 import { ArrowDownToLine } from 'lucide-react';
-import {exportToCsv} from "../utils/exportToCsv.ts";
-import {Filters} from "./Filters.tsx";
-import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
+import {exportToCsv} from '../utils/exportToCsv';
+import {Filters} from './Filters';
+import {ISSUERS_NAMES, MCC_NAMES} from '../mockData';
 
 const mapTransactionToCsvRow = (tx: Transaction) => ({
     'STAN': tx.stan,
