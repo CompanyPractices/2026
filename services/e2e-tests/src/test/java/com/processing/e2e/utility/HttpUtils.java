@@ -82,4 +82,26 @@ public class HttpUtils {
                 .response();
         return response.body().as(JsonNode.class);
     }
+
+    public void httpPatch(String baseUrl, String path, Object body, int expectedStatus) {
+        RestAssured
+                .given()
+                .baseUri(baseUrl)
+                .contentType("application/json")
+                .body(body)
+                .when()
+                .patch(path)
+                .then()
+                .statusCode(expectedStatus);
+    }
+
+    public void httpDelete(String baseUrl, String path, int expectedStatus) {
+        RestAssured
+                .given()
+                .baseUri(baseUrl)
+                .when()
+                .delete(path)
+                .then()
+                .statusCode(expectedStatus);
+    }
 }
