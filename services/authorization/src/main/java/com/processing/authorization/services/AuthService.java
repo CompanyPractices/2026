@@ -100,11 +100,20 @@ public class AuthService {
         } catch (CardNotFoundException e) {
             log.error("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
-        } catch (ServiceUnavailableException | ResourceAccessException e) {
+        } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
             log.error("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
+        } catch (InvalidGetCardRequestException e) {
+            log.error("card not found for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
+        } catch (PaymentRequiredException e) {
+            log.error("card required payment for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
+        } catch (GetCardException e) {
+            log.error("get card from card-management service failed for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.error("getting card from card management service failed for pan: {}", logPan(request.pan()), e);
+            log.error("getting card failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
@@ -250,17 +259,23 @@ public class AuthService {
         return restClient.get()
                 .uri(uri)
                 .retrieve()
-                .onStatus(status -> status.value() == 404, (req, res) -> {
-                    log.debug("Card not found: {}", logPan(pan));
-                    throw new CardNotFoundException("Card not found: " + logPan(pan));
+                .onStatus(status -> status.value() == 500, (req, res) -> {
+                    throw new InternalCardManagerException("Internal card management error");
                 })
                 .onStatus(status -> status.value() == 503, (req, res) -> {
-                    log.debug("Card Management service unavailable");
                     throw new ServiceUnavailableException("Card Management service unavailable");
                 })
+                .onStatus(status -> status.value() == 400, (req, res) -> {
+                    throw new InvalidGetCardRequestException("Invalid pan");
+                })
+                .onStatus(status -> status.value() == 402, (req, res) -> {
+                    throw new PaymentRequiredException("Payment Required from card-managment");
+                })
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    throw new CardNotFoundException("Card not found");
+                })
                 .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                    log.debug("Failed to get card. Status: {}", res.getStatusCode());
-                    throw new CardNotFoundException("Failed to get card. Status: " + res.getStatusCode());
+                    throw new GetCardException("Failed to get card. Status: " + res.getStatusCode());
                 })
                 .body(CardModel.class);
     }
