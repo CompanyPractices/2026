@@ -1,5 +1,6 @@
 server:
   port: ${SERVER_PORT:${GATEWAY_PORT:8080}}
+  shutdown: graceful
 
 #---
 # Logging
@@ -54,6 +55,8 @@ management:
           - 2s
 
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: ${GATEWAY_SHUTDOWN_DRAIN_PERIOD}
   cloud:
     gateway:
       mvc:
@@ -161,6 +164,8 @@ gateway:
     connection-timeout: 5
     request-timeout: 3
     url: /health
+  shutdown:
+    drain-period: ${GATEWAY_SHUTDOWN_DRAIN_PERIOD}
 
 #---
 # Swagger
