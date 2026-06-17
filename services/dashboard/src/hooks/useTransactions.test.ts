@@ -223,4 +223,34 @@ describe('useTransactions', () => {
         expect(calledUrl).not.toContain('12:34:56');
         expect(calledUrl).not.toContain('23:59:59');
     });
+
+    it('should change isFiltered to true when filter is active and false when reset', async () => {
+        mockedFetchApi.mockResolvedValueOnce(mockTransactions);
+        const { result } = renderHook(() => useTransactions());
+
+        await waitFor(() => {
+            expect(result.current.loading).toBe(false);
+        });
+        expect(result.current.isFiltered).toBe(false);
+
+        mockedFetchApi.mockResolvedValueOnce(mockSearchResponse)
+        const filter: Filter = {
+            mcc: '5411',
+        };
+        act(() => {
+            result.current.searchTransactions(filter)
+        });
+        await waitFor(() => {
+            expect(result.current.isFiltered).toBe(true);
+        });
+        const calledUrl = mockedFetchApi.mock.calls[1][0];
+        expect(calledUrl).toContain('5411');
+        expect(calledUrl).not.toContain('status');
+
+        const emptyFilter: Filter = {};
+        act(() => {
+            result.current.searchTransactions(emptyFilter)
+        });
+        expect(result.current.isFiltered).toBe(false);
+    });
 });
