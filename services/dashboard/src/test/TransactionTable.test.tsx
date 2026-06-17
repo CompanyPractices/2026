@@ -3,13 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useState } from 'react';
 import { TransactionTable } from '../components/TransactionTable';
 import { Transaction, Filter } from '../types';
-import { hidePan, convertPenniesToRubles, formatTime } from '../utils/format';
+import { hidePan, convertPenniesToRubles, formatTime, formatDate, formatDateTime } from '../utils/format';
 import { exportToCsv } from '../utils/exportToCsv';
 
 vi.mock('../utils/format', () => ({
     hidePan: vi.fn((pan: string) => `****${pan.slice(-4)}`),
     convertPenniesToRubles: vi.fn((amount: number) => `${(amount / 100).toFixed(2)} ₽`),
     formatTime: vi.fn(() => '10:00:00'),
+    formatDate: vi.fn(() => '27.10.2023'),
+    formatDateTime: vi.fn(() => '27.10.2023, 10:00:00'),
 }));
 
 vi.mock('../utils/statusIcon', () => ({
@@ -81,7 +83,9 @@ vi.mock('lucide-react', () => ({
 const mockedHidePan = vi.mocked(hidePan);
 const mockedConvertPennies = vi.mocked(convertPenniesToRubles);
 const mockedFormatTime = vi.mocked(formatTime);
+const mockedFormatDate = vi.mocked(formatDate);
 const mockedExportToCsv = vi.mocked(exportToCsv);
+const mockedFormatDateTime = vi.mocked(formatDateTime);
 
 const createMockTransaction = (overrides: Partial<Transaction>): Transaction => ({
     id: 'tx-default',
@@ -156,13 +160,27 @@ describe('TransactionTable', () => {
         expect(exportBtn).toBeDisabled();
     });
 
-    it('should render transactions table with correct data and call utility functions', () => {
-        const tx1 = createMockTransaction({ id: 'tx-1', pan: '4111111111111111', amount: 150000, merchantId: 'SHOP-1' });
-        const tx2 = createMockTransaction({ id: 'tx-2', pan: '5555555555554444', amount: 250000, status: 'DECLINED', merchantId: 'SHOP-2' });
+    it('should render transactions table sorted by createdAt (newest first)', () => {
+        const txOlder = createMockTransaction({
+            id: 'tx-older',
+            pan: '4111111111111111',
+            amount: 150000,
+            merchantId: 'SHOP-OLD',
+            createdAt: '2023-10-26T10:00:00Z',
+        });
+
+        const txNewer = createMockTransaction({
+            id: 'tx-newer',
+            pan: '5555555555554444',
+            amount: 250000,
+            status: 'DECLINED',
+            merchantId: 'SHOP-NEW',
+            createdAt: '2023-10-28T10:00:00Z',
+        });
 
         render(
             <TransactionTable
-                liveTransactions={[tx1, tx2]}
+                liveTransactions={[txOlder, txNewer]}
                 error={null}
                 loading={false}
                 search={mockSearch}
@@ -171,18 +189,22 @@ describe('TransactionTable', () => {
 
         expect(screen.getByRole('table')).toBeInTheDocument();
 
+        const rows = screen.getAllByRole('row');
+        expect(rows).toHaveLength(3);
+
+        expect(rows[1]).toHaveTextContent('SHOP-NEW');
+        expect(rows[1]).toHaveTextContent('****4444');
+
+        expect(rows[2]).toHaveTextContent('SHOP-OLD');
+        expect(rows[2]).toHaveTextContent('****1111');
+
         expect(mockedHidePan).toHaveBeenCalledWith('4111111111111111');
         expect(mockedHidePan).toHaveBeenCalledWith('5555555555554444');
-
         expect(mockedConvertPennies).toHaveBeenCalledWith(150000);
         expect(mockedConvertPennies).toHaveBeenCalledWith(250000);
-
-        expect(mockedFormatTime).toHaveBeenCalledWith('2023-10-27T10:00:00Z');
-
-        expect(screen.getByText('****1111')).toBeInTheDocument();
-        expect(screen.getByText('1500.00 ₽')).toBeInTheDocument();
-        expect(screen.getByText('SHOP-1')).toBeInTheDocument();
-        expect(screen.getAllByTestId('status-icon')).toHaveLength(2);
+        expect(mockedFormatDateTime).toHaveBeenCalledWith('2023-10-26T10:00:00Z');
+        expect(mockedFormatDateTime).toHaveBeenCalledWith('2023-10-28T10:00:00Z');
+        expect(screen.getAllByText('27.10.2023, 10:00:00')).toHaveLength(2);
     });
 
     it('should open TransactionModal when a row is clicked', () => {
@@ -246,19 +268,30 @@ describe('TransactionTable', () => {
         expect(mockSearch).toHaveBeenCalledWith({ status: 'APPROVED' });
     });
 
-    it('should handle CSV export correctly with valid transactions', () => {
-        const tx1 = createMockTransaction({
-            id: 'tx-1',
+    it('should export CSV with transactions sorted by createdAt (newest first)', () => {
+        const txOlder = createMockTransaction({
+            id: 'tx-older',
             stan: '000001',
             rrn: '123456789012',
             authCode: 'A1B2C3',
             terminalType: 'POS',
-            issuerId: 'ISS-1'
+            issuerId: 'ISS-1',
+            createdAt: '2023-10-26T10:00:00Z',
+        });
+
+        const txNewer = createMockTransaction({
+            id: 'tx-newer',
+            stan: '000002',
+            rrn: '987654321098',
+            authCode: 'X9Y8Z7',
+            terminalType: 'ATM',
+            issuerId: 'ISS-2',
+            createdAt: '2023-10-28T10:00:00Z',
         });
 
         render(
             <TransactionTable
-                liveTransactions={[tx1]}
+                liveTransactions={[txOlder, txNewer]}
                 error={null}
                 loading={false}
                 search={mockSearch}
@@ -276,21 +309,28 @@ describe('TransactionTable', () => {
         expect(calledFilename).toMatch(/^transactions_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.csv$/);
 
         const calledData = mockedExportToCsv.mock.calls[0][1];
-        expect(calledData).toHaveLength(1);
-        expect(calledData[0]).toEqual({
-            'STAN': '000001',
-            'RRN': '123456789012',
-            'PAN': '****1111',
-            'Amount': 150000,
-            'Status': 'APPROVED',
-            'Auth code': 'A1B2C3',
-            'Terminal': 'T123 (POS)',
-            'Merchant ID': 'M123',
-            'MCC': '5411',
-            'Acquirer ID': 'A123',
-            'Issuer ID': 'ISS-1',
-            'Time': '10:00:00',
-        });
+        expect(calledData).toHaveLength(2);
+
+        expect(mockedFormatTime).toHaveBeenCalledWith('2023-10-26T10:00:00Z');
+        expect(mockedFormatTime).toHaveBeenCalledWith('2023-10-28T10:00:00Z');
+        expect(mockedFormatDate).toHaveBeenCalledWith('2023-10-26T10:00:00Z');
+        expect(mockedFormatDate).toHaveBeenCalledWith('2023-10-28T10:00:00Z');
+
+        expect(calledData[0]['STAN']).toBe('000002');
+        expect(calledData[0]['RRN']).toBe('987654321098');
+        expect(calledData[0]['Auth code']).toBe('X9Y8Z7');
+        expect(calledData[0]['Terminal']).toBe('T123 (ATM)');
+        expect(calledData[0]['Issuer ID']).toBe('ISS-2');
+        expect(calledData[0]['Date']).toBe('27.10.2023');
+        expect(calledData[0]['Time']).toBe('10:00:00');
+
+        expect(calledData[1]['STAN']).toBe('000001');
+        expect(calledData[1]['RRN']).toBe('123456789012');
+        expect(calledData[1]['Auth code']).toBe('A1B2C3');
+        expect(calledData[1]['Terminal']).toBe('T123 (POS)');
+        expect(calledData[1]['Issuer ID']).toBe('ISS-1');
+        expect(calledData[1]['Date']).toBe('27.10.2023');
+        expect(calledData[1]['Time']).toBe('10:00:00');
     });
 
     it('should handle full user flow: live data -> filter search -> reset -> back to live data', () => {
