@@ -3,6 +3,8 @@ package com.processing.gateway.validation;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -17,13 +19,35 @@ class TransactionRequestValidatorTest {
     }
 
     @Test
+    void acceptsDecimalAmount() {
+        AuthorizationRequest request = new AuthorizationRequest(
+                "0100",
+                "000001",
+                "4000001234560001",
+                "000000",
+                new BigDecimal("150000.75"),
+                "643",
+                "2026-06-01T10:30:00Z",
+                "TERM001",
+                "POS",
+                "MERCH12345678901",
+                "5411",
+                "ACQ001",
+                null
+        );
+
+        assertThatCode(() -> validator.validate(request))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void rejectsPanWithWrongLength() {
         AuthorizationRequest request = new AuthorizationRequest(
                 "0100",
                 "000001",
                 "400000123456000",
                 "000000",
-                150000L,
+                BigDecimal.valueOf(150000),
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
@@ -46,7 +70,7 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560001",
                 "000000",
-                0L,
+                BigDecimal.ZERO,
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
@@ -69,7 +93,7 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560001",
                 "000000",
-                150000L,
+                BigDecimal.valueOf(150000),
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
@@ -91,7 +115,7 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560001",
                 "000000",
-                150000L,
+                BigDecimal.valueOf(150000),
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",
@@ -110,7 +134,7 @@ class TransactionRequestValidatorTest {
                 "000001",
                 "4000001234560000",
                 "000000",
-                150000L,
+                BigDecimal.valueOf(150000),
                 "643",
                 "2026-06-01T10:30:00Z",
                 "TERM001",

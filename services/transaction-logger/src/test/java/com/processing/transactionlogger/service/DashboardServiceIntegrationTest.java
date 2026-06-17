@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -39,34 +40,34 @@ public class DashboardServiceIntegrationTest {
         assertEquals(0, stats.approvedCount());
         assertEquals(0, stats.declinedCount());
         assertEquals(0, stats.approvalRate());
-        assertEquals(0, stats.totalAmount());
-        assertEquals(0, stats.averageAmount());
+        assertEquals(BigDecimal.ZERO, stats.totalAmount());
+        assertEquals(BigDecimal.ZERO, stats.averageAmount());
         assertEquals(0, stats.avgProcessingTimeMs());
     }
 
     @Test
     void getStatsReturnsCorrectCountsAndAmounts() {
-        save(transaction(TransactionStatus.APPROVED, 100000L, 40));
-        save(transaction(TransactionStatus.APPROVED, 200000L, 60));
-        save(transaction(TransactionStatus.APPROVED, 300000L, 80));
-        save(transaction(TransactionStatus.DECLINED, 50000L, 20));
+        save(transaction(TransactionStatus.APPROVED, new BigDecimal("100000"), 40));
+        save(transaction(TransactionStatus.APPROVED, new BigDecimal("200000"), 60));
+        save(transaction(TransactionStatus.APPROVED, new BigDecimal("300000"), 80));
+        save(transaction(TransactionStatus.DECLINED, new BigDecimal("50000"), 20));
 
         DashboardStatsResponse stats = transactionService.getStats();
 
         assertEquals(4, stats.totalTransactions());
         assertEquals(3, stats.approvedCount());
         assertEquals(1, stats.declinedCount());
-        assertEquals(650000L, stats.totalAmount());
-        assertEquals(162500L, stats.averageAmount());
+        assertThat(stats.totalAmount()).isEqualByComparingTo(new BigDecimal("650000"));
+        assertThat(stats.averageAmount()).isEqualByComparingTo(new BigDecimal("162500"));
         assertEquals(50.0, stats.avgProcessingTimeMs());
     }
 
     @Test
     void getStatsCalculatesApprovalRateCorrectly() {
-        save(transaction(TransactionStatus.APPROVED, 100000L, 30));
-        save(transaction(TransactionStatus.APPROVED, 100000L, 30));
-        save(transaction(TransactionStatus.APPROVED, 100000L, 30));
-        save(transaction(TransactionStatus.DECLINED, 100000L, 30));
+        save(transaction(TransactionStatus.APPROVED, new BigDecimal("100000"), 30));
+        save(transaction(TransactionStatus.APPROVED, new BigDecimal("100000"), 30));
+        save(transaction(TransactionStatus.APPROVED, new BigDecimal("100000"), 30));
+        save(transaction(TransactionStatus.DECLINED, new BigDecimal("100000"), 30));
 
         DashboardStatsResponse stats = transactionService.getStats();
 
@@ -75,9 +76,9 @@ public class DashboardServiceIntegrationTest {
 
     @Test
     void getStatsCountsRecentTransactions() {
-        save(transaction(TransactionStatus.APPROVED, 100000L, 30));
+        save(transaction(TransactionStatus.APPROVED, new BigDecimal("100000"), 30));
 
-        Transaction old = transaction(TransactionStatus.APPROVED, 100000L, 30);
+        Transaction old = transaction(TransactionStatus.APPROVED, new BigDecimal("100000"), 30);
         old.setCreatedAt(Instant.now().minus(2, ChronoUnit.MINUTES));
         save(old);
 
@@ -88,30 +89,30 @@ public class DashboardServiceIntegrationTest {
 
     @Test
     void getRecentReturnsSortedByCreatedAtDesc() {
-        Transaction first = transaction(TransactionStatus.APPROVED, 100000L, 30);
+        Transaction first = transaction(TransactionStatus.APPROVED, new BigDecimal("100000"), 30);
         first.setCreatedAt(Instant.now().minus(2, ChronoUnit.MINUTES));
         save(first);
 
-        Transaction second = transaction(TransactionStatus.APPROVED, 200000L, 30);
+        Transaction second = transaction(TransactionStatus.APPROVED, new BigDecimal("200000"), 30);
         second.setCreatedAt(Instant.now().minus(1, ChronoUnit.MINUTES));
         save(second);
 
-        Transaction third = transaction(TransactionStatus.APPROVED, 300000L, 30);
+        Transaction third = transaction(TransactionStatus.APPROVED, new BigDecimal("300000"), 30);
         third.setCreatedAt(Instant.now());
         save(third);
 
         List<TransactionResponse> result = transactionService.getRecent(10);
 
         assertThat(result).hasSize(3);
-        assertEquals(300000L, result.get(0).amount());
-        assertEquals(100000L, result.get(2).amount());
+        assertThat(result.get(0).amount()).isEqualByComparingTo(new BigDecimal("300000"));
+        assertThat(result.get(2).amount()).isEqualByComparingTo(new BigDecimal("100000"));
     }
 
     private Transaction save(Transaction transaction) {
         return transactionRepository.save(transaction);
     }
 
-    private Transaction transaction(TransactionStatus status, long amount, int processingTimeMs) {
+    private Transaction transaction(TransactionStatus status, BigDecimal amount, int processingTimeMs) {
         Transaction t = new Transaction();
         t.setId(UUID.randomUUID());
         t.setMti("0100");

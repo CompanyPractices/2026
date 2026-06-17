@@ -3,9 +3,20 @@ package com.processing.gateway.validation;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
+/**
+ * Validates the authorization request contract required by the gateway.
+ */
 @Component
 public class TransactionRequestValidator {
 
+    /**
+     * Validates a transaction authorization request.
+     *
+     * @param request authorization request to validate
+     * @throws TransactionValidationException when the request violates gateway rules
+     */
     public void validate(AuthorizationRequest request) {
         if (request == null) {
             throw new TransactionValidationException("Request body is required");
@@ -31,7 +42,7 @@ public class TransactionRequestValidator {
         if (request.amount() == null) {
             throw new TransactionValidationException("Field 'amount' is required");
         }
-        if (request.amount().compareTo(0L) <= 0L) {
+        if (request.amount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new TransactionValidationException("Field 'amount' must be > 0");
         }
         if (request.currencyCode().length() != 3) {

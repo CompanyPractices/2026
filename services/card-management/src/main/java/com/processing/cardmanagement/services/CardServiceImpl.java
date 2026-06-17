@@ -1,6 +1,6 @@
 package com.processing.cardmanagement.services;
 
-import com.processing.cardmanagement.events.domain.*;
+import com.processing.cardmanagement.events.*;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
@@ -10,12 +10,12 @@ import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardRepository;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 
-@Slf4j
 @RequiredArgsConstructor
 public class CardServiceImpl implements CardService {
 
@@ -23,15 +23,16 @@ public class CardServiceImpl implements CardService {
     private final CardServiceSettings settings;
     private final CardServiceDefaults defaults;
     private final PanGenerator panGenerator;
-    private final CardServiceEventListener eventListener;
+    private final CardEventNotifier eventNotifier;
 
+    @Override
     public Card createCard(
         String bin,
         String cardholderName,
         String currencyCode,
-        long dailyLimit,
-        long monthlyLimit,
-        long initialBalance
+        BigDecimal dailyLimit,
+        BigDecimal monthlyLimit,
+        BigDecimal initialBalance
     ) {
         var draft = new CardDraft(
             bin,
@@ -46,36 +47,39 @@ public class CardServiceImpl implements CardService {
         var savedCard = cardRepository.save(Card.fromDraft(
             panGenerator.generatePan(draft.bin()),
             settings.issuerId(),
-            settings.cardYtl(),
+            settings.cardValidityPeriod(),
             draft
         ));
 
-        eventListener.onEvent(new CardServiceCreationEvent(1));
+        eventNotifier.onEvent(new CardServiceCreationEvent(1));
         return savedCard;
     }
 
+    @Override
     public List<Card> createCards(List<CardDraft> data) {
         var entities = data
             .stream()
             .map(draft -> Card.fromDraft(
                 panGenerator.generatePan(draft.bin()),
                 settings.issuerId(),
-                settings.cardYtl(),
+                settings.cardValidityPeriod(),
                 draft
             ))
             .toList();
 
         var saved = cardRepository.saveAll(entities);
-        eventListener.onEvent(new CardServiceCreationEvent(saved.size()));
+        eventNotifier.onEvent(new CardServiceCreationEvent(saved.size()));
         return saved;
     }
 
+    @Override
     public Card getCard(String pan) {
         return cardRepository
             .findByPan(pan)
             .orElseThrow(() -> new CardNotFoundException(pan));
     }
 
+    @Override
     public List<Card> getCards(
         @Nullable Integer limit,
         @Nullable Integer offset,
@@ -96,36 +100,40 @@ public class CardServiceImpl implements CardService {
         );
     }
 
+    @Override
     public Card patchCard(
         String pan,
         @Nullable CardStatus status,
-        @Nullable Long dailyLimit,
-        @Nullable Long monthlyLimit,
-        @Nullable Long availableBalance
+        @Nullable BigDecimal dailyLimit,
+        @Nullable BigDecimal monthlyLimit,
+        @Nullable BigDecimal availableBalance
     ) {
-        var card = getCard(pan);
-        var saved = cardRepository.save(
-            card.withData(
+        try {
+            var updated = cardRepository.updateWithPessimisticLock(pan, card -> card.withData(
                 status != null ? status : card.status(),
                 dailyLimit != null ? dailyLimit : card.dailyLimit(),
                 monthlyLimit != null ? monthlyLimit : card.monthlyLimit(),
                 availableBalance != null ? availableBalance : card.availableBalance()
-            )
-        );
-
-        eventListener.onEvent(new CardServicePatchEvent(maskPan(pan)));
-        return saved;
+            ));
+            eventNotifier.onEvent(new CardServicePatchEvent(maskPan(pan)));
+            return updated;
+        } catch (NoSuchElementException ex) {
+            throw new CardNotFoundException(pan);
+        }
     }
 
+    @Override
     public void deleteCard(String pan) {
         cardRepository.save(getCard(pan).deleted());
-        eventListener.onEvent(new CardServiceDeletionEvent(maskPan(pan)));
+        eventNotifier.onEvent(new CardServiceDeletionEvent(maskPan(pan)));
     }
 
-    public long countCardsFiltered() {
-        return cardRepository.countCards();
+    @Override
+    public long countAllCards() {
+        return cardRepository.countAllCards();
     }
 
+    @Override
     public long countCardsFiltered(
         @Nullable CardStatus status,
         @Nullable String bin,
@@ -133,7 +141,7 @@ public class CardServiceImpl implements CardService {
         @Nullable LocalDateTime startDate,
         @Nullable LocalDateTime endDate
     ) {
-        return cardRepository.countCards(
+        return cardRepository.countCardsFiltered(
             status,
             bin,
             issuerId,
@@ -142,10 +150,15 @@ public class CardServiceImpl implements CardService {
         );
     }
 
-    public Card reserve(String pan, long amount) {
-        var reserved = cardRepository.save(getCard(pan).withReserved(amount));
-        eventListener.onEvent(new CardServiceReserveEvent(maskPan(pan), amount));
-        return reserved;
+    @Override
+    public Card reserve(String pan, BigDecimal amount) {
+        try {
+            var reserved = cardRepository.updateWithPessimisticLock(pan, card -> card.withReserved(amount));
+            eventNotifier.onEvent(new CardServiceReserveEvent(maskPan(pan), amount));
+            return reserved;
+        } catch (NoSuchElementException ex) {
+            throw new CardNotFoundException(pan);
+        }
     }
 
     private String maskPan(String pan) {

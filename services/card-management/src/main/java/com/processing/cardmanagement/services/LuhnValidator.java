@@ -3,14 +3,12 @@ package com.processing.cardmanagement.services;
 import com.processing.common.dto.annotations.Bin;
 import com.processing.common.dto.annotations.Pan;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Реализация {@link PanGenerator} на основе алгоритма Луна
  */
 public class LuhnValidator implements PanGenerator {
-
-    private final Random random = new Random();
 
     @Override
     public boolean isValid(@Pan String pan) {
@@ -35,7 +33,7 @@ public class LuhnValidator implements PanGenerator {
 
     @Override
     public String generatePan(@Bin String bin) {
-        int randomNumber = random.nextInt(100_000_000, 1_000_000_000);
+        int randomNumber = ThreadLocalRandom.current().nextInt(100_000_000, 1_000_000_000);
         String base = bin + randomNumber;
 
         for (int checkDigit = 0; checkDigit < 10; checkDigit++) {

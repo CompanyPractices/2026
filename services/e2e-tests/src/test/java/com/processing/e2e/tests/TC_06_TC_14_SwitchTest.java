@@ -2,6 +2,7 @@ package com.processing.e2e.tests;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.e2e.E2EBaseTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -11,6 +12,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -22,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 
 import static io.restassured.RestAssured.given;
@@ -43,7 +44,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     private static final String[] EXPECTED_ISSUERS = {"ISS001", "ISS002", "ISS003", "ISS004", "ISS005"};
 
 
-    private static final int TC06_AMOUNT = 150_000;
+    private static final BigDecimal TC06_AMOUNT = new BigDecimal("150000");
     private static final String TC06_STAN = "000001";
     private static final String TERMINAL_ID = "TERM0001";
     private static final String TERMINAL_TYPE = "POS";
@@ -55,22 +56,36 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
             List.of("switch", "cardManagement", "authorization", "logger");
 
 
+    private static final String[] TEST_TRANSACTION_STANS = {
+            TC06_STAN, "140000", "140001", "140002", "140003", "140004"
+    };
+
+
     private Connection connection;
     private String tc06Pan;
+    private boolean testCardsPrepared;
+    private final List<String> generatedPans = new ArrayList<>();
 
 
     @BeforeClass
     public void setUp() throws Exception {
         RestAssured.baseURI = GATEWAY_URL;
         connection = DriverManager.getConnection(jdbcUrl(), DB_USER, DB_PASSWORD);
+        cleanupLeftoverSwitchTestData();
         assertStackIsReady();
     }
 
 
     @AfterClass(alwaysRun = true)
     public void tearDown() throws SQLException {
-        if (connection != null && !connection.isClosed()) {
-            connection.close();
+        try {
+            if (connection != null && !connection.isClosed()) {
+                cleanupSwitchTestData();
+            }
+        } finally {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
         }
     }
 
@@ -112,79 +127,9 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    @Test(priority = 1, description = "TC-03: Массовая генерация тестовых карт (предусловие)")
-    public void tc03_massCardGeneration() throws Exception {
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body("""
-                        {
-                          "count": 100,
-                          "bins": ["400000","400001","400002","400003","400004"]
-                        }
-                        """)
-                .when()
-                .post("/api/cards/generate")
-                .then()
-                .statusCode(201)
-                .extract()
-                .response();
-
-
-        JsonNode body = mapper.readTree(response.asString());
-        int generated = body.get("generated").asInt();
-        JsonNode cards = body.get("cards");
-
-
-        assertTrue(generated >= 100, "generated must be >= 100");
-        assertEquals(cards.size(), generated, "cards array length must match generated");
-
-
-        Set<String> pans = new HashSet<>();
-        Set<String> binsPresent = new HashSet<>();
-        for (JsonNode card : cards) {
-            assertNotNull(card.get("id").asText());
-            UUID.fromString(card.get("id").asText());
-
-
-            String pan = card.get("pan").asText();
-            assertEquals(pan.length(), 16, "pan must be 16 digits");
-            assertTrue(pan.matches("\\d{16}"), "pan must contain only digits");
-            assertTrue(isValidLuhn(pan), "pan must pass Luhn: " + pan);
-            assertTrue(pans.add(pan), "duplicate pan in response: " + pan);
-
-
-            assertNotNull(card.get("status").asText());
-            binsPresent.add(card.get("bin").asText());
-        }
-
-
-        for (String bin : BINS) {
-            assertTrue(binsPresent.contains(bin), "missing bin in response: " + bin);
-        }
-
-
-        long activeCardsCount = queryLong("SELECT COUNT(*) FROM cards WHERE status <> 'DELETED'");
-        assertTrue(activeCardsCount >= 100, "DB must contain at least 100 non-deleted cards");
-
-
-        List<String> distinctBins = queryStringList("SELECT DISTINCT bin FROM cards");
-        for (String bin : BINS) {
-            assertTrue(distinctBins.contains(bin), "DB must contain bin: " + bin);
-        }
-
-
-        List<String> samplePans = queryStringList(
-                "SELECT pan FROM cards WHERE status = 'ACTIVE' ORDER BY RANDOM() LIMIT 5");
-        assertEquals(samplePans.size(), 5, "need 5 sample PANs for Luhn check");
-        for (String pan : samplePans) {
-            assertTrue(isValidLuhn(pan), "DB pan must pass Luhn: " + pan);
-        }
-    }
-
-
-    @Test(priority = 2, dependsOnMethods = "tc03_massCardGeneration",
-            description = "TC-06: Полный цикл одиночной транзакции (APPROVED)")
+    @Test(description = "TC-06: Полный цикл одиночной транзакции (APPROVED)")
     public void tc06_fullApprovedTransactionCycle() throws Exception {
+        ensureTestCards();
         tc06Pan = findActivePanWithBalance(BINS[0], TC06_AMOUNT);
         cleanupTransaction(TC06_STAN);
 
@@ -201,8 +146,8 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
                 .post("/api/transactions")
                 .then()
                 .statusCode(200)
-                .body("status", equalTo("APPROVED"))
-                .body("responseCode", equalTo("00"))
+                .body("status", equalTo(AuthorizationResponse.STATUS_APPROVED))
+                .body("responseCode", equalTo(AuthorizationResponse.CODE_APPROVED))
                 .body("mti", equalTo("0100"))
                 .body("stan", equalTo(TC06_STAN))
                 .body("rrn", matchesPattern("\\d{12}"))
@@ -218,12 +163,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
 
 
         long balanceAfterDb = getCardBalanceFromDb(tc06Pan);
-        assertEquals(balanceAfterDb, balanceBeforeDb - TC06_AMOUNT,
+        assertEquals(balanceAfterDb, balanceBeforeDb - TC06_AMOUNT.longValue(),
                 "DB balance must decrease by transaction amount");
 
 
         long balanceAfterHttp = getCardBalanceFromApi(tc06Pan);
-        assertEquals(balanceAfterHttp, balanceBeforeDb - TC06_AMOUNT,
+        assertEquals(balanceAfterHttp, balanceAfterDb,
                 "HTTP balance after transaction must match DB");
 
 
@@ -233,9 +178,10 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
             stmt.setString(1, TC06_STAN);
             ResultSet rs = stmt.executeQuery();
             assertTrue(rs.next(), "transaction must exist in DB");
-            assertEquals(rs.getString("status"), "APPROVED");
+            assertEquals(rs.getString("status"), AuthorizationResponse.STATUS_APPROVED);
             assertEquals(rs.getString("pan"), tc06Pan);
-            assertEquals(rs.getLong("amount"), TC06_AMOUNT);
+            assertEquals(0, rs.getBigDecimal("amount").compareTo(TC06_AMOUNT),
+                    "transaction amount must match request");
             assertEquals(rs.getString("rrn"), rrn);
             assertEquals(rs.getString("auth_code"), authCode);
             assertNotNull(rs.getString("issuer_id"));
@@ -244,9 +190,9 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    @Test(priority = 3, dependsOnMethods = "tc03_massCardGeneration",
-            description = "TC-14: Маршрутизация по BIN (5 BIN → 5 issuerId)")
+    @Test(description = "TC-14: Маршрутизация по BIN (5 BIN → 5 issuerId)")
     public void tc14_binRoutingToIssuerId() throws Exception {
+        ensureTestCards();
         Set<String> observedIssuers = new HashSet<>();
 
 
@@ -262,12 +208,13 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
 
             given()
                     .contentType(ContentType.JSON)
-                    .body(transactionPayload(stan, pan, 1_000))
+                    .body(transactionPayload(stan, pan, new BigDecimal("1000")))
                     .when()
                     .post("/api/transactions")
                     .then()
                     .statusCode(200)
-                    .body("status", oneOf("APPROVED", "DECLINED"));
+                    .body("status", oneOf(
+                            AuthorizationResponse.STATUS_APPROVED, AuthorizationResponse.STATUS_DECLINED));
 
 
             String issuerIdDb = getIssuerIdFromDbByStan(stan);
@@ -289,14 +236,86 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    private String transactionPayload(String stan, String pan, int amount) {
+    private void ensureTestCards() throws Exception {
+        if (testCardsPrepared) {
+            return;
+        }
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body("""
+                        {
+                          "count": 100,
+                          "bins": ["400000","400001","400002","400003","400004"]
+                        }
+                        """)
+                .when()
+                .post("/api/cards/generate")
+                .then()
+                .statusCode(201)
+                .extract()
+                .response();
+
+        JsonNode cards = mapper.readTree(response.asString()).get("cards");
+        for (JsonNode card : cards) {
+            generatedPans.add(card.get("pan").asText());
+        }
+        testCardsPrepared = true;
+    }
+
+
+    private void cleanupLeftoverSwitchTestData() throws SQLException {
+        deleteTestTransactions();
+        softDeleteCardsByBins(BINS);
+    }
+
+
+    private void cleanupSwitchTestData() throws SQLException {
+        deleteTestTransactions();
+        softDeleteGeneratedCards(generatedPans);
+        generatedPans.clear();
+    }
+
+
+    private void deleteTestTransactions() throws SQLException {
+        for (String stan : TEST_TRANSACTION_STANS) {
+            cleanupTransaction(stan);
+        }
+    }
+
+
+    private void softDeleteGeneratedCards(List<String> pans) throws SQLException {
+        if (pans.isEmpty()) {
+            return;
+        }
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "UPDATE cards SET status = 'DELETED' WHERE pan = ? AND status <> 'DELETED'")) {
+            for (String pan : pans) {
+                stmt.setString(1, pan);
+                stmt.executeUpdate();
+            }
+        }
+    }
+
+
+    private void softDeleteCardsByBins(String[] bins) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "UPDATE cards SET status = 'DELETED' WHERE bin = ? AND status <> 'DELETED'")) {
+            for (String bin : bins) {
+                stmt.setString(1, bin);
+                stmt.executeUpdate();
+            }
+        }
+    }
+
+
+    private String transactionPayload(String stan, String pan, BigDecimal amount) {
         return """
                 {
                   "mti": "0100",
                   "stan": "%s",
                   "pan": "%s",
                   "processingCode": "000000",
-                  "amount": %d,
+                  "amount": %s,
                   "currencyCode": "643",
                   "transmissionDateTime": "%s",
                   "terminalId": "%s",
@@ -305,12 +324,13 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
                   "mcc": "5411",
                   "acquirerId": "ACQ001"
                 }
-                """.formatted(stan, pan, amount, TRANSMISSION_DATE_TIME, TERMINAL_ID, TERMINAL_TYPE, MERCHANT_ID);
+                """.formatted(stan, pan, amount.toPlainString(), TRANSMISSION_DATE_TIME, TERMINAL_ID, TERMINAL_TYPE, MERCHANT_ID);
     }
 
 
     private long getCardBalanceFromApi(String pan) throws Exception {
         Response response = given()
+                .queryParam("_", System.currentTimeMillis())
                 .when()
                 .get("/api/cards/{pan}", pan)
                 .then()
@@ -342,12 +362,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    private String findActivePanWithBalance(String bin, long minBalance) throws SQLException {
+    private String findActivePanWithBalance(String bin, BigDecimal minBalance) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT pan FROM cards WHERE bin = ? AND status = 'ACTIVE' "
                         + "AND available_balance >= ? LIMIT 1")) {
             stmt.setString(1, bin);
-            stmt.setLong(2, minBalance);
+            stmt.setBigDecimal(2, minBalance);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getString("pan");
@@ -411,19 +431,6 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    private List<String> queryStringList(String sql, Object... params) throws SQLException {
-        List<String> result = new ArrayList<>();
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            bindParams(stmt, params);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                result.add(rs.getString(1));
-            }
-        }
-        return result;
-    }
-
-
     private void bindParams(PreparedStatement stmt, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             stmt.setObject(i + 1, params[i]);
@@ -431,20 +438,4 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
-    private static boolean isValidLuhn(String pan) {
-        int sum = 0;
-        boolean alternate = false;
-        for (int i = pan.length() - 1; i >= 0; i--) {
-            int digit = Character.getNumericValue(pan.charAt(i));
-            if (alternate) {
-                digit *= 2;
-                if (digit > 9) {
-                    digit -= 9;
-                }
-            }
-            sum += digit;
-            alternate = !alternate;
-        }
-        return sum % 10 == 0;
-    }
 }

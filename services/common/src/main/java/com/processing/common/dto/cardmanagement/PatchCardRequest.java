@@ -4,6 +4,8 @@ import com.processing.common.dto.annotations.NotNegative;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 
+import java.math.BigDecimal;
+
 @Schema(description = "Request to update a card")
 public record PatchCardRequest(
 
@@ -23,14 +25,14 @@ public record PatchCardRequest(
     @Nullable
     @NotNegative
     @Schema(description = "Daily limit in kopecks", example = "15000000")
-    Long dailyLimit,
+    BigDecimal dailyLimit,
 
     @Nullable
     @NotNegative
     @Schema(description = "Monthly limit in kopecks", example = "300000000")
-    Long monthlyLimit,
+    BigDecimal monthlyLimit,
 
     @Nullable
     @Schema(description = "Available balance in kopecks", example = "1000000000")
-    Long availableBalance
+    BigDecimal availableBalance
 ) {}

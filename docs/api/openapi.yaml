@@ -273,8 +273,12 @@ paths:
             schema:
               $ref: '#/components/schemas/CardUpdateRequest'
       responses:
-        '204':
+        '200':
           description: Карта обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
         '400':
           description: Ошибка валидации (некорректный BIN, status и т.п.)
           content:
@@ -346,7 +350,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReserveResponse'
+                $ref: '#/components/schemas/Card'
         '402':
           description: Недостаточно средств для резервирования
         '400':

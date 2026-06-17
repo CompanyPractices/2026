@@ -1,10 +1,10 @@
 package com.processing.terminalsimulator.strategy;
 
-import com.processing.terminalsimulator.dto.Card;
+import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
-import java.util.Random;
+import java.math.BigDecimal;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -13,10 +13,10 @@ public class HighValueStrategy implements TransactionStrategy {
     public TransactionType getType() {
         return TransactionType.HIGH_VALUE;
     }
-    private final Random random = new Random();
     @Override
-    public long calculateAmount(Card card) {
-        return 10_000_000 + (long) (random.nextDouble() * 40_000_000);
+    public BigDecimal calculateAmount(CardModel card) {
+        long amount = ThreadLocalRandom.current().nextLong(10_000_000L, 50_000_001L);
+        return BigDecimal.valueOf(amount);
     }
     @Override
     public String getMcc() {

@@ -8,6 +8,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.math.BigDecimal;
+
 @Service
 public class MerchantAcquirerClient implements AcquiringFeeClient {
 
@@ -22,17 +24,25 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     }
 
     @Override
-    public Long fetchAcquiringFee(String stan, String pan, String terminalId) {
+    public BigDecimal fetchAcquiringFee(
+            String transmissionDateTime,
+            String stan,
+            String pan,
+            String terminalId,
+            BigDecimal amount
+    ) {
         try {
             AcquirerFeeResponse response = restClient.method(HttpMethod.GET)
-                    .uri(switchProperties.merchantAcquirerUrl() + "/api/simulator/merchant/fee")
-                    .body(new AcquirerFeeRequest(stan, pan, terminalId))
+                    .uri(switchProperties.merchantAcquirerUrl()
+                            + "/api/simulator/merchant/fee")
+                    .body(new AcquirerFeeRequest(
+                            transmissionDateTime, stan, pan, terminalId, amount))
                     .retrieve()
                     .body(AcquirerFeeResponse.class);
             if (response == null) {
                 return null;
             }
-            return Math.round(response.acquirerFee());
+            return response.acquirerFee();
         } catch (Exception e) {
             LOG.warn("Acquiring fee unavailable for STAN={}: {}", stan, e.getMessage());
             return null;
@@ -40,16 +50,16 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     }
 
     private record AcquirerFeeRequest(
+            String transmissionDateTime,
             String stan,
             String pan,
-            @JsonProperty("terminalID") String terminalId
+            @JsonProperty("terminalId") String terminalId,
+            BigDecimal amount
     ) {
     }
 
     private record AcquirerFeeResponse(
-            String stan,
-            String pan,
-            double acquirerFee
+            BigDecimal acquirerFee
     ) {
     }
 }
