@@ -10,7 +10,7 @@ import com.processing.authorization.entities.LimitUsage;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.authorization.exceptions.*;
 import com.processing.common.dto.cardmanagement.ReserveRequest;
-
+import com.processing.common.utils.MaskPan;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -85,7 +86,7 @@ public class AuthService {
      *         </ul>
      *
      * @see #getCard(String)
-     * @see #reserve(long, String, String)
+     * @see #reserve(BigDecimal, String, String)
      * @see #generateRRN()
      * @see #generateAuthCode()
      * @see AuthorizationRequest
@@ -97,13 +98,13 @@ public class AuthService {
         try {
             cardResponse = getCard(request.pan());
         } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", maskPAN(request.pan()), e);
+            log.error("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException e) {
-            log.error("service unavailable for pan: {}", maskPAN(request.pan()), e);
+            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.error("getting card from card management service failed for pan: {}", maskPAN(request.pan()), e);
+            log.error("getting card from card management service failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
@@ -132,7 +133,7 @@ public class AuthService {
             return DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
         }
 
-        if (request.amount() > cardResponse.availableBalance()) {
+        if (request.amount().compareTo(cardResponse.availableBalance()) > 0) {
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         }
 
@@ -148,19 +149,19 @@ public class AuthService {
                                 transmissionDate);
         if (monthLimitUsage.isPresent()) {
             LimitUsage monthUsage = monthLimitUsage.get();
-            if (monthUsage.getMonthlyAmount() + request.amount() > cardResponse.monthlyLimit()) {
+            if (monthUsage.getMonthlyAmount().add(request.amount()).compareTo(cardResponse.monthlyLimit()) > 0) {
                 return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
             }
-        } else if (request.amount() > cardResponse.monthlyLimit()) {
+        } else if (request.amount().compareTo(cardResponse.monthlyLimit()) > 0) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
-            if (usage.getDailyAmount() + request.amount() > cardResponse.dailyLimit()) {
+            if (usage.getDailyAmount().add(request.amount()).compareTo(cardResponse.dailyLimit()) > 0) {
                 return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
             }
-        } else if (request.amount() > cardResponse.dailyLimit()) {
+        } else if (request.amount().compareTo(cardResponse.dailyLimit()) > 0) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
@@ -169,8 +170,8 @@ public class AuthService {
             reserve(request.amount(), rrn, request.pan());
             if (currLimitUsage.isPresent()) {
                 LimitUsage usage = currLimitUsage.get();
-                usage.setMonthlyAmount(usage.getMonthlyAmount() + request.amount());
-                usage.setDailyAmount(usage.getDailyAmount() + request.amount());
+                usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
+                usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
                 limitUsageRepository.save(usage);
             } else if (monthLimitUsage.isPresent()) {
                 LimitUsage monthUsage = monthLimitUsage.get();
@@ -178,7 +179,7 @@ public class AuthService {
                 usage.setPan(request.pan());
                 usage.setUsageDate(transmissionDate);
                 usage.setDailyAmount(request.amount());
-                usage.setMonthlyAmount(monthUsage.getMonthlyAmount() + request.amount());
+                usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
                 limitUsageRepository.save(usage);
             } else {
                 LimitUsage usage = new LimitUsage();
@@ -229,14 +230,14 @@ public class AuthService {
                 .path("/api/cards/{pan}")
                 .buildAndExpand(pan)
                 .toUri();
-        log.debug("Getting card info for pan {}", maskPAN(pan));
+        log.debug("Getting card info for pan {}", logPan(pan));
 
         return restClient.get()
                 .uri(uri)
                 .retrieve()
                 .onStatus(status -> status.value() == 404, (req, res) -> {
-                    log.debug("Card not found: {}", maskPAN(pan));
-                    throw new CardNotFoundException("Card not found: " + maskPAN(pan));
+                    log.debug("Card not found: {}", logPan(pan));
+                    throw new CardNotFoundException("Card not found: " + logPan(pan));
                 })
                 .onStatus(status -> status.value() == 503, (req, res) -> {
                     log.debug("Card Management service unavailable");
@@ -275,7 +276,7 @@ public class AuthService {
      * @see ReserveRequest
      * @see ReserveCardException
      */
-    public void reserve(long amount, String rrn, String pan) {
+    public void reserve(BigDecimal amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
         URI uri = UriComponentsBuilder
                 .fromUriString(cmsUrl)
@@ -283,7 +284,7 @@ public class AuthService {
                 .path("/api/cards/{pan}/reserve")
                 .buildAndExpand(pan)
                 .toUri();
-        log.debug("Reserving amount {} for card {} with rrn {}", amount, maskPAN(pan), rrn);
+        log.debug("Reserving amount {} for card {} with rrn {}", amount, logPan(pan), rrn);
         restClient.post()
                 .uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -295,10 +296,11 @@ public class AuthService {
                 })
                 .toBodilessEntity();
 
-        log.debug("Reserve successful for card {}", maskPAN(pan));
+        log.debug("Reserve successful for card {}", logPan(pan));
     }
 
     private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyDDDHHmmss");
 
     /**
      * Генерирует уникальный Retrieval Reference Number (RRN) для транзакции.
@@ -329,8 +331,7 @@ public class AuthService {
      * @see #lastTimestampAndSeq
      */
     public String generateRRN() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyDDDHHmmss");
-        String currentSecond = formatter.format(LocalDateTime.now()).substring(1);
+        String currentSecond = FORMATTER.format(LocalDateTime.now()).substring(1);
         String nextValue;
         while (true) {
             String currentState = lastTimestampAndSeq.get();
@@ -385,30 +386,8 @@ public class AuthService {
         return new String(buf, StandardCharsets.US_ASCII);
     }
 
-    /**
-     * Маскирует номер банковской карты (PAN) для безопасного вывода в логи.
-     *
-     * <p>
-     * Формат маскирования: первые 4 цифры + 8 звездочек + последние 4 цифры.
-     * Пример: "1234******5678"
-     * </p>
-     *
-     * <p>
-     * Если переданный PAN некорректен (null или длина не равна 16 символам),
-     * метод возвращает строку "INVALID_PAN" и записывает предупреждение в лог.
-     * </p>
-     *
-     * @param pan полный номер карты (16 цифр)
-     * @return маскированный номер карты в формате "1234******5678"
-     *         или "INVALID_PAN" для некорректного PAN
-     */
-    public String maskPAN(String pan) {
-        if (pan == null || pan.length() != 16) {
-            log.warn("Invalid PAN provided for masking");
-            return "INVALID_PAN";
-        }
-
-        return pan.substring(0, 4) + "*".repeat(8) + pan.substring(12);
+    public String logPan(String pan) {
+        return MaskPan.maskPan(pan);
     }
 
     public RollbackResponse rollback(RollbackRequest request, LocalDateTime requestInputTime) {

@@ -18,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
@@ -47,9 +48,9 @@ public final class CardServiceTest {
         1,
         50,
         "643",
-        15000000,
-        300000000,
-        1000000
+        BigDecimal.valueOf(15000000),
+        BigDecimal.valueOf(300000000),
+        BigDecimal.valueOf(300000000)
     );
 
     private final PanGenerator panGenerator = new PanGenerator() {
@@ -91,9 +92,9 @@ public final class CardServiceTest {
         var bin = faker.number().digits(6);
         var cardholderName = faker.name().fullName().toUpperCase(Locale.ROOT);
         var currencyCode = faker.number().digits(3);
-        var dailyLimit = faker.number().numberBetween(0L, 10000000L);
-        var monthlyLimit = faker.number().numberBetween(dailyLimit, 30000000L);
-        var initialBalance = faker.number().numberBetween(0L, 10000000L);
+        var dailyLimit = BigDecimal.valueOf(faker.number().numberBetween(0, 10000000));
+        var monthlyLimit = BigDecimal.valueOf(faker.number().numberBetween(dailyLimit.intValue(), 30000000));
+        var initialBalance = BigDecimal.valueOf(faker.number().numberBetween(0, 10000000));
         var expDate = YearMonth.now().plusYears(settings.cardValidityPeriod());
 
         when(cardRepository.save(any(Card.class)))
@@ -171,9 +172,15 @@ public final class CardServiceTest {
     void testPatchCard() {
         var pan = generatePan();
         var status = CardStatus.EXPIRED;
-        var dailyLimit = faker.number().numberBetween(0L, 10000000L);
-        var monthlyLimit = faker.number().numberBetween(dailyLimit, 30000000L);
-        var availableBalance = faker.number().numberBetween(0L, 10000000L);
+        var dailyLimit = BigDecimal.valueOf(
+            faker.number().numberBetween(0, 10000000)
+        );
+        var monthlyLimit = BigDecimal.valueOf(
+            faker.number().numberBetween(dailyLimit.intValue(), 30000000)
+        );
+        var availableBalance = BigDecimal.valueOf(
+            faker.number().numberBetween(0, 10000000)
+        );
         var testCard = createTestCard(pan);
 
         when(cardRepository.updateWithPessimisticLock(eq(pan), any()))
@@ -275,7 +282,9 @@ public final class CardServiceTest {
     void testReserve() {
         var pan = generatePan();
         var testCard = createTestCard(pan);
-        var reserveAmount = faker.number().numberBetween(0L, testCard.availableBalance());
+        var reserveAmount = BigDecimal.valueOf(
+            faker.number().numberBetween(0, testCard.availableBalance().intValue())
+        );
         when(cardRepository.updateWithPessimisticLock(eq(pan), any()))
             .thenAnswer(invocation -> {
                 @SuppressWarnings("unchecked")
@@ -293,7 +302,7 @@ public final class CardServiceTest {
             testCard.currencyCode(),
             testCard.dailyLimit(),
             testCard.monthlyLimit(),
-            testCard.availableBalance() - reserveAmount,
+            testCard.availableBalance().subtract(reserveAmount),
             testCard.issuerId(),
             testCard.createdAt()
         );
@@ -303,7 +312,7 @@ public final class CardServiceTest {
         assertThrows(InsufficientFundsException.class, () ->
             cardService.reserve(
                 pan,
-                Long.MAX_VALUE
+                BigDecimal.valueOf(Long.MAX_VALUE)
             )
         );
     }

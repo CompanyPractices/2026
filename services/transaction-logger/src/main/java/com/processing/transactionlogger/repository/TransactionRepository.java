@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
-import java.time.Instant;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -18,18 +18,20 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     /** @return суммарный объём всех транзакций в минорных единицах */
     @Query("SELECT SUM(t.amount) FROM Transaction t")
-    long sumAmount();
+    BigDecimal sumAmount();
 
     /**
-     * Считает транзакции, созданные после указанного момента.
-     * Используется для расчёта {@code transactionsPerMinute} в статистике.
-     *
-     * @param since нижняя граница {@code createdAt} (не включается)
-     * @return количество транзакций
+     * Возвращает агрегированную статистику одним запросом.
      */
-    long countByCreatedAtAfter(Instant since);
-
-    /** @return среднее время обработки транзакции в миллисекундах */
-    @Query("SELECT AVG(t.processingTimeMs) FROM Transaction t")
-    double averageProcessingTimeMs();
+    @Query(value = """
+            SELECT
+                COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE status = 'APPROVED') AS approved,
+                COUNT(*) FILTER (WHERE status = 'DECLINED') AS declined,
+                COALESCE(SUM(amount), 0) AS total_amount,
+                COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 minute') AS recent_count,
+                COALESCE(AVG(processing_time_ms), 0) AS avg_processing_time_ms
+            FROM transactions
+""", nativeQuery = true)
+    TransactionStats findStats();
 }

@@ -1,12 +1,12 @@
-import {hidePan, convertPenniesToRubles, formatTime} from '../utils/format.ts';
-import { getStatusIcon } from '../utils/statusIcon.ts';
-import {Filter, Transaction} from "../types";
-import { useState } from 'react';
+import {hidePan, convertPenniesToRubles, formatTime, formatDate, formatDateTime} from '../utils/format';
+import { getStatusIcon } from '../utils/statusIcon';
+import {Filter, Transaction} from '../types';
+import { useState, useMemo } from 'react';
 import { TransactionModal } from './TransactionModal';
 import { ArrowDownToLine } from 'lucide-react';
-import {exportToCsv} from "../utils/exportToCsv.ts";
-import {Filters} from "./Filters.tsx";
-import {ISSUERS_NAMES, MCC_NAMES} from "../mockData.ts";
+import {exportToCsv} from '../utils/exportToCsv';
+import {Filters} from './Filters';
+import {ISSUERS_NAMES, MCC_NAMES} from '../mockData';
 
 const mapTransactionToCsvRow = (tx: Transaction) => ({
     'STAN': tx.stan,
@@ -20,7 +20,8 @@ const mapTransactionToCsvRow = (tx: Transaction) => ({
     'MCC': tx.mcc,
     'Acquirer ID': tx.acquirerId,
     'Issuer ID': tx.issuerId || '—',
-    'Time': formatTime(tx.transmissionDateTime)
+    'Time': formatTime(tx.createdAt),
+    'Date': formatDate(tx.createdAt)
 });
 
 type TransactionTableProps = {
@@ -33,8 +34,14 @@ type TransactionTableProps = {
 export function TransactionTable({ liveTransactions, error, loading, search }: TransactionTableProps){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
+    const sortedTransactions = useMemo(() => {
+        return [...liveTransactions].sort((a, b) => {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+    }, [liveTransactions]);
+
     const handleExportCsv = () => {
-        const csvRows = liveTransactions.map(mapTransactionToCsvRow);
+        const csvRows = sortedTransactions.map(mapTransactionToCsvRow);
         const now = new Date();
         const dateStr = now.toISOString().slice(0, 10);
         const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
@@ -61,7 +68,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-400 disabled:hover:text-white
                     disabled:hover:bg-sage-200 disabled:hover:text-sage-50"
                     onClick={handleExportCsv}
-                    disabled={liveTransactions.length === 0} >
+                    disabled={sortedTransactions.length === 0} >
                     <ArrowDownToLine size={16} strokeWidth={3} className="inline-block"/>
                     CSV
                 </button>
@@ -79,11 +86,11 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                 </div>
             }
 
-            {!loading && !error && liveTransactions.length === 0 &&
+            {!loading && !error && sortedTransactions.length === 0 &&
                 <div className="text-center py-8 dark:text-sage-50">Транзакций не найдено</div>
             }
 
-            {!loading && !error && liveTransactions.length > 0 &&
+            {!loading && !error && sortedTransactions.length > 0 &&
                 <div className="rounded-xl border-2 border-emerald-600 dark:border-sage-200 shadow-lg mb-5">
 
                 <div className="overflow-x-auto">
@@ -91,7 +98,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                     <table className="w-full min-w-[900px] text-sm">
                         <thead>
                         <tr className="border-b-2 border-emerald-600 dark:border-sage-200 text-center font-semibold dark:text-sage-50">
-                            <th className="px-3 md:px-6 py-2 md:py-4">Время</th>
+                            <th className="px-3 md:px-6 py-2 md:py-4">Дата, Время</th>
                             <th className="px-3 md:px-6 py-2 md:py-4">PAN</th>
                             <th className="px-3 md:px-6 py-2 md:py-4 text-right">Сумма</th>
                             <th className="px-3 md:px-6 py-2 md:py-4">Мерчант</th>
@@ -99,7 +106,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                         </tr>
                         </thead>
                         <tbody>
-                        {liveTransactions.map((transaction) => {
+                        {sortedTransactions.map((transaction) => {
                             const statusIconData = getStatusIcon(transaction.status);
 
                             return (
@@ -108,7 +115,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                                     className="text-center cursor-pointer hover:bg-emerald-50 dark:hover:bg-sage-400 transition-colors border-b border-gray-100 dark:border-sage-400 last:border-0 dark:text-sage-50"
                                     onClick={() => setSelectedTx(transaction)}
                                 >
-                                    <td className="px-3 md:px-6 py-2 md:py-4">{formatTime(transaction.transmissionDateTime)}</td>
+                                    <td className="px-3 md:px-6 py-2 md:py-4">{formatDateTime(transaction.createdAt)}</td>
                                     <td className="px-3 md:px-6 py-2 md:py-4">{hidePan(transaction.pan)}</td>
                                     <td className="px-3 md:px-6 py-2 md:py-4 text-right">{convertPenniesToRubles(transaction.amount)}</td>
                                     <td className="px-3 md:px-6 py-2 md:py-4">{transaction.merchantId}</td>

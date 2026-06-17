@@ -4,6 +4,7 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.terminalsimulator.model.TransactionType;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -13,9 +14,9 @@ public class MoreThanDailyLimitStrategy implements TransactionStrategy {
         return TransactionType.MORE_THAN_DAILY_LIMIT;
     }
     @Override
-    public long calculateAmount(CardModel card) {
-        double randomDouble = ThreadLocalRandom.current().nextDouble();
-        return card.dailyLimit() + (long) (randomDouble * 10_000);
+    public BigDecimal calculateAmount(CardModel card) {
+        long extra = ThreadLocalRandom.current().nextLong(0L, 10_001L);
+        return card.dailyLimit().add(BigDecimal.valueOf(extra));
     }
     @Override
     public String getMcc() {
