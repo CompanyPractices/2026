@@ -2,22 +2,35 @@ import { useMemo } from 'react';
 import { Transaction } from '../types';
 import { getTransactionLocation } from '../utils/geoGenerator';
 
-export type TransactionWithLocation = {
+export type CityCluster = {
     city: string;
     coordinates: [number, number];
-    transaction: Transaction;
+    transactions: Transaction[];
+    count: number;
 };
 
-export function useLocations(transactions: Transaction[]): TransactionWithLocation[] {
+export function useLocations(transactions: Transaction[]): CityCluster[] {
     return useMemo(() => {
-        return transactions.map((tx) => {
+        const cityMap = new Map<string, CityCluster>();
+
+        for (const tx of transactions) {
             const location = getTransactionLocation(tx.issuerId);
-            return {
-                id: tx.id,
-                city: location.city,
-                coordinates: location.coordinates,
-                transaction: tx,
-            };
-        });
+            const key = location.city;
+
+            if (!cityMap.has(key)) {
+                cityMap.set(key, {
+                    city: location.city,
+                    coordinates: location.coordinates,
+                    transactions: [],
+                    count: 0,
+                });
+            }
+
+            const cluster = cityMap.get(key)!;
+            cluster.transactions.push(tx);
+            cluster.count++;
+        }
+
+        return Array.from(cityMap.values());
     }, [transactions]);
 }

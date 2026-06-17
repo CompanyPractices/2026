@@ -1,0 +1,242 @@
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import { useEffect } from 'react';
+import { CityCluster, useLocations } from '../hooks/useLocations';
+import { Transaction } from '../types';
+import { getStatusIcon } from '../utils/statusIcon';
+import 'leaflet/dist/leaflet.css';
+
+type TransactionMapProps = {
+    transactions: Transaction[];
+};
+
+function getClusterStyle(count: number) {
+    if (count >= 10) {
+        return {
+            color: '#1e40af',
+            shadow: 'rgba(30, 64, 175, 0.6)',
+            size: 40,
+            fontSize: '14px',
+        };
+    } else if (count >= 5) {
+        return {
+            color: '#3b82f6',
+            shadow: 'rgba(59, 130, 246, 0.5)',
+            size: 35,
+            fontSize: '13px',
+        };
+    } else {
+        return {
+            color: '#60a5fa',
+            shadow: 'rgba(96, 165, 250, 0.4)',
+            size: 30,
+            fontSize: '12px',
+        };
+    }
+}
+
+function createClusterIcon(count: number) {
+    const style = getClusterStyle(count);
+
+    return L.divIcon({
+        className: 'custom-cluster-marker',
+        html: `
+            <div style="
+                position: relative;
+                width: ${style.size}px;
+                height: ${style.size}px;
+                background: ${style.color};
+                border: 4px solid white;
+                border-radius: 50%;
+                box-shadow: 0 0 0 3px ${style.color}, 0 4px 12px ${style.shadow};
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: ${style.fontSize};
+                font-family: system-ui, -apple-system, sans-serif;
+            ">
+                ${count}
+            </div>
+        `,
+        iconSize: [style.size, style.size],
+        iconAnchor: [style.size / 2, style.size / 2],
+        popupAnchor: [0, -style.size / 2],
+    });
+}
+
+function FitBoundsToClusters({ clusters }: { clusters: CityCluster[] }) {
+    const map = useMap();
+
+    useEffect(() => {
+        if (clusters.length === 0) return;
+
+        const bounds = L.latLngBounds(clusters.map(c => c.coordinates));
+        map.fitBounds(bounds, {
+            padding: [80, 80],
+            maxZoom: 10,
+        });
+    }, [clusters, map]);
+
+    return null;
+}
+
+function formatAmount(amount: number, currencyCode: string): string {
+    return `${amount.toLocaleString('ru-RU')} ${currencyCode}`;
+}
+
+function getClusterStats(transactions: Transaction[]) {
+    const approved = transactions.filter(t => t.status === 'APPROVED').length;
+    const declined = transactions.length - approved;
+    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+    const approvalRate = transactions.length > 0 ? (approved / transactions.length) * 100 : 0;
+
+    return { approved, declined, totalAmount, approvalRate };
+}
+
+export function TransactionMap({ transactions }: TransactionMapProps) {
+    const clusters = useLocations(transactions);
+
+    const initialCenter: [number, number] = [61.5240, 105.3188];
+    const initialZoom = 3;
+
+    if (clusters.length === 0) {
+        return (
+            <div className="w-full h-full min-h-[400px] rounded-lg overflow-hidden flex items-center justify-center bg-zinc-100 dark:bg-sage-600">
+                <div className="text-center text-zinc-500 dark:text-sage-200">
+                    <div className="text-lg font-mono">Ожидание транзакций...</div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full h-full min-h-[400px] rounded-lg overflow-hidden">
+            <MapContainer
+                center={initialCenter}
+                zoom={initialZoom}
+                style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom={true}
+            >
+                <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+
+                <FitBoundsToClusters clusters={clusters} />
+
+                {clusters.map((cluster) => {
+                    const icon = createClusterIcon(cluster.count);
+                    const stats = getClusterStats(cluster.transactions);
+
+                    return (
+                        <Marker
+                            key={cluster.city}
+                            position={cluster.coordinates}
+                            icon={icon}
+                        >
+                            <Popup>
+                                <div style={{ minWidth: '280px', fontSize: '13px' }}>
+                                    <div style={{
+                                        fontWeight: 'bold',
+                                        fontSize: '16px',
+                                        marginBottom: '10px',
+                                        borderBottom: '2px solid #e5e7eb',
+                                        paddingBottom: '6px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between'
+                                    }}>
+                                        <span>{cluster.city}</span>
+                                        <span style={{
+                                            background: getClusterStyle(cluster.count).color,
+                                            color: 'white',
+                                            padding: '2px 8px',
+                                            borderRadius: '12px',
+                                            fontSize: '12px'
+                                        }}>
+                                            {cluster.count} транз.
+                                        </span>
+                                    </div>
+
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr 1fr',
+                                        gap: '8px',
+                                        marginBottom: '10px',
+                                        padding: '8px',
+                                        background: '#f9fafb',
+                                        borderRadius: '6px'
+                                    }}>
+                                        <div>
+                                            <div style={{ fontSize: '11px', color: '#6b7280' }}>Одобрено</div>
+                                            <div style={{ fontWeight: 'bold', color: '#16a34a' }}>
+                                                {stats.approved}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '11px', color: '#6b7280' }}>Отклонено</div>
+                                            <div style={{ fontWeight: 'bold', color: '#dc2626' }}>
+                                                {stats.declined}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '11px', color: '#6b7280' }}>Общая сумма</div>
+                                            <div style={{ fontWeight: 'bold' }}>
+                                                {formatAmount(stats.totalAmount, cluster.transactions[0]?.currencyCode ?? 'RUB')}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '11px', color: '#6b7280' }}>Одобрение</div>
+                                            <div style={{ fontWeight: 'bold' }}>
+                                                {stats.approvalRate.toFixed(1)}%
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{
+                                        maxHeight: '200px',
+                                        overflowY: 'auto',
+                                        borderTop: '1px solid #e5e7eb',
+                                        paddingTop: '8px'
+                                    }}>
+                                        <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px' }}>
+                                            Транзакции:
+                                        </div>
+                                        {cluster.transactions.map((tx) => {
+                                            const statusIconData = getStatusIcon(tx.status);
+                                            const StatusIcon = statusIconData.icon;
+
+                                            return (
+                                                <div key={tx.id} style={{
+                                                    padding: '4px 0',
+                                                    borderBottom: '1px solid #f3f4f6',
+                                                    fontSize: '12px'
+                                                }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <span style={{ color: '#6b7280' }}>
+                                                            {tx.terminalId}
+                                                        </span>
+                                                        <StatusIcon
+                                                            className={statusIconData.color}
+                                                            size={16}
+                                                            aria-hidden="true"
+                                                        />
+                                                    </div>
+                                                    <div style={{ color: '#374151' }}>
+                                                        {formatAmount(tx.amount, tx.currencyCode)}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </Popup>
+                        </Marker>
+                    );
+                })}
+            </MapContainer>
+        </div>
+    );
+}
