@@ -8,7 +8,7 @@ import java.time.Duration;
 @Data
 @ConfigurationProperties(prefix = "gateway.shutdown")
 public class ShutdownProperties {
-    private Duration drainPeriod = Duration.ofSeconds(30);
+    private Duration drainPeriod;
 
     public long retryAfterSeconds() {
         return Math.max(1, drainPeriod.toSeconds());
