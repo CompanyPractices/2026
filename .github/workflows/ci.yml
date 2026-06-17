@@ -230,7 +230,7 @@ jobs:
           echo "Waiting for services to start"
           for i in {1..60}; do
             not_ready=$(docker compose ps --format '{{.Health}}' | grep -E 'starting|unhealthy' | wc -l | tr -d ' ')
-            if [ $"not_ready" == "0" ]; then
+            if [ "$not_ready" == "0" ]; then
               break
             fi
             echo "Waiting ($i/60)"
