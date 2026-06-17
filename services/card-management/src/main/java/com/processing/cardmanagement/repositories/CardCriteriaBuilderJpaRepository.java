@@ -9,7 +9,7 @@ import java.util.List;
 public interface CardCriteriaBuilderJpaRepository {
 
     List<CardEntity> findCards(
-        long limit,
+        int limit,
         long offset,
         @Nullable String status,
         @Nullable String bin,

@@ -12,9 +12,11 @@ import java.math.BigDecimal;
 @Validated
 @ConfigurationProperties(prefix = "app.card-generator")
 public record CardGeneratorOptions(
-    BigDecimal minBalance,
-    BigDecimal maxBalance,
-    BigDecimal minDailyLimit,
-    BigDecimal maxDailyLimit,
-    String currencyCode
-) {}
+        BigDecimal minBalance,
+        BigDecimal maxBalance,
+        BigDecimal minDailyLimit,
+        BigDecimal maxDailyLimit,
+        String currencyCode,
+        int maxCount
+) {
+}

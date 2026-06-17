@@ -94,7 +94,7 @@ public class CardController {
         @NotNegative
         @Schema(description = "Offset for pagination", example = "0")
         @RequestParam(required = false, defaultValue = "0")
-        Integer offset,
+        Long offset,
 
         @Nullable
         @Schema(
