@@ -29,6 +29,7 @@ public class ReservationRollbackEntity {
     @Column(length = 16, nullable = false)
     private String pan;
 
+    @Column(nullable = false, precision = 19)
     private BigDecimal rollbackAmount;
 
     @Column(length = 12, unique = true, nullable = false)

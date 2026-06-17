@@ -46,13 +46,13 @@ public class CardEntity {
     @Column(length = 3, nullable = false)
     private String currencyCode;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19)
     private BigDecimal dailyLimit;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19)
     private BigDecimal monthlyLimit;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19)
     private BigDecimal availableBalance;
 
     @Column(length = 10, nullable = false)
