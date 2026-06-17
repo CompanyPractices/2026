@@ -1,5 +1,7 @@
 import { Pie, PieChart, Tooltip, Cell, Legend, ResponsiveContainer } from 'recharts';
 import { Transaction } from '../types/index.ts'
+import {ThemeContext} from "../contexts/ThemeContext.ts";
+import { useContext } from 'react';
 
 type PieChartProps = {
     transactions: Transaction[];
@@ -7,6 +9,11 @@ type PieChartProps = {
     error: string | null
 }
 export default function TransactionPieChart({transactions, loading, error}: PieChartProps) {
+    const { theme } = useContext(ThemeContext)!;
+    const isDark = theme === 'dark';
+    const cellColorApproved = isDark ? 'oklch(79.2% 0.209 151.711)' : 'green'
+    const cellColorDeclined = isDark ? 'oklch(70.4% 0.191 22.216)' : 'red'
+
     const approved = transactions?.filter((s) => s.status === 'APPROVED').length || 0;
     const declined = transactions?.filter((s) => s.status === 'DECLINED').length || 0;
 
@@ -48,9 +55,14 @@ export default function TransactionPieChart({transactions, loading, error}: PieC
                 cy="45%"
                 outerRadius={100}
                 label={false}
+                activeShape={{
+                    fillOpacity: 0.8,
+                    stroke: 'white',
+                    strokeWidth: 2
+                }}
             >
-                <Cell fill="green" />
-                <Cell fill="red" />
+                <Cell fill={cellColorApproved}/>
+                <Cell fill={cellColorDeclined} />
             </Pie>
             <Legend
                 layout="horizontal"
