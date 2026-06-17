@@ -189,8 +189,23 @@ public class AuthService {
                 usage.setMonthlyAmount(request.amount());
                 limitUsageRepository.save(usage);
             }
+        } catch (CardNotFoundException e) {
+            log.error("card not found for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
+        } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
+            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
+        } catch (InvalidReserveRequestException e) {
+            log.error("invalid reverse request for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
+        } catch (InsufficientFundsException e) {
+            log.error("Insufficient funds from card-managment for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
+        } catch (ReserveException e) {
+            log.error("reserve from card-management service failed for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.error("reserving failed for card {}", cardResponse.id(), e);
+            log.error("reserve failed for card {}", cardResponse.id(), e);
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         }
 
@@ -262,7 +277,7 @@ public class AuthService {
      *
      * <p>
      * В случае ошибки резервирования (не 2xx статус) выбрасывается
-     * {@link ReserveCardException}.
+     * {@link ReserveException}.
      * </p>
      *
      * @param amount сумма для резервирования в минимальных единицах валюты
@@ -271,10 +286,10 @@ public class AuthService {
      *               Number)
      * @param pan    номер карты для резервирования средств
      * @throws Exception если резервирование не удалось.
-     *                   Причина ошибки содержится в {@link ReserveCardException}
+     *                   Причина ошибки содержится в {@link ReserveException}
      *
      * @see ReserveRequest
-     * @see ReserveCardException
+     * @see ReserveException
      */
     public void reserve(BigDecimal amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
@@ -290,9 +305,23 @@ public class AuthService {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(reserveRequest)
                 .retrieve()
+                .onStatus(status -> status.value() == 500, (req, res) -> {
+                    throw new InternalCardManagerException("Internal card management error");
+                })
+                .onStatus(status -> status.value() == 503, (req, res) -> {
+                    throw new ServiceUnavailableException("Card Management service unavailable");
+                })
+                .onStatus(status -> status.value() == 400, (req, res) -> {
+                    throw new InvalidReserveRequestException("Invalid reserve request");
+                })
+                .onStatus(status -> status.value() == 402, (req, res) -> {
+                    throw new InsufficientFundsException("Insufficient Funds from card-managment");
+                })
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    throw new CardNotFoundException("Card not found");
+                })
                 .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                    log.debug("Reserve failed. Status: {}", res.getStatusCode());
-                    throw new ReserveCardException("Failed to reserve. Status: " + res.getStatusCode());
+                    throw new ReserveException("Failed to reserve. Status: " + res.getStatusCode());
                 })
                 .toBodilessEntity();
 
