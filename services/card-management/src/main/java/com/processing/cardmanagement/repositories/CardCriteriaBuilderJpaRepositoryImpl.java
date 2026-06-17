@@ -21,7 +21,7 @@ public class CardCriteriaBuilderJpaRepositoryImpl
 
     @Override
     public List<CardEntity> findCards(
-        long limit,
+        int limit,
         long offset,
         @Nullable String status,
         @Nullable String bin,
@@ -47,7 +47,7 @@ public class CardCriteriaBuilderJpaRepositoryImpl
             .where(predicates.toArray(Predicate[]::new));
         return entityManager
             .createQuery(criteriaQuery)
-            .setMaxResults((int) limit)
+            .setMaxResults(limit)
             .setFirstResult((int) offset)
             .getResultList();
     }
