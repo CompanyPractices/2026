@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -62,10 +61,10 @@ public class TerminalSimulatorService {
 
     private AuthorizationResponse executeSingleTransaction(TransactionType transactionType, PartofDay partOfDay,
                                                            List<CardModel> cards, AtomicInteger approved,
-                                                           AtomicInteger declined) {
+                                                           AtomicInteger declined,
+                                                           String terminalId) {
         CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
         CardModel card = getRandomCard(requiredStatus, cards);
-        String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
         AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card, terminalId);
         AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
 
@@ -116,6 +115,7 @@ public class TerminalSimulatorService {
 
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
         long start = System.currentTimeMillis();
+        String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
         List<CardModel> cards = loadCards(scenario);
         List<TransactionTask> tasks = generateTasks(scenario, count);
 
@@ -124,39 +124,28 @@ public class TerminalSimulatorService {
         AtomicInteger declined = new AtomicInteger(0);
 
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-//            List<CompletableFuture<AuthorizationResponse>> futures = tasks.stream().map(
-//                    task -> CompletableFuture.supplyAsync(
-//                            () -> executeSingleTransaction(task.type(), task.partOfDay(), cards, approved, declined),
-//                            executor)).toList();
-//            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-//            for (var future : futures) {
-//                try {
-//                    authResponses.add(future.get());
-//                } catch (Exception e) {
-//                    log.error("Error getting future result", e);
-//                    authResponses.add(new AuthorizationResponse(null, null, null, null, null,
-//                            null, e.getMessage(), 0));
-//                }
-//            }
-            List<CompletableFuture<Void>> futures = tasks.stream()
-                    .map(task -> CompletableFuture.supplyAsync(
-                            () -> executeSingleTransaction(task.type(), task.partOfDay(), cards, approved, declined),
-                            executor
-                        )
-                        .thenAccept(authResponses::add)
-                        .exceptionally(ex -> {
-                            log.error("Transaction failed", ex);
-                            authResponses.add(new AuthorizationResponse(null, null, null, null, null,
-                                    null, ex.getMessage(), 0));
-                            return null;
-                        })
-                    )
-                    .toList();
-
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        } catch (Exception e) {
+            // главный поток заходит и раздает задачи экзекутору
+            for (TransactionTask task : tasks) {
+                // неблокирующий метод, закидывает задачу в пул
+                executor.submit(
+                        () -> {  // создаю задачу (объект Runnable), без входящих аргументов, с таким кодом:
+                    try {
+                        AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay, cards,
+                                approved, declined, terminalId);
+                        authResponses.add(resp);
+                    }
+                    catch (Exception e) {
+                        log.error("Transaction failed", e);
+                        authResponses.add(new AuthorizationResponse(null, null, null, null, null,
+                                null, e.getMessage(), 0));
+                    }
+                });
+            }
+        } // тут вызывается executor.close() и ждет завершения всех задач(!!) без allOf().join()
+        catch (Exception e) {
             log.error("Execution error", e);
-            throw e;
+            authResponses.add(new AuthorizationResponse(null, null, null, null, null,
+                    null, e.getMessage(), 0));
         }
 
         long elapsed = System.currentTimeMillis() - start;
