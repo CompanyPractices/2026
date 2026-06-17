@@ -2,6 +2,7 @@ package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
+import com.processing.merchantacquirer.exception.ResourceNotFoundException;
 import com.processing.merchantacquirer.repository.MerchantRepository;
 
 import java.math.BigDecimal;
@@ -22,7 +23,7 @@ public class MerchantProvider {
     List<Merchant> merchants = merchantRepository.findByMccIn(mccCodes);
 
     if (merchants.isEmpty()) {
-      throw new IllegalArgumentException("Merchants with given mcc (" + mccCodes + ") not found");
+      throw new ResourceNotFoundException("Merchants with given mcc (" + mccCodes + ") not found");
     }
 
     return merchants;

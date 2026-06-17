@@ -7,7 +7,7 @@ import java.math.RoundingMode;
 
 @Component
 public class FeeCalculator {
-    public BigDecimal calculate(BigDecimal fee, BigDecimal amount){
+    public BigDecimal calculate(BigDecimal fee, BigDecimal amount) {
         return amount
                     .multiply(fee)
                     .setScale(0, RoundingMode.HALF_EVEN);

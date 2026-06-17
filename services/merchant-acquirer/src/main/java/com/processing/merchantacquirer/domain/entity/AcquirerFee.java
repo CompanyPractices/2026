@@ -36,7 +36,7 @@ public class AcquirerFee {
         this.amount = amount;
     }
 
-    public static AcquirerFee of(BigDecimal fee, AuthorizationRequest request){
+    public static AcquirerFee of(BigDecimal fee, AuthorizationRequest request) {
         return new AcquirerFee(
                 request.transmissionDateTime(),
                 request.stan(),

@@ -5,6 +5,8 @@ import com.processing.merchantacquirer.client.dto.CardDataResponse;
 import com.processing.merchantacquirer.client.dto.CardsRequest;
 import com.processing.merchantacquirer.client.dto.CardsResponse;
 import java.util.List;
+
+import com.processing.merchantacquirer.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +20,7 @@ public class CardProvider {
     CardsResponse cardsResponse = gatewayClient.getCards(cardsRequest);
 
     if (cardsResponse.cards().isEmpty()) {
-      throw new IllegalArgumentException("Cards not found");
+      throw new ResourceNotFoundException("Cards not found");
     }
 
     return cardsResponse.cards();

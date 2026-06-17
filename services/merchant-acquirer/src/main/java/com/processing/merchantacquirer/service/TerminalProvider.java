@@ -1,6 +1,7 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.domain.entity.Terminal;
+import com.processing.merchantacquirer.exception.ResourceNotFoundException;
 import com.processing.merchantacquirer.repository.TerminalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +28,7 @@ public class TerminalProvider {
 
         List<Terminal> terminals = terminalsByMerchants.get(merchantId);
         if (terminals.isEmpty()) {
-            throw new IllegalStateException("Merchant not have terminals, merchant id: " + merchantId);
+            throw new ResourceNotFoundException("Merchant not have terminals, merchant id: " + merchantId);
         }
 
         return terminals.get(ThreadLocalRandom.current().nextInt(0, terminals.size()));
