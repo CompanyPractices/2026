@@ -34,9 +34,9 @@ public class CardServiceMetricsEventListener implements CardEventListener {
                 .counter("cards.operations", "type", "rolled_back")
                 .increment();
 
-            case CardGeneratedEvent e -> meterRegistry
-                .counter("cards.generated", "status", e.status().name())
-                .increment();
+            case CardsBatchGeneratedEvent e -> e.statusCount().forEach((status, count) ->
+                meterRegistry.counter("cards.generated", "status", status.name())
+                    .increment(count));
         }
     }
 }
