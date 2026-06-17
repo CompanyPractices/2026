@@ -28,6 +28,7 @@ public class ReservationEntity {
     @Column(length = 16, nullable = false)
     private String pan;
 
+    @Column(nullable = false, precision = 19)
     private BigDecimal reservationAmount;
 
     @Column(length = 12, unique = true, nullable = false)

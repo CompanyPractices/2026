@@ -35,11 +35,6 @@ public class AppConfig {
     }
 
     @Bean
-    public BinIssuerInitializer binIssuerInitializer(BinIssuerRepository repository) {
-        return new BinIssuerInitializer(repository);
-    }
-
-    @Bean
     public CardService cardService(
         CardRepository cardRepository,
         ReservationRepository reservationRepository,
