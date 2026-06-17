@@ -20,7 +20,6 @@ import java.util.UUID;
 
 public abstract class E2EBaseTest {
 
-
     protected static final String GATEWAY_URL = env("GATEWAY_URL", "http://localhost:8080");
     protected static final String CARD_MGMT_URL = env("CARD_MGMT_URL", "http://localhost:8081");
     protected static final String SWITCH_URL = env("SWITCH_URL", "http://localhost:8082");
