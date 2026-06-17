@@ -30,7 +30,7 @@ export function TransactionModal({ transaction, onClose }: TransactionModalProps
         {label: "MCC", value: transaction.mcc },
         {label: "ID экваера", value: transaction.acquirerId},
         {label: "ID эмитента", value: transaction.issuerId || "—" },
-        {label: "Время", value: formatTime(transaction.transmissionDateTime) }
+        {label: "Время", value: formatTime(transaction.createdAt) }
     ];
 
     return (

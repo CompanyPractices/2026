@@ -20,7 +20,7 @@ const mapTransactionToCsvRow = (tx: Transaction) => ({
     'MCC': tx.mcc,
     'Acquirer ID': tx.acquirerId,
     'Issuer ID': tx.issuerId || '—',
-    'Time': formatTime(tx.transmissionDateTime)
+    'Time': formatTime(tx.createdAt)
 });
 
 type TransactionTableProps = {
@@ -108,7 +108,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
                                     className="text-center cursor-pointer hover:bg-emerald-50 dark:hover:bg-sage-400 transition-colors border-b border-gray-100 dark:border-sage-400 last:border-0 dark:text-sage-50"
                                     onClick={() => setSelectedTx(transaction)}
                                 >
-                                    <td className="px-3 md:px-6 py-2 md:py-4">{formatTime(transaction.transmissionDateTime)}</td>
+                                    <td className="px-3 md:px-6 py-2 md:py-4">{formatTime(transaction.createdAt)}</td>
                                     <td className="px-3 md:px-6 py-2 md:py-4">{hidePan(transaction.pan)}</td>
                                     <td className="px-3 md:px-6 py-2 md:py-4 text-right">{convertPenniesToRubles(transaction.amount)}</td>
                                     <td className="px-3 md:px-6 py-2 md:py-4">{transaction.merchantId}</td>
