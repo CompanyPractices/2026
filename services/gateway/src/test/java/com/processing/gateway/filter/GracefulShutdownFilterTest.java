@@ -5,6 +5,7 @@ import com.processing.gateway.properties.ShutdownProperties;
 import com.processing.gateway.shutdown.GracefulShutdownState;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.annotation.Order;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -51,10 +52,24 @@ class GracefulShutdownFilterTest {
         );
     }
 
+    @Test
+    void hasHighestPriorityAmongGatewayFilters() {
+        int gracefulShutdownOrder = orderOf(GracefulShutdownFilter.class);
+
+        assertThat(gracefulShutdownOrder).isLessThan(orderOf(TransactionRateLimitFilter.class));
+        assertThat(gracefulShutdownOrder).isLessThan(orderOf(TransactionValidationFilter.class));
+        assertThat(gracefulShutdownOrder).isLessThan(orderOf(CircuitBreakerFilter.class));
+        assertThat(gracefulShutdownOrder).isLessThan(orderOf(DownstreamErrorFilter.class));
+    }
+
     private ShutdownProperties shutdownProperties() {
         ShutdownProperties properties = new ShutdownProperties();
         properties.setDrainPeriod(Duration.ofSeconds(30));
         return properties;
+    }
+
+    private int orderOf(Class<?> filterClass) {
+        return filterClass.getAnnotation(Order.class).value();
     }
 
     private static final class CountingFilterChain implements FilterChain {
