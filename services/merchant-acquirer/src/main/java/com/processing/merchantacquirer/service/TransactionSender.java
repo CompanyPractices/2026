@@ -48,7 +48,8 @@ public class TransactionSender {
                     } catch (ExternalServiceException e) {
                       transactionMetrics.record(request.mcc(), "ERROR");
 
-                      log.warn("Gateway returned failed AuthorizationRequest: [STAN: {}, PAN: {}, amount: {}, TerminalID: {}, MerchantID: {}, AcquirerID: {}, MCC: {}]: {}",
+                      log.warn("Gateway returned failed AuthorizationRequest: [STAN: {}, PAN: {}, amount: {}, "
+                                      + "TerminalID: {}, MerchantID: {}, AcquirerID: {}, MCC: {}]: {}",
                               request.stan(),
                               MaskerPan.mask(request.pan()),
                               request.amount(),

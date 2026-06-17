@@ -60,7 +60,8 @@ public class TransactionBuilder {
                             AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
                                     card.pan(), card.currencyCode(), amount, terminal, merchant);
 
-                            log.info("AuthorizationRequest: STAN: {}, PAN: {}, amount: {}, TerminalID: {}, MerchantID: {}, AcquirerID: {}, MCC: {} ",
+                            log.info("AuthorizationRequest: STAN: {}, PAN: {}, amount: {}, "
+                                            + "TerminalID: {}, MerchantID: {}, AcquirerID: {}, MCC: {} ",
                                     authorizationRequest.stan(),
                                     MaskerPan.mask(authorizationRequest.pan()),
                                     authorizationRequest.amount(),
