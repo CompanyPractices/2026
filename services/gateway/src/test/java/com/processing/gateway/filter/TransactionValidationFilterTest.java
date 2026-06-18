@@ -2,6 +2,7 @@ package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.gateway.validation.TransactionRequestValidator;
+import com.processing.gateway.validation.TransactionValidationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;

@@ -1,6 +1,4 @@
-package com.processing.gateway.dto;
-
-import com.processing.gateway.enums.HealthStatus;
+package com.processing.gateway.health.models;
 
 import java.util.Map;
 

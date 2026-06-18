@@ -1,4 +1,4 @@
-package com.processing.gateway.wrapper;
+package com.processing.gateway.logging;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;

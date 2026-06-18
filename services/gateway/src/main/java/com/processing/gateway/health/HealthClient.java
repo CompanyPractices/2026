@@ -1,7 +1,6 @@
-package com.processing.gateway.client;
+package com.processing.gateway.health;
 
-import com.processing.gateway.enums.HealthStatus;
-import com.processing.gateway.properties.HealthProperties;
+import com.processing.gateway.health.models.HealthStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

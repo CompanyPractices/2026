@@ -3,6 +3,7 @@ package com.processing.gateway.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.gateway.ratelimit.ClientIpResolver;
 import com.processing.gateway.ratelimit.InMemoryRateLimiter;
+import com.processing.gateway.ratelimit.TransactionRateLimitFilter;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;

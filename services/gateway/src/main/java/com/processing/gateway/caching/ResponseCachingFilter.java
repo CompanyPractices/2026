@@ -1,8 +1,8 @@
-package com.processing.gateway.filter;
+package com.processing.gateway.caching;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
-import com.processing.gateway.utils.DownstreamExceptionUtils;
+import com.processing.gateway.downstream.DownstreamExceptionUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

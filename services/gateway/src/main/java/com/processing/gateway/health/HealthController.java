@@ -1,8 +1,7 @@
-package com.processing.gateway.controller;
+package com.processing.gateway.health;
 
-import com.processing.gateway.dto.HealthResponse;
-import com.processing.gateway.enums.HealthStatus;
-import com.processing.gateway.service.HealthService;
+import com.processing.gateway.health.models.HealthResponse;
+import com.processing.gateway.health.models.HealthStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

@@ -1,4 +1,4 @@
-package com.processing.gateway.enums;
+package com.processing.gateway.health.models;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 

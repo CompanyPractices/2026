@@ -1,4 +1,4 @@
-package com.processing.gateway.service;
+package com.processing.gateway.downstream;
 
 import com.processing.gateway.properties.GatewayRouteProperties;
 import org.springframework.http.server.PathContainer;

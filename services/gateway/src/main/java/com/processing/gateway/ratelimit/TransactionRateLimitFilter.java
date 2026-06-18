@@ -1,7 +1,6 @@
-package com.processing.gateway.filter;
+package com.processing.gateway.ratelimit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.gateway.ratelimit.*;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

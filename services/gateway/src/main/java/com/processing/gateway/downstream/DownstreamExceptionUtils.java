@@ -1,4 +1,4 @@
-package com.processing.gateway.utils;
+package com.processing.gateway.downstream;
 
 import jakarta.servlet.ServletException;
 import org.springframework.web.client.ResourceAccessException;

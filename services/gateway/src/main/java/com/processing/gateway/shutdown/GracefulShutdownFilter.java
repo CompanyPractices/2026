@@ -1,9 +1,7 @@
-package com.processing.gateway.filter;
+package com.processing.gateway.shutdown;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
-import com.processing.gateway.properties.ShutdownProperties;
-import com.processing.gateway.shutdown.GracefulShutdownState;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,10 +1,8 @@
-package com.processing.gateway.service;
+package com.processing.gateway.health;
 
-import com.processing.gateway.client.HealthClient;
-import com.processing.gateway.dto.HealthResponse;
-import com.processing.gateway.enums.HealthStatus;
+import com.processing.gateway.health.models.HealthResponse;
+import com.processing.gateway.health.models.HealthStatus;
 import com.processing.gateway.properties.GatewayProperties;
-import com.processing.gateway.properties.HealthProperties;
 import com.processing.gateway.properties.ServiceProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

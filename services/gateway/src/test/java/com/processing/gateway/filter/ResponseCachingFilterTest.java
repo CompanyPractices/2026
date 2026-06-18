@@ -2,6 +2,7 @@ package com.processing.gateway.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
+import com.processing.gateway.caching.ResponseCachingFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,7 +13,6 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.lang.NonNullApi;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.client.ResourceAccessException;

@@ -1,5 +1,6 @@
 package com.processing.gateway.service;
 
+import com.processing.gateway.downstream.DownstreamServiceResolver;
 import com.processing.gateway.properties.GatewayRouteProperties;
 import org.junit.jupiter.api.Test;
 

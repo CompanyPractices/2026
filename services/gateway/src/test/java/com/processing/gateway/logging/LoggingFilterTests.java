@@ -1,7 +1,6 @@
 package com.processing.gateway.logging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.gateway.filter.RequestLoggingFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 

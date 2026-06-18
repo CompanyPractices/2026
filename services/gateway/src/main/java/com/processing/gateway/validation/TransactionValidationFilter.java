@@ -1,10 +1,9 @@
-package com.processing.gateway.filter;
+package com.processing.gateway.validation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.authorization.AuthorizationRequest;
-import com.processing.gateway.validation.*;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;

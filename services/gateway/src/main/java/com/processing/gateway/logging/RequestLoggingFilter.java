@@ -1,12 +1,11 @@
-package com.processing.gateway.filter;
+package com.processing.gateway.logging;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.processing.gateway.logging.RequestLog;
-import com.processing.gateway.wrapper.MutableHeadersRequestWrapper;
+import com.processing.gateway.logging.models.RequestLog;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
