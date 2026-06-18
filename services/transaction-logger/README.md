@@ -22,8 +22,10 @@ Transaction Logger сохраняет все транзакции процесс
 | GET | `/health` | Health-check сервиса |
 | POST | `/api/internal/log` | Приём транзакции от Switch и сохранение в PostgreSQL |
 | GET | `/api/transactions/search` | Поиск транзакций с фильтрацией и пагинацией |
+| GET | `/api/transactions/export` | Экспорт транзакций по фильтру в CSV |
 | GET | `/api/dashboard/stats` | Агрегированная статистика |
 | GET | `/api/dashboard/recent` | Последние N транзакций |
+| GET | `/api/dashboard/charts` | Агрегация по часам/дням для графиков |
 | WS | `/ws/transactions` | Real-time поток транзакций |
 
 Swagger UI: `http://localhost:8080/docs` при локальном запуске или `http://localhost:8088/docs`
@@ -172,13 +174,50 @@ Endpoint принимает транзакцию от Switch и сохраняе
 }
 ```
 
-> Суммы в копейках (minor units). Для отображения в рублях: `amount / 100`.
-
 **Ошибки:**
 
 | Код | Условие |
 |-----|---------|
 | 400 | Невалидные параметры (`limit <= 0`, `offset < 0`) |
+
+---
+
+#### `GET /api/transactions/export`
+
+Экспорт транзакций, удовлетворяющих фильтру, в CSV-файл.
+
+**Query-параметры:** те же, что у `/api/transactions/search`, **кроме `limit`/`offset` — они не применяются.**
+
+| Параметр | Тип | Описание | По умолчанию |
+|----------|-----|----------|--------------|
+| `pan` | string | Номер карты | — |
+| `status` | string | `APPROVED` / `DECLINED` | — |
+| `dateFrom` | date | С даты | — |
+| `dateTo` | date | По дату | — |
+| `merchantId` | string | ID мерчанта | — |
+| `issuerId` | string | ID эмитента | — |
+| `mcc` | string | Код категории | — |
+
+Все параметры опциональны, активные объединяются через AND.
+
+**Ответ 200:**
+- `Content-Type: text/csv; charset=UTF-8`
+- `Content-Disposition: attachment; filename="transactions.csv"`
+- Тело - CSV: первая строка - заголовок, далее по строке на транзакцию (сортировка `createdAt DESC`). Поля со спецсимволами экранируются кавычками, `null` → пустое поле.
+
+Пример:
+```csv
+id,mti,stan,rrn,pan,processingCode,amount,currencyCode,terminalId,terminalType,merchantId,mcc,acquirerId,issuerId,acquiringFee,status,declineReason,authCode,processingTimeMs,transmissionDateTime,createdAt
+550e8400-e29b-41d4-a716-446655440000,0100,000001,012345678901,4000000000000001,000000,150000,643,TERM0001,POS,MERCHANT001,5411,ACQ001,ISS001,300,APPROVED,,ABC123,38,2024-01-15T14:30:01Z,2024-01-15T14:30:01Z
+```
+
+> Экспорт ограничен `50 000` строк. Если под фильтр попадает больше — выгружаются первые 50 000 (по `createdAt DESC`), в лог пишется предупреждение.
+
+**Ошибки:**
+
+| Код | Условие |
+|-----|---------|
+| 400 | Невалидные параметры фильтра (например, `status=UNKNOWN`, `dateFrom > dateTo`) |
 
 ---
 
@@ -209,6 +248,56 @@ Endpoint принимает транзакцию от Switch и сохраняе
 | `limit` | int | Количество записей | `20` |
 
 **Ответ 200:** массив транзакций, отсортированных по `createdAt DESC`.
+
+---
+
+#### `GET /api/dashboard/charts`
+
+Агрегация транзакций по временным корзинам (час/день) для графиков Dashboard. Группировка и фильтрация — по `createdAt` в UTC; возвращаются **только непустые** корзины, упорядоченные по времени.
+
+**Query-параметры:**
+
+| Параметр | Тип    | Описание | По умолчанию |
+|----------|--------|----------|--------------|
+| `granularity` | string | Шаг агрегации: `hour` или `day` | `hour` |
+| `from` | date   | Нижняя граница `createdAt`, включительно | — (с начала) |
+| `to` | date   | Верхняя граница `createdAt`, исключительно | — (до конца) |
+
+Диапазон - полуинтервал `[from, to)`. Если границы не заданы — агрегируются все транзакции.
+
+**Ответ 200:** массив корзин.
+```json
+[
+  {
+    "timestamp": "2026-06-16T10:00:00Z",
+    "total": 2,
+    "approved": 1,
+    "declined": 1,
+    "amount": 150000
+  },
+  {
+    "timestamp": "2026-06-16T11:00:00Z",
+    "total": 1,
+    "approved": 1,
+    "declined": 0,
+    "amount": 200000
+  }
+]
+```
+
+| Поле        | Описание                                       |
+|-------------|------------------------------------------------|
+| `timestamp` | Начало интервала (усечено до часа/дня, UTC)    |
+| `total`     | Всего транзакций в интервале                   |
+| `approved`  | Одобренных                                     |
+| `declined`  | Отклонённых                                    |
+| `amount`    | Суммарный объём в минорных единицах (копейках) |
+
+**Ошибки:**
+
+| Код | Условие |
+|-----|---------|
+| 400 | `granularity` не `hour`/`day`, либо `from > to` |
 
 ---
 
