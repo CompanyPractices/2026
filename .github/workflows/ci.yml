@@ -117,6 +117,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Normalize GHCR namespace to lowercase
+        run: echo "GITHUB_ACTOR=${ACTOR,,}" >> "$GITHUB_ENV"
+        env:
+          ACTOR: ${{ github.actor }}
+
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y jq bc
 
@@ -148,9 +153,13 @@ jobs:
 
       - name: Build Docker images
         run: docker compose build
+        env:
+          GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
 
       - name: Start all services
         run: docker compose up -d
+        env:
+          GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
 
       - name: Wait for services to be ready
         run: |
@@ -182,6 +191,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Normalize GHCR namespace to lowercase
+        run: echo "GITHUB_ACTOR=${ACTOR,,}" >> "$GITHUB_ENV"
+        env:
+          ACTOR: ${{ github.actor }}
 
       - name: Set up JDK 21 for E2E
         uses: actions/setup-java@v4
@@ -221,9 +235,13 @@ jobs:
 
       - name: Build Docker images
         run: docker compose build
+        env:
+          GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
 
       - name: Start all services
         run: docker compose up -d
+        env:
+          GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
 
       - name: Wait for services to be ready
         run: |
