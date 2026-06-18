@@ -70,7 +70,7 @@ export function Header({ stats, loading, error, isConnected }: HeaderProps) {
             <div className="absolute top-0 right-0 mr-3 md:mr-8 mt-2 md:mt-3 flex items-center gap-2">
                 <span
                     className={`w-7 h-7 rounded-full drop-shadow-lg ${
-                        isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500 animate-pulse'
+                        isConnected ? 'bg-[oklch(79.2%_0.209_151.711)] animate-pulse' : 'bg-[oklch(70.4%_0.191_22.216)] animate-pulse'
                     }`}
                     title={isConnected ? 'WebSocket подключен' : 'Соединение потеряно'}
                 />
