@@ -20,7 +20,7 @@ public class AuthorizationRequestFactory {
 
     return AuthorizationRequest.builder()
         .mti("0100")
-        .stan(stanGenerator.next())
+        .stan(stanGenerator.next(terminal.getId()))
         .pan(pan)
         .processingCode("000000")
         .amount(amount)
