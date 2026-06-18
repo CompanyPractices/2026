@@ -20,8 +20,9 @@ export function useLiveStats(liveTransactions: Transaction[]) {
     };
 
     const [stats, setStats] = useState<KpiLiveStats>(defaultStats);
-
     const statsRef = useRef<KpiLiveStats>(defaultStats);
+
+    const prevLiveTransactionsRef = useRef<Transaction[]>([]);
 
     useEffect(() => {
         if (transactionStats) {
@@ -38,21 +39,26 @@ export function useLiveStats(liveTransactions: Transaction[]) {
     }, [transactionStats]);
 
     useEffect(() => {
-        if (liveTransactions.length > 0) {
-            const newTx = liveTransactions[0];
+        const prevIds = new Set(prevLiveTransactionsRef.current.map(tx => tx.id));
+        const newTransactions = liveTransactions.filter(tx => !prevIds.has(tx.id));
 
-            const current = statsRef.current;
+        if (newTransactions.length > 0) {
+            let current = statsRef.current;
 
-            const nextStats: KpiLiveStats = {
-                totalTx: current.totalTx + 1,
-                approvedTx: current.approvedTx + (newTx.status === 'APPROVED' ? 1 : 0),
-                totalAmount: current.totalAmount + newTx.amount,
-                totalTime: current.totalTime + (newTx.processingTimeMs || 0),
-            };
+            for (const newTx of newTransactions) {
+                current = {
+                    totalTx: current.totalTx + 1,
+                    approvedTx: current.approvedTx + (newTx.status === 'APPROVED' ? 1 : 0),
+                    totalAmount: current.totalAmount + newTx.amount,
+                    totalTime: current.totalTime + (newTx.processingTimeMs || 0),
+                };
+            }
 
-            statsRef.current = nextStats;
-            setStats(nextStats);
+            statsRef.current = current;
+            setStats(current);
         }
+
+        prevLiveTransactionsRef.current = liveTransactions;
     }, [liveTransactions]);
 
     const approvalRate = stats.totalTx > 0
