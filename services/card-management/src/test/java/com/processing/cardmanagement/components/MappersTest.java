@@ -248,8 +248,8 @@ public class MappersTest {
             reservation.reservationAmount(),
             reservation.rrn(),
             reservation.status().name(),
-            reservation.updatedAt(),
-            reservation.createdAt()
+            reservation.createdAt(),
+            reservation.updatedAt()
         );
         assertEquals(expectedEntity, entity);
     }
@@ -265,8 +265,8 @@ public class MappersTest {
             entity.getReservationAmount(),
             entity.getRrn(),
             ReservationStatus.valueOf(entity.getStatus()),
-            reservation.updatedAt(),
-            entity.getCreatedAt()
+            entity.getCreatedAt(),
+            entity.getUpdatedAt()
         );
         assertEquals(expectedReservation, reservation);
     }
