@@ -158,7 +158,7 @@ public class DBIntegrationTest {
     }
 
     @Test
-    void authorizeShouldReturnDeclinedWhenReservationFails() throws Exception {
+    void authorizeShouldReturnDeclinedWhenReservationFails() {
         CardModel mockCard = createActiveCardModel();
         mockGetCard(mockCard);
         AuthorizationResponse response = authService.authorize(correctRequest, now);

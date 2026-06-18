@@ -183,7 +183,7 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = RollbackResponse.class)))
     })
     public ResponseEntity<RollbackResponse> rollback(@Valid @RequestBody RollbackRequest request) {
-        LocalDateTime requestInputTime = LocalDateTime.now();
+        Instant requestInputTime = Instant.now();
         RollbackResponse response = authService.rollback(request, requestInputTime);
 
         boolean isApproved = response.status().equals(RollbackResponse.STATUS_APPROVED);
@@ -193,7 +193,8 @@ public class AuthController {
         } else {
             String declineReason = response.declineReason();
             httpStatus = switch (declineReason) {
-                case REASON_TRANSACTION_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                case REASON_TRANSACTION_NOT_FOUND,
+                     REASON_CARD_NOT_FOUND -> HttpStatus.NOT_FOUND;
                 case REASON_ALREADY_ROLLED_BACK -> HttpStatus.CONFLICT;
                 case REASON_SERVICE_UNAVAILABLE,
                      REASON_ROLLBACK_FAILED -> HttpStatus.SERVICE_UNAVAILABLE;

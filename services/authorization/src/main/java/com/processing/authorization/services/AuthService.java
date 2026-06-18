@@ -26,6 +26,10 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Random;
@@ -390,8 +394,65 @@ public class AuthService {
         return MaskPan.maskPan(pan);
     }
 
-    public RollbackResponse rollback(RollbackRequest request, LocalDateTime requestInputTime) {
-        // TODO
-        return null;
+    public RollbackResponse rollback(RollbackRequest request, Instant requestInputTime) {
+        try {
+            rollbackCard(request);
+        } catch (CardNotFoundException e) {
+            log.error("card not found for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
+        } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
+            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.SERVICE_UNAVAILABLE.buildRollback(request, requestInputTime);
+        } catch (InvalidRollbackRequestException e) {
+            log.error("invalid rollback request for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
+        } catch (RollbackConflictException e) {
+            log.error("rollback request already completed for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.ALREADY_ROLLED_BACK.buildRollback(request, requestInputTime);
+        } catch (RollbackFailureException e) {
+            log.error("rollback from card-management service failed for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.ROLLBACK_FAILED.buildRollback(request, requestInputTime);
+        } catch (Exception e) {
+            log.error("rollback failed for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.UNKNOWN_REASON.buildRollback(request, requestInputTime);
+        }
+        return RollbackResponse.approved(request, requestInputTime);
+
+    }
+
+    public void rollbackCard(RollbackRequest request) {
+        URI uri = UriComponentsBuilder
+                .fromUriString(cmsUrl)
+                .scheme("http")
+                .path("/api/cards/{pan}/rollback")
+                .buildAndExpand(request.pan())
+                .toUri();
+        log.debug("Rollback amount {} for card {} with rrn {}", request.amount(), logPan(request.pan()), request.rrn());
+        restClient.post()
+                .uri(uri)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .onStatus(status -> status.value() == 500, (req, res) -> {
+                    throw new InternalCardManagerException("Internal card management error");
+                })
+                .onStatus(status -> status.value() == 503, (req, res) -> {
+                    throw new ServiceUnavailableException("Card Management service unavailable");
+                })
+                .onStatus(status -> status.value() == 400, (req, res) -> {
+                    throw new InvalidRollbackRequestException("Invalid rollback request");
+                })
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    throw new CardNotFoundException("Card not found: " + logPan(request.pan()));
+                })
+                .onStatus(status -> status.value() == 409, (req, res) -> {
+                    throw new RollbackConflictException("Rollback conflict");
+                })
+                .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
+                    throw new RollbackFailureException("Failed to rollback. Status: " + res.getStatusCode());
+                })
+                .toBodilessEntity();
+
+        log.debug("Rollback successful for card {}", logPan(request.pan()));
     }
 }

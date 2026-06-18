@@ -117,6 +117,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Normalize GHCR namespace to lowercase
+        run: echo "GHCR_USER=${ACTOR,,}" >> "$GITHUB_ENV"
+        env:
+          ACTOR: ${{ github.actor }}
+
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y jq bc
 
@@ -148,9 +153,13 @@ jobs:
 
       - name: Build Docker images
         run: docker compose build
+        env:
+          GHCR_USER: ${{ env.GHCR_USER }}
 
       - name: Start all services
         run: docker compose up -d
+        env:
+          GHCR_USER: ${{ env.GHCR_USER }}
 
       - name: Wait for services to be ready
         run: |
@@ -182,6 +191,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Normalize GHCR namespace to lowercase
+        run: echo "GHCR_USER=${ACTOR,,}" >> "$GITHUB_ENV"
+        env:
+          ACTOR: ${{ github.actor }}
 
       - name: Set up JDK 21 for E2E
         uses: actions/setup-java@v4
@@ -221,9 +235,13 @@ jobs:
 
       - name: Build Docker images
         run: docker compose build
+        env:
+          GHCR_USER: ${{ env.GHCR_USER }}
 
       - name: Start all services
         run: docker compose up -d
+        env:
+          GHCR_USER: ${{ env.GHCR_USER }}
 
       - name: Wait for services to be ready
         run: |
@@ -248,3 +266,62 @@ jobs:
       - name: Cleanup
         if: always()
         run: docker compose down -v
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [smoke-tests, e2e-tests]
+    if: github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Normalize GHCR namespace to lowercase
+        run: echo "GHCR_USER=${ACTOR,,}" >> "$GITHUB_ENV"
+        env:
+          ACTOR: ${{ github.actor }}
+
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ env.GHCR_USER }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker images
+        run: docker compose build --push
+        env:
+          GHCR_USER: ${{ env.GHCR_USER }}
+
+      - name: Copy config files to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.yaml,infra/**,scripts/**,.env.example"
+          target: "~/app/2026/"
+
+      - name: Deploy on server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: GHCR_USER
+          script: |
+            cd ~/app/2026
+            if [ ! -f .env ]; then cp .env.example .env; fi
+            docker compose pull
+            chmod -R o+rx ./infra/grafana
+            docker compose up -d --remove-orphans --no-build
+        env:
+          GHCR_USER: ${{ env.GHCR_USER }}

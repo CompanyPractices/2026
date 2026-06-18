@@ -33,9 +33,9 @@ public record RollbackResponse(
 
     public static final String CODE_SERVICE_UNAVAILABLE = "96";
 
-    public static RollbackResponse approved(String rrn, Instant requestInputTime) {
+    public static RollbackResponse approved(RollbackRequest request, Instant requestInputTime) {
         return new RollbackResponse(
-                rrn,
+                request.rrn(),
                 CODE_SUCCESS,
                 STATUS_APPROVED,
                 null,
@@ -43,9 +43,9 @@ public record RollbackResponse(
         );
     }
 
-    public static RollbackResponse declined(String rrn, String reason, String code, Instant requestInputTime) {
+    public static RollbackResponse declined(RollbackRequest request, String reason, String code, Instant requestInputTime) {
         return new RollbackResponse(
-                rrn,
+                request.rrn(),
                 code,
                 STATUS_DECLINED,
                 reason,
