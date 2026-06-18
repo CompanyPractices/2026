@@ -14,7 +14,7 @@ public class ApiKeyExceptionHandler {
         var errorResponse = new ErrorResponse(
                 "Bad Request",
                 "Role doesn't exist",
-                Instant.now().toString(),
+                Instant.now(),
                 "keyManagement",
                 ""
         );

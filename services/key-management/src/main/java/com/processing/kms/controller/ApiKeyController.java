@@ -5,6 +5,7 @@ import com.processing.kms.dto.*;
 import com.processing.kms.models.ApiKeyRole;
 import com.processing.kms.models.ApiKey;
 import com.processing.kms.errors.KeyError;
+import com.processing.kms.properties.KmsProperties;
 import com.processing.kms.service.ApiKeyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,9 +20,7 @@ public class ApiKeyController {
 
     @PostMapping("/issue")
     public ResponseEntity<IssueResponse> issueApiKey(@RequestBody IssueRequest request) {
-        Result<ApiKey, KeyError> result = apiKeyService.issueKey(
-                request.clientId(),
-                ApiKeyRole.valueOf(request.role().toUpperCase()));
+        Result<ApiKey, KeyError> result = apiKeyService.issueKey(request.clientType());
 
         return switch (result) {
             case Result.Success<ApiKey, KeyError>(ApiKey value) ->

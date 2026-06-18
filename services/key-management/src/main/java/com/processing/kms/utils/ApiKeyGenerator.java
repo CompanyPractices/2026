@@ -1,5 +1,7 @@
 package com.processing.kms.utils;
 
+import com.processing.kms.properties.KmsProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -9,17 +11,14 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 @Component
+@RequiredArgsConstructor
 public class ApiKeyGenerator {
-    @Value("${api-keys.length:256}")
-    private int keyLength;
-
-    @Value("${api-keys.algorithm:AES}")
-    private String algorithm;
+    private final KmsProperties kmsProperties;
 
     public String generate() {
         try {
-            KeyGenerator keyGen = KeyGenerator.getInstance(algorithm);
-            keyGen.init(keyLength);
+            KeyGenerator keyGen = KeyGenerator.getInstance(kmsProperties.getGeneration().getAlgorithm());
+            keyGen.init(kmsProperties.getGeneration().getLength());
             SecretKey secretKey = keyGen.generateKey();
 
             return Base64.getEncoder().encodeToString(secretKey.getEncoded());
