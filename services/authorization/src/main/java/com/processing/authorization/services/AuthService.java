@@ -17,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -296,31 +295,6 @@ public class AuthService {
         log.debug("Reserve successful for card {}", logPan(pan));
     }
 
-    // TODO change transmissionDate to Instant type
-    // public void updateLimits(AuthorizationRequest request, Instant transmissionDate,
-    //         Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
-    //     if (currLimitUsage.isPresent()) {
-    //         LimitUsage usage = currLimitUsage.get();
-    //         usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
-    //         usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
-    //         limitUsageRepository.save(usage);
-    //     } else if (monthLimitUsage.isPresent()) {
-    //         LimitUsage monthUsage = monthLimitUsage.get();
-    //         LimitUsage usage = new LimitUsage();
-    //         usage.setPan(request.pan());
-    //         usage.setUsageDate(transmissionDate);
-    //         usage.setDailyAmount(request.amount());
-    //         usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
-    //         limitUsageRepository.save(usage);
-    //     } else {
-    //         LimitUsage usage = new LimitUsage();
-    //         usage.setPan(request.pan());
-    //         usage.setUsageDate(transmissionDate);
-    //         usage.setDailyAmount(request.amount());
-    //         usage.setMonthlyAmount(request.amount());
-    //         limitUsageRepository.save(usage);
-    //     }
-    // }
 
     // @Transactional(rollbackFor = Exception.class)
     public boolean checkAndUpdateLimits(AuthorizationRequest request, CardModel cardResponse,
@@ -354,6 +328,28 @@ public class AuthService {
             }
         } else if (request.amount().compareTo(cardResponse.dailyLimit()) > 0) {
             return true;
+        }
+
+        if (currLimitUsage.isPresent()) {
+            LimitUsage usage = currLimitUsage.get();
+            usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
+            usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
+            limitUsageRepository.save(usage);
+        } else if (monthLimitUsage.isPresent()) {
+            LimitUsage monthUsage = monthLimitUsage.get();
+            LimitUsage usage = new LimitUsage();
+            usage.setPan(request.pan());
+            usage.setUsageDate(transmissionLocalDate);
+            usage.setDailyAmount(request.amount());
+            usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
+            limitUsageRepository.save(usage);
+        } else {
+            LimitUsage usage = new LimitUsage();
+            usage.setPan(request.pan());
+            usage.setUsageDate(transmissionLocalDate);
+            usage.setDailyAmount(request.amount());
+            usage.setMonthlyAmount(request.amount());
+            limitUsageRepository.save(usage);
         }
         return false;
     }

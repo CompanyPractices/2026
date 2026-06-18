@@ -3,19 +3,15 @@ package com.processing.authorization.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import java.net.URI;
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
-
-import javax.sql.DataSource;
 
 import com.processing.authorization.entities.LimitUsage;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,8 +40,6 @@ public class DBIntegrationTest {
     private AuthService authService;
     @Autowired
     private LimitUsageRepository limitUsageRepository;
-    @Autowired
-    private DataSource dataSource;
     @MockitoBean
     private RestClient restClient;
 
