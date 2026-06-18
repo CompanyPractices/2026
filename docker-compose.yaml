@@ -22,7 +22,7 @@ services:
       retries: 5
 
   gateway:
-    image: ghcr.io/${GITHUB_ACTOR:-local}/smp-gateway:latest
+    image: ghcr.io/${GHCR_USER:-local}/smp-gateway:latest
     build:
       context: .
       dockerfile: services/gateway/Dockerfile
@@ -54,7 +54,7 @@ services:
       start_period: 40s
 
   card-management:
-    image: ghcr.io/${GITHUB_ACTOR:-local}/smp-card-management:latest
+    image: ghcr.io/${GHCR_USER:-local}/smp-card-management:latest
     build:
       context: .
       dockerfile: services/card-management/Dockerfile
@@ -82,7 +82,7 @@ services:
       start_period: 40s
 
   switch:
-    image: ghcr.io/${GITHUB_ACTOR:-local}/smp-switch:latest
+    image: ghcr.io/${GHCR_USER:-local}/smp-switch:latest
     build:
       context: .
       dockerfile: services/switch/Dockerfile
@@ -108,7 +108,7 @@ services:
       start_period: 40s
 
   authorization:
-    image: ghcr.io/${GITHUB_ACTOR:-local}/smp-authorization:latest
+    image: ghcr.io/${GHCR_USER:-local}/smp-authorization:latest
     build:
       context: .
       dockerfile: services/authorization/Dockerfile
@@ -139,7 +139,7 @@ services:
       start_period: 40s
 
   terminal-simulator:
-    image: ghcr.io/${GITHUB_ACTOR:-local}/smp-terminal-simulator:latest
+    image: ghcr.io/${GHCR_USER:-local}/smp-terminal-simulator:latest
     build:
       context: .
       dockerfile: services/terminal-simulator/Dockerfile
@@ -165,7 +165,7 @@ services:
   autoscaler:
     image: docker:27-cli
     environment:
-      - GITHUB_ACTOR
+      - GHCR_USER
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./scripts/autoscaler.sh:/app/autoscaler.sh
@@ -180,7 +180,7 @@ services:
       - smp-network
 
   merchant-acquirer:
-    image: ghcr.io/${GITHUB_ACTOR:-local}/smp-merchant-acquirer:latest
+    image: ghcr.io/${GHCR_USER:-local}/smp-merchant-acquirer:latest
     build:
       context: .
       dockerfile: services/merchant-acquirer/Dockerfile
@@ -212,7 +212,7 @@ services:
       start_period: 40s
 
   transaction-logger:
-    image: ghcr.io/${GITHUB_ACTOR:-local}/smp-transaction-logger:latest
+    image: ghcr.io/${GHCR_USER:-local}/smp-transaction-logger:latest
     build:
       context: .
       dockerfile: services/transaction-logger/Dockerfile
@@ -240,7 +240,7 @@ services:
       start_period: 40s
 
   dashboard:
-    image: ghcr.io/${GITHUB_ACTOR:-local}/smp-dashboard:latest
+    image: ghcr.io/${GHCR_USER:-local}/smp-dashboard:latest
     build:
       context: ./services/dashboard
       dockerfile: Dockerfile
