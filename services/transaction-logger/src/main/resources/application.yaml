@@ -2,7 +2,7 @@ server:
   port: ${SERVER_PORT:${PORT:8080}}
 
 websocket:
-  allowed-origins: ${DASHBOARD_ORIGIN:http://localhost:3000}
+  allowed-origins: http://localhost:3000,http://5.53.124.5:3000
   ping-interval-ms: 30000
 
 spring:
