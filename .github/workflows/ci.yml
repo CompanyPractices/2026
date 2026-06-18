@@ -292,7 +292,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          username: ${{ env.GHCR_USER }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
@@ -318,13 +318,15 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: GHCR_USER
+          envs: GHCR_USER,GHCR_TOKEN
           script: |
             cd ~/app/2026
             cp -f .env.example .env
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
             docker compose down --remove-orphans
             docker compose pull
             chmod -R o+rx ./infra/grafana
             docker compose up -d --no-build
         env:
           GHCR_USER: ${{ env.GHCR_USER }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
