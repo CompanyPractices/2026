@@ -1,12 +1,8 @@
 package com.processing.config;
 
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
-
-
 import java.util.List;
 import java.util.Map;
-
 
 /**
  * Конфигурация Switch из {@code application.yml} (префикс {@code switch}).
@@ -18,6 +14,7 @@ import java.util.Map;
  * @param merchantAcquirerUrl  базовый URL Merchant Acquirer Simulator
  * @param http                 таймауты HTTP-клиентов
  * @param retry                настройки Resilience4j retry
+ * @param circuitBreaker       настройки Resilience4j circuit breaker
  */
 @ConfigurationProperties(prefix = "switch")
 public record SwitchProperties(
@@ -27,7 +24,8 @@ public record SwitchProperties(
         String loggerUrl,
         String merchantAcquirerUrl,
         HttpProperties http,
-        RetryProperties retry
+        RetryProperties retry,
+        CircuitBreakerSection circuitBreaker
 ) {
     /**
      * Таймауты подключения и чтения для REST-клиентов.
@@ -51,5 +49,29 @@ public record SwitchProperties(
     public record RetryProperties(
             int maxAttempts,
             List<Long> backoffMs
+    ) {}
+
+    /**
+     * Секция circuit breaker в конфигурации Switch.
+     *
+     * @param authorization параметры CB для Authorization Service
+     */
+    public record CircuitBreakerSection(
+            CircuitBreakerProperties authorization
+    ) {}
+
+    /**
+     * Параметры circuit breaker для вызовов Authorization.
+     *
+     * @param failureRateThreshold       порог ошибок (%), при котором контур открывается
+     * @param slidingWindowSize          размер скользящего окна вызовов
+     * @param minimumNumberOfCalls       минимум вызовов перед расчётом failure rate
+     * @param waitDurationInOpenStateMs  время в OPEN-состоянии (мс)
+     */
+    public record CircuitBreakerProperties(
+            int failureRateThreshold,
+            int slidingWindowSize,
+            int minimumNumberOfCalls,
+            long waitDurationInOpenStateMs
     ) {}
 }

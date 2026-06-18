@@ -1,6 +1,7 @@
 package com.processing.controller;
 
 import com.processing.SwitchTestData;
+import com.processing.config.CircuitBreakerFactory;
 import com.processing.config.RetryFactory;
 import com.processing.config.SwitchProperties;
 import com.processing.service.AuthorizationClient;
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -32,7 +32,10 @@ class HealthControllerTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess());
         AuthorizationClient authorizationClient = new AuthorizationClient(
-                properties, builder.build(), RetryFactory.authorizationRetry(properties));
+                properties,
+                builder.build(),
+                RetryFactory.authorizationRetry(properties),
+                CircuitBreakerFactory.authorizationCircuitBreaker(properties));
         controller = new HealthController(properties, authorizationClient);
     }
 
@@ -40,7 +43,6 @@ class HealthControllerTest {
     @Test
     void health_returnsSwitchStatusAndVersion() {
         var response = controller.health();
-
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().status()).isEqualTo("ok");

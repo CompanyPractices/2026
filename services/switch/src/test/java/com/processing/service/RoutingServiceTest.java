@@ -5,7 +5,6 @@ import com.processing.config.SwitchProperties;
 import com.processing.exception.UnknownBinException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -56,10 +55,10 @@ class RoutingServiceTest {
                 "http://logger",
                 "http://merchant",
                 SwitchTestData.defaultHttp(),
-                SwitchTestData.defaultRetry()
+                SwitchTestData.defaultRetry(),
+                SwitchTestData.defaultCircuitBreaker()
         );
         RoutingService customRouting = new RoutingService(custom);
-
         assertThat(customRouting.getIssuerIdByPan("4999991234560001")).isEqualTo("ISS999");
         assertThrows(UnknownBinException.class, () ->
                 customRouting.getIssuerIdByPan("4000001234560001"));

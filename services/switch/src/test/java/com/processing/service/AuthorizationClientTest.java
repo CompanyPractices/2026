@@ -6,6 +6,7 @@ import com.processing.SwitchTestData;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
+import com.processing.config.CircuitBreakerFactory;
 import com.processing.config.RetryFactory;
 import com.processing.config.SwitchProperties;
 import com.processing.exception.AuthorizationException;
@@ -17,10 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
-
 import java.math.BigDecimal;
 import java.time.Instant;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
@@ -38,7 +37,6 @@ class AuthorizationClientTest {
     private static final String TEST_RRN = "012345678901";
     private static final String TEST_PAN = "4000001234560001";
     private static final BigDecimal TEST_AMOUNT = BigDecimal.valueOf(150000);
-
     private MockRestServiceServer mockServer;
     private AuthorizationClient client;
     private ObjectMapper objectMapper;
@@ -51,7 +49,8 @@ class AuthorizationClientTest {
         client = new AuthorizationClient(
                 SwitchTestData.defaultProperties(),
                 builder.build(),
-                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
+                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()),
+                CircuitBreakerFactory.authorizationCircuitBreaker(SwitchTestData.defaultProperties()));
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
@@ -91,13 +90,53 @@ class AuthorizationClientTest {
                 "http://127.0.0.1:1",
                 "http://127.0.0.1:1",
                 SwitchTestData.defaultHttp(),
-                SwitchTestData.defaultRetry()
+                SwitchTestData.defaultRetry(),
+                SwitchTestData.defaultCircuitBreaker()
         );
         AuthorizationClient unreachableClient = new AuthorizationClient(
-                properties, RestClient.create(), RetryFactory.authorizationRetry(properties));
+                properties,
+                RestClient.create(),
+                RetryFactory.authorizationRetry(properties),
+                CircuitBreakerFactory.authorizationCircuitBreaker(properties));
 
         assertThrows(AuthorizationException.class, () ->
                 unreachableClient.authorize(SwitchTestData.sampleRequest().withIssuerId("ISS001")));
+    }
+
+    /** OPEN circuit breaker → fail-fast без HTTP-вызова. */
+    @Test
+    void authorize_whenCircuitBreakerOpen_throwsWithoutHttpCall() {
+        SwitchProperties properties = new SwitchProperties(
+                "1.0.0",
+                SwitchTestData.BIN_ROUTING,
+                "http://localhost:8083",
+                "http://localhost:8088",
+                "http://localhost:8086",
+                SwitchTestData.defaultHttp(),
+                SwitchTestData.defaultRetry(),
+                SwitchTestData.aggressiveCircuitBreaker()
+        );
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer cbServer = MockRestServiceServer.bindTo(builder).build();
+        for (int i = 0; i < 3; i++) {
+            cbServer.expect(requestTo("http://localhost:8083/api/internal/authorize"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+        }
+        AuthorizationClient cbClient = new AuthorizationClient(
+                properties,
+                builder.build(),
+                RetryFactory.authorizationRetry(properties),
+                CircuitBreakerFactory.authorizationCircuitBreaker(properties));
+
+        assertThrows(AuthorizationException.class, () ->
+                cbClient.authorize(SwitchTestData.sampleRequest().withIssuerId("ISS001")));
+
+        AuthorizationException openCircuit = assertThrows(AuthorizationException.class, () ->
+                cbClient.authorize(SwitchTestData.sampleRequest().withIssuerId("ISS001")));
+        assertThat(openCircuit.getMessage()).contains("Circuit breaker open");
+
+        cbServer.verify();
     }
 
     /** Rollback передаёт rrn, pan и amount в теле запроса. */
@@ -113,6 +152,7 @@ class AuthorizationClientTest {
 
         RollbackResponse response = client.rollback(
                 SwitchTestData.sampleRequest().withIssuerId("ISS001"), TEST_RRN);
+
 
         assertThat(response.status()).isEqualTo(RollbackResponse.STATUS_APPROVED);
         assertThat(response.responseCode()).isEqualTo(RollbackResponse.CODE_SUCCESS);
@@ -220,7 +260,6 @@ class AuthorizationClientTest {
         mockServer.expect(requestTo("http://localhost:8083/health"))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess());
-
         assertThat(client.checkHealth()).isEqualTo("ok");
     }
 }

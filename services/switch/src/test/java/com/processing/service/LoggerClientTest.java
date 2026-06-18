@@ -101,7 +101,8 @@ class LoggerClientTest {
                 "http://localhost:8088",
                 "http://localhost:8086",
                 SwitchTestData.defaultHttp(),
-                new SwitchProperties.RetryProperties(5, List.of(0L, 0L, 0L))
+                new SwitchProperties.RetryProperties(5, List.of(0L, 0L, 0L)),
+                SwitchTestData.defaultCircuitBreaker()
         );
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
