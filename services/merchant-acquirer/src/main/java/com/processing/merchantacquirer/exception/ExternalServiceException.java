@@ -30,7 +30,7 @@ public class ExternalServiceException extends RuntimeException {
     } catch (JsonProcessingException e) {
       ExternalServiceException fallback = new ExternalServiceException("Merchant acquirer simulator", ex.getMessage(), "0");
       fallback.initCause(e);
-      throw fallback;
+      return fallback;
     }
   }
 }

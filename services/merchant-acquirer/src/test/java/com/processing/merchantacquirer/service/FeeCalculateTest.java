@@ -19,4 +19,30 @@ public class FeeCalculateTest {
 
         assertEquals(expected, feeCalculator.calculate(fee, amount));
     }
+
+    @Test
+    void calculateOnePointFivePercent() {
+        assertEquals(new BigDecimal("1500"), feeCalculator.calculate(new BigDecimal("0.015"), new BigDecimal("100000")));
+    }
+
+    @Test
+    void calculateWithUpFraction() {
+        assertEquals(new BigDecimal("2100"), feeCalculator.calculate(new BigDecimal("0.015"), new BigDecimal("139999")));
+    }
+
+    @Test
+    void calculateWithHalfEven() {
+        assertEquals(new BigDecimal("2"), feeCalculator.calculate(new BigDecimal("0.5"), new BigDecimal("5")));
+        assertEquals(new BigDecimal("4"), feeCalculator.calculate(new BigDecimal("0.5"), new BigDecimal("7")));
+    }
+
+    @Test
+    void calculateZeroAmount() {
+        assertEquals(new BigDecimal("0"), feeCalculator.calculate(new BigDecimal("0.5"), BigDecimal.ZERO));
+    }
+
+    @Test
+    void calculateLargeAmount() {
+        assertEquals(new BigDecimal("3500000000"), feeCalculator.calculate(new BigDecimal("0.035"), new BigDecimal("100000000000")));
+    }
 }
