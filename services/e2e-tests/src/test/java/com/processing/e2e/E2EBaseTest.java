@@ -104,7 +104,7 @@ public abstract class E2EBaseTest {
                 new BigDecimal(row.get("monthly_limit").toString()),
                 new BigDecimal(row.get("available_balance").toString()),
                 (String) row.get("issuer_id"),
-                ((Timestamp) row.get("created_at")).toLocalDateTime()
+                ((Timestamp) row.get("created_at")).toInstant()
         );
     }
 }
