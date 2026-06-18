@@ -1,5 +1,7 @@
 package com.processing.gateway.validation;
 
+import com.processing.gateway.metrics.GatewayMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.MediaType;
@@ -15,9 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TransactionValidationFilterTest {
 
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     private final TransactionValidationFilter filter = new TransactionValidationFilter(
             Jackson2ObjectMapperBuilder.json().build(),
-            new TransactionRequestValidator()
+            new TransactionRequestValidator(),
+            new GatewayMetrics(meterRegistry)
     );
 
     @Test
@@ -51,6 +55,11 @@ class TransactionValidationFilterTest {
                 "Field 'pan' must be exactly 16 digits",
                 "\"serviceName\":\"gateway\""
         );
+        assertThat(meterRegistry.counter(
+                "gateway.requests.rejected",
+                "reason", "validation_invalid_request",
+                "service", "gateway"
+        ).count()).isEqualTo(1);
     }
 
     @Test

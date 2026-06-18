@@ -1,8 +1,10 @@
 package com.processing.gateway.circuitbreaker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.gateway.metrics.GatewayMetrics;
 import com.processing.gateway.properties.GatewayRouteProperties;
 import com.processing.gateway.downstream.DownstreamServiceResolver;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -20,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CircuitBreakerFilterTest {
 
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     private final InMemoryCircuitBreaker circuitBreaker = InMemoryCircuitBreaker.forTesting(
             Duration.ofSeconds(10),
             2,
@@ -29,6 +32,7 @@ class CircuitBreakerFilterTest {
             new ObjectMapper(),
             new DownstreamServiceResolver(routeProperties()),
             circuitBreaker,
+            new GatewayMetrics(meterRegistry),
             Duration.ofSeconds(10)
     );
 
@@ -51,6 +55,11 @@ class CircuitBreakerFilterTest {
                 "\"error\":\"SERVICE_UNAVAILABLE\"",
                 "\"serviceName\":\"switch\""
         );
+        assertThat(meterRegistry.counter(
+                "gateway.requests.rejected",
+                "reason", "circuit_open",
+                "service", "switch"
+        ).count()).isEqualTo(1);
     }
 
     @Test

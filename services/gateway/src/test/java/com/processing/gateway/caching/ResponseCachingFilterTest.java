@@ -2,6 +2,8 @@ package com.processing.gateway.caching;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
+import com.processing.gateway.metrics.GatewayMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,6 +31,7 @@ class ResponseCachingFilterTest {
 
     private ObjectMapper objectMapper;
     private TestCache cache;
+    private SimpleMeterRegistry meterRegistry;
     private ResponseCachingFilter filter;
 
     private MockHttpServletRequest request;
@@ -38,7 +41,8 @@ class ResponseCachingFilterTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         cache = new TestCache();
-        filter = new ResponseCachingFilter(cache, objectMapper);
+        meterRegistry = new SimpleMeterRegistry();
+        filter = new ResponseCachingFilter(cache, objectMapper, new GatewayMetrics(meterRegistry));
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
     }
@@ -85,6 +89,11 @@ class ResponseCachingFilterTest {
         assertEquals(cachedJson.length(), response.getContentLength());
         assertEquals(cachedJson, response.getContentAsString());
         assertEquals(0, filterChain.callCount);
+        assertEquals(1, meterRegistry.counter(
+                "gateway.cache.requests",
+                "cache", "cards",
+                "result", "hit"
+        ).count());
     }
 
     @Test
@@ -110,6 +119,11 @@ class ResponseCachingFilterTest {
         assertEquals("MISS", response.getHeader("X-Cache"));
         assertEquals(responseBody, response.getContentAsString());
         assertEquals(responseBody, cache.get(cacheKey, String.class));
+        assertEquals(1, meterRegistry.counter(
+                "gateway.cache.requests",
+                "cache", "cards",
+                "result", "miss"
+        ).count());
     }
 
     @Test
@@ -206,6 +220,10 @@ class ResponseCachingFilterTest {
 
         // Assert
         assertEquals(1, cache.clearCount);
+        assertEquals(1, meterRegistry.counter(
+                "gateway.cache.invalidations",
+                "cache", "cards"
+        ).count());
     }
 
     @Test
