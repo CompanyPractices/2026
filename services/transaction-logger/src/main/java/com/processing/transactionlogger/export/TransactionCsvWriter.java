@@ -15,7 +15,7 @@ import java.util.List;
 public class TransactionCsvWriter {
     private static final char DELIMITER = ',';
     private static final String LINE_END = "\r\n";
-    private static final String HEADER = String.join(",", "id", "mti", "stan", "rrn", "processingCode",
+    private static final String HEADER = String.join(",", "id", "mti", "stan", "rrn", "pan", "processingCode",
             "amount", "currencyCode", "terminalId", "terminalType", "merchantId", "mcc", "acquirerId", "issuerId",
             "acquiringFee", "status", "declineReason", "authCode", "processingTimeMs", "transmissionDateTime", "createdAt");
 
