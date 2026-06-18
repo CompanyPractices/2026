@@ -35,7 +35,6 @@ export function Filters({ issuers, mccNames, onSearch }: FilterProps) {
 
             <div className="flex flex-col xl:flex-row gap-4">
 
-                {/* Контейнер фильтров */}
                 <div className="flex-1">
                     <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
                         <div className="flex flex-col relative w-full">
@@ -121,7 +120,6 @@ export function Filters({ issuers, mccNames, onSearch }: FilterProps) {
                     </div>
                 </div>
 
-                {/* Контейнер кнопок */}
                 <div className="flex flex-row gap-2 xl:self-end">
                     <button className={buttonClass} type="submit">
                         Найти
