@@ -49,7 +49,7 @@ spring:
             timeout: 5000
   flyway:
     baseline-on-migrate: true
-    locations: com/processing/kms/migrations
+    locations: com/processing/kms/infrastructure/migrations
 
 kms:
   ttl: 60
