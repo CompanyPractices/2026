@@ -3,6 +3,7 @@ package com.processing.e2e.tests;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.processing.e2e.E2EBaseTest;
 import com.processing.e2e.utility.DBUtils;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -19,15 +20,16 @@ import static org.testng.Assert.*;
 public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
 
     private static final String SIMULATOR_RUN_URL = "/api/simulator/terminal/run";
+    private static final DBUtils dbUtils = new DBUtils();
 
     @BeforeClass
     public void setup() {
+        RestAssured.baseURI = GATEWAY_URL;
         ensureActiveCardsExist();
     }
 
     @Test(description = "TC-16: Сценарий 'normal'")
     public void testNormalScenario() throws Exception {
-        DBUtils dbUtils = new DBUtils();
         long countBefore = dbUtils.queryLong("SELECT COUNT(*) from transactions");
         String testStart = dbUtils.queryString("select now()");
 
