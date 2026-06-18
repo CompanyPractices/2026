@@ -1,8 +1,6 @@
-package com.processing.gateway.filter;
+package com.processing.gateway.circuitbreaker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.gateway.circuitbreaker.CircuitBreakerFilter;
-import com.processing.gateway.circuitbreaker.InMemoryCircuitBreaker;
 import com.processing.gateway.properties.GatewayRouteProperties;
 import com.processing.gateway.downstream.DownstreamServiceResolver;
 import org.junit.jupiter.api.Test;

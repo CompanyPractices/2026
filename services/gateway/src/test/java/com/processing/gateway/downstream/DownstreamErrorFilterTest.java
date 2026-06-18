@@ -1,10 +1,8 @@
-package com.processing.gateway.filter;
+package com.processing.gateway.downstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.processing.gateway.downstream.DownstreamErrorFilter;
 import com.processing.gateway.properties.GatewayRouteProperties;
-import com.processing.gateway.downstream.DownstreamServiceResolver;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;

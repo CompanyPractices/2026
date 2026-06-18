@@ -1,12 +1,9 @@
-package com.processing.gateway.filter;
+package com.processing.gateway.shutdown;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.gateway.circuitbreaker.CircuitBreakerFilter;
 import com.processing.gateway.downstream.DownstreamErrorFilter;
 import com.processing.gateway.ratelimit.TransactionRateLimitFilter;
-import com.processing.gateway.shutdown.ShutdownProperties;
-import com.processing.gateway.shutdown.GracefulShutdownFilter;
-import com.processing.gateway.shutdown.GracefulShutdownState;
 import com.processing.gateway.validation.TransactionValidationFilter;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;

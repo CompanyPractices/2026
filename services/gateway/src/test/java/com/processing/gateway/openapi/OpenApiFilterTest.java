@@ -1,7 +1,5 @@
-package com.processing.gateway.filter;
+package com.processing.gateway.openapi;
 
-import com.processing.gateway.openapi.OpenApiFilter;
-import com.processing.gateway.openapi.OpenApiProperties;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
