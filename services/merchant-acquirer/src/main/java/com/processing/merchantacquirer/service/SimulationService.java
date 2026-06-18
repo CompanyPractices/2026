@@ -4,13 +4,11 @@ import com.processing.merchantacquirer.client.dto.CardDataResponse;
 import com.processing.merchantacquirer.controller.dto.*;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
-import com.processing.merchantacquirer.domain.entity.Terminal;
+import com.processing.merchantacquirer.service.dto.RequestFeeData;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
-import com.processing.common.dto.authorization.AuthorizationRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,28 +27,25 @@ public class SimulationService {
 
   public SimulatorResponse run(SimulatorRequest request) {
     LocalDateTime startTime = LocalDateTime.now();
-    log.info(String.valueOf(request));
+    log.info("Simulator request: {}", request);
 
     List<CardDataResponse> cards = cardProvider.getCards(request.count());
-    log.info(String.valueOf(cards));
+    log.info("{} cards load from card management", cards.size());
 
     // Получение сценария
     Scenario scenario = scenarioProvider.getScenario(request.scenario());
-    log.info(String.valueOf(scenario));
+    log.info("Loaded scenario: {}", scenario);
 
     // Получение мерчантов
     List<Merchant> merchants = merchantProvider.getMerchant(request.mccCodes(), scenario);
-    log.info(String.valueOf(merchants));
-
-    // Создание терминала
-    String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10000));
-    Terminal terminal = new Terminal(terminalId, "POS");
+    log.info("Merchants with MCC({}): {}", request.mccCodes(), merchants);
 
     // Создание транакций
-    List<AuthorizationRequest> authorizationRequests =
-        transactionBuilder.build(request.count(), cards, merchants, terminal, scenario);
+    List<RequestFeeData> built = transactionBuilder.build(request.count(), cards, merchants, scenario);
 
-    SimulatorStats stats = transactionSender.sendAll(authorizationRequests);
+    acquirerProvider.saveAll(built.stream().map(RequestFeeData::fee).toList());
+
+    SimulatorStats stats = transactionSender.sendAll(built.stream().map(RequestFeeData::authorizationRequest).toList());
 
     // Формирование
     LocalDateTime endTime = LocalDateTime.now();

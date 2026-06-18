@@ -3,41 +3,37 @@ package com.processing.merchantacquirer.service;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeResponse;
 import com.processing.merchantacquirer.domain.entity.AcquirerFee;
+import com.processing.merchantacquirer.exception.ResourceNotFoundException;
 import com.processing.merchantacquirer.repository.AcquirerFeeRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.util.List;
 
 @Slf4j
 @Component
 @AllArgsConstructor
 public class AcquirerProvider {
     private final AcquirerFeeRepository repository;
-    private final MerchantProvider merchantProvider;
 
-    public void calculateFee(
-            String merchantId, BigDecimal amount, String transmissionDateTime, String stan, String terminalId, String pan) {
-        BigDecimal fee = merchantProvider.getMerchantAcquirerFee(merchantId);
-        BigDecimal acquiringFee = amount
-                .multiply(fee)
-                .setScale(0, RoundingMode.HALF_EVEN);
-
-        AcquirerFee acquirerFeeEntity = new AcquirerFee(transmissionDateTime, stan, pan, terminalId, acquiringFee, amount);
-        repository.save(acquirerFeeEntity);
-        log.info("Calculate Acquirer fee: {}",
-                acquirerFeeEntity);
+    public void saveAll(List<AcquirerFee> fees) {
+        repository.saveAll(fees);
+        log.info("Saved {} acquiring fees", fees.size());
     }
 
     public AcquirerFeeResponse getAcquirerFee(AcquirerFeeRequest request) {
-        BigDecimal acquirerFee = repository.findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
+        AcquirerFee acquirerFee = repository.findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
                 request.transmissionDateTime(), request.stan(), request.terminalId(),
-                request.amount(), request.pan()).getAcquirerFee();
+                request.amount(), request.pan());
+        if (acquirerFee == null) {
+            log.warn("AcquirerFee not found for request: TransmissiontDataTime: {}, STAN: {}, TerminalId: {}",
+                    request.transmissionDateTime(), request.stan(), request.terminalId());
+            throw new ResourceNotFoundException("Acquirer fee not found for stan = " + request.stan());
+        }
         log.info("Request for get acquirer fee: DataTime: {} STAN: {} Acquirer fee: {}",
-                request.transmissionDateTime(), request.stan(), acquirerFee);
+                request.transmissionDateTime(), request.stan(), acquirerFee.getAcquirerFee());
 
-        return new AcquirerFeeResponse(acquirerFee);
+        return new AcquirerFeeResponse(acquirerFee.getAcquirerFee());
     }
 }

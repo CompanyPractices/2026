@@ -1,6 +1,6 @@
 package com.processing.gateway.config;
 
-import com.processing.gateway.properties.HealthProperties;
+import com.processing.gateway.health.HealthProperties;
 import lombok.RequiredArgsConstructor;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.Cache;
