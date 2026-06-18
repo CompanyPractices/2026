@@ -53,7 +53,7 @@ class TerminalSimulatorServiceTest {
                 YearMonth.of(2030, 1), CardModelStatus.ACTIVE, "643", new BigDecimal(500_002L),
                 new BigDecimal(100_000L), new BigDecimal(20_000_000L), "ISS001",
                 (LocalDateTime.now()).toInstant(ZoneOffset.UTC));
-        blockedCard = new CardModel(UUID.randomUUID(), "4000001234560003", "400000", "PETR PETROV",
+        CardModel blockedCard = new CardModel(UUID.randomUUID(), "4000001234560003", "400000", "PETR PETROV",
                 YearMonth.of(2029, 1), CardModelStatus.BLOCKED, "643", new BigDecimal(700_000L),
                 new BigDecimal(200_000L), new BigDecimal(40_000L), "ISS001",
                 (LocalDateTime.now()).toInstant(ZoneOffset.UTC));
