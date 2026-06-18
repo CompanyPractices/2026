@@ -28,11 +28,15 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+/**
+ * Unit-тесты HTTP-клиента {@link LoggerClient} с retry и exponential backoff.
+ */
 class LoggerClientTest {
     private MockRestServiceServer mockServer;
     private LoggerClient client;
     private ObjectMapper objectMapper;
 
+    /** Настраивает MockRestServiceServer и клиент. */
     @BeforeEach
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
@@ -44,11 +48,13 @@ class LoggerClientTest {
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
+    /** Проверяет, что все ожидаемые HTTP-вызовы были выполнены. */
     @AfterEach
     void verifyServer() {
         mockServer.verify();
     }
 
+    /** Успешный log → {@code true}. */
     @Test
     void log_whenLoggerReturnsSuccess_returnsTrue() throws Exception {
         UUID id = UUID.randomUUID();
@@ -58,6 +64,8 @@ class LoggerClientTest {
                 .andRespond(withSuccess(objectMapper.writeValueAsString(storedResponse), MediaType.APPLICATION_JSON));
         assertThat(client.log(sampleTransaction(id))).isTrue();
     }
+
+    /** Все 3 попытки неуспешны → {@link LoggerException}. */
     @Test
     void log_whenLoggerFailsAllRetries_throwsLoggerException() {
         for (int i = 0; i < 3; i++) {
@@ -69,6 +77,7 @@ class LoggerClientTest {
                 client.log(sampleTransaction(UUID.randomUUID())));
     }
 
+    /** Вторая попытка успешна → {@code true}. */
     @Test
     void log_whenSecondAttemptSucceeds_returnsTrue() throws Exception {
         UUID id = UUID.randomUUID();
@@ -81,6 +90,8 @@ class LoggerClientTest {
                 .andRespond(withSuccess(objectMapper.writeValueAsString(storedResponse), MediaType.APPLICATION_JSON));
         assertThat(client.log(sampleTransaction(id))).isTrue();
     }
+
+    /** При числе попыток больше длины backoff используется последнее значение интервала. */
     @Test
     void log_whenMaxAttemptsExceedsBackoffList_usesLastBackoffValue() {
         SwitchProperties properties = new SwitchProperties(
@@ -105,6 +116,11 @@ class LoggerClientTest {
                 extendedClient.log(sampleTransaction(UUID.randomUUID())));
         server.verify();
     }
+
+    /**
+     * @param id UUID транзакции
+     * @return тестовый {@link TransactionRequest}
+     */
     private static TransactionRequest sampleTransaction(UUID id) {
         return new TransactionRequest(
                 id,

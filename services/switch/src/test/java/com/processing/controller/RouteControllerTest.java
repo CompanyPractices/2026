@@ -18,11 +18,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Unit-тесты {@link RouteController} через MockMvc.
+ */
 class RouteControllerTest {
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
+    /** Собирает standalone MockMvc с тестовыми doubles. */
     @BeforeEach
     void setUp() {
         RouteService routeService = new RouteService(
@@ -34,6 +38,7 @@ class RouteControllerTest {
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
+    /** Проверяет {@code POST /api/internal/route} — HTTP 200 и APPROVED в теле. */
     @Test
     void route_returnsAuthorizationResponse() throws Exception {
         mockMvc.perform(post("/api/internal/route")

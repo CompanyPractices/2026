@@ -15,10 +15,14 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+/**
+ * Unit-тесты {@link HealthController}.
+ */
 class HealthControllerTest {
 
     private HealthController controller;
 
+    /** Настраивает mock Authorization health и контроллер. */
     @BeforeEach
     void setUp() {
         SwitchProperties properties = SwitchTestData.defaultProperties();
@@ -32,6 +36,7 @@ class HealthControllerTest {
         controller = new HealthController(properties, authorizationClient);
     }
 
+    /** Проверяет поля ответа {@code GET /health}. */
     @Test
     void health_returnsSwitchStatusAndVersion() {
         var response = controller.health();

@@ -13,6 +13,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+/**
+ * HTTP-клиент для взаимодействия с Authorization Service (authorize, rollback, health).
+ */
 @Service
 public class AuthorizationClient {
 
@@ -22,6 +25,11 @@ public class AuthorizationClient {
     private final RestClient restClient;
     private final Retry authorizationRetry;
 
+    /**
+     * @param switchProperties   конфигурация URL и retry
+     * @param restClient         REST-клиент с таймаутами для Authorization
+     * @param authorizationRetry политика повторных попыток
+     */
     public AuthorizationClient(
             SwitchProperties switchProperties,
             RestClient restClient,
@@ -31,6 +39,13 @@ public class AuthorizationClient {
         this.authorizationRetry = authorizationRetry;
     }
 
+    /**
+     * Отправляет запрос авторизации с retry при сетевых сбоях.
+     *
+     * @param request запрос с заполненным {@code issuerId}
+     * @return ответ Authorization (APPROVED или DECLINED)
+     * @throws AuthorizationException если сервис недоступен после всех попыток
+     */
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         int maxAttempts = switchProperties.retry().maxAttempts();
         try {
@@ -41,6 +56,13 @@ public class AuthorizationClient {
         }
     }
 
+    /**
+     * Выполняет один HTTP-вызов {@code POST /api/internal/authorize}.
+     *
+     * @param request тело запроса
+     * @return валидный ответ Authorization
+     * @throws IllegalStateException если тело ответа пустое или статус не APPROVED/DECLINED
+     */
     private AuthorizationResponse callAuthorize(AuthorizationRequest request) {
         AuthorizationResponse response = restClient.post()
                 .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
@@ -56,6 +78,14 @@ public class AuthorizationClient {
         throw new IllegalStateException("Invalid response from Authorization");
     }
 
+    /**
+     * Откатывает резервирование средств через {@code POST /api/internal/rollback}.
+     * Ошибки перехватываются и логируются — вызывающий код получает {@code null}.
+     *
+     * @param original исходный запрос авторизации (PAN, amount)
+     * @param rrn      RRN одобренной транзакции
+     * @return ответ rollback или {@code null} при сбое
+     */
     public RollbackResponse rollback(AuthorizationRequest original, String rrn) {
         RollbackRequest request = new RollbackRequest(rrn, original.pan(), original.amount());
         try {
@@ -77,6 +107,11 @@ public class AuthorizationClient {
         }
     }
 
+    /**
+     * Проверяет доступность Authorization Service через {@code GET /health}.
+     *
+     * @return {@code "ok"} если сервис отвечает, иначе {@code "down"}
+     */
     public String checkHealth() {
         try {
             restClient.get()

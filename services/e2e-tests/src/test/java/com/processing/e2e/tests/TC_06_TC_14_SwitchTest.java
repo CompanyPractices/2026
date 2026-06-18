@@ -37,10 +37,17 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 
+/**
+ * E2E-тесты Switch: TC-06 (полный цикл APPROVED) и TC-14 (маршрутизация 5 BIN → 5 issuerId).
+ * <p>
+ * Требует поднятый docker-compose (Gateway, Switch, Authorization, Logger, Card Management).
+ */
 public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
 
 
+    /** BIN из таблицы маршрутизации Switch. */
     private static final String[] BINS = {"400000", "400001", "400002", "400003", "400004"};
+    /** Ожидаемые issuerId для каждого BIN. */
     private static final String[] EXPECTED_ISSUERS = {"ISS001", "ISS002", "ISS003", "ISS004", "ISS005"};
 
 
@@ -52,10 +59,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     private static final Instant TRANSMISSION_DATE_TIME = Instant.parse("2026-06-01T10:30:00Z");
     private static final Duration STACK_READY_TIMEOUT = Duration.ofMinutes(3);
     private static final Duration STACK_READY_POLL_INTERVAL = Duration.ofSeconds(3);
+    /** Сервисы, которые должны быть {@code ok} перед запуском тестов. */
     private static final List<String> REQUIRED_SERVICES =
             List.of("switch", "cardManagement", "authorization", "logger");
 
 
+    /** STAN транзакций, создаваемых в тестах (для cleanup). */
     private static final String[] TEST_TRANSACTION_STANS = {
             TC06_STAN, "140000", "140001", "140002", "140003", "140004"
     };
@@ -67,6 +76,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     private final List<String> generatedPans = new ArrayList<>();
 
 
+    /**
+     * Подключается к БД, очищает артефакты прошлых прогонов, ждёт готовности стека.
+     *
+     * @throws Exception при ошибке подключения или таймауте ожидания сервисов
+     */
     @BeforeClass
     public void setUp() throws Exception {
         RestAssured.baseURI = GATEWAY_URL;
@@ -76,6 +90,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Удаляет тестовые транзакции и помечает сгенерированные карты как DELETED.
+     *
+     * @throws SQLException при ошибке SQL
+     */
     @AfterClass(alwaysRun = true)
     public void tearDown() throws SQLException {
         try {
@@ -90,6 +109,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Опрашивает {@code GET /health} Gateway до готовности всех required-сервисов.
+     *
+     * @throws Exception при прерывании sleep или ошибке парсинга JSON
+     */
     private void assertStackIsReady() throws Exception {
         Instant deadline = Instant.now().plus(STACK_READY_TIMEOUT);
         String lastServicesState = null;
@@ -127,6 +151,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * TC-06: транзакция через Gateway → APPROVED, списание баланса, запись в Logger/БД.
+     *
+     * @throws Exception при ошибках HTTP или SQL
+     */
     @Test(description = "TC-06: Полный цикл одиночной транзакции (APPROVED)")
     public void tc06_fullApprovedTransactionCycle() throws Exception {
         ensureTestCards();
@@ -190,6 +219,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * TC-14: для каждого из 5 BIN issuerId в БД и Search API совпадает с таблицей маршрутизации.
+     *
+     * @throws Exception при ошибках HTTP или SQL
+     */
     @Test(description = "TC-14: Маршрутизация по BIN (5 BIN → 5 issuerId)")
     public void tc14_binRoutingToIssuerId() throws Exception {
         ensureTestCards();
@@ -236,6 +270,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Генерирует 100 тестовых карт по 5 BIN через Card Management (один раз за класс).
+     *
+     * @throws Exception при ошибке HTTP
+     */
     private void ensureTestCards() throws Exception {
         if (testCardsPrepared) {
             return;
@@ -263,12 +302,22 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Очистка перед тестами: транзакции по STAN и soft-delete карт по BIN.
+     *
+     * @throws SQLException при ошибке SQL
+     */
     private void cleanupLeftoverSwitchTestData() throws SQLException {
         deleteTestTransactions();
         softDeleteCardsByBins(BINS);
     }
 
 
+    /**
+     * Очистка после тестов: транзакции и сгенерированные карты.
+     *
+     * @throws SQLException при ошибке SQL
+     */
     private void cleanupSwitchTestData() throws SQLException {
         deleteTestTransactions();
         softDeleteGeneratedCards(generatedPans);
@@ -276,6 +325,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Удаляет транзакции с тестовыми STAN из таблицы {@code transactions}.
+     *
+     * @throws SQLException при ошибке SQL
+     */
     private void deleteTestTransactions() throws SQLException {
         for (String stan : TEST_TRANSACTION_STANS) {
             cleanupTransaction(stan);
@@ -283,6 +337,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Помечает сгенерированные карты как DELETED.
+     *
+     * @param pans список PAN
+     * @throws SQLException при ошибке SQL
+     */
     private void softDeleteGeneratedCards(List<String> pans) throws SQLException {
         if (pans.isEmpty()) {
             return;
@@ -297,6 +357,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Помечает все ACTIVE-карты указанных BIN как DELETED.
+     *
+     * @param bins массив BIN
+     * @throws SQLException при ошибке SQL
+     */
     private void softDeleteCardsByBins(String[] bins) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
                 "UPDATE cards SET status = 'DELETED' WHERE bin = ? AND status <> 'DELETED'")) {
@@ -308,6 +374,14 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Формирует JSON-тело запроса транзакции для Gateway.
+     *
+     * @param stan   STAN операции
+     * @param pan    номер карты
+     * @param amount сумма
+     * @return JSON-строка
+     */
     private String transactionPayload(String stan, String pan, BigDecimal amount) {
         return """
                 {
@@ -328,6 +402,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * @param pan номер карты
+     * @return availableBalance через Card Management API
+     * @throws Exception при ошибке HTTP
+     */
     private long getCardBalanceFromApi(String pan) throws Exception {
         Response response = given()
                 .queryParam("_", System.currentTimeMillis())
@@ -344,11 +423,21 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * @param pan номер карты
+     * @return available_balance из таблицы {@code cards}
+     * @throws SQLException при ошибке SQL
+     */
     private long getCardBalanceFromDb(String pan) throws SQLException {
         return queryLong("SELECT available_balance FROM cards WHERE pan = ?", pan);
     }
 
 
+    /**
+     * @param bin BIN (6 цифр)
+     * @return PAN первой ACTIVE-карты с данным BIN
+     * @throws SQLException если карта не найдена
+     */
     private String findActivePanByBin(String bin) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT pan FROM cards WHERE bin = ? AND status = 'ACTIVE' LIMIT 1")) {
@@ -362,6 +451,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * @param bin        BIN (6 цифр)
+     * @param minBalance минимальный баланс
+     * @return PAN ACTIVE-карты с достаточным балансом
+     * @throws SQLException если карта не найдена
+     */
     private String findActivePanWithBalance(String bin, BigDecimal minBalance) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT pan FROM cards WHERE bin = ? AND status = 'ACTIVE' "
@@ -378,6 +473,11 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * @param stan STAN транзакции
+     * @return issuer_id из таблицы {@code transactions} или {@code null}
+     * @throws SQLException при ошибке SQL
+     */
     private String getIssuerIdFromDbByStan(String stan) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
                 "SELECT issuer_id FROM transactions WHERE stan = ?")) {
@@ -388,6 +488,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * @param pan  PAN для поиска
+     * @param stan STAN для фильтрации в результатах search
+     * @return issuerId из Transaction Logger Search API
+     * @throws Exception если транзакция не найдена
+     */
     private String getIssuerIdFromSearchApi(String pan, String stan) throws Exception {
         Response response = given()
                 .queryParam("pan", pan)
@@ -410,6 +516,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Удаляет транзакцию по STAN (идемпотентная подготовка теста).
+     *
+     * @param stan STAN операции
+     * @throws SQLException при ошибке SQL
+     */
     private void cleanupTransaction(String stan) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM transactions WHERE stan = ?")) {
@@ -419,6 +531,14 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Выполняет SQL-запрос, возвращающий одно long-значение.
+     *
+     * @param sql    SQL с плейсхолдерами
+     * @param params параметры запроса
+     * @return значение первой колонки первой строки
+     * @throws SQLException если строк нет или ошибка SQL
+     */
     private long queryLong(String sql, Object... params) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             bindParams(stmt, params);
@@ -431,6 +551,13 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     }
 
 
+    /**
+     * Привязывает параметры к {@link PreparedStatement} по порядку.
+     *
+     * @param stmt   подготовленный запрос
+     * @param params значения параметров
+     * @throws SQLException при ошибке setObject
+     */
     private void bindParams(PreparedStatement stmt, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             stmt.setObject(i + 1, params[i]);
