@@ -19,19 +19,14 @@ public class MerchantProvider {
   private final MerchantRepository merchantRepository;
 
   public List<Merchant> getMerchant(Collection<String> mccCodes, Scenario scenario) {
-    mccCodes = mccCodes == null ? scenario.getMcc() : mccCodes;
-    List<Merchant> merchants = merchantRepository.findByMccIn(mccCodes);
+    Collection<String> effective = (mccCodes == null || mccCodes.isEmpty()) ? scenario.getMcc() : mccCodes;
+    List<Merchant> merchants = merchantRepository.findByMccIn(effective);
 
     if (merchants.isEmpty()) {
-      throw new ResourceNotFoundException("Merchants with given mcc (" + mccCodes + ") not found");
+      throw new ResourceNotFoundException("Merchants with given mcc (" + effective + ") not found");
     }
 
     return merchants;
-  }
-  public BigDecimal getMerchantAcquirerFee(String id) {
-    Merchant merchant = merchantRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Merchant not found with id: " + id));
-    return merchant.getAcquiringFee();
   }
 
   public List<Merchant> getAll() {
