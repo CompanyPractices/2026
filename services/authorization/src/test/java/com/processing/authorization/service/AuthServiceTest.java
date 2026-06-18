@@ -281,7 +281,7 @@ class AuthServiceTest {
     void authorizeDeclineWhenReserveThrowsException() {
         AuthService spyService = spy(authService);
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doThrow(new ReserveCardException("Reserve failed")).when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
+        doThrow(new ReserveException("Reserve failed")).when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
         when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
         when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
