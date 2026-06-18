@@ -10,6 +10,9 @@ import org.springframework.web.client.RestClient;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+/**
+ * HTTP-клиент Merchant Acquirer Simulator для получения комиссии эквайринга.
+ */
 @Service
 public class MerchantAcquirerClient implements AcquiringFeeClient {
 
@@ -18,11 +21,19 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
 
+    /**
+     * @param switchProperties конфигурация с URL Merchant Acquirer
+     * @param restClient       общий REST-клиент Switch
+     */
     public MerchantAcquirerClient(SwitchProperties switchProperties, RestClient restClient) {
         this.switchProperties = switchProperties;
         this.restClient = restClient;
     }
 
+    /**
+     * {@inheritDoc}
+     * При недоступности сервиса возвращает {@code null} и пишет предупреждение в лог.
+     */
     @Override
     public BigDecimal fetchAcquiringFee(
             Instant transmissionDateTime,
@@ -49,6 +60,7 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
         }
     }
 
+    /** Тело запроса комиссии к Merchant Acquirer. */
     private record AcquirerFeeRequest(
             Instant transmissionDateTime,
             String stan,
@@ -58,6 +70,7 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     ) {
     }
 
+    /** Ответ Merchant Acquirer с рассчитанной комиссией. */
     private record AcquirerFeeResponse(
             BigDecimal acquirerFee
     ) {
