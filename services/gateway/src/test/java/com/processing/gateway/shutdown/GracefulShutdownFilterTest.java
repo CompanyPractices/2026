@@ -3,8 +3,10 @@ package com.processing.gateway.shutdown;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.gateway.circuitbreaker.CircuitBreakerFilter;
 import com.processing.gateway.downstream.DownstreamErrorFilter;
+import com.processing.gateway.metrics.GatewayMetrics;
 import com.processing.gateway.ratelimit.TransactionRateLimitFilter;
 import com.processing.gateway.validation.TransactionValidationFilter;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.Order;
@@ -19,10 +21,12 @@ class GracefulShutdownFilterTest {
 
     private final GracefulShutdownState shutdownState = new GracefulShutdownState();
     private final ShutdownProperties shutdownProperties = shutdownProperties();
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     private final GracefulShutdownFilter filter = new GracefulShutdownFilter(
             shutdownState,
             shutdownProperties,
-            new ObjectMapper()
+            new ObjectMapper(),
+            new GatewayMetrics(meterRegistry)
     );
 
     @Test
@@ -52,6 +56,11 @@ class GracefulShutdownFilterTest {
                 "\"error\":\"SERVICE_UNAVAILABLE\"",
                 "\"serviceName\":\"gateway\""
         );
+        assertThat(meterRegistry.counter(
+                "gateway.requests.rejected",
+                "reason", "shutting_down",
+                "service", "gateway"
+        ).count()).isEqualTo(1);
     }
 
     @Test
