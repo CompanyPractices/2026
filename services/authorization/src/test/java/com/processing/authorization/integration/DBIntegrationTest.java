@@ -101,6 +101,16 @@ public class DBIntegrationTest {
         doReturn(null).when(responseSpec).toBodilessEntity();
     }
 
+    private void mockRollbackSuccess() {
+        doReturn(requestBodyUriSpec).when(restClient).post();
+        doReturn(requestBodySpec).when(requestBodyUriSpec).uri(any(URI.class));
+        doReturn(requestBodySpec).when(requestBodySpec).contentType(any());
+        doReturn(requestBodySpec).when(requestBodySpec).body(any(Object.class));
+        doReturn(responseSpec).when(requestBodySpec).retrieve();
+        doReturn(responseSpec).when(responseSpec).onStatus(any(), any());
+        doReturn(null).when(responseSpec).toBodilessEntity();
+    }
+
     private String getDatabaseUrl() {
         try {
             return dataSource.getConnection().getMetaData().getURL();
