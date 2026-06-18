@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import TransactionPieChart from '../components/TransactionPieChart';
-import {Transaction} from "../types";
+import TransactionPieChart from '../TransactionPieChart';
+import {Transaction} from "../../types";
 import * as React from 'react';
 
 class MockResizeObserver {

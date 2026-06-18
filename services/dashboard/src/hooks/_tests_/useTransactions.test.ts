@@ -1,10 +1,10 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import useTransactions from './useTransactions';
-import fetchApi from '../api/client';
-import { Transaction, SearchResponse, Filter } from '../types';
+import useTransactions from '../useTransactions';
+import fetchApi from '../../api/client';
+import { Transaction, SearchResponse, Filter } from '../../types';
 
-vi.mock('../api/client');
+vi.mock('../../api/client');
 
 const mockedFetchApi = vi.mocked(fetchApi);
 

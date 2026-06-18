@@ -1,4 +1,4 @@
-import { exportToCsv } from '../utils/exportToCsv';
+import { exportToCsv } from '../exportToCsv';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('exportToCsv', () => {

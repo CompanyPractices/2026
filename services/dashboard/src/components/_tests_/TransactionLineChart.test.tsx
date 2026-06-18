@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { subMinutes } from 'date-fns';
-import TransactionLineChart from "../components/TransactionLineChart";
-import {Transaction} from "../types";
+import TransactionLineChart from "../TransactionLineChart";
+import {Transaction} from "../../types";
 import { formatInTimeZone } from 'date-fns-tz';
 
 class MockResizeObserver {

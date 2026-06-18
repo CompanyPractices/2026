@@ -1,10 +1,10 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useLiveStats } from './useLiveStats';
-import useStats from './useStats';
-import { Transaction, DashboardStats } from '../types';
+import { useLiveStats } from '../useLiveStats';
+import useStats from '../useStats';
+import { Transaction, DashboardStats } from '../../types';
 
-vi.mock('./useStats');
+vi.mock('../useStats');
 
 const mockedUseStats = vi.mocked(useStats);
 
