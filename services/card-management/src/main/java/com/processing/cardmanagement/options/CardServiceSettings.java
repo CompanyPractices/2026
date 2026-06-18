@@ -14,4 +14,9 @@ public interface CardServiceSettings {
      * @return срок действия карты
      */
     int cardValidityPeriod();
+
+    /**
+     * @return максимальный размер страницы для пагинации
+     */
+    int maxPageLimit();
 }

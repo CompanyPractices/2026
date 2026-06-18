@@ -521,7 +521,7 @@ export const MOCK_TRANSACTIONS_LINECHART: Transaction[] = [
     {
         id: 'tx-004', mti: '0100', stan: '000004', rrn: '012345678904',
         pan: '4000031111220004', processingCode: '000000', processingTimeMs: 65,
-        amount: 89000, currencyCode: '643', terminalId: 'TERM004', terminalType: 'POS',
+        amount: 320000, currencyCode: '643', terminalId: 'TERM004', terminalType: 'POS',
         responseCode: '00', merchantId: 'MERCH004', mcc: '5411', acquirerId: 'ACQ001',
         acquiringFee: 890, issuerId: 'ISS001', status: 'APPROVED', authCode: 'GHI789',
         transmissionDateTime: '2026-06-10T14:02:55Z', createdAt: '2026-06-10T14:02:55Z',
@@ -537,7 +537,7 @@ export const MOCK_TRANSACTIONS_LINECHART: Transaction[] = [
     {
         id: 'tx-006', mti: '0100', stan: '000006', rrn: '012345678906',
         pan: '4000013333440006', processingCode: '000000', processingTimeMs: 30,
-        amount: 67000, currencyCode: '643', terminalId: 'TERM006', terminalType: 'POS',
+        amount: 320000, currencyCode: '643', terminalId: 'TERM006', terminalType: 'POS',
         responseCode: '00', merchantId: 'MERCH006', mcc: '5411', acquirerId: 'ACQ001',
         acquiringFee: 670, issuerId: 'ISS001', status: 'APPROVED', authCode: 'MNO345',
         transmissionDateTime: '2026-06-10T14:05:05Z', createdAt: '2026-06-10T14:05:05Z',
