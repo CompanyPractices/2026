@@ -5,11 +5,9 @@ import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.exception.ResourceNotFoundException;
 import com.processing.merchantacquirer.repository.MerchantRepository;
 
-import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
