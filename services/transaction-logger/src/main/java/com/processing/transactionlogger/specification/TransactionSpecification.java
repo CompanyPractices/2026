@@ -3,6 +3,7 @@ package com.processing.transactionlogger.specification;
 import com.processing.transactionlogger.model.Transaction;
 import com.processing.transactionlogger.model.Transaction_;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -29,7 +30,8 @@ public class TransactionSpecification {
                 .and(dateTo(filter.getDateTo()))
                 .and(equals(Transaction_.MERCHANT_ID, filter.getMerchantId()))
                 .and(equals(Transaction_.ISSUER_ID, filter.getIssuerId()))
-                .and(equals(Transaction_.MCC, filter.getMcc()));
+                .and(equals(Transaction_.MCC, filter.getMcc()))
+                .and(fullTextDeclineReason(filter.getDeclineReason()));
     }
 
     private static Specification<Transaction> equals(String field, Object value) {
@@ -54,6 +56,20 @@ public class TransactionSpecification {
             }
             Instant from = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
             return criteriaBuilder.lessThan(root.get(Transaction_.TRANSMISSION_DATE_TIME), from);
+        };
+    }
+
+    private static Specification<Transaction> fullTextDeclineReason(String declineReason) {
+        return (root, query, criteriaBuilder) -> {
+            if (!StringUtils.hasText(declineReason)) {
+                return null;
+            }
+            return criteriaBuilder.isTrue(criteriaBuilder.function(
+                    "fts_match_decline_reason",
+                    Boolean.class,
+                    root.get(Transaction_.DECLINE_REASON),
+                    criteriaBuilder.literal(declineReason)
+            ));
         };
     }
 }
