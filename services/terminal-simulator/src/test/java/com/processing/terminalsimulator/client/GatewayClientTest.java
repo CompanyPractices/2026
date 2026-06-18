@@ -12,6 +12,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -37,7 +39,8 @@ class GatewayClientTest {
     @Test
     void sendToGateway_shouldReturnAuthorizationResponse() {
         AuthorizationRequest request = new AuthorizationRequest("0100", "000001", "4000001234560001",
-                "000000", new BigDecimal(10000L), "643", "2026-06-09T10:00:00Z",
+                "000000", new BigDecimal(10000L), "643",
+                (LocalDateTime.of(2026, 6, 9, 10, 0, 0)).toInstant(ZoneOffset.UTC),
                 "TERM001", "02", "MERCH001", "5411", "ACQ001", "");
 
         String responseJson = """

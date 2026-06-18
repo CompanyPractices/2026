@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.processing.config.SwitchProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Service
 public class MerchantAcquirerClient implements AcquiringFeeClient {
@@ -25,14 +25,14 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
 
     @Override
     public BigDecimal fetchAcquiringFee(
-            String transmissionDateTime,
+            Instant transmissionDateTime,
             String stan,
             String pan,
             String terminalId,
             BigDecimal amount
     ) {
         try {
-            AcquirerFeeResponse response = restClient.method(HttpMethod.GET)
+            AcquirerFeeResponse response = restClient.post()
                     .uri(switchProperties.merchantAcquirerUrl()
                             + "/api/simulator/merchant/fee")
                     .body(new AcquirerFeeRequest(
@@ -50,7 +50,7 @@ public class MerchantAcquirerClient implements AcquiringFeeClient {
     }
 
     private record AcquirerFeeRequest(
-            String transmissionDateTime,
+            Instant transmissionDateTime,
             String stan,
             String pan,
             @JsonProperty("terminalId") String terminalId,

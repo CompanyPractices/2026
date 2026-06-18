@@ -14,9 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
 import java.util.UUID;
 
 @Service
@@ -132,23 +129,12 @@ public class RouteService {
                 response.declineReason(),
                 response.authCode(),
                 response.processingTimeMs() != null ? response.processingTimeMs() : 0,
-                toInstant(request.transmissionDateTime()),
+                request.transmissionDateTime(),
                 Instant.now()
         );
     }
 
     private static TransactionStatus toTransactionStatus(String status) {
         return TransactionStatus.valueOf(status);
-    }
-
-    private static Instant toInstant(String dateTime) {
-        if (dateTime == null || dateTime.isBlank()) {
-            return Instant.now();
-        }
-        try {
-            return Instant.parse(dateTime);
-        } catch (DateTimeParseException e) {
-            return LocalDateTime.parse(dateTime).atZone(ZoneOffset.UTC).toInstant();
-        }
     }
 }

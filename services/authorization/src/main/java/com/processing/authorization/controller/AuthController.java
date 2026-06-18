@@ -131,7 +131,7 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = AuthorizationResponse.class)))
     })
     public ResponseEntity<AuthorizationResponse> authorize(@Valid @RequestBody AuthorizationRequest request) {
-        LocalDateTime requestInputTime = LocalDateTime.now();
+        Instant requestInputTime = Instant.now();
         AuthorizationResponse response = authService.authorize(request, requestInputTime);
 
         boolean isApproved = response.status().equals(AuthorizationResponse.STATUS_APPROVED);

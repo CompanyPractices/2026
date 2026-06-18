@@ -4,6 +4,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 /**
  * Validates the authorization request contract required by the gateway.
@@ -55,6 +56,12 @@ public class TransactionRequestValidator {
 
     private void requireValue(String value, String fieldName) {
         if (value == null || value.isBlank()) {
+            throw new TransactionValidationException("Field '" + fieldName + "' is required");
+        }
+    }
+
+    private void requireValue(Instant value, String fieldName) {
+        if (value == null) {
             throw new TransactionValidationException("Field '" + fieldName + "' is required");
         }
     }
