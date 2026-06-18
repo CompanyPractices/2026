@@ -57,6 +57,7 @@ public class DBIntegrationTest {
 
     private Instant now;
     private AuthorizationRequest correctRequest;
+    private AuthorizationRequest correctRequestOther;
 
     @BeforeEach
     void setUp() {
@@ -69,6 +70,21 @@ public class DBIntegrationTest {
                 "0100",
                 "123456",
                 "1234567890123456",
+                "000000",
+                BigDecimal.valueOf(5000),
+                "810",
+                Instant.parse("2026-06-05T18:12:49.070Z"),
+                "T0000001",
+                null,
+                "M00000000000001",
+                "5411",
+                "A001",
+                "I001");
+
+        correctRequestOther = new AuthorizationRequest(
+                "0100",
+                "123456",
+                "6543210987654321",
                 "000000",
                 BigDecimal.valueOf(5000),
                 "810",
@@ -206,12 +222,42 @@ public class DBIntegrationTest {
         assertThat(limitUsageRepository.findAll()).hasSize(1);
     }
 
+    @Test
+    void authorizeShouldBeApprovedForBothPans() {
+        CardModel mockCard1 = createActiveCardModel();
+        CardModel mockCard2 = createActiveCardModelOther();
+        mockGetCard(mockCard1);
+        mockGetCard(mockCard2);
+        mockReserveSuccess(); //for mockCard1
+        mockReserveSuccess(); //for mockCard2
+        AuthorizationResponse response1 = authService.authorize(correctRequest, now);
+        AuthorizationResponse response2 = authService.authorize(correctRequestOther, now);
+        assertEquals(AuthorizationResponse.STATUS_APPROVED, response1.status());
+        assertEquals(AuthorizationResponse.STATUS_APPROVED, response2.status());
+        assertThat(limitUsageRepository.findAll()).hasSize(2);
+    }
+
     private CardModel createActiveCardModel() {
         return new CardModel(
                 UUID.randomUUID(),
                 "1234567890123456",
                 "123456",
                 "John Golt",
+                YearMonth.of(2026, 12),
+                CardModelStatus.ACTIVE,
+                "810",
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
+                "I001",
+                Instant.now());
+    }
+    private CardModel createActiveCardModelOther() {
+        return new CardModel(
+                UUID.randomUUID(),
+                "6543210987654321",
+                "654321",
+                "John Snow",
                 YearMonth.of(2026, 12),
                 CardModelStatus.ACTIVE,
                 "810",
