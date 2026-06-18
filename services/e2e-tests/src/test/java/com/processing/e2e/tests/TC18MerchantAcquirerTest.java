@@ -41,7 +41,7 @@ public class TC18MerchantAcquirerTest extends E2EBaseTest {
                 .statusCode(201);
 
         long countBefore = dbUtils.queryLong("select count(*) from transactions");
-        long countFeesBefore = dbUtils.queryLong("select count(*) from acquirer_fee");
+        long countFeesBefore = dbUtils.queryLong("select count(*) from acquirer_fee where acquirer_fee > 0");
         String testStart = dbUtils.queryString("select now()");
 
         Response response = given()
@@ -65,7 +65,6 @@ public class TC18MerchantAcquirerTest extends E2EBaseTest {
         assertNotNull(transactions);
         assertEquals(TX_COUNT, transactions.size());
 
-        int declined = body.get("declined").asInt();
         for(JsonNode node: transactions){
             assertNotNull(node.get("status"));
             assertNotNull(node.get("stan"));
@@ -73,13 +72,14 @@ public class TC18MerchantAcquirerTest extends E2EBaseTest {
 
         long countAfter = dbUtils.queryLong("select count(*) from transactions");
         long transactionsCount = dbUtils.queryLong("select count(*) from transactions where created_at > ?::timestamp", testStart);
-//        assertEquals(transactionsCount, (TX_COUNT - declined)); Исправлю
-//        assertEquals(countBefore, countAfter - (TX_COUNT - declined)); Исправлю
+
+        assertEquals(TX_COUNT, transactionsCount);
+        assertEquals(countBefore, countAfter - TX_COUNT);
 
         long groceryCount = dbUtils.queryLong("select count(*) from transactions where mcc = '5411' and created_at > ?::timestamp", testStart);
-//        assertEquals(groceryCount, transactionsCount); Исправлю
+        assertEquals(groceryCount, transactionsCount);
 
         long feeRows = dbUtils.queryLong("select count(*) from acquirer_fee where acquirer_fee > 0");
-//        assertEquals(TX_COUNT, feeRows - countFeesBefore); Исправлю
+        assertEquals(TX_COUNT, feeRows - countFeesBefore);
     }
 }
