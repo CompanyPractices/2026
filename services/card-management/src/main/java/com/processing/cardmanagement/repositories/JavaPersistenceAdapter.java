@@ -7,7 +7,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -27,13 +27,13 @@ public class JavaPersistenceAdapter implements CardRepository {
 
     @Override
     public List<Card> findCards(
-        long limit,
+        int limit,
         long offset,
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         return jpaRepository
             .findCards(
@@ -55,8 +55,8 @@ public class JavaPersistenceAdapter implements CardRepository {
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         return jpaRepository.countCards(
             status != null ? status.name() : null,

@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
@@ -37,11 +37,12 @@ public class CardGeneratorServiceTest {
     private MeterRegistry meterRegistry;
 
     private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
-        BigDecimal.valueOf(1_000_000),
-        BigDecimal.valueOf(50_000_000),
-        BigDecimal.valueOf(5_000_000),
-        BigDecimal.valueOf(30_000_000),
-        "643"
+            BigDecimal.valueOf(1_000_000),
+            BigDecimal.valueOf(50_000_000),
+            BigDecimal.valueOf(5_000_000),
+            BigDecimal.valueOf(30_000_000),
+            "643",
+            100
     );
 
     private CardGeneratorService cardGeneratorService;
@@ -49,9 +50,9 @@ public class CardGeneratorServiceTest {
     @BeforeEach
     void setUp() {
         cardGeneratorService = new CardGeneratorService(
-            cardService,
-            generatorOptions,
-            eventNotifier
+                cardService,
+                generatorOptions,
+                eventNotifier
         );
     }
 
@@ -59,11 +60,11 @@ public class CardGeneratorServiceTest {
     void generateShouldReturnCorrectCount() {
         int count = 100;
         List<String> bins = List.of(
-            faker.numerify("######"),
-            faker.numerify("######"),
-            faker.numerify("######"),
-            faker.numerify("######"),
-            faker.numerify("######"));
+                faker.numerify("######"),
+                faker.numerify("######"),
+                faker.numerify("######"),
+                faker.numerify("######"),
+                faker.numerify("######"));
 
         when(cardService.createCards(anyList())).thenAnswer(inv -> {
             List<CardDraft> dtos = inv.getArgument(0);
@@ -79,7 +80,7 @@ public class CardGeneratorServiceTest {
                 dto.monthlyLimit(),
                 dto.initialBalance(),
                 "ZZZZZZ",
-                LocalDateTime.now()
+                Instant.now()
             )).toList();
         });
 
@@ -107,7 +108,7 @@ public class CardGeneratorServiceTest {
                 dto.monthlyLimit(),
                 dto.initialBalance(),
                 "ZZZZZZ",
-                LocalDateTime.now()
+                Instant.now()
             )).toList();
         });
 

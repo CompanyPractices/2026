@@ -22,15 +22,18 @@ services:
       retries: 5
 
   gateway:
+    image: ghcr.io/${GHCR_USER:-local}/smp-gateway:latest
     build:
       context: .
       dockerfile: services/gateway/Dockerfile
     container_name: smp-gateway
     restart: unless-stopped
+    stop_grace_period: ${GATEWAY_STOP_GRACE_PERIOD}
     ports:
       - "${GATEWAY_PORT}:8080"
     environment:
       - SERVER_PORT=8080
+      - GATEWAY_SHUTDOWN_DRAIN_PERIOD=${GATEWAY_SHUTDOWN_DRAIN_PERIOD}
       - SWITCH_URL=http://switch:8080
       - AUTH_URL=http://authorization:8080
       - CARD_MGMT_URL=http://card-management:8080
@@ -51,6 +54,7 @@ services:
       start_period: 40s
 
   card-management:
+    image: ghcr.io/${GHCR_USER:-local}/smp-card-management:latest
     build:
       context: .
       dockerfile: services/card-management/Dockerfile
@@ -78,6 +82,7 @@ services:
       start_period: 40s
 
   switch:
+    image: ghcr.io/${GHCR_USER:-local}/smp-switch:latest
     build:
       context: .
       dockerfile: services/switch/Dockerfile
@@ -103,6 +108,7 @@ services:
       start_period: 40s
 
   authorization:
+    image: ghcr.io/${GHCR_USER:-local}/smp-authorization:latest
     build:
       context: .
       dockerfile: services/authorization/Dockerfile
@@ -133,6 +139,7 @@ services:
       start_period: 40s
 
   terminal-simulator:
+    image: ghcr.io/${GHCR_USER:-local}/smp-terminal-simulator:latest
     build:
       context: .
       dockerfile: services/terminal-simulator/Dockerfile
@@ -157,6 +164,8 @@ services:
 
   autoscaler:
     image: docker:27-cli
+    environment:
+      - GHCR_USER
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./scripts/autoscaler.sh:/app/autoscaler.sh
@@ -171,6 +180,7 @@ services:
       - smp-network
 
   merchant-acquirer:
+    image: ghcr.io/${GHCR_USER:-local}/smp-merchant-acquirer:latest
     build:
       context: .
       dockerfile: services/merchant-acquirer/Dockerfile
@@ -202,6 +212,7 @@ services:
       start_period: 40s
 
   transaction-logger:
+    image: ghcr.io/${GHCR_USER:-local}/smp-transaction-logger:latest
     build:
       context: .
       dockerfile: services/transaction-logger/Dockerfile
@@ -229,6 +240,7 @@ services:
       start_period: 40s
 
   dashboard:
+    image: ghcr.io/${GHCR_USER:-local}/smp-dashboard:latest
     build:
       context: ./services/dashboard
       dockerfile: Dockerfile
@@ -268,6 +280,7 @@ services:
 
   grafana:
     image: grafana/grafana:11.3.0
+    user: "472:472"
     container_name: smp-grafana
     restart: unless-stopped
     ports:

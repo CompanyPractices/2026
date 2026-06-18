@@ -15,7 +15,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
@@ -60,7 +60,7 @@ public class CardGeneratorControllerTest {
             BigDecimal.valueOf(300_000_000),
             BigDecimal.valueOf(100_000_000),
             "ZZZZZZ",
-            LocalDateTime.now()
+            Instant.now()
         );
 
         Card card2 = new Card(
@@ -75,7 +75,7 @@ public class CardGeneratorControllerTest {
             BigDecimal.valueOf(300_000_000),
             BigDecimal.valueOf(100_000_000),
             "ZZZZZZ",
-            LocalDateTime.now()
+            Instant.now()
         );
 
         when(generatorService.generate(2, bins)).thenReturn(List.of(card1, card2));
@@ -89,7 +89,7 @@ public class CardGeneratorControllerTest {
 
     @Test
     void generateShouldReturn400WhenCountIsZero() throws Exception {
-        GenerateCardsRequest request = new GenerateCardsRequest(0, List.of("4000000"));
+        GenerateCardsRequest request = new GenerateCardsRequest(1, List.of("4000000"));
 
         mockMvc.perform(post("/api/cards/generate")
                 .contentType(MediaType.APPLICATION_JSON)

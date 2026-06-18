@@ -2,6 +2,7 @@ package com.processing.service;
 
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.transactionlogger.TransactionRequest;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.exception.AuthorizationException;
@@ -13,9 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
 import java.util.UUID;
 
 @Service
@@ -73,7 +71,8 @@ public class RouteService {
 
         if (!logged && AuthorizationResponse.STATUS_APPROVED.equals(response.status())) {
             LOG.error("Logger unavailable for TX {} — rolling back reservation", request.stan());
-            authorizationClient.reverse(routedRequest, response.rrn());
+            RollbackResponse rollback = authorizationClient.rollback(routedRequest, response.rrn());
+            logRollbackResult(request.stan(), rollback);
             return AuthorizationResponse.systemError(request.stan());
         }
 
@@ -91,6 +90,19 @@ public class RouteService {
             LOG.error("{}", e.getMessage());
             return false;
         }
+    }
+
+    private void logRollbackResult(String stan, RollbackResponse rollback) {
+        if (rollback == null) {
+            LOG.error("Rollback failed for TX {} — no response from Authorization", stan);
+            return;
+        }
+        if (RollbackResponse.STATUS_APPROVED.equals(rollback.status())) {
+            LOG.info("Rollback succeeded for TX {} rrn={}", stan, rollback.rrn());
+            return;
+        }
+        LOG.warn("Rollback declined for TX {} rrn={} code={} reason={}",
+                stan, rollback.rrn(), rollback.responseCode(), rollback.declineReason());
     }
 
     private TransactionRequest buildTransaction(
@@ -117,23 +129,12 @@ public class RouteService {
                 response.declineReason(),
                 response.authCode(),
                 response.processingTimeMs() != null ? response.processingTimeMs() : 0,
-                toInstant(request.transmissionDateTime()),
+                request.transmissionDateTime(),
                 Instant.now()
         );
     }
 
     private static TransactionStatus toTransactionStatus(String status) {
         return TransactionStatus.valueOf(status);
-    }
-
-    private static Instant toInstant(String dateTime) {
-        if (dateTime == null || dateTime.isBlank()) {
-            return Instant.now();
-        }
-        try {
-            return Instant.parse(dateTime);
-        } catch (DateTimeParseException e) {
-            return LocalDateTime.parse(dateTime).atZone(ZoneOffset.UTC).toInstant();
-        }
     }
 }

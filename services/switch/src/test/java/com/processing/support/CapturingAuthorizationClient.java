@@ -1,21 +1,24 @@
 package com.processing.support;
 
-
 import com.processing.SwitchTestData;
-import com.processing.config.RetryFactory;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.authorization.RollbackRequest;
+import com.processing.common.dto.authorization.RollbackResponse;
+import com.processing.config.RetryFactory;
 import com.processing.service.AuthorizationClient;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 
 public class CapturingAuthorizationClient extends AuthorizationClient {
 
-
     private AuthorizationRequest lastRequest;
-    private String lastReverseRrn;
-    private boolean reverseCalled;
+    private RollbackRequest lastRollbackRequest;
+    private String lastRollbackRrn;
+    private boolean rollbackCalled;
     private final AuthorizationResponse responseToReturn;
-
+    private RollbackResponse rollbackResponseToReturn;
 
     public CapturingAuthorizationClient() {
         super(
@@ -25,7 +28,6 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
         this.responseToReturn = approvedResponse();
     }
 
-
     public CapturingAuthorizationClient(AuthorizationResponse responseToReturn) {
         super(
                 SwitchTestData.defaultProperties(),
@@ -34,6 +36,10 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
         this.responseToReturn = responseToReturn;
     }
 
+    public CapturingAuthorizationClient withRollbackResponse(RollbackResponse rollbackResponse) {
+        this.rollbackResponseToReturn = rollbackResponse;
+        return this;
+    }
 
     @Override
     public AuthorizationResponse authorize(AuthorizationRequest request) {
@@ -49,28 +55,32 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
                 responseToReturn.processingTimeMs());
     }
 
-
     @Override
-    public void reverse(AuthorizationRequest original, String rrn) {
-        reverseCalled = true;
-        lastReverseRrn = rrn;
+    public RollbackResponse rollback(AuthorizationRequest original, String rrn) {
+        rollbackCalled = true;
+        lastRollbackRrn = rrn;
+        lastRollbackRequest = new RollbackRequest(rrn, original.pan(), original.amount());
+        if (rollbackResponseToReturn != null) {
+            return rollbackResponseToReturn;
+        }
+        return RollbackResponse.approved(new RollbackRequest(rrn, lastRequest().pan(), BigDecimal.valueOf(5000)), Instant.now());
     }
-
 
     public AuthorizationRequest lastRequest() {
         return lastRequest;
     }
 
-
-    public boolean reverseCalled() {
-        return reverseCalled;
+    public boolean rollbackCalled() {
+        return rollbackCalled;
     }
 
-
-    public String lastReverseRrn() {
-        return lastReverseRrn;
+    public String lastRollbackRrn() {
+        return lastRollbackRrn;
     }
 
+    public RollbackRequest lastRollbackRequest() {
+        return lastRollbackRequest;
+    }
 
     private static AuthorizationResponse approvedResponse() {
         return new AuthorizationResponse(

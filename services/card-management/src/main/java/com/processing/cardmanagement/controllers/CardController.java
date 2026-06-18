@@ -25,7 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/cards")
@@ -94,7 +94,7 @@ public class CardController {
         @NotNegative
         @Schema(description = "Offset for pagination", example = "0")
         @RequestParam(required = false, defaultValue = "0")
-        Integer offset,
+        Long offset,
 
         @Nullable
         @Schema(
@@ -127,12 +127,12 @@ public class CardController {
         @Nullable
         @Schema(description = "Start date")
         @RequestParam(required = false)
-        LocalDateTime startDate,
+        Instant startDate,
 
         @Nullable
         @Schema(description = "End date")
         @RequestParam(required = false)
-        LocalDateTime endDate
+        Instant endDate
     ) {
         var domainStatus = cardStatusMapper.toCardStatus(status);
         var cards = cardService.getCards(

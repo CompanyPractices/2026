@@ -5,6 +5,7 @@ import com.processing.e2e.E2EBaseTest;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.time.Instant;
 import java.util.List;
 
 /*
@@ -31,12 +32,18 @@ public class GatewayValidationTest extends E2EBaseTest {
     @Test(description = "TC-11 - Gateway rejects invalid transaction requests")
     public void gatewayRejectsInvalidTransactionRequests() {
         for (InvalidRequestCase testCase : invalidRequestCases()) {
-            JsonNode response = httpUtils.httpPost(GATEWAY_URL, "/api/transactions", testCase.body(), 400);
+            JsonNode response = httpUtils.httpPostRaw(GATEWAY_URL, "/api/transactions", testCase.body(), 400);
 
             Assert.assertEquals(response.path("error").asText(), "VALIDATION_ERROR",
                     testCase.name() + ": $.error should be VALIDATION_ERROR");
             Assert.assertFalse(response.path("message").asText().isBlank(),
                     testCase.name() + ": $.message should explain validation failure");
+            Assert.assertEquals(response.path("serviceName").asText(), "gateway",
+                    testCase.name() + ": $.serviceName should be gateway");
+            Assert.assertFalse(response.path("timestamp").asText().isBlank(),
+                    testCase.name() + ": $.timestamp should be present");
+            Assert.assertNotNull(Instant.parse(response.path("timestamp").asText()),
+                    testCase.name() + ": $.timestamp should be an ISO-8601 instant");
         }
     }
 

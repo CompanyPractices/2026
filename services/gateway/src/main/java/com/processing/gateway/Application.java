@@ -1,8 +1,8 @@
 package com.processing.gateway;
 
-import com.processing.gateway.properties.GatewayProperties;
-import com.processing.gateway.properties.OpenApiProperties;
-import com.processing.gateway.properties.ServiceProperties;
+import com.processing.gateway.openapi.OpenApiProperties;
+import com.processing.gateway.properties.*;
+import com.processing.gateway.shutdown.ShutdownProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -12,7 +12,12 @@ import org.springframework.cache.annotation.EnableCaching;
  * Spring Boot entry point for Gateway Service.
  */
 @SpringBootApplication
-@EnableConfigurationProperties({ServiceProperties.class, OpenApiProperties.class, GatewayProperties.class})
+@EnableConfigurationProperties({
+        ServiceProperties.class,
+        OpenApiProperties.class,
+        GatewayProperties.class,
+        ShutdownProperties.class
+})
 @EnableCaching
 public class Application {
 

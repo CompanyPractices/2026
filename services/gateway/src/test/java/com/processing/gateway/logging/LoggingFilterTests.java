@@ -1,7 +1,6 @@
 package com.processing.gateway.logging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.gateway.filter.RequestLoggingFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -41,7 +40,7 @@ public class LoggingFilterTests {
         filter.doFilter(request, response, chain);
 
         // Assert
-        verify(chain, times(1)).doFilter(requestCaptor.capture(), eq(response));
+        verify(chain, times(1)).doFilter(requestCaptor.capture(), any(HttpServletResponse.class));
 
         HttpServletRequest wrappedRequest = requestCaptor.getValue();
         assertNotNull(wrappedRequest);

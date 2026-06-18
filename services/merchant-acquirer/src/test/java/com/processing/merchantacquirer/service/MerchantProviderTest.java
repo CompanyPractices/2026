@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
+import com.processing.merchantacquirer.exception.ResourceNotFoundException;
 import com.processing.merchantacquirer.repository.MerchantRepository;
 
 import java.math.BigDecimal;
@@ -35,9 +36,9 @@ public class MerchantProviderTest {
 
     when(merchantRepository.findByMccIn(mccCodes)).thenReturn(Collections.emptyList());
 
-    IllegalArgumentException exception =
+    ResourceNotFoundException exception =
         assertThrows(
-            IllegalArgumentException.class,
+                ResourceNotFoundException.class,
             () -> merchantProvider.getMerchant(mccCodes, scenario));
 
     assertEquals("Merchants with given mcc ([0000]) not found", exception.getMessage());
