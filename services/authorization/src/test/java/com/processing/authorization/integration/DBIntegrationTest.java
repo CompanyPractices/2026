@@ -9,11 +9,14 @@ import java.net.URI;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.processing.authorization.entities.LimitUsage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -196,6 +199,41 @@ public class DBIntegrationTest {
         assertThat(limitUsageRepository.findAll()).hasSize(1);
     }
 
+    @Test
+    void deleteByUsageDateBetweenShouldDeleteOnlyPreviousMonthRecords() {
+        String pan = "4000001234567890";
+        BigDecimal currLimit = BigDecimal.valueOf(1000);
+
+        LocalDate now = LocalDate.now();
+        LocalDate firstDayPreviousMonth = now.minusMonths(1).withDayOfMonth(1);
+        LocalDate lastDayPreviousMonth = now.minusMonths(1).withDayOfMonth(now.minusMonths(1).lengthOfMonth());
+        LocalDate firstDayCurrentMonth = now.withDayOfMonth(1);
+        LocalDate secondDayCurrentMonth = now.withDayOfMonth(2);
+
+        LimitUsage record1 = createLimitUsage(pan, firstDayPreviousMonth, currLimit);
+        LimitUsage record2 = createLimitUsage(pan, lastDayPreviousMonth.minusDays(1), currLimit);
+        LimitUsage record3 = createLimitUsage(pan, lastDayPreviousMonth, currLimit);
+        LimitUsage record4 = createLimitUsage(pan, firstDayCurrentMonth, currLimit);
+        LimitUsage record5 = createLimitUsage(pan, secondDayCurrentMonth, currLimit);
+        limitUsageRepository.saveAll(List.of(record1, record2, record3, record4, record5));
+
+        List<LimitUsage> allRecords = limitUsageRepository.findAll();
+        assertThat(allRecords).hasSize(5);
+
+        int deletedCount = limitUsageRepository.deleteByUsageDateBetween(
+                firstDayPreviousMonth,
+                lastDayPreviousMonth
+        );
+
+        assertThat(deletedCount).isEqualTo(3);
+
+        List<LimitUsage> remainingRecords = limitUsageRepository.findAll();
+        assertThat(remainingRecords).hasSize(2);
+        assertThat(remainingRecords)
+                .extracting("usageDate")
+                .containsExactlyInAnyOrder(firstDayCurrentMonth, secondDayCurrentMonth);
+    }
+
     private CardModel createActiveCardModel() {
         return new CardModel(
                 UUID.randomUUID(),
@@ -306,5 +344,15 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(10000),
                 "I001",
                 Instant.now());
+    }
+
+    private LimitUsage createLimitUsage(String pan, LocalDate usageDate, BigDecimal amount) {
+        LimitUsage usage = new LimitUsage();
+        usage.setPan(pan);
+        usage.setUsageDate(usageDate);
+        usage.setDailyAmount(amount);
+        usage.setMonthlyAmount(amount);
+        usage.setUpdatedAt(Instant.now());
+        return usage;
     }
 }

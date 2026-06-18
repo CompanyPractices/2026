@@ -12,12 +12,12 @@ import java.time.ZoneOffset;
 
 @Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class CleanupService {
 
     private final LimitUsageRepository limitUsageRepository;
 
+    @Transactional
     @Scheduled(cron = "0 0 0 2 * ?")
     public void cleanPreviousMonthRecords() {
         log.info("Starting cleanup of limit_usage records for previous month");
