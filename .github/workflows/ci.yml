@@ -22,7 +22,7 @@ on:
       - 'scripts/smoke-test.sh'
 
 env:
-  GHCR_USER: ${{ github.repository_owner }}
+  GHCR_USER: ${{ toLower(github.repository_owner) }}
 
 jobs:
   base-lint:
