@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
 import com.processing.gateway.downstream.DownstreamServiceResolver;
 import com.processing.gateway.downstream.DownstreamExceptionUtils;
+import com.processing.gateway.metrics.GatewayMetrics;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +36,7 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
     private final DownstreamServiceResolver serviceResolver;
     private final InMemoryCircuitBreaker circuitBreaker;
+    private final GatewayMetrics gatewayMetrics;
     private final Duration openDuration;
 
     /**
@@ -48,10 +50,12 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
     public CircuitBreakerFilter(ObjectMapper objectMapper,
                                 DownstreamServiceResolver serviceResolver,
                                 InMemoryCircuitBreaker circuitBreaker,
+                                GatewayMetrics gatewayMetrics,
                                 @Value("${gateway.circuit-breaker.open-duration:10s}") Duration openDuration) {
         this.objectMapper = objectMapper;
         this.serviceResolver = serviceResolver;
         this.circuitBreaker = circuitBreaker;
+        this.gatewayMetrics = gatewayMetrics;
         this.openDuration = openDuration;
     }
 
@@ -69,6 +73,7 @@ public class CircuitBreakerFilter extends OncePerRequestFilter {
 
         String downstreamService = serviceName.get();
         if (!circuitBreaker.allowRequest(downstreamService)) {
+            gatewayMetrics.recordCircuitOpen(downstreamService);
             writeCircuitOpen(response, downstreamService);
             return;
         }

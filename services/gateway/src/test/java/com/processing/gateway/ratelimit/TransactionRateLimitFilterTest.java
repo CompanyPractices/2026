@@ -1,6 +1,8 @@
 package com.processing.gateway.ratelimit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.gateway.metrics.GatewayMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -12,10 +14,12 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TransactionRateLimitFilterTest {
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     private final TransactionRateLimitFilter filter = new TransactionRateLimitFilter(
             InMemoryRateLimiter.forTesting(1, 0, Duration.ofMinutes(10), 100, () -> 0),
             new ClientIpResolver(),
-            new ObjectMapper()
+            new ObjectMapper(),
+            new GatewayMetrics(meterRegistry)
     );
 
     @Test
@@ -35,6 +39,11 @@ class TransactionRateLimitFilterTest {
         assertThat(secondResponse.getStatus()).isEqualTo(429);
         assertThat(thirdResponse.getStatus()).isEqualTo(200);
         assertThat(filterChain.callCount).isEqualTo(2);
+        assertThat(meterRegistry.counter(
+                "gateway.requests.rejected",
+                "reason", "rate_limit",
+                "service", "gateway"
+        ).count()).isEqualTo(1);
 
         MockHttpServletResponse fourthResponse = new MockHttpServletResponse();
         filter.doFilter(transactionRequest("203.0.113.13"), fourthResponse, filterChain);

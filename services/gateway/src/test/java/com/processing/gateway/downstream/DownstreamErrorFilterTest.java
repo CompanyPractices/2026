@@ -2,7 +2,9 @@ package com.processing.gateway.downstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.processing.gateway.metrics.GatewayMetrics;
 import com.processing.gateway.properties.GatewayRouteProperties;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -19,10 +21,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class DownstreamErrorFilterTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
     private final DownstreamErrorFilter filter = new DownstreamErrorFilter(
             objectMapper,
-            new DownstreamServiceResolver(routeProperties())
+            new DownstreamServiceResolver(routeProperties()),
+            new GatewayMetrics(meterRegistry)
     );
 
     @Test
@@ -42,6 +46,10 @@ class DownstreamErrorFilterTest {
                 "\"serviceName\":\"switch\"",
                 "Switch service is temporarily unavailable"
         );
+        assertThat(meterRegistry.counter(
+                "gateway.downstream.unavailable",
+                "service", "switch"
+        ).count()).isEqualTo(1);
     }
 
     @Test
