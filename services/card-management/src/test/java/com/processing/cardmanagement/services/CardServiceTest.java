@@ -33,7 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public final class CardServiceTest {
+public class CardServiceTest {
 
     private final String panGeneratorCardNumber = "1234 5678 9101 1123".replace(" ", "");
 
@@ -190,7 +190,7 @@ public final class CardServiceTest {
     }
 
     @Test
-    void testPatchCard() {
+    void testPatchCardSuccess() {
         var pan = generatePan();
         var status = CardStatus.EXPIRED;
         var dailyLimit = BigDecimal.valueOf(
@@ -232,6 +232,41 @@ public final class CardServiceTest {
             availableBalance
         );
         assertEquals(expected, card);
+    }
+
+    @Test
+    void testPatchCardInvalidData() {
+        var testCard = createTestCard(generatePan());
+        when(cardRepository.findByPanForUpdate(testCard.pan()))
+            .thenReturn(Optional.of(testCard));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            cardService.patchCard(
+                testCard.pan(),
+                CardStatus.ACTIVE,
+                BigDecimal.valueOf(-1),
+                BigDecimal.valueOf(1),
+                BigDecimal.valueOf(1)
+            );
+        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            cardService.patchCard(
+                testCard.pan(),
+                CardStatus.ACTIVE,
+                BigDecimal.valueOf(1),
+                BigDecimal.valueOf(-1),
+                BigDecimal.valueOf(1)
+            );
+        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            cardService.patchCard(
+                testCard.pan(),
+                CardStatus.ACTIVE,
+                BigDecimal.valueOf(2),
+                BigDecimal.valueOf(1),
+                BigDecimal.valueOf(1)
+            );
+        });
     }
 
     @Test

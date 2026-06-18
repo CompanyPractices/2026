@@ -206,6 +206,10 @@
                     <excludes>
                         <exclude>**/load/**/*.java</exclude>
                     </excludes>
+                    <argLine>
+                        -javaagent:${settings.localRepository}/net/bytebuddy/byte-buddy-agent/1.15.11/byte-buddy-agent-1.15.11.jar
+                        -XX:+EnableDynamicAgentLoading
+                    </argLine>
                 </configuration>
             </plugin>
         </plugins>
