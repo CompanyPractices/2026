@@ -5,7 +5,7 @@ import { CityCluster, useLocations } from '../hooks/useLocations';
 import { Transaction } from '../types';
 import { getStatusIcon } from '../utils/statusIcon';
 import 'leaflet/dist/leaflet.css';
-import { convertPenniesToRubles, formatAmount } from "../utils/format.ts";
+import { convertPenniesToRubles } from "../utils/format.ts";
 import { ThemeContext } from "../contexts/ThemeContext.ts";
 
 const LIGHT_TILES = {
