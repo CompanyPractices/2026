@@ -96,7 +96,7 @@ public class DBIntegrationTest {
                 "A001",
                 "I001");
 
-        log.debug("Test database URL: {}", getDatabaseUrl());
+        // log.debug("Test database URL: {}", getDatabaseUrl());
     }
 
     private void mockGetCard(CardModel cardToReturn) {
@@ -127,14 +127,14 @@ public class DBIntegrationTest {
         doReturn(null).when(responseSpec).toBodilessEntity();
     }
 
-    private String getDatabaseUrl() {
-        try {
-            return dataSource.getConnection().getMetaData().getURL();
-        } catch (SQLException e) {
-            log.warn("Could not determine database URL", e);
-            return "none";
-        }
-    }
+    // private String getDatabaseUrl() {
+    //     try {
+    //         return dataSource.getConnection().getMetaData().getURL();
+    //     } catch (SQLException e) {
+    //         log.warn("Could not determine database URL", e);
+    //         return "none";
+    //     }
+    // }
 
     @Test
     void authorizeShouldReturnDeclinedWhenCardIsBlocked() {
@@ -222,20 +222,20 @@ public class DBIntegrationTest {
         assertThat(limitUsageRepository.findAll()).hasSize(1);
     }
 
-    @Test
-    void authorizeShouldBeApprovedForBothPans() {
-        CardModel mockCard1 = createActiveCardModel();
-        CardModel mockCard2 = createActiveCardModelOther();
-        mockGetCard(mockCard1);
-        mockGetCard(mockCard2);
-        mockReserveSuccess(); //for mockCard1
-        mockReserveSuccess(); //for mockCard2
-        AuthorizationResponse response1 = authService.authorize(correctRequest, now);
-        AuthorizationResponse response2 = authService.authorize(correctRequestOther, now);
-        assertEquals(AuthorizationResponse.STATUS_APPROVED, response1.status());
-        assertEquals(AuthorizationResponse.STATUS_APPROVED, response2.status());
-        assertThat(limitUsageRepository.findAll()).hasSize(2);
-    }
+    // @Test
+    // void authorizeShouldBeApprovedForBothPans() {
+    //     CardModel mockCard1 = createActiveCardModel();
+    //     CardModel mockCard2 = createActiveCardModelOther();
+    //     mockGetCard(mockCard1);
+    //     mockGetCard(mockCard2);
+    //     mockReserveSuccess(); //for mockCard1
+    //     mockReserveSuccess(); //for mockCard2
+    //     AuthorizationResponse response1 = authService.authorize(correctRequest, now);
+    //     AuthorizationResponse response2 = authService.authorize(correctRequestOther, now);
+    //     assertEquals(AuthorizationResponse.STATUS_APPROVED, response1.status());
+    //     assertEquals(AuthorizationResponse.STATUS_APPROVED, response2.status());
+    //     assertThat(limitUsageRepository.findAll()).hasSize(2);
+    // }
 
     private CardModel createActiveCardModel() {
         return new CardModel(

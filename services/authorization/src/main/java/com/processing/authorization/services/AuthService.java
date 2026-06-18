@@ -143,26 +143,11 @@ public class AuthService {
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         }
 
-        Optional<LimitUsage> currLimitUsage = limitUsageRepository
-                .findByPanAndUsageDate(request.pan(), transmissionDate);
-
         LocalDate transmissionLocalDate = request.transmissionDateTime()
                 .atZone(ZoneOffset.UTC)
                 .toLocalDate();
 
-        Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
-                ? currLimitUsage
-                : limitUsageRepository
-                        .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
-                                request.pan(),
-                                transmissionLocalDate.withDayOfMonth(1)
-                                        .atStartOfDay()
-                                        .atZone(ZoneOffset.UTC)
-                                        .toInstant(),
-                                transmissionDate);
-        boolean isExceedsLimit = isExceedsAmountLimit(request, requestInputTime, cardResponse, currLimitUsage,
-                monthLimitUsage);
-        if (isExceedsLimit) {
+        if (checkAndUpdateLimits(request, cardResponse, transmissionLocalDate)) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
@@ -189,34 +174,6 @@ public class AuthService {
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         }
 
-        try {
-            updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
-        } catch (DuplicateKeyException e) {
-            log.warn("data race for pan {}", logPan(request.pan()));
-            isExceedsLimit = isExceedsAmountLimit(request, requestInputTime, cardResponse, currLimitUsage,
-                    monthLimitUsage);
-            if (isExceedsLimit) {
-                RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
-                RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
-                if (rollbackResponse.status() == RollbackResponse.STATUS_APPROVED) {
-                    return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
-                }
-                // TODO ask about business logic
-                log.error("rollback from card-management service failed for pan: {}", logPan(request.pan()), e);
-                return DeclineOutcome.ROLLBACK_FAILED.buildAuthorization(request, requestInputTime);
-            }
-            updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
-        } catch (Exception e) {
-            log.error("updation limits failed for pan {}", logPan(request.pan()), e);
-            RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
-            RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
-            if (!rollbackResponse.status().equals(RollbackResponse.STATUS_APPROVED)) {
-                // TODO ask about business logic
-                log.error("rollback after failing to update limit_usage table from "
-                        + "card-management service failed for pan: {}", logPan(request.pan()), e);
-                return DeclineOutcome.ROLLBACK_FAILED.buildAuthorization(request, requestInputTime);
-            }
-        }
         String authCode = generateAuthCode();
         return AuthorizationResponse.approved(request, rrn, authCode, requestInputTime);
     }
@@ -340,36 +297,47 @@ public class AuthService {
     }
 
     // TODO change transmissionDate to Instant type
-    public void updateLimits(AuthorizationRequest request, Instant transmissionDate,
-            Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
-        if (currLimitUsage.isPresent()) {
-            LimitUsage usage = currLimitUsage.get();
-            usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
-            usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
-            limitUsageRepository.save(usage);
-        } else if (monthLimitUsage.isPresent()) {
-            LimitUsage monthUsage = monthLimitUsage.get();
-            LimitUsage usage = new LimitUsage();
-            usage.setPan(request.pan());
-            usage.setUsageDate(transmissionDate);
-            usage.setDailyAmount(request.amount());
-            usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
-            limitUsageRepository.save(usage);
-        } else {
-            LimitUsage usage = new LimitUsage();
-            usage.setPan(request.pan());
-            usage.setUsageDate(transmissionDate);
-            usage.setDailyAmount(request.amount());
-            usage.setMonthlyAmount(request.amount());
-            limitUsageRepository.save(usage);
-        }
-    }
+    // public void updateLimits(AuthorizationRequest request, Instant transmissionDate,
+    //         Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
+    //     if (currLimitUsage.isPresent()) {
+    //         LimitUsage usage = currLimitUsage.get();
+    //         usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
+    //         usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
+    //         limitUsageRepository.save(usage);
+    //     } else if (monthLimitUsage.isPresent()) {
+    //         LimitUsage monthUsage = monthLimitUsage.get();
+    //         LimitUsage usage = new LimitUsage();
+    //         usage.setPan(request.pan());
+    //         usage.setUsageDate(transmissionDate);
+    //         usage.setDailyAmount(request.amount());
+    //         usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
+    //         limitUsageRepository.save(usage);
+    //     } else {
+    //         LimitUsage usage = new LimitUsage();
+    //         usage.setPan(request.pan());
+    //         usage.setUsageDate(transmissionDate);
+    //         usage.setDailyAmount(request.amount());
+    //         usage.setMonthlyAmount(request.amount());
+    //         limitUsageRepository.save(usage);
+    //     }
+    // }
 
-    // TODO change requestInputTime to Instant type
-    @Transactional(rollbackFor = Exception.class)
-    public boolean isExceedsAmountLimit(AuthorizationRequest request, Instant requestInputTime,
-            CardModel cardResponse,
-            Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
+    // @Transactional(rollbackFor = Exception.class)
+    public boolean checkAndUpdateLimits(AuthorizationRequest request, CardModel cardResponse,
+            LocalDate transmissionLocalDate) {
+        Optional<LimitUsage> currLimitUsage = limitUsageRepository
+                .findByPanAndUsageDate(request.pan(), transmissionLocalDate);
+
+        Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
+                ? currLimitUsage
+                : limitUsageRepository
+                        .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
+                                request.pan(),
+                                transmissionLocalDate.withDayOfMonth(1)
+                                        .atStartOfDay()
+                                        .toLocalDate(),
+                                transmissionLocalDate);
+
         if (monthLimitUsage.isPresent()) {
             LimitUsage monthUsage = monthLimitUsage.get();
             if (monthUsage.getMonthlyAmount().add(request.amount()).compareTo(cardResponse.monthlyLimit()) > 0) {
