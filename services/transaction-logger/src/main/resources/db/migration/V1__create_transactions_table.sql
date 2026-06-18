@@ -1,6 +1,6 @@
-create table transactions (
+create table if not exists transactions (
     id uuid primary key,
-    mti varchar(4),
+    mti varchar(4) not null default '0100',
     stan varchar(6) not null,
     rrn varchar(12),
     pan varchar(16) not null,
@@ -23,7 +23,7 @@ create table transactions (
     constraint transactions_status_check check (status in ('APPROVED', 'DECLINED'))
 );
 
-create index idx_transactions_status on transactions (status);
-create index idx_transactions_created_at on transactions (created_at);
-create index idx_transactions_pan on transactions (pan);
-create index idx_transactions_merchant on transactions (merchant_id);
+create index if not exists idx_transactions_status on transactions (status);
+create index if not exists idx_transactions_created_at on transactions (created_at);
+create index if not exists idx_transactions_pan on transactions (pan);
+create index if not exists idx_transactions_merchant on transactions (merchant_id);
