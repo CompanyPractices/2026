@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -26,7 +27,7 @@ public class LimitUsage {
     private String pan;
 
     @Column(name = "usage_date", nullable = false)
-    private Instant usageDate;
+    private LocalDate usageDate;
 
     @Column(name = "daily_amount", nullable = false)
     @ColumnDefault("0")

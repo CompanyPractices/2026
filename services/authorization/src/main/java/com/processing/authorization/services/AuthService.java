@@ -135,9 +135,9 @@ public class AuthService {
             };
         }
 
-        Instant transmissionDate = request.transmissionDateTime();
+        LocalDate transmissionDate = request.transmissionDateTime().atZone(ZoneOffset.UTC).toLocalDate();
 
-        Instant lastValidDay = cardResponse.expiryDate().atEndOfMonth().atStartOfDay().toInstant(ZoneOffset.UTC);
+        LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
         if (lastValidDay.isBefore(transmissionDate)) {
             return DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
         }
@@ -158,10 +158,7 @@ public class AuthService {
                 : limitUsageRepository
                         .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
                                 request.pan(),
-                                transmissionLocalDate.withDayOfMonth(1)
-                                        .atStartOfDay()
-                                        .atZone(ZoneOffset.UTC)
-                                        .toInstant(),
+                                transmissionLocalDate.withDayOfMonth(1),
                                 transmissionDate);
         boolean isExceedsLimit = isExceedsAmountLimit(request, requestInputTime, cardResponse, currLimitUsage,
                 monthLimitUsage);
@@ -196,12 +193,13 @@ public class AuthService {
             updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
         } catch (DuplicateKeyException e) {
             log.warn("data race for pan {}", logPan(request.pan()));
+            // TODO: get new limits and check them
             isExceedsLimit = isExceedsAmountLimit(request, requestInputTime, cardResponse, currLimitUsage,
                     monthLimitUsage);
             if (isExceedsLimit) {
                 RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
                 RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
-                if (rollbackResponse.status() == RollbackResponse.STATUS_APPROVED) {
+                if (rollbackResponse.status().equals(RollbackResponse.STATUS_APPROVED)) {
                     return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
                 }
                 // TODO ask about business logic
@@ -210,7 +208,7 @@ public class AuthService {
             }
             updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
         } catch (Exception e) {
-            log.error("updation limits failed for pan {}", logPan(request.pan()), e);
+            log.error("Update limits failed for pan {}", logPan(request.pan()), e);
             RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
             RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
             if (!rollbackResponse.status().equals(RollbackResponse.STATUS_APPROVED)) {
@@ -271,7 +269,7 @@ public class AuthService {
                     throw new InvalidGetCardRequestException("Invalid pan");
                 })
                 .onStatus(status -> status.value() == 402, (req, res) -> {
-                    throw new PaymentRequiredException("Payment Required from card-managment");
+                    throw new PaymentRequiredException("Payment Required from card-management");
                 })
                 .onStatus(status -> status.value() == 404, (req, res) -> {
                     throw new CardNotFoundException("Card not found");
@@ -329,7 +327,7 @@ public class AuthService {
                     throw new InvalidReserveRequestException("Invalid reserve request");
                 })
                 .onStatus(status -> status.value() == 402, (req, res) -> {
-                    throw new InsufficientFundsException("Insufficient Funds from card-managment");
+                    throw new InsufficientFundsException("Insufficient Funds from card-management");
                 })
                 .onStatus(status -> status.value() == 404, (req, res) -> {
                     throw new CardNotFoundException("Card not found");
@@ -343,7 +341,7 @@ public class AuthService {
     }
 
     // TODO change transmissionDate to Instant type
-    public void updateLimits(AuthorizationRequest request, Instant transmissionDate,
+    public void updateLimits(AuthorizationRequest request, LocalDate transmissionDate,
             Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
