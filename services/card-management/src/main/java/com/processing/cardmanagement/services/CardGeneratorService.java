@@ -13,10 +13,7 @@ import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -51,6 +48,7 @@ public class CardGeneratorService {
         }
 
         Map<CardStatus, Long> statusCounts = new HashMap<>();
+        List<CardStatus> cardStatuses = generateStatuses(count);
 
         log.info("Generating {} cards for bins: {}", count, bins);
         List<CardDraft> cards = new ArrayList<>();
@@ -80,7 +78,7 @@ public class CardGeneratorService {
             CardDraft card = new CardDraft(
                     bin,
                     cardholderName,
-                    generateStatus(),
+                    cardStatuses.get(i),
                     generatorOptions.currencyCode(),
                     dailyLimit,
                     monthlyLimit,
@@ -98,17 +96,27 @@ public class CardGeneratorService {
         return result;
     }
 
-    private CardStatus generateStatus() {
-        int roll = ThreadLocalRandom.current().nextInt(100);
+    private List<CardStatus> generateStatuses(int count) {
+        List<CardStatus> cardStatuses = new ArrayList<>();
 
-        if (roll < 95) {
-            return CardStatus.ACTIVE;
+        int activeStatuses = count * 95 / 100;
+        int inactiveStatuses = count * 3 / 100;
+        int blockedStatuses = count - activeStatuses - inactiveStatuses;
+
+        for (int i = 0; i < activeStatuses; i++) {
+            cardStatuses.add(CardStatus.ACTIVE);
         }
 
-        if (roll < 98) {
-            return CardStatus.INACTIVE;
+        for (int i = 0; i < inactiveStatuses; i++) {
+            cardStatuses.add(CardStatus.INACTIVE);
         }
 
-        return CardStatus.BLOCKED;
+        for (int i = 0; i < blockedStatuses; i++) {
+            cardStatuses.add(CardStatus.BLOCKED);
+        }
+
+        Collections.shuffle(cardStatuses);
+
+        return cardStatuses;
     }
 }
