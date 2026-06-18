@@ -8,7 +8,6 @@ import com.processing.cardmanagement.exceptions.TooLargeLimitException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.models.CardStatus;
-import com.processing.cardmanagement.models.Reservation;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.repositories.CardRepository;
@@ -163,12 +162,11 @@ public class CardServiceImpl implements CardService {
     @Override
     public Card reserve(String pan, BigDecimal amount, String rrn) {
         var card = getCardForUpdate(pan);
+        var reservation = card.startReservation(amount, rrn);
         if (reservationRepository.findByRrn(rrn).isPresent()) {
             throw new RrnAlreadyExistsException(rrn);
         }
-        var reservation = reservationRepository.save(
-            new Reservation(pan, amount, rrn)
-        );
+        reservation = reservationRepository.save(reservation);
         card = cardRepository.save(card.withReservation(reservation));
         eventNotifier.onEvent(new CardServiceReserveEvent(pan, rrn, amount));
         return card;

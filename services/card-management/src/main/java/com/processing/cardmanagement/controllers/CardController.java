@@ -212,7 +212,7 @@ public class CardController {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404", description = "Card not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "409", description = "RRN is already in database",
+        @ApiResponse(responseCode = "409", description = "RRN is already in database or illegal state",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{pan}/reserve")
@@ -232,11 +232,11 @@ public class CardController {
     @Operation(summary = "Rollback funds on a card")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Funds reserve successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid request data",
+        @ApiResponse(responseCode = "400", description = "Invalid request data or state",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404", description = "Card not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "409", description = "Rollback already satisfied",
+        @ApiResponse(responseCode = "409", description = "Rollback already satisfied or illegal state",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{pan}/rollback")
