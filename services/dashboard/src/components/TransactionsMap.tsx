@@ -7,6 +7,7 @@ import { getStatusIcon } from '../utils/statusIcon';
 import 'leaflet/dist/leaflet.css';
 import { convertPenniesToRubles } from "../utils/format.ts";
 import { ThemeContext } from "../contexts/ThemeContext.ts";
+import {getClusterStats} from "../utils/getClusterStats.ts";
 
 const LIGHT_TILES = {
     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -92,15 +93,6 @@ function FitBoundsToClusters({ clusters }: { clusters: CityCluster[] }) {
     }, [clusters, map]);
 
     return null;
-}
-
-export function getClusterStats(transactions: Transaction[]) {
-    const approved = transactions.filter(t => t.status === 'APPROVED').length;
-    const declined = transactions.length - approved;
-    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
-    const approvalRate = transactions.length > 0 ? (approved / transactions.length) * 100 : 0;
-
-    return { approved, declined, totalAmount, approvalRate };
 }
 
 export function TransactionMap({ transactions }: TransactionMapProps) {
