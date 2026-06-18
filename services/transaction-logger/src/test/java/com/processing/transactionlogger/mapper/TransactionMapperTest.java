@@ -117,6 +117,17 @@ class TransactionMapperTest {
         assertThat(matches).isFalse();
     }
 
+    @Test
+    void matchesReturnsTrueWhenOnlyCreatedAtDiffers() {
+        TransactionRequest request = transactionRequest();
+        Transaction transaction = transaction();
+        transaction.setCreatedAt(Instant.parse("2026-06-01T10:31:01Z"));
+
+        boolean matches = mapper.matches(transaction, request);
+
+        assertThat(matches).isTrue();
+    }
+
     private static TransactionRequest transactionRequest() {
         return new TransactionRequest(
                 UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
