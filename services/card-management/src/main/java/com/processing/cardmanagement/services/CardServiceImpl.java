@@ -83,7 +83,7 @@ public class CardServiceImpl implements CardService {
     public Card getCard(String pan) {
         return cardRepository
             .findByPan(pan)
-            .orElseThrow(() -> new CardNotFoundException(maskPan(pan)));
+            .orElseThrow(() -> new CardNotFoundException(pan));
     }
 
     @Override
@@ -127,14 +127,14 @@ public class CardServiceImpl implements CardService {
                 availableBalance != null ? availableBalance : card.availableBalance()
             )
         );
-        eventNotifier.onEvent(new CardServicePatchEvent(maskPan(pan)));
+        eventNotifier.onEvent(new CardServicePatchEvent(pan));
         return card;
     }
 
     @Override
     public void deleteCard(String pan) {
         cardRepository.save(getCard(pan).deleted());
-        eventNotifier.onEvent(new CardServiceDeletionEvent(maskPan(pan)));
+        eventNotifier.onEvent(new CardServiceDeletionEvent(pan));
     }
 
     @Override
@@ -190,10 +190,6 @@ public class CardServiceImpl implements CardService {
     private Card getCardForUpdate(String pan) {
         return cardRepository
             .findByPanForUpdate(pan)
-            .orElseThrow(() -> new CardNotFoundException(maskPan(pan)));
-    }
-
-    private String maskPan(String pan) {
-        return pan.substring(0, 6) + "******" + pan.substring(pan.length() - 4);
+            .orElseThrow(() -> new CardNotFoundException(pan));
     }
 }
