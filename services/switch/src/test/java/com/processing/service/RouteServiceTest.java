@@ -19,6 +19,9 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Unit-тесты оркестрации {@link RouteService}: маршрутизация, логирование, rollback.
+ */
 class RouteServiceTest {
 
     private static final String TEST_RRN = "012345678901";
@@ -27,6 +30,7 @@ class RouteServiceTest {
 
     private final RoutingService routingService = new RoutingService(SwitchTestData.defaultProperties());
 
+    /** Неизвестный BIN → DECLINED/14, Logger вызывается, Authorization — нет. */
     @Test
     void route_unknownBin_declinesAndLogsWithoutCallingAuthorization() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
@@ -53,6 +57,7 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().issuerId()).isNull();
     }
 
+    /** Authorization недоступен → DECLINED/05, транзакция всё равно логируется. */
     @Test
     void route_authUnavailable_declinesAndLogsTransaction() {
         TrackingLoggerClient logger = new TrackingLoggerClient(true);
@@ -71,6 +76,7 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().issuerId()).isEqualTo("ISS001");
     }
 
+    /** Успешный цикл: BIN → ISS001, APPROVED, запись в Logger. */
     @Test
     void route_knownBin_authorizesAndLogsTransaction() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
@@ -97,6 +103,7 @@ class RouteServiceTest {
         assertThat(authorizationClient.rollbackCalled()).isFalse();
     }
 
+    /** Smoke-test идентификаторы нормализуются до отправки в Authorization. */
     @Test
     void route_smokeTestIds_areNormalizedBeforeAuthorization() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
@@ -122,6 +129,7 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().merchantId()).isEqualTo("MERCH0000000001");
     }
 
+    /** Комиссия эквайринга из Merchant Acquirer попадает в TransactionRequest. */
     @Test
     void route_includesAcquiringFeeFromMerchantAcquirer() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
@@ -137,6 +145,11 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().acquiringFee()).isEqualByComparingTo(new BigDecimal("2250"));
     }
 
+    /**
+     * Logger недоступен после APPROVED → rollback и DECLINED/96 независимо от кода rollback.
+     *
+     * @param rollbackResponse симулированный ответ Authorization на rollback
+     */
     @ParameterizedTest(name = "rollback response code {0}")
     @MethodSource("rollbackResponses")
     void route_loggerFailureAfterApproved_triggersRollbackAndReturns96(RollbackResponse rollbackResponse) {
@@ -159,6 +172,9 @@ class RouteServiceTest {
                 .isEqualByComparingTo(new BigDecimal("150000"));
     }
 
+    /**
+     * @return набор ответов rollback (успех и все decline-коды)
+     */
     private static Stream<RollbackResponse> rollbackResponses() {
         Instant now = Instant.now();
         return Stream.of(
@@ -178,6 +194,7 @@ class RouteServiceTest {
         );
     }
 
+    /** DECLINED от Authorization → логируется, rollback не вызывается. */
     @Test
     void route_declinedByAuth_stillLogsAndReturnsDecline() {
         AuthorizationResponse declined = new AuthorizationResponse(
