@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 import '@testing-library/jest-dom';
+import {Transaction} from "./types";
 
 class MockWebSocket {
   url: string;
@@ -29,6 +30,7 @@ class MockWebSocket {
 
 const mockUseStats = vi.hoisted(() => vi.fn());
 const mockUseWebSocket = vi.hoisted(() => vi.fn());
+const mockUseTransactions = vi.hoisted(() => vi.fn());
 
 const MOCK_STATS_SUCCESS = {
   transactionStats: {
@@ -47,6 +49,30 @@ const MOCK_STATS_ERROR = {
   error: 'Network error',
 };
 
+const createMockTransaction = (overrides: Partial<Transaction>): Transaction => ({
+  id: 'tx-default',
+  mti: '0200',
+  stan: '123456',
+  pan: '4111111111111111',
+  processingCode: '000000',
+  processingTimeMs: 100,
+  amount: 1000,
+  currencyCode: 'USD',
+  terminalId: 'T123',
+  responseCode: '00',
+  merchantId: 'M123',
+  mcc: '5411',
+  acquirerId: 'A123',
+  status: 'APPROVED',
+  transmissionDateTime: '2023-10-27T10:00:00Z',
+  createdAt: '2023-10-27T10:00:00Z',
+  ...overrides,
+});
+
+vi.mock('./hooks/useTransactions.ts', () => ({
+  default: mockUseTransactions
+}));
+
 vi.mock('./hooks/useStats', () => ({
   default: mockUseStats,
 }));
@@ -62,6 +88,15 @@ describe('App', () => {
 
     vi.clearAllMocks();
 
+    mockUseTransactions.mockReturnValue({
+      transactions: [],
+      filteredTransactions: [],
+      isFiltered: false,
+      loading: false,
+      error: null,
+      searchTransactions: vi.fn(),
+    });
+
     mockUseWebSocket.mockReturnValue({
       liveTransactions: [],
       isConnected: false,
@@ -70,6 +105,18 @@ describe('App', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  beforeAll(() => {
+    global.ResizeObserver = class ResizeObserver {
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    } as unknown as typeof ResizeObserver;
+  });
+
+  afterAll(() => {
+    Reflect.deleteProperty(global, 'ResizeObserver');
   });
 
   it('renders dashboard title', async () => {
@@ -115,4 +162,45 @@ describe('App', () => {
       expect(screen.getByText(/Ошибка загрузки статистики:/)).toBeInTheDocument();
     });
   });
+
+  it('after reset filters table shows live data', async() => {
+    mockUseStats.mockReturnValue(MOCK_STATS_SUCCESS);
+
+    const wsTransaction = createMockTransaction({id: 'ws-1', merchantId: 'WS_MERCHANT'});
+    const searchTransaction = createMockTransaction({id: 'search-1', merchantId: 'SEARCH_MERCHANT'});
+
+    mockUseTransactions.mockReturnValue({
+      transactions: [createMockTransaction({id: 'api-1'})],
+      filteredTransactions: [searchTransaction],
+      isFiltered: true,
+      loading: false,
+      error: null,
+      searchTransactions: vi.fn(),
+    });
+    mockUseWebSocket.mockReturnValue({
+      liveTransactions: [wsTransaction],
+      isConnected: true,
+    });
+
+    const { rerender } = render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText('SEARCH_MERCHANT')).toBeInTheDocument();
+      expect(screen.queryByText('WS_MERCHANT')).not.toBeInTheDocument();
+    })
+
+    mockUseTransactions.mockReturnValue({
+      transactions: [createMockTransaction({id: 'api-1'})],
+      filteredTransactions: [searchTransaction],
+      isFiltered: false,
+      loading: false,
+      error: null,
+      searchTransactions: vi.fn(),
+    });
+
+    rerender(<App />);
+    await waitFor(() => {
+      expect(screen.getByText('WS_MERCHANT')).toBeInTheDocument();
+      expect(screen.queryByText('SEARCH_MERCHANT')).not.toBeInTheDocument();
+    })
+  })
 });

@@ -29,7 +29,7 @@ public class Transaction {
     private UUID id;
 
     /** Message Type Indicator — тип сообщения (например, {@code 0110} — ответ на авторизацию) */
-    @Column(length = 4)
+    @Column(nullable = false, length = 4)
     private String mti;
 
     /** System Trace Audit Number — порядковый номер транзакции в рамках сессии терминала */
