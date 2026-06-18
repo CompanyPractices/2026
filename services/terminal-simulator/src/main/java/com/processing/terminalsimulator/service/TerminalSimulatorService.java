@@ -87,6 +87,11 @@ public class TerminalSimulatorService {
             approved.incrementAndGet();
         } else if (TransactionStatus.DECLINED.name().equals(authResp.status())) {
             declined.incrementAndGet();
+            log.info("Terminal-simulator: declined transaction in HTTP response: {}",
+                    authResp.declineReason());
+        } else {
+            log.warn("Terminal-simulator: not accepted/declined transaction in HTTP response: {}",
+                    authResp.declineReason());
         }
         return authResp;
     }
