@@ -7,13 +7,41 @@ import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.model.Transaction;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.RecordComponent;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TransactionMapperTest {
+
+    private static final Set<String> MATCHED_REQUEST_FIELDS = Set.of(
+            "id",
+            "mti",
+            "stan",
+            "rrn",
+            "pan",
+            "processingCode",
+            "amount",
+            "currencyCode",
+            "terminalId",
+            "terminalType",
+            "merchantId",
+            "mcc",
+            "acquirerId",
+            "issuerId",
+            "acquiringFee",
+            "status",
+            "declineReason",
+            "authCode",
+            "processingTimeMs",
+            "transmissionDateTime"
+    );
+    private static final Set<String> IGNORED_REQUEST_FIELDS_FOR_MATCHES = Set.of("createdAt");
 
     private final TransactionMapper mapper = new TransactionMapper();
 
@@ -115,6 +143,34 @@ class TransactionMapperTest {
         boolean matches = mapper.matches(transaction, request);
 
         assertThat(matches).isFalse();
+    }
+
+    @Test
+    void matchesReturnsTrueWhenOnlyCreatedAtDiffers() {
+        TransactionRequest request = transactionRequest();
+        Transaction transaction = transaction();
+        transaction.setCreatedAt(Instant.parse("2026-06-01T10:31:01Z"));
+
+        boolean matches = mapper.matches(transaction, request);
+
+        assertThat(matches).isTrue();
+    }
+
+    @Test
+    void matchesCoverageAccountsForAllTransactionRequestFields() {
+        Set<String> requestFields = Arrays.stream(TransactionRequest.class.getRecordComponents())
+                .map(RecordComponent::getName)
+                .collect(Collectors.toUnmodifiableSet());
+        Set<String> accountedFields = java.util.stream.Stream.concat(
+                        MATCHED_REQUEST_FIELDS.stream(),
+                        IGNORED_REQUEST_FIELDS_FOR_MATCHES.stream()
+                )
+                .collect(Collectors.toUnmodifiableSet());
+
+        assertThat(MATCHED_REQUEST_FIELDS).doesNotContain("createdAt");
+        assertThat(IGNORED_REQUEST_FIELDS_FOR_MATCHES).containsExactly("createdAt");
+        assertThat(MATCHED_REQUEST_FIELDS).doesNotContainAnyElementsOf(IGNORED_REQUEST_FIELDS_FOR_MATCHES);
+        assertThat(accountedFields).isEqualTo(requestFields);
     }
 
     private static TransactionRequest transactionRequest() {

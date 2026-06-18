@@ -19,8 +19,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -157,8 +158,8 @@ public final class CardServiceTest {
         CardStatus status = CardStatus.ACTIVE;
         String bin = faker.number().digits(6);
         String issuerId = faker.regexify("[A-Z0-9]{1,10}");
-        LocalDateTime startDate = LocalDateTime.now().minusDays(1);
-        LocalDateTime endDate = LocalDateTime.now();
+        Instant startDate = Instant.now().minus(1, ChronoUnit.DAYS);
+        Instant endDate = Instant.now();
 
         when(cardRepository.findCards(
                 limit,
@@ -257,8 +258,8 @@ public final class CardServiceTest {
         CardStatus status = CardStatus.ACTIVE;
         String bin = faker.number().digits(6);
         String issuerId = faker.regexify("[A-Z0-9]{1,10}");
-        LocalDateTime startDate = LocalDateTime.now().minusDays(1);
-        LocalDateTime endDate = LocalDateTime.now();
+        Instant startDate = Instant.now().minus(1, ChronoUnit.DAYS);
+        Instant endDate = Instant.now();
 
         when(cardRepository.countCardsFiltered(
                 status,

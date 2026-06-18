@@ -4,14 +4,15 @@ package com.processing.terminalsimulator.util;
 import com.processing.terminalsimulator.model.PartofDay;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 public class DateTimeGenerator {
-    public String generate(PartofDay partOfDay) {
+    public Instant generate(PartofDay partOfDay) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
-
         int year = 2026;
         int month = random.nextInt(1, 13);
         int day = random.nextInt(1, 28);
@@ -26,6 +27,6 @@ public class DateTimeGenerator {
         int second = random.nextInt(0, 60);
 
         LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, minute, second);
-        return ldt.toString();
+        return ldt.toInstant(ZoneOffset.UTC);
     }
 }

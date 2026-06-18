@@ -45,6 +45,24 @@ class TransactionServiceStoreTest {
     }
 
     @Test
+    void storeReturnsExistingTransactionWhenOnlyCreatedAtDiffers() {
+        TransactionRequest request = transactionRequest();
+        Transaction transaction = transaction(request);
+        transaction.setCreatedAt(Instant.parse("2026-06-01T10:31:01Z"));
+        RepositoryFake repository = new RepositoryFake(transaction);
+        CapturingWebSocketManager webSocketManager = new CapturingWebSocketManager();
+        TransactionService transactionService = transactionService(repository, webSocketManager);
+
+        TransactionStoreResult result = transactionService.store(request);
+
+        assertThat(result.created()).isFalse();
+        assertThat(result.existingTransaction().id()).isEqualTo(request.id());
+        assertThat(result.storedTransaction()).isNull();
+        assertThat(repository.saveCount).isZero();
+        assertThat(webSocketManager.lastMessage).isNull();
+    }
+
+    @Test
     void storeThrowsConflictWhenExistingTransactionDiffersFromRequest() {
         TransactionRequest request = transactionRequest();
         Transaction transaction = transaction(request);

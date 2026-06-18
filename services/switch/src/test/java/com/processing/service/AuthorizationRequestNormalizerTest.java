@@ -4,6 +4,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +39,7 @@ class AuthorizationRequestNormalizerTest {
                 .processingCode("000000")
                 .amount(amountWithKopecks)
                 .currencyCode("643")
-                .transmissionDateTime("2026-06-01T10:30:00")
+                .transmissionDateTime(Instant.parse("2026-06-01T10:30:00Z"))
                 .terminalId("TERM0001")
                 .terminalType("POS")
                 .merchantId("MERCH0000000001")

@@ -3,7 +3,7 @@ package com.processing.cardmanagement.models;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.util.UUID;
 
@@ -35,7 +35,7 @@ public record Card(
     BigDecimal monthlyLimit,
     BigDecimal availableBalance,
     String issuerId,
-    LocalDateTime createdAt
+    Instant createdAt
 ) {
 
     public Card(
@@ -63,7 +63,7 @@ public record Card(
             monthlyLimit,
             availableBalance,
             issuerId,
-            LocalDateTime.now()
+            Instant.now()
         );
     }
 

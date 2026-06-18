@@ -34,7 +34,7 @@ public class SimulationController {
     return ResponseEntity.ok(simulationService.getAllMerchants());
   }
 
-  @GetMapping("/api/simulator/merchant/fee")
+  @PostMapping("/api/simulator/merchant/fee")
   public ResponseEntity<AcquirerFeeResponse> getAcquirerFee(@RequestBody @Valid AcquirerFeeRequest request) {
     return ResponseEntity.ok(simulationService.getAcquirerFee(request));
   }

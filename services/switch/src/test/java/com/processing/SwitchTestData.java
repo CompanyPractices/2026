@@ -5,6 +5,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.config.SwitchProperties;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -58,7 +59,7 @@ public final class SwitchTestData {
                 "000000",
                 new BigDecimal("150000"),
                 "643",
-                "2026-06-01T10:30:00",
+                Instant.parse("2026-06-01T10:30:00Z"),
                 "TERM001",
                 TERMINAL_TYPE,
                 "MERCH12345678901",
