@@ -8,6 +8,7 @@ import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.config.RetryFactory;
 import com.processing.service.AuthorizationClient;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 public class CapturingAuthorizationClient extends AuthorizationClient {
@@ -62,7 +63,7 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
         if (rollbackResponseToReturn != null) {
             return rollbackResponseToReturn;
         }
-        return RollbackResponse.approved(rrn, Instant.now());
+        return RollbackResponse.approved(new RollbackRequest(rrn, lastRequest().pan(), BigDecimal.valueOf(5000)), Instant.now());
     }
 
     public AuthorizationRequest lastRequest() {

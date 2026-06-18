@@ -3,6 +3,7 @@ package com.processing.service;
 import com.processing.SwitchTestData;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.support.CapturingAuthorizationClient;
@@ -21,6 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RouteServiceTest {
 
     private static final String TEST_RRN = "012345678901";
+    private static final String TEST_PAN = "4000001234560001";
+    private static final BigDecimal TEST_AMOUNT = BigDecimal.valueOf(150000);
 
     private final RoutingService routingService = new RoutingService(SwitchTestData.defaultProperties());
 
@@ -159,18 +162,18 @@ class RouteServiceTest {
     private static Stream<RollbackResponse> rollbackResponses() {
         Instant now = Instant.now();
         return Stream.of(
-                RollbackResponse.approved(TEST_RRN, now),
+                RollbackResponse.approved(new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), now),
                 RollbackResponse.declined(
-                        TEST_RRN, "TRANSACTION_NOT_FOUND",
+                        new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), "TRANSACTION_NOT_FOUND",
                         RollbackResponse.CODE_TRANSACTION_NOT_FOUND, now),
                 RollbackResponse.declined(
-                        TEST_RRN, "ALREADY_ROLLED_BACK",
+                        new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), "ALREADY_ROLLED_BACK",
                         RollbackResponse.CODE_DECLINED_GENERAL, now),
                 RollbackResponse.declined(
-                        TEST_RRN, "ROLLBACK_FAILED",
+                        new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), "ROLLBACK_FAILED",
                         RollbackResponse.CODE_SERVICE_UNAVAILABLE, now),
                 RollbackResponse.declined(
-                        TEST_RRN, "SERVICE_UNAVAILABLE",
+                        new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), "SERVICE_UNAVAILABLE",
                         RollbackResponse.CODE_SERVICE_UNAVAILABLE, now)
         );
     }
