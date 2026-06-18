@@ -54,9 +54,16 @@ http://localhost:8080/v3/api-docs
 | `CIRCUIT_BREAKER_FAILURE_THRESHOLD` | `3` | Количество ошибок до открытия circuit breaker. |
 | `CIRCUIT_BREAKER_OPEN_DURATION` | `10s` | Время, на которое circuit breaker остается открытым. |
 | `GATEWAY_PUBLIC_URL` | `http://localhost:${GATEWAY_PORT:8080}` | Публичный URL, который подставляется в OpenAPI-документы. |
+| `GATEWAY_SHUTDOWN_DRAIN_PERIOD` | `30s` | Drain-период graceful shutdown: новые запросы получают `503`, а уже выполняющиеся запросы могут завершиться в течение этого времени. |
+| `GATEWAY_STOP_GRACE_PERIOD` | `35s` | Время, которое Docker Compose дает gateway-контейнеру на завершение после `SIGTERM`; должно быть больше или равно `GATEWAY_SHUTDOWN_DRAIN_PERIOD`. |
 
 Маршруты, metadata downstream-сервисов и rewrite-правила находятся в
 `src/main/resources/application.yml`.
+
+`GATEWAY_SHUTDOWN_DRAIN_PERIOD` используется приложением и пробрасывается в
+`gateway.shutdown.drain-period` и `spring.lifecycle.timeout-per-shutdown-phase`.
+`GATEWAY_STOP_GRACE_PERIOD` используется только `docker-compose.yaml` как
+`stop_grace_period`.
 
 Дополнительные настройки health-check:
 
