@@ -4,8 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.authorization.AuthorizationRequest;
-import com.processing.gateway.validation.TransactionRequestValidator;
-import com.processing.gateway.validation.TransactionValidationException;
+import com.processing.gateway.validation.*;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;
@@ -87,7 +86,7 @@ public class TransactionValidationFilter extends OncePerRequestFilter {
                 "VALIDATION_ERROR",
                 message,
                 Instant.now().toString(),
-                null,
+                "gateway",
                 null
         ));
     }

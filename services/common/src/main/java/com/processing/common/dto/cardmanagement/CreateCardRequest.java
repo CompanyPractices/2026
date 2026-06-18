@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
+import java.math.BigDecimal;
+
 @Schema(description = "Request to create a new card")
 public record CreateCardRequest(
 
@@ -32,12 +34,12 @@ public record CreateCardRequest(
 
     @NotNegative
     @Schema(description = "Daily limit in kopecks", example = "15000000")
-    long dailyLimit,
+    BigDecimal dailyLimit,
 
     @NotNegative
     @Schema(description = "Monthly limit in kopecks", example = "300000000")
-    long monthlyLimit,
+    BigDecimal monthlyLimit,
 
     @Schema(description = "Initial balance in kopecks", example = "1000000000")
-    long initialBalance
+    BigDecimal initialBalance
 ) {}

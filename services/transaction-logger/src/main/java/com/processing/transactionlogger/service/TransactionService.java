@@ -15,6 +15,7 @@ import com.processing.transactionlogger.model.Transaction;
 import com.processing.transactionlogger.model.Transaction_;
 import com.processing.transactionlogger.repository.TransactionRepository;
 import com.processing.transactionlogger.specification.ChartsFilter;
+import com.processing.transactionlogger.repository.TransactionStats;
 import com.processing.transactionlogger.specification.OffsetBasedPageRequest;
 import com.processing.transactionlogger.specification.TransactionFilter;
 import com.processing.transactionlogger.specification.TransactionSpecification;
@@ -29,6 +30,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -127,21 +129,19 @@ public class TransactionService {
      */
     @Transactional(readOnly = true)
     public DashboardStatsResponse getStats() {
-        long total = transactionRepository.count();
-        long approved = transactionRepository.countByStatus(TransactionStatus.APPROVED);
-        long declined = transactionRepository.countByStatus(TransactionStatus.DECLINED);
-        long totalAmount = total > 0 ? transactionRepository.sumAmount() : 0;
-        long recentCount = transactionRepository.countByCreatedAtAfter(Instant.now().minusSeconds(60));
-        double avgProcessingTimeMs = total > 0 ? transactionRepository.averageProcessingTimeMs() : 0;
+        TransactionStats stats = transactionRepository.findStats();
+        long total = stats.getTotal();
+        long approved = stats.getApproved();
+        BigDecimal totalAmount = stats.getTotalAmount();
         return new DashboardStatsResponse(
                 total,
                 approved,
-                declined,
+                stats.getDeclined(),
                 total > 0 ? (double) approved / total : 0,
                 totalAmount,
-                total > 0 ? totalAmount / total : 0,
-                avgProcessingTimeMs,
-                recentCount
+                total > 0 ? totalAmount.divideToIntegralValue(BigDecimal.valueOf(total)) : BigDecimal.ZERO,
+                stats.getAvgProcessingTimeMs(),
+                stats.getRecentCount()
         );
     }
 

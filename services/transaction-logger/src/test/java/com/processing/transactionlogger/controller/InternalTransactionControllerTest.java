@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -57,7 +58,7 @@ class InternalTransactionControllerTest {
                 "012345678901",
                 "4000001234560001",
                 "000000",
-                150000L,
+                new BigDecimal("150000"),
                 "643",
                 "TERM001",
                 "POS",
@@ -65,7 +66,7 @@ class InternalTransactionControllerTest {
                 "5411",
                 "ACQ001",
                 "ISS001",
-                2250L,
+                new BigDecimal("2250"),
                 TransactionStatus.APPROVED,
                 null,
                 "ABC123",
@@ -83,7 +84,7 @@ class InternalTransactionControllerTest {
                 "012345678901",
                 "4000001234560001",
                 "000000",
-                150000L,
+                new BigDecimal("150000"),
                 "643",
                 "TERM001",
                 "POS",
@@ -91,7 +92,7 @@ class InternalTransactionControllerTest {
                 "5411",
                 "ACQ001",
                 "ISS001",
-                2250L,
+                new BigDecimal("2250"),
                 TransactionStatus.APPROVED,
                 null,
                 "ABC123",

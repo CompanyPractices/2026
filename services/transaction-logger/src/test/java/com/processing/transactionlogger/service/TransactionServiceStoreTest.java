@@ -16,6 +16,7 @@ import org.springframework.web.socket.WebSocketSession;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +49,7 @@ class TransactionServiceStoreTest {
     void storeThrowsConflictWhenExistingTransactionDiffersFromRequest() {
         TransactionRequest request = transactionRequest();
         Transaction transaction = transaction(request);
-        transaction.setAmount(200000L);
+        transaction.setAmount(new BigDecimal("200000"));
         RepositoryFake repository = new RepositoryFake(transaction);
         CapturingWebSocketManager webSocketManager = new CapturingWebSocketManager();
         TransactionService transactionService = transactionService(repository, webSocketManager);
@@ -83,7 +84,7 @@ class TransactionServiceStoreTest {
     void storeThrowsConflictWhenConcurrentRetrySavedDifferentTransaction() {
         TransactionRequest request = transactionRequest();
         Transaction transaction = transaction(request);
-        transaction.setAmount(200000L);
+        transaction.setAmount(new BigDecimal("200000"));
         RepositoryFake repository = new RepositoryFake(transaction);
         repository.hideExistingOnFirstFind();
         repository.failSaveWith(new DataIntegrityViolationException("duplicate id"));
@@ -137,7 +138,7 @@ class TransactionServiceStoreTest {
                 "012345678901",
                 "4000001234560001",
                 "000000",
-                150000L,
+                new BigDecimal("150000"),
                 "643",
                 "TERM001",
                 "POS",
@@ -145,7 +146,7 @@ class TransactionServiceStoreTest {
                 "5411",
                 "ACQ001",
                 "ISS001",
-                2250L,
+                new BigDecimal("2250"),
                 TransactionStatus.APPROVED,
                 null,
                 "ABC123",

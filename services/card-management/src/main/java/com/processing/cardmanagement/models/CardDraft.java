@@ -1,11 +1,13 @@
 package com.processing.cardmanagement.models;
 
+import java.math.BigDecimal;
+
 public record CardDraft(
     String bin,
     String cardholderName,
     CardStatus status,
     String currencyCode,
-    long dailyLimit,
-    long monthlyLimit,
-    long initialBalance
+    BigDecimal dailyLimit,
+    BigDecimal monthlyLimit,
+    BigDecimal initialBalance
 ) {}

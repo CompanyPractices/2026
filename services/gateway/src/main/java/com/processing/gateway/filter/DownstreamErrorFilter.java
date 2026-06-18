@@ -3,6 +3,7 @@ package com.processing.gateway.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
 import com.processing.gateway.service.DownstreamServiceResolver;
+import com.processing.gateway.utils.DownstreamExceptionUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,14 +15,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
-import java.net.http.HttpConnectTimeoutException;
-import java.net.http.HttpTimeoutException;
 import java.util.Optional;
 
 /**
@@ -31,7 +27,7 @@ import java.util.Optional;
  * Spring error handling can process them.</p>
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 4)
 @RequiredArgsConstructor
 public class DownstreamErrorFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
@@ -47,31 +43,15 @@ public class DownstreamErrorFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             Optional<String> serviceName = serviceResolver.resolve(request.getRequestURI());
 
-            if (serviceName.isPresent() && isDownstreamUnavailable(e) && !response.isCommitted()) {
+            if (serviceName.isPresent()
+                    && DownstreamExceptionUtils.isDownstreamUnavailable(e)
+                    && !response.isCommitted()) {
                 writeServiceUnavailable(response, serviceName.get());
                 return;
             }
 
-            rethrow(e);
+            DownstreamExceptionUtils.rethrow(e);
         }
-    }
-
-    private boolean isDownstreamUnavailable(Throwable throwable) {
-        Throwable current = throwable;
-
-        while (current != null) {
-            if (current instanceof ResourceAccessException
-                    || current instanceof ConnectException
-                    || current instanceof SocketTimeoutException
-                    || current instanceof HttpTimeoutException
-                    || current instanceof HttpConnectTimeoutException) {
-                return true;
-            }
-
-            current = current.getCause();
-        }
-
-        return false;
     }
 
     private void writeServiceUnavailable(HttpServletResponse response, String serviceName) throws IOException {
@@ -93,17 +73,4 @@ public class DownstreamErrorFilter extends OncePerRequestFilter {
         return serviceName.substring(0, 1).toUpperCase() + serviceName.substring(1);
     }
 
-    private void rethrow(Exception exception) throws ServletException, IOException {
-        if (exception instanceof ServletException servletException) {
-            throw servletException;
-        }
-        if (exception instanceof IOException ioException) {
-            throw ioException;
-        }
-        if (exception instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-
-        throw new ServletException(exception);
-    }
 }

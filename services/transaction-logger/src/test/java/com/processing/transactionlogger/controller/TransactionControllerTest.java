@@ -46,7 +46,7 @@ public class TransactionControllerTest {
         when(transactionService.search(any())).thenReturn(new TransactionSearchResponse(0L, List.of()));
         TransactionFilter filter = new TransactionFilter();
         filter.setPan("4000001234560001");
-        filter.setStatus("APPROVED");
+        filter.setStatus(TransactionStatus.APPROVED);
 
         transactionController.search(filter);
 

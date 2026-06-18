@@ -1,5 +1,7 @@
 package com.processing.cardmanagement.options;
 
+import java.math.BigDecimal;
+
 /**
  * Значения по умолчанию для CardService
  */
@@ -8,7 +10,7 @@ public interface CardServiceDefaults {
     /**
      * @return значение лимита для пагинации
      */
-    long pageLimit();
+    int pageLimit();
 
     /**
      * @return значение сдвига для пагинации
@@ -23,15 +25,15 @@ public interface CardServiceDefaults {
     /**
      * @return дневной лимит карты
      */
-    long dailyLimit();
+    BigDecimal dailyLimit();
 
     /**
      * @return месячный лимит карты
      */
-    long monthlyLimit();
+    BigDecimal monthlyLimit();
 
     /**
      * @return баланс карты
      */
-    long balance();
+    BigDecimal balance();
 }

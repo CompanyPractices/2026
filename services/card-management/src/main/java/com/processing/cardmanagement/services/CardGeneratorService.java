@@ -2,6 +2,7 @@ package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.events.CardGeneratedEvent;
+import com.processing.cardmanagement.exceptions.CardGenerationLimitException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.models.CardStatus;
@@ -11,9 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Сервис для генерации тестовых банковских карт
@@ -27,20 +29,25 @@ public class CardGeneratorService {
     private final CardService cardService;
     private final CardGeneratorOptions generatorOptions;
     private final CardEventNotifier eventNotifier;
-
     private final Faker faker = new Faker();
-    private final Random random = new Random();
+
+    private static final long DAYS_IN_MONTH = 30;
 
     /**
      * Генерирует указанное количество тестовых карт и сохраняет их в базе данных
      * Карты равномерно распределяются по BIN-ам
      * Распределение статусов: ACTIVE - 95%, INACTIVE - 3%, BLOCKED - 2%
+     * Сохранение выполняется батчами. Размер батча задается в application.properties
      *
      * @param count количество карт для генерации
      * @param bins  список BIN-префиксов для распределения карт
      * @return список созданных карт
      */
     public List<Card> generate(int count, List<String> bins) {
+        if (count > generatorOptions.maxCount()) {
+            throw new CardGenerationLimitException(generatorOptions.maxCount());
+        }
+
         log.info("Generating {} cards for bins: {}", count, bins);
         List<CardDraft> cards = new ArrayList<>();
 
@@ -48,30 +55,45 @@ public class CardGeneratorService {
             String bin = bins.get(i % bins.size());
 
             String cardholderName = faker.name().fullName().toUpperCase();
-            int balance = random.nextInt(generatorOptions.minBalance(), generatorOptions.maxBalance());
-            int dailyLimit = random.nextInt(generatorOptions.minDailyLimit(), generatorOptions.maxDailyLimit());
-            int monthlyLimit = dailyLimit * 30;
+
+            BigDecimal balance = BigDecimal.valueOf(
+                    ThreadLocalRandom.current().nextLong(
+                            generatorOptions.minBalance().longValue(),
+                            generatorOptions.maxBalance().longValue()
+                    )
+            );
+            BigDecimal dailyLimit = BigDecimal.valueOf(
+                    ThreadLocalRandom.current().nextLong(
+                            generatorOptions.minDailyLimit().longValue(),
+                            generatorOptions.maxDailyLimit().longValue()
+                    )
+            );
+            BigDecimal monthlyLimit = BigDecimal.valueOf(
+                    dailyLimit.longValue() * DAYS_IN_MONTH
+            );
 
 
             CardDraft card = new CardDraft(
-                bin,
-                cardholderName,
-                generateStatus(),
-                generatorOptions.currencyCode(),
-                dailyLimit,
-                monthlyLimit,
-                balance
+                    bin,
+                    cardholderName,
+                    generateStatus(),
+                    generatorOptions.currencyCode(),
+                    dailyLimit,
+                    monthlyLimit,
+                    balance
             );
-
-            eventNotifier.onEvent(new CardGeneratedEvent(card.status()));
             cards.add(card);
         }
+
+        List<Card> result = cardService.createCards(cards);
+        result.forEach(c -> eventNotifier.onEvent(new CardGeneratedEvent(c.status())));
+
         log.info("Successfully generated {} cards", count);
-        return cardService.createCards(cards);
+        return result;
     }
 
     private CardStatus generateStatus() {
-        int roll = random.nextInt(100);
+        int roll = ThreadLocalRandom.current().nextInt(100);
 
         if (roll < 95) {
             return CardStatus.ACTIVE;

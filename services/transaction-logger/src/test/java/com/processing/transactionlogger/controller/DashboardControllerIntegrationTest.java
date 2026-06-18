@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -35,8 +36,8 @@ public class DashboardControllerIntegrationTest {
                         80L,
                         20L,
                         0.8,
-                        500000L,
-                        5000L,
+                        new BigDecimal("500000"),
+                        new BigDecimal("5000"),
                         42.5,
                         5.0)
         );

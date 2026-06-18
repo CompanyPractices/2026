@@ -6,6 +6,7 @@ import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.models.CardStatus;
 import jakarta.annotation.Nullable;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,9 +17,9 @@ public interface CardService {
         String bin,
         String cardholderName,
         String currencyCode,
-        long dailyLimit,
-        long monthlyLimit,
-        long initialBalance
+        BigDecimal dailyLimit,
+        BigDecimal monthlyLimit,
+        BigDecimal initialBalance
     );
 
     List<Card> createCards(List<CardDraft> data);
@@ -39,7 +40,7 @@ public interface CardService {
      */
     List<Card> getCards(
         @Nullable Integer limit,
-        @Nullable Integer offset,
+        @Nullable Long offset,
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
@@ -61,9 +62,9 @@ public interface CardService {
     Card patchCard(
         String pan,
         @Nullable CardStatus status,
-        @Nullable Long dailyLimit,
-        @Nullable Long monthlyLimit,
-        @Nullable Long availableBalance
+        @Nullable BigDecimal dailyLimit,
+        @Nullable BigDecimal monthlyLimit,
+        @Nullable BigDecimal availableBalance
     );
 
     /**
@@ -107,5 +108,5 @@ public interface CardService {
      * @return измененная карта
      * @throws CardNotFoundException если карта не найдена
      */
-    Card reserve(String pan, long amount);
+    Card reserve(String pan, BigDecimal amount);
 }
