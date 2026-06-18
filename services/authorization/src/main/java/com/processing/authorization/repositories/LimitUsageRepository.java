@@ -27,4 +27,9 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate
     );
+
+    int deleteByUsageDateBetween(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }

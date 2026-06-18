@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Slf4j
 @RestControllerAdvice
@@ -78,11 +78,11 @@ public class GlobalExceptionHandler {
         }
 
         return new ErrorResponse(
-                ex.getClass().getSimpleName(),
-                errorMessage,
-                LocalDateTime.now().toString(),
-                serviceName,
-                null
+            ex.getClass().getSimpleName(),
+            errorMessage,
+            Instant.now(),
+            serviceName,
+            null
         );
     }
 
@@ -160,11 +160,11 @@ public class GlobalExceptionHandler {
 
     private ErrorResponse errorResponseFromException(Exception ex) {
         return new ErrorResponse(
-                ex.getClass().getSimpleName(),
-                ex.getMessage(),
-                LocalDateTime.now().toString(),
-                serviceName,
-                null
+            ex.getClass().getSimpleName(),
+            ex.getMessage(),
+            Instant.now(),
+            serviceName,
+            null
         );
     }
 }

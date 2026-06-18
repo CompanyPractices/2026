@@ -17,10 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.*;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +30,6 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Random;
@@ -94,18 +95,27 @@ public class AuthService {
      * @see AuthorizationResponse
      */
     @Transactional(rollbackFor = { Exception.class })
-    public AuthorizationResponse authorize(AuthorizationRequest request, LocalDateTime requestInputTime) {
+    public AuthorizationResponse authorize(AuthorizationRequest request, Instant requestInputTime) {
         CardModel cardResponse;
         try {
             cardResponse = getCard(request.pan());
         } catch (CardNotFoundException e) {
             log.error("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
-        } catch (ServiceUnavailableException | ResourceAccessException e) {
+        } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
             log.error("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
+        } catch (InvalidGetCardRequestException e) {
+            log.error("card not found for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
+        } catch (PaymentRequiredException e) {
+            log.error("card required payment for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
+        } catch (GetCardException e) {
+            log.error("get card from card-management service failed for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.error("getting card from card management service failed for pan: {}", logPan(request.pan()), e);
+            log.error("getting card failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
@@ -115,19 +125,17 @@ public class AuthService {
         }
         if (!currCardStatus.equals(CardModelStatus.ACTIVE)) {
             return switch (currCardStatus) {
-                case CardModelStatus.EXPIRED -> DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
-                case CardModelStatus.BLOCKED -> DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
-                case CardModelStatus.INACTIVE -> DeclineOutcome.CARD_INACTIVE.buildAuthorization(request, requestInputTime);
+                case CardModelStatus.EXPIRED ->
+                    DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
+                case CardModelStatus.BLOCKED ->
+                    DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
+                case CardModelStatus.INACTIVE ->
+                    DeclineOutcome.CARD_INACTIVE.buildAuthorization(request, requestInputTime);
                 default -> DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
             };
         }
 
-        LocalDate transmissionDate;
-        if (request.transmissionDateTime().endsWith("Z")) {
-            transmissionDate = OffsetDateTime.parse(request.transmissionDateTime()).toLocalDate();
-        } else {
-            transmissionDate = LocalDateTime.parse(request.transmissionDateTime()).toLocalDate();
-        }
+        LocalDate transmissionDate = request.transmissionDateTime().atZone(ZoneOffset.UTC).toLocalDate();
 
         LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
         if (lastValidDay.isBefore(transmissionDate)) {
@@ -141,60 +149,75 @@ public class AuthService {
         Optional<LimitUsage> currLimitUsage = limitUsageRepository
                 .findByPanAndUsageDate(request.pan(), transmissionDate);
 
+        LocalDate transmissionLocalDate = request.transmissionDateTime()
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate();
+
         Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
                 ? currLimitUsage
                 : limitUsageRepository
                         .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
                                 request.pan(),
-                                transmissionDate.withDayOfMonth(1),
+                                transmissionLocalDate.withDayOfMonth(1),
                                 transmissionDate);
-        if (monthLimitUsage.isPresent()) {
-            LimitUsage monthUsage = monthLimitUsage.get();
-            if (monthUsage.getMonthlyAmount().add(request.amount()).compareTo(cardResponse.monthlyLimit()) > 0) {
-                return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
-            }
-        } else if (request.amount().compareTo(cardResponse.monthlyLimit()) > 0) {
-            return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
-        }
-
-        if (currLimitUsage.isPresent()) {
-            LimitUsage usage = currLimitUsage.get();
-            if (usage.getDailyAmount().add(request.amount()).compareTo(cardResponse.dailyLimit()) > 0) {
-                return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
-            }
-        } else if (request.amount().compareTo(cardResponse.dailyLimit()) > 0) {
+        boolean isExceedsLimit = isExceedsAmountLimit(request, requestInputTime, cardResponse, currLimitUsage,
+                monthLimitUsage);
+        if (isExceedsLimit) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
         String rrn = generateRRN();
         try {
             reserve(request.amount(), rrn, request.pan());
-            if (currLimitUsage.isPresent()) {
-                LimitUsage usage = currLimitUsage.get();
-                usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
-                usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
-                limitUsageRepository.save(usage);
-            } else if (monthLimitUsage.isPresent()) {
-                LimitUsage monthUsage = monthLimitUsage.get();
-                LimitUsage usage = new LimitUsage();
-                usage.setPan(request.pan());
-                usage.setUsageDate(transmissionDate);
-                usage.setDailyAmount(request.amount());
-                usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
-                limitUsageRepository.save(usage);
-            } else {
-                LimitUsage usage = new LimitUsage();
-                usage.setPan(request.pan());
-                usage.setUsageDate(transmissionDate);
-                usage.setDailyAmount(request.amount());
-                usage.setMonthlyAmount(request.amount());
-                limitUsageRepository.save(usage);
-            }
+        } catch (CardNotFoundException e) {
+            log.error("card not found for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
+        } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
+            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
+        } catch (InvalidReserveRequestException e) {
+            log.error("invalid reverse request for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
+        } catch (InsufficientFundsException e) {
+            log.error("Insufficient funds from card-management for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
+        } catch (ReserveException e) {
+            log.error("reserve from card-management service failed for pan: {}", logPan(request.pan()), e);
+            return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.error("reserving failed for card {}", cardResponse.id(), e);
+            log.error("reserve failed for card {}", cardResponse.id(), e);
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         }
 
+        try {
+            updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
+        } catch (DuplicateKeyException e) {
+            log.warn("data race for pan {}", logPan(request.pan()));
+            // TODO: get new limits and check them
+            isExceedsLimit = isExceedsAmountLimit(request, requestInputTime, cardResponse, currLimitUsage,
+                    monthLimitUsage);
+            if (isExceedsLimit) {
+                RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
+                RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
+                if (rollbackResponse.status().equals(RollbackResponse.STATUS_APPROVED)) {
+                    return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
+                }
+                // TODO ask about business logic
+                log.error("rollback from card-management service failed for pan: {}", logPan(request.pan()), e);
+                return DeclineOutcome.ROLLBACK_FAILED.buildAuthorization(request, requestInputTime);
+            }
+            updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
+        } catch (Exception e) {
+            log.error("Update limits failed for pan {}", logPan(request.pan()), e);
+            RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
+            RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
+            if (!rollbackResponse.status().equals(RollbackResponse.STATUS_APPROVED)) {
+                // TODO ask about business logic
+                log.error("rollback after failing to update limit_usage table from "
+                        + "card-management service failed for pan: {}", logPan(request.pan()), e);
+                return DeclineOutcome.ROLLBACK_FAILED.buildAuthorization(request, requestInputTime);
+            }
+        }
         String authCode = generateAuthCode();
         return AuthorizationResponse.approved(request, rrn, authCode, requestInputTime);
     }
@@ -236,17 +259,23 @@ public class AuthService {
         return restClient.get()
                 .uri(uri)
                 .retrieve()
-                .onStatus(status -> status.value() == 404, (req, res) -> {
-                    log.debug("Card not found: {}", logPan(pan));
-                    throw new CardNotFoundException("Card not found: " + logPan(pan));
+                .onStatus(status -> status.value() == 500, (req, res) -> {
+                    throw new InternalCardManagerException("Internal card management error");
                 })
                 .onStatus(status -> status.value() == 503, (req, res) -> {
-                    log.debug("Card Management service unavailable");
                     throw new ServiceUnavailableException("Card Management service unavailable");
                 })
+                .onStatus(status -> status.value() == 400, (req, res) -> {
+                    throw new InvalidGetCardRequestException("Invalid pan");
+                })
+                .onStatus(status -> status.value() == 402, (req, res) -> {
+                    throw new PaymentRequiredException("Payment Required from card-management");
+                })
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    throw new CardNotFoundException("Card not found");
+                })
                 .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                    log.debug("Failed to get card. Status: {}", res.getStatusCode());
-                    throw new CardNotFoundException("Failed to get card. Status: " + res.getStatusCode());
+                    throw new GetCardException("Failed to get card. Status: " + res.getStatusCode());
                 })
                 .body(CardModel.class);
     }
@@ -263,7 +292,7 @@ public class AuthService {
      *
      * <p>
      * В случае ошибки резервирования (не 2xx статус) выбрасывается
-     * {@link ReserveCardException}.
+     * {@link ReserveException}.
      * </p>
      *
      * @param amount сумма для резервирования в минимальных единицах валюты
@@ -271,11 +300,8 @@ public class AuthService {
      * @param rrn    уникальный идентификатор транзакции (Retrieval Reference
      *               Number)
      * @param pan    номер карты для резервирования средств
-     * @throws Exception если резервирование не удалось.
-     *                   Причина ошибки содержится в {@link ReserveCardException}
-     *
      * @see ReserveRequest
-     * @see ReserveCardException
+     * @see ReserveException
      */
     public void reserve(BigDecimal amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
@@ -291,13 +317,78 @@ public class AuthService {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(reserveRequest)
                 .retrieve()
+                .onStatus(status -> status.value() == 500, (req, res) -> {
+                    throw new InternalCardManagerException("Internal card management error");
+                })
+                .onStatus(status -> status.value() == 503, (req, res) -> {
+                    throw new ServiceUnavailableException("Card Management service unavailable");
+                })
+                .onStatus(status -> status.value() == 400, (req, res) -> {
+                    throw new InvalidReserveRequestException("Invalid reserve request");
+                })
+                .onStatus(status -> status.value() == 402, (req, res) -> {
+                    throw new InsufficientFundsException("Insufficient Funds from card-management");
+                })
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    throw new CardNotFoundException("Card not found");
+                })
                 .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                    log.debug("Reserve failed. Status: {}", res.getStatusCode());
-                    throw new ReserveCardException("Failed to reserve. Status: " + res.getStatusCode());
+                    throw new ReserveException("Failed to reserve. Status: " + res.getStatusCode());
                 })
                 .toBodilessEntity();
 
         log.debug("Reserve successful for card {}", logPan(pan));
+    }
+
+    // TODO change transmissionDate to Instant type
+    public void updateLimits(AuthorizationRequest request, LocalDate transmissionDate,
+            Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
+        if (currLimitUsage.isPresent()) {
+            LimitUsage usage = currLimitUsage.get();
+            usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
+            usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
+            limitUsageRepository.save(usage);
+        } else if (monthLimitUsage.isPresent()) {
+            LimitUsage monthUsage = monthLimitUsage.get();
+            LimitUsage usage = new LimitUsage();
+            usage.setPan(request.pan());
+            usage.setUsageDate(transmissionDate);
+            usage.setDailyAmount(request.amount());
+            usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
+            limitUsageRepository.save(usage);
+        } else {
+            LimitUsage usage = new LimitUsage();
+            usage.setPan(request.pan());
+            usage.setUsageDate(transmissionDate);
+            usage.setDailyAmount(request.amount());
+            usage.setMonthlyAmount(request.amount());
+            limitUsageRepository.save(usage);
+        }
+    }
+
+    // TODO change requestInputTime to Instant type
+    @Transactional(rollbackFor = Exception.class)
+    public boolean isExceedsAmountLimit(AuthorizationRequest request, Instant requestInputTime,
+            CardModel cardResponse,
+            Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
+        if (monthLimitUsage.isPresent()) {
+            LimitUsage monthUsage = monthLimitUsage.get();
+            if (monthUsage.getMonthlyAmount().add(request.amount()).compareTo(cardResponse.monthlyLimit()) > 0) {
+                return true;
+            }
+        } else if (request.amount().compareTo(cardResponse.monthlyLimit()) > 0) {
+            return true;
+        }
+
+        if (currLimitUsage.isPresent()) {
+            LimitUsage usage = currLimitUsage.get();
+            if (usage.getDailyAmount().add(request.amount()).compareTo(cardResponse.dailyLimit()) > 0) {
+                return true;
+            }
+        } else if (request.amount().compareTo(cardResponse.dailyLimit()) > 0) {
+            return true;
+        }
+        return false;
     }
 
     private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");

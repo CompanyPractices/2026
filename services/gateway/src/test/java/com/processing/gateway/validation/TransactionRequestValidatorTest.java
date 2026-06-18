@@ -4,6 +4,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,7 +28,7 @@ class TransactionRequestValidatorTest {
                 "000000",
                 new BigDecimal("150000.75"),
                 "643",
-                "2026-06-01T10:30:00Z",
+                Instant.parse("2026-06-01T10:30:00Z"),
                 "TERM001",
                 "POS",
                 "MERCH12345678901",
@@ -49,7 +50,7 @@ class TransactionRequestValidatorTest {
                 "000000",
                 BigDecimal.valueOf(150000),
                 "643",
-                "2026-06-01T10:30:00Z",
+                Instant.parse("2026-06-01T10:30:00Z"),
                 "TERM001",
                 "POS",
                 "MERCH12345678901",
@@ -72,7 +73,7 @@ class TransactionRequestValidatorTest {
                 "000000",
                 BigDecimal.ZERO,
                 "643",
-                "2026-06-01T10:30:00Z",
+                Instant.parse("2026-06-01T10:30:00Z"),
                 "TERM001",
                 "POS",
                 "MERCH12345678901",
@@ -95,7 +96,7 @@ class TransactionRequestValidatorTest {
                 "000000",
                 BigDecimal.valueOf(150000),
                 "643",
-                "2026-06-01T10:30:00Z",
+                Instant.parse("2026-06-01T10:30:00Z"),
                 "TERM001",
                 "POS",
                 "MERCH12345678901",
@@ -117,7 +118,7 @@ class TransactionRequestValidatorTest {
                 "000000",
                 BigDecimal.valueOf(150000),
                 "643",
-                "2026-06-01T10:30:00Z",
+                Instant.parse("2026-06-01T10:30:00Z"),
                 "TERM001",
                 "POS",
                 "MERCH12345678901",
@@ -136,7 +137,7 @@ class TransactionRequestValidatorTest {
                 "000000",
                 BigDecimal.valueOf(150000),
                 "643",
-                "2026-06-01T10:30:00Z",
+                Instant.parse("2026-06-01T10:30:00Z"),
                 "TERM001",
                 null,
                 "MERCH12345678901",

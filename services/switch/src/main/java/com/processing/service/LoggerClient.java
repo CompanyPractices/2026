@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+/**
+ * HTTP-клиент для синхронной отправки транзакций в Transaction Logger.
+ */
 @Service
 public class LoggerClient {
 
@@ -20,6 +23,11 @@ public class LoggerClient {
     private final RestClient restClient;
     private final Retry loggerRetry;
 
+    /**
+     * @param switchProperties конфигурация URL и retry
+     * @param restClient       REST-клиент с таймаутами для Logger
+     * @param loggerRetry      политика повторных попыток с exponential backoff
+     */
     public LoggerClient(
             SwitchProperties switchProperties,
             @Qualifier("loggerRestClient") RestClient restClient,
@@ -29,6 +37,13 @@ public class LoggerClient {
         this.loggerRetry = loggerRetry;
     }
 
+    /**
+     * Сохраняет транзакцию в Logger с retry при временных сбоях.
+     *
+     * @param transaction полный объект транзакции
+     * @return {@code true} при успешной записи
+     * @throws LoggerException если все попытки исчерпаны
+     */
     public boolean log(TransactionRequest transaction) {
         int maxAttempts = switchProperties.retry().maxAttempts();
         try {
@@ -42,6 +57,12 @@ public class LoggerClient {
         }
     }
 
+    /**
+     * Выполняет один HTTP-вызов {@code POST /api/internal/log}.
+     *
+     * @param transaction тело запроса
+     * @return ответ Logger с подтверждением записи
+     */
     private TransactionStoredResponse sendToLogger(TransactionRequest transaction) {
         TransactionStoredResponse response = restClient.post()
                 .uri(switchProperties.loggerUrl() + "/api/internal/log")

@@ -6,9 +6,9 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(name = "limit_usage",
@@ -40,5 +40,5 @@ public class LimitUsage {
     @Column(name = "updated_at")
     @ColumnDefault("CURRENT_TIMESTAMP")
     @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

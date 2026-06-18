@@ -6,6 +6,8 @@ import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.config.SwitchProperties;
 import com.processing.exception.AuthorizationException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+/**
+ * HTTP-клиент для взаимодействия с Authorization Service (authorize, rollback, health).
+ */
 @Service
 public class AuthorizationClient {
 
@@ -21,26 +26,53 @@ public class AuthorizationClient {
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
     private final Retry authorizationRetry;
+    private final CircuitBreaker authorizationCircuitBreaker;
 
+    /**
+     * @param switchProperties            конфигурация URL и retry
+     * @param restClient                  REST-клиент с таймаутами для Authorization
+     * @param authorizationRetry          политика повторных попыток
+     * @param authorizationCircuitBreaker circuit breaker для authorize
+     */
     public AuthorizationClient(
             SwitchProperties switchProperties,
             RestClient restClient,
-            @Qualifier("authorizationRetry") Retry authorizationRetry) {
+            @Qualifier("authorizationRetry") Retry authorizationRetry,
+            @Qualifier("authorizationCircuitBreaker") CircuitBreaker authorizationCircuitBreaker) {
         this.switchProperties = switchProperties;
         this.restClient = restClient;
         this.authorizationRetry = authorizationRetry;
+        this.authorizationCircuitBreaker = authorizationCircuitBreaker;
     }
 
+    /**
+     * Отправляет запрос авторизации с circuit breaker и retry при сетевых сбоях.
+     *
+     * @param request запрос с заполненным {@code issuerId}
+     * @return ответ Authorization (APPROVED или DECLINED)
+     * @throws AuthorizationException если сервис недоступен, контур OPEN или исчерпаны попытки
+     */
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         int maxAttempts = switchProperties.retry().maxAttempts();
         try {
-            return Retry.decorateCallable(authorizationRetry, () -> callAuthorize(request)).call();
+            return CircuitBreaker.decorateCallable(authorizationCircuitBreaker,
+                    () -> Retry.decorateCallable(authorizationRetry, () -> callAuthorize(request)).call()
+            ).call();
+        } catch (CallNotPermittedException e) {
+            throw new AuthorizationException(request.stan(), maxAttempts, "Circuit breaker open");
         } catch (Exception e) {
             String lastError = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
             throw new AuthorizationException(request.stan(), maxAttempts, lastError);
         }
     }
 
+    /**
+     * Выполняет один HTTP-вызов {@code POST /api/internal/authorize}.
+     *
+     * @param request тело запроса
+     * @return валидный ответ Authorization
+     * @throws IllegalStateException если тело ответа пустое или статус не APPROVED/DECLINED
+     */
     private AuthorizationResponse callAuthorize(AuthorizationRequest request) {
         AuthorizationResponse response = restClient.post()
                 .uri(switchProperties.authorizationUrl() + "/api/internal/authorize")
@@ -56,6 +88,14 @@ public class AuthorizationClient {
         throw new IllegalStateException("Invalid response from Authorization");
     }
 
+    /**
+     * Откатывает резервирование средств через {@code POST /api/internal/rollback}.
+     * Ошибки перехватываются и логируются — вызывающий код получает {@code null}.
+     *
+     * @param original исходный запрос авторизации (PAN, amount)
+     * @param rrn      RRN одобренной транзакции
+     * @return ответ rollback или {@code null} при сбое
+     */
     public RollbackResponse rollback(AuthorizationRequest original, String rrn) {
         RollbackRequest request = new RollbackRequest(rrn, original.pan(), original.amount());
         try {
@@ -77,6 +117,11 @@ public class AuthorizationClient {
         }
     }
 
+    /**
+     * Проверяет доступность Authorization Service через {@code GET /health}.
+     *
+     * @return {@code "ok"} если сервис отвечает, иначе {@code "down"}
+     */
     public String checkHealth() {
         try {
             restClient.get()

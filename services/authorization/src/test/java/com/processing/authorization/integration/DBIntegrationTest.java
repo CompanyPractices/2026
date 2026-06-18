@@ -3,17 +3,21 @@ package com.processing.authorization.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import java.net.URI;
 import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.processing.authorization.entities.LimitUsage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -21,6 +25,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
@@ -55,7 +60,7 @@ public class DBIntegrationTest {
     @Mock
     private RestClient.RequestBodySpec requestBodySpec;
 
-    private LocalDateTime now;
+    private Instant now;
     private AuthorizationRequest correctRequest;
 
     @BeforeEach
@@ -64,7 +69,7 @@ public class DBIntegrationTest {
                 requestBodyUriSpec, requestBodySpec);
 
         limitUsageRepository.deleteAll();
-        now = LocalDateTime.now();
+        now = Instant.now();
         correctRequest = new AuthorizationRequest(
                 "0100",
                 "123456",
@@ -72,15 +77,13 @@ public class DBIntegrationTest {
                 "000000",
                 BigDecimal.valueOf(5000),
                 "810",
-                "2026-06-05T18:12:49.070",
+                Instant.parse("2026-06-05T18:12:49.070Z"),
                 "T0000001",
                 null,
                 "M00000000000001",
                 "5411",
                 "A001",
                 "I001");
-
-        log.debug("Test database URL: {}", getDatabaseUrl());
     }
 
     private void mockGetCard(CardModel cardToReturn) {
@@ -99,15 +102,6 @@ public class DBIntegrationTest {
         doReturn(responseSpec).when(requestBodySpec).retrieve();
         doReturn(responseSpec).when(responseSpec).onStatus(any(), any());
         doReturn(null).when(responseSpec).toBodilessEntity();
-    }
-
-    private String getDatabaseUrl() {
-        try {
-            return dataSource.getConnection().getMetaData().getURL();
-        } catch (SQLException e) {
-            log.warn("Could not determine database URL", e);
-            return "none";
-        }
     }
 
     @Test
@@ -196,6 +190,42 @@ public class DBIntegrationTest {
         assertThat(limitUsageRepository.findAll()).hasSize(1);
     }
 
+    @Test
+    @Transactional
+    void deleteByUsageDateBetweenShouldDeleteOnlyPreviousMonthRecords() {
+        String pan = "4000001234567890";
+        BigDecimal currLimit = BigDecimal.valueOf(1000);
+
+        LocalDate now = LocalDate.now();
+        LocalDate firstDayPreviousMonth = now.minusMonths(1).withDayOfMonth(1);
+        LocalDate lastDayPreviousMonth = now.minusMonths(1).withDayOfMonth(now.minusMonths(1).lengthOfMonth());
+        LocalDate firstDayCurrentMonth = now.withDayOfMonth(1);
+        LocalDate secondDayCurrentMonth = now.withDayOfMonth(2);
+
+        LimitUsage record1 = createLimitUsage(pan, firstDayPreviousMonth, currLimit);
+        LimitUsage record2 = createLimitUsage(pan, lastDayPreviousMonth.minusDays(1), currLimit);
+        LimitUsage record3 = createLimitUsage(pan, lastDayPreviousMonth, currLimit);
+        LimitUsage record4 = createLimitUsage(pan, firstDayCurrentMonth, currLimit);
+        LimitUsage record5 = createLimitUsage(pan, secondDayCurrentMonth, currLimit);
+        limitUsageRepository.saveAll(List.of(record1, record2, record3, record4, record5));
+
+        List<LimitUsage> allRecords = limitUsageRepository.findAll();
+        assertThat(allRecords).hasSize(5);
+
+        int deletedCount = limitUsageRepository.deleteByUsageDateBetween(
+                firstDayPreviousMonth,
+                lastDayPreviousMonth
+        );
+
+        assertThat(deletedCount).isEqualTo(3);
+
+        List<LimitUsage> remainingRecords = limitUsageRepository.findAll();
+        assertThat(remainingRecords).hasSize(2);
+        assertThat(remainingRecords)
+                .extracting("usageDate")
+                .containsExactlyInAnyOrder(firstDayCurrentMonth, secondDayCurrentMonth);
+    }
+
     private CardModel createActiveCardModel() {
         return new CardModel(
                 UUID.randomUUID(),
@@ -209,7 +239,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createBlockedCardModel() {
@@ -225,7 +255,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createExpiredCardModel() {
@@ -241,7 +271,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createInactiveCardModel() {
@@ -257,7 +287,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createCardWithLowBalance() {
@@ -273,7 +303,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(1000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createActiveCardModelWithLowMonthlyLimit() {
@@ -289,7 +319,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createCardExpiredByDate() {
@@ -305,6 +335,16 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
+    }
+
+    private LimitUsage createLimitUsage(String pan, LocalDate usageDate, BigDecimal amount) {
+        LimitUsage usage = new LimitUsage();
+        usage.setPan(pan);
+        usage.setUsageDate(usageDate);
+        usage.setDailyAmount(amount);
+        usage.setMonthlyAmount(amount);
+        usage.setUpdatedAt(Instant.now());
+        return usage;
     }
 }

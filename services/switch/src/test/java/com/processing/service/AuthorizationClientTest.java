@@ -6,6 +6,7 @@ import com.processing.SwitchTestData;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
+import com.processing.config.CircuitBreakerFactory;
 import com.processing.config.RetryFactory;
 import com.processing.config.SwitchProperties;
 import com.processing.exception.AuthorizationException;
@@ -17,10 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
-
 import java.math.BigDecimal;
 import java.time.Instant;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
@@ -29,17 +28,20 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+/**
+ * Unit-тесты HTTP-клиента {@link AuthorizationClient} (authorize, rollback, health).
+ */
 class AuthorizationClientTest {
 
     private static final String ROLLBACK_URL = "http://localhost:8083/api/internal/rollback";
     private static final String TEST_RRN = "012345678901";
     private static final String TEST_PAN = "4000001234560001";
     private static final BigDecimal TEST_AMOUNT = BigDecimal.valueOf(150000);
-
     private MockRestServiceServer mockServer;
     private AuthorizationClient client;
     private ObjectMapper objectMapper;
 
+    /** Настраивает MockRestServiceServer и клиент. */
     @BeforeEach
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
@@ -47,15 +49,18 @@ class AuthorizationClientTest {
         client = new AuthorizationClient(
                 SwitchTestData.defaultProperties(),
                 builder.build(),
-                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
+                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()),
+                CircuitBreakerFactory.authorizationCircuitBreaker(SwitchTestData.defaultProperties()));
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
+    /** Проверяет, что все ожидаемые HTTP-вызовы были выполнены. */
     @AfterEach
     void verifyServer() {
         mockServer.verify();
     }
 
+    /** Успешный authorize → APPROVED и корректный RRN. */
     @Test
     void authorize_whenAuthReturnsApproved_returnsResponse() throws Exception {
         AuthorizationResponse authResponse = new AuthorizationResponse(
@@ -75,6 +80,7 @@ class AuthorizationClientTest {
         assertThat(response.rrn()).isEqualTo(TEST_RRN);
     }
 
+    /** Недоступный Authorization после retry → {@link AuthorizationException}. */
     @Test
     void authorize_whenAuthUnreachableAfterRetries_throwsAuthorizationException() {
         SwitchProperties properties = new SwitchProperties(
@@ -84,15 +90,56 @@ class AuthorizationClientTest {
                 "http://127.0.0.1:1",
                 "http://127.0.0.1:1",
                 SwitchTestData.defaultHttp(),
-                SwitchTestData.defaultRetry()
+                SwitchTestData.defaultRetry(),
+                SwitchTestData.defaultCircuitBreaker()
         );
         AuthorizationClient unreachableClient = new AuthorizationClient(
-                properties, RestClient.create(), RetryFactory.authorizationRetry(properties));
+                properties,
+                RestClient.create(),
+                RetryFactory.authorizationRetry(properties),
+                CircuitBreakerFactory.authorizationCircuitBreaker(properties));
 
         assertThrows(AuthorizationException.class, () ->
                 unreachableClient.authorize(SwitchTestData.sampleRequest().withIssuerId("ISS001")));
     }
 
+    /** OPEN circuit breaker → fail-fast без HTTP-вызова. */
+    @Test
+    void authorize_whenCircuitBreakerOpen_throwsWithoutHttpCall() {
+        SwitchProperties properties = new SwitchProperties(
+                "1.0.0",
+                SwitchTestData.BIN_ROUTING,
+                "http://localhost:8083",
+                "http://localhost:8088",
+                "http://localhost:8086",
+                SwitchTestData.defaultHttp(),
+                SwitchTestData.defaultRetry(),
+                SwitchTestData.aggressiveCircuitBreaker()
+        );
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer cbServer = MockRestServiceServer.bindTo(builder).build();
+        for (int i = 0; i < 3; i++) {
+            cbServer.expect(requestTo("http://localhost:8083/api/internal/authorize"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+        }
+        AuthorizationClient cbClient = new AuthorizationClient(
+                properties,
+                builder.build(),
+                RetryFactory.authorizationRetry(properties),
+                CircuitBreakerFactory.authorizationCircuitBreaker(properties));
+
+        assertThrows(AuthorizationException.class, () ->
+                cbClient.authorize(SwitchTestData.sampleRequest().withIssuerId("ISS001")));
+
+        AuthorizationException openCircuit = assertThrows(AuthorizationException.class, () ->
+                cbClient.authorize(SwitchTestData.sampleRequest().withIssuerId("ISS001")));
+        assertThat(openCircuit.getMessage()).contains("Circuit breaker open");
+
+        cbServer.verify();
+    }
+
+    /** Rollback передаёт rrn, pan и amount в теле запроса. */
     @Test
     void rollback_sendsRrnPanAndAmount() throws Exception {
         RollbackResponse approved = RollbackResponse.approved(new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), Instant.now());
@@ -106,10 +153,12 @@ class AuthorizationClientTest {
         RollbackResponse response = client.rollback(
                 SwitchTestData.sampleRequest().withIssuerId("ISS001"), TEST_RRN);
 
+
         assertThat(response.status()).isEqualTo(RollbackResponse.STATUS_APPROVED);
         assertThat(response.responseCode()).isEqualTo(RollbackResponse.CODE_SUCCESS);
     }
 
+    /** Успешный rollback → код {@code 00}. */
     @Test
     void rollback_whenApproved_returnsCode00() throws Exception {
         RollbackResponse approved = RollbackResponse.approved(new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), Instant.now());
@@ -125,6 +174,7 @@ class AuthorizationClientTest {
         assertThat(response.declineReason()).isNull();
     }
 
+    /** Транзакция не найдена → HTTP 404, код {@code 14}. */
     @Test
     void rollback_whenTransactionNotFound_returnsCode14() throws Exception {
         RollbackResponse declined = RollbackResponse.declined(
@@ -144,6 +194,7 @@ class AuthorizationClientTest {
         assertThat(response.declineReason()).isEqualTo("TRANSACTION_NOT_FOUND");
     }
 
+    /** Повторный rollback → HTTP 409, код {@code 05}. */
     @Test
     void rollback_whenAlreadyRolledBack_returnsCode05() throws Exception {
         RollbackResponse declined = RollbackResponse.declined(
@@ -163,6 +214,7 @@ class AuthorizationClientTest {
         assertThat(response.declineReason()).isEqualTo("ALREADY_ROLLED_BACK");
     }
 
+    /** Ошибка rollback на стороне Auth → код {@code 96}. */
     @Test
     void rollback_whenRollbackFailed_returnsCode96() throws Exception {
         RollbackResponse declined = RollbackResponse.declined(
@@ -182,6 +234,7 @@ class AuthorizationClientTest {
         assertThat(response.declineReason()).isEqualTo("ROLLBACK_FAILED");
     }
 
+    /** Authorization недоступен при rollback → код {@code 96}. */
     @Test
     void rollback_whenServiceUnavailable_returnsCode96() throws Exception {
         RollbackResponse declined = RollbackResponse.declined(
@@ -201,12 +254,12 @@ class AuthorizationClientTest {
         assertThat(response.declineReason()).isEqualTo("SERVICE_UNAVAILABLE");
     }
 
+    /** Health-check Authorization → {@code "ok"}. */
     @Test
     void checkHealth_whenAuthUp_returnsOk() {
         mockServer.expect(requestTo("http://localhost:8083/health"))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess());
-
         assertThat(client.checkHealth()).isEqualTo("ok");
     }
 }

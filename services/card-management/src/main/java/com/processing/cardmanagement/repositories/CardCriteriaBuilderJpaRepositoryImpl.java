@@ -9,7 +9,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.jspecify.annotations.Nullable;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,8 +26,8 @@ public class CardCriteriaBuilderJpaRepositoryImpl
         @Nullable String status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         var criteriaBuilder = entityManager.getCriteriaBuilder();
         var criteriaQuery = criteriaBuilder.createQuery(CardEntity.class);
@@ -57,8 +57,8 @@ public class CardCriteriaBuilderJpaRepositoryImpl
         @Nullable String status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         var criteriaBuilder = entityManager.getCriteriaBuilder();
         var criteriaQuery = criteriaBuilder.createQuery(Long.class);
@@ -87,8 +87,8 @@ public class CardCriteriaBuilderJpaRepositoryImpl
         @Nullable String status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         var predicates = new ArrayList<Predicate>();
         if (status != null) {

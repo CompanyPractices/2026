@@ -74,8 +74,9 @@ public class TransactionMapper {
     }
 
     /**
-     * Проверяет, совпадают ли все поля существующей транзакции с входящим запросом.
-     * Используется для идемпотентности: повторный запрос с теми же данными не является конфликтом.
+     * Проверяет, совпадают ли поля существующей транзакции с входящим запросом.
+     * Используется для идемпотентности: повторный запрос с теми же бизнес-данными не является конфликтом.
+     * Поле {@code createdAt} намеренно не участвует в сравнении.
      *
      * @param transaction запись из БД
      * @param request     входящий запрос от Switch
@@ -101,8 +102,7 @@ public class TransactionMapper {
                 && Objects.equals(transaction.getDeclineReason(), request.declineReason())
                 && Objects.equals(transaction.getAuthCode(), request.authCode())
                 && Objects.equals(transaction.getProcessingTimeMs(), request.processingTimeMs())
-                && Objects.equals(transaction.getTransmissionDateTime(), request.transmissionDateTime())
-                && Objects.equals(transaction.getCreatedAt(), request.createdAt());
+                && Objects.equals(transaction.getTransmissionDateTime(), request.transmissionDateTime());
     }
 
     private static boolean compareBigDecimal(BigDecimal a, BigDecimal b) {

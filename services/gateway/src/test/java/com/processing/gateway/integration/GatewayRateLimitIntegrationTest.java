@@ -59,7 +59,7 @@ class GatewayRateLimitIntegrationTest {
                   "processingCode": "000000",
                   "amount": 1000,
                   "currencyCode": "643",
-                  "transmissionDateTime": "2026-06-05T18:12:49.07",
+                  "transmissionDateTime": "2026-06-05T18:12:49.07Z",
                   "terminalId": "TERM001",
                   "terminalType": "POS",
                   "merchantId": "MERCH00000000029",
