@@ -3,6 +3,7 @@ package com.processing.authorization.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import java.net.URI;
@@ -24,6 +25,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
@@ -82,8 +84,6 @@ public class DBIntegrationTest {
                 "5411",
                 "A001",
                 "I001");
-
-        log.debug("Test database URL: {}", getDatabaseUrl());
     }
 
     private void mockGetCard(CardModel cardToReturn) {
@@ -102,15 +102,6 @@ public class DBIntegrationTest {
         doReturn(responseSpec).when(requestBodySpec).retrieve();
         doReturn(responseSpec).when(responseSpec).onStatus(any(), any());
         doReturn(null).when(responseSpec).toBodilessEntity();
-    }
-
-    private String getDatabaseUrl() {
-        try {
-            return dataSource.getConnection().getMetaData().getURL();
-        } catch (SQLException e) {
-            log.warn("Could not determine database URL", e);
-            return "none";
-        }
     }
 
     @Test
@@ -200,6 +191,7 @@ public class DBIntegrationTest {
     }
 
     @Test
+    @Transactional
     void deleteByUsageDateBetweenShouldDeleteOnlyPreviousMonthRecords() {
         String pan = "4000001234567890";
         BigDecimal currLimit = BigDecimal.valueOf(1000);

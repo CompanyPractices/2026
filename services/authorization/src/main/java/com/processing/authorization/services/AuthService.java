@@ -193,12 +193,13 @@ public class AuthService {
             updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
         } catch (DuplicateKeyException e) {
             log.warn("data race for pan {}", logPan(request.pan()));
+            // TODO: get new limits and check them
             isExceedsLimit = isExceedsAmountLimit(request, requestInputTime, cardResponse, currLimitUsage,
                     monthLimitUsage);
             if (isExceedsLimit) {
                 RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
                 RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
-                if (rollbackResponse.status() == RollbackResponse.STATUS_APPROVED) {
+                if (rollbackResponse.status().equals(RollbackResponse.STATUS_APPROVED)) {
                     return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
                 }
                 // TODO ask about business logic
@@ -207,7 +208,7 @@ public class AuthService {
             }
             updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
         } catch (Exception e) {
-            log.error("updation limits failed for pan {}", logPan(request.pan()), e);
+            log.error("Update limits failed for pan {}", logPan(request.pan()), e);
             RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
             RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
             if (!rollbackResponse.status().equals(RollbackResponse.STATUS_APPROVED)) {
@@ -268,7 +269,7 @@ public class AuthService {
                     throw new InvalidGetCardRequestException("Invalid pan");
                 })
                 .onStatus(status -> status.value() == 402, (req, res) -> {
-                    throw new PaymentRequiredException("Payment Required from card-managment");
+                    throw new PaymentRequiredException("Payment Required from card-management");
                 })
                 .onStatus(status -> status.value() == 404, (req, res) -> {
                     throw new CardNotFoundException("Card not found");
@@ -326,7 +327,7 @@ public class AuthService {
                     throw new InvalidReserveRequestException("Invalid reserve request");
                 })
                 .onStatus(status -> status.value() == 402, (req, res) -> {
-                    throw new InsufficientFundsException("Insufficient Funds from card-managment");
+                    throw new InsufficientFundsException("Insufficient Funds from card-management");
                 })
                 .onStatus(status -> status.value() == 404, (req, res) -> {
                     throw new CardNotFoundException("Card not found");
