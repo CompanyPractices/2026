@@ -6,10 +6,11 @@ import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
 import { useMemo } from 'react'
+import TransactionHistogram from './components/TransactionHistogram.tsx'
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
-    const { transactions: initialTransactions, filteredTransactions, loading, error, searchTransactions } = useTransactions();
+    const { transactions: initialTransactions, filteredTransactions, isFiltered, loading, error, searchTransactions } = useTransactions();
     const { stats, loading: liveLoading, error: liveError } = useLiveStats(liveTransactions);
 
     const uniqueTransactions = useMemo(() => {
@@ -22,16 +23,14 @@ function App() {
     }, [liveTransactions, initialTransactions]);
 
     const displayedTransactions = useMemo(() => {
-        const isSearch = filteredTransactions !== initialTransactions;
-        if (isSearch){
+        if (isFiltered){
             const filtered = filteredTransactions || [];
-            const uniqueFiltered = filtered.filter((tx, index, self) =>
-                index === self.findIndex(t => t.id === tx.id)
-            );
-            return uniqueFiltered.slice(0, 20);
+            return filtered
+                .filter((tx, index, self) => index === self.findIndex(t => t.id === tx.id))
+                .slice(0, 20);
         }
         return uniqueTransactions.slice(0, 20)
-    }, [filteredTransactions, uniqueTransactions, initialTransactions]);
+    }, [isFiltered, filteredTransactions, uniqueTransactions]);
 
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
@@ -41,10 +40,10 @@ function App() {
 
                 <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
                     <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                        Транзакции за последний час
+                        Распределение сумм транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
+                        <TransactionHistogram transactions={uniqueTransactions} loading={loading} error={error} />
                     </div>
                 </div>
 
@@ -54,6 +53,17 @@ function App() {
                     </h2>
                     <div className="flex-grow min-h-[300px]">
                         <TransactionPieChart transactions={uniqueTransactions} loading={loading} error={error} />
+                    </div>
+                </div>
+
+                <div className="col-span-1 md:col-span-2 flex justify-center p-4">
+                    <div className="w-full max-w-[800px] bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                        <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                            Транзакции за последний час
+                        </h2>
+                        <div className="flex-grow min-h-[300px]">
+                            <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
+                        </div>
                     </div>
                 </div>
 

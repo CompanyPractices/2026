@@ -32,7 +32,7 @@ public class GatewayValidationTest extends E2EBaseTest {
     @Test(description = "TC-11 - Gateway rejects invalid transaction requests")
     public void gatewayRejectsInvalidTransactionRequests() {
         for (InvalidRequestCase testCase : invalidRequestCases()) {
-            JsonNode response = httpUtils.httpPost(GATEWAY_URL, "/api/transactions", testCase.body(), 400);
+            JsonNode response = httpUtils.httpPostRaw(GATEWAY_URL, "/api/transactions", testCase.body(), 400);
 
             Assert.assertEquals(response.path("error").asText(), "VALIDATION_ERROR",
                     testCase.name() + ": $.error should be VALIDATION_ERROR");

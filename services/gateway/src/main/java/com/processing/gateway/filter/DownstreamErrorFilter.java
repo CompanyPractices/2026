@@ -27,7 +27,7 @@ import java.util.Optional;
  * Spring error handling can process them.</p>
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 4)
 @RequiredArgsConstructor
 public class DownstreamErrorFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
