@@ -122,9 +122,9 @@ public class AuthService {
             };
         }
 
-        Instant transmissionDate = request.transmissionDateTime();
+        LocalDate transmissionDate = request.transmissionDateTime().atZone(ZoneOffset.UTC).toLocalDate();
 
-        Instant lastValidDay = cardResponse.expiryDate().atEndOfMonth().atStartOfDay().toInstant(ZoneOffset.UTC);
+        LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
         if (lastValidDay.isBefore(transmissionDate)) {
             return DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
         }
@@ -145,10 +145,7 @@ public class AuthService {
                 : limitUsageRepository
                         .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
                                 request.pan(),
-                                transmissionLocalDate.withDayOfMonth(1)
-                                        .atStartOfDay()
-                                        .atZone(ZoneOffset.UTC)
-                                        .toInstant(),
+                                transmissionLocalDate.withDayOfMonth(1),
                                 transmissionDate);
         if (monthLimitUsage.isPresent()) {
             LimitUsage monthUsage = monthLimitUsage.get();
