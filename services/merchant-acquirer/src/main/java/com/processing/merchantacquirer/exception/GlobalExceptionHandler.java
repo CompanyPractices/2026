@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
             new ErrorResponse(
                 "Invalid request",
                 message,
-                String.valueOf(LocalDateTime.now()),
+                Instant.now(),
                 SERVICE_NAME,
                 NO_RETRY));
   }
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
                     new ErrorResponse(
                             "Invalid request",
                             ex.getMessage(),
-                            String.valueOf(LocalDateTime.now()),
+                            Instant.now(),
                             SERVICE_NAME,
                             NO_RETRY));
   }
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
                     new ErrorResponse(
                             "Invalid request",
                             ex.getMessage(),
-                            String.valueOf(LocalDateTime.now()),
+                            Instant.now(),
                             SERVICE_NAME,
                             NO_RETRY));
   }
@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
                     new ErrorResponse(
                             "Resource not found",
                             ex.getMessage(),
-                            String.valueOf(LocalDateTime.now()),
+                            Instant.now(),
                             SERVICE_NAME,
                             NO_RETRY));
   }
@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
                     new ErrorResponse(
                             "External service error",
                             ex.getMessage(),
-                            String.valueOf(LocalDateTime.now()),
+                            Instant.now(),
                             ex.getServiceName(),
                             ex.getRetryAfterMs()));
   }
@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
                     new ErrorResponse(
                             "Internal service error",
                             "Unexpected error in merchant acquirer simulator service",
-                            String.valueOf(LocalDateTime.now()),
+                            Instant.now(),
                             SERVICE_NAME,
                             NO_RETRY));
   }

@@ -29,7 +29,7 @@ public class AcquirerFee {
     private BigDecimal amount;
 
     public AcquirerFee(
-            String transmissionDateTime, String stan, String pan, String terminalId, BigDecimal acquirerFee, BigDecimal amount) {
+            Instant transmissionDateTime, String stan, String pan, String terminalId, BigDecimal acquirerFee, BigDecimal amount) {
         this.transmissionDateTime = transmissionDateTime;
         this.stan = stan;
         this.pan = pan;
