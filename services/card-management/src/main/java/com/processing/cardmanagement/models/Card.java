@@ -1,5 +1,7 @@
 package com.processing.cardmanagement.models;
 
+import com.processing.cardmanagement.exceptions.InsufficientFundsException;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -75,6 +77,9 @@ public record Card(
      */
     public Reservation startReservation(BigDecimal amount, String rrn) {
         checkStatusOrThrow();
+        if (availableBalance.compareTo(amount) < 0) {
+            throw new InsufficientFundsException();
+        }
         return new Reservation(this.pan, amount, rrn);
     }
 
