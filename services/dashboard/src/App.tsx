@@ -6,6 +6,7 @@ import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
 import { useMemo } from 'react'
+import {TransactionMap} from "./components/TransactionsMap.tsx";
 import TransactionHistogram from './components/TransactionHistogram.tsx'
 
 function App() {
@@ -69,6 +70,15 @@ function App() {
 
                 <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
                     <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
+                </div>
+
+                <div className="col-span-1 md:col-span-2 pt-6 bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                        Карта последних 20 транзакций
+                    </h2>
+                    <div className="flex-grow min-h-[550px]">
+                        <TransactionMap transactions={displayedTransactions} />
+                    </div>
                 </div>
             </main>
 
