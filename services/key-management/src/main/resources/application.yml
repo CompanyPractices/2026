@@ -1,11 +1,5 @@
-# PostgreSQL (раскомментируй, если нужна БД)
-# spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:processing}
-# spring.datasource.username=${DB_USER:postgres}
-# spring.datasource.password=${DB_PASSWORD:postgres}
-# spring.jpa.hibernate.ddl-auto=update
----
 server:
-  port: 8089
+  port: ${KMS_PORT:8099}
 
 ---
 # Logging

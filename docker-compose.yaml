@@ -53,6 +53,33 @@ services:
       retries: 3
       start_period: 40s
 
+  key-management:
+    build:
+      context: .
+      dockerfile: services/key-management/Dockerfile
+    container_name: smp-key-management
+    restart: unless-stopped
+    ports:
+      - "${KMS_PORT}:8080"
+    environment:
+      - SERVER_PORT=8080
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_PORT=${DB_PORT}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smp-network
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8080/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
   card-management:
     image: ghcr.io/${GHCR_USER:-local}/smp-card-management:latest
     build:
@@ -150,9 +177,11 @@ services:
       - SERVER_PORT=8080
       - GATEWAY_URL=http://gateway:8080
       - CARD_MGMT_URL=http://card-management:8080
+      - KMS_URL=http://key-management:8080
     depends_on:
       - gateway
       - card-management
+      - key-management
     networks:
       - smp-network
     healthcheck:
@@ -200,8 +229,10 @@ services:
       # baseline; версия 0, чтобы собственные V1/V2 миграции применились.
       - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
       - SPRING_FLYWAY_BASELINE_VERSION=0
+      - KMS_URL=http://key-management:8080
     depends_on:
       - gateway
+      - key-management
     networks:
       - smp-network
     healthcheck:
