@@ -50,6 +50,24 @@ public final class SwitchTestData {
 
 
     /**
+     * @return circuit breaker с production-подобными параметрами
+     */
+    public static SwitchProperties.CircuitBreakerSection defaultCircuitBreaker() {
+        return new SwitchProperties.CircuitBreakerSection(
+                new SwitchProperties.CircuitBreakerProperties(50, 10, 5, 30_000L));
+    }
+
+
+    /**
+     * @return circuit breaker, открывающийся после одного неуспешного вызова (для тестов)
+     */
+    public static SwitchProperties.CircuitBreakerSection aggressiveCircuitBreaker() {
+        return new SwitchProperties.CircuitBreakerSection(
+                new SwitchProperties.CircuitBreakerProperties(50, 1, 1, 30_000L));
+    }
+
+
+    /**
      * @return полная конфигурация Switch для локальных тестов
      */
     public static SwitchProperties defaultProperties() {
@@ -60,7 +78,8 @@ public final class SwitchTestData {
                 "http://localhost:8088",
                 "http://localhost:8086",
                 defaultHttp(),
-                defaultRetry()
+                defaultRetry(),
+                defaultCircuitBreaker()
         );
     }
 

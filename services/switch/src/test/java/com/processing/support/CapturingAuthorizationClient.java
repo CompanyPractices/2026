@@ -5,6 +5,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
+import com.processing.config.CircuitBreakerFactory;
 import com.processing.config.RetryFactory;
 import com.processing.service.AuthorizationClient;
 
@@ -28,7 +29,8 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
         super(
                 SwitchTestData.defaultProperties(),
                 null,
-                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
+                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()),
+                CircuitBreakerFactory.authorizationCircuitBreaker(SwitchTestData.defaultProperties()));
         this.responseToReturn = approvedResponse();
     }
 
@@ -39,7 +41,8 @@ public class CapturingAuthorizationClient extends AuthorizationClient {
         super(
                 SwitchTestData.defaultProperties(),
                 null,
-                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
+                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()),
+                CircuitBreakerFactory.authorizationCircuitBreaker(SwitchTestData.defaultProperties()));
         this.responseToReturn = responseToReturn;
     }
 

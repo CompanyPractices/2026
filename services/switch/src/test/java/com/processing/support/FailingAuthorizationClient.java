@@ -3,6 +3,7 @@ package com.processing.support;
 import com.processing.SwitchTestData;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.config.CircuitBreakerFactory;
 import com.processing.config.RetryFactory;
 import com.processing.exception.AuthorizationException;
 import com.processing.service.AuthorizationClient;
@@ -17,7 +18,8 @@ public class FailingAuthorizationClient extends AuthorizationClient {
         super(
                 SwitchTestData.defaultProperties(),
                 null,
-                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()));
+                RetryFactory.authorizationRetry(SwitchTestData.defaultProperties()),
+                CircuitBreakerFactory.authorizationCircuitBreaker(SwitchTestData.defaultProperties()));
     }
 
     /** {@inheritDoc} */

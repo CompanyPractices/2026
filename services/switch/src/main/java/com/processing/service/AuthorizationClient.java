@@ -6,6 +6,8 @@ import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.config.SwitchProperties;
 import com.processing.exception.AuthorizationException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,32 +26,40 @@ public class AuthorizationClient {
     private final SwitchProperties switchProperties;
     private final RestClient restClient;
     private final Retry authorizationRetry;
+    private final CircuitBreaker authorizationCircuitBreaker;
 
     /**
-     * @param switchProperties   конфигурация URL и retry
-     * @param restClient         REST-клиент с таймаутами для Authorization
-     * @param authorizationRetry политика повторных попыток
+     * @param switchProperties            конфигурация URL и retry
+     * @param restClient                  REST-клиент с таймаутами для Authorization
+     * @param authorizationRetry          политика повторных попыток
+     * @param authorizationCircuitBreaker circuit breaker для authorize
      */
     public AuthorizationClient(
             SwitchProperties switchProperties,
             RestClient restClient,
-            @Qualifier("authorizationRetry") Retry authorizationRetry) {
+            @Qualifier("authorizationRetry") Retry authorizationRetry,
+            @Qualifier("authorizationCircuitBreaker") CircuitBreaker authorizationCircuitBreaker) {
         this.switchProperties = switchProperties;
         this.restClient = restClient;
         this.authorizationRetry = authorizationRetry;
+        this.authorizationCircuitBreaker = authorizationCircuitBreaker;
     }
 
     /**
-     * Отправляет запрос авторизации с retry при сетевых сбоях.
+     * Отправляет запрос авторизации с circuit breaker и retry при сетевых сбоях.
      *
      * @param request запрос с заполненным {@code issuerId}
      * @return ответ Authorization (APPROVED или DECLINED)
-     * @throws AuthorizationException если сервис недоступен после всех попыток
+     * @throws AuthorizationException если сервис недоступен, контур OPEN или исчерпаны попытки
      */
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         int maxAttempts = switchProperties.retry().maxAttempts();
         try {
-            return Retry.decorateCallable(authorizationRetry, () -> callAuthorize(request)).call();
+            return CircuitBreaker.decorateCallable(authorizationCircuitBreaker,
+                    () -> Retry.decorateCallable(authorizationRetry, () -> callAuthorize(request)).call()
+            ).call();
+        } catch (CallNotPermittedException e) {
+            throw new AuthorizationException(request.stan(), maxAttempts, "Circuit breaker open");
         } catch (Exception e) {
             String lastError = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
             throw new AuthorizationException(request.stan(), maxAttempts, lastError);
