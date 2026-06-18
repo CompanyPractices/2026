@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -31,9 +32,9 @@ public class DashboardChartsIntegrationTest {
 
     @Test
     void getChartsGroupsTransactionsByHour() {
-        save(at("2026-06-16T10:15:00Z", TransactionStatus.APPROVED, 100000L));
-        save(at("2026-06-16T10:45:00Z", TransactionStatus.DECLINED, 50000L));
-        save(at("2026-06-16T11:05:00Z", TransactionStatus.APPROVED, 200000L));
+        save(at("2026-06-16T10:15:00Z", TransactionStatus.APPROVED, new BigDecimal("100000")));
+        save(at("2026-06-16T10:45:00Z", TransactionStatus.DECLINED, new BigDecimal("50000")));
+        save(at("2026-06-16T11:05:00Z", TransactionStatus.APPROVED, new BigDecimal("200000")));
 
         List<ChartBucket> charts = transactionService.getCharts(filter("hour", null, null));
 
@@ -54,9 +55,9 @@ public class DashboardChartsIntegrationTest {
 
     @Test
     void getChartsGroupsTransactionsByDay() {
-        save(at("2026-06-16T10:00:00Z", TransactionStatus.APPROVED, 100000L));
-        save(at("2026-06-16T23:30:00Z", TransactionStatus.APPROVED, 100000L));
-        save(at("2026-06-17T01:00:00Z", TransactionStatus.DECLINED, 50000L));
+        save(at("2026-06-16T10:00:00Z", TransactionStatus.APPROVED, new BigDecimal("100000")));
+        save(at("2026-06-16T23:30:00Z", TransactionStatus.APPROVED, new BigDecimal("100000")));
+        save(at("2026-06-17T01:00:00Z", TransactionStatus.DECLINED, new BigDecimal("50000")));
 
         List<ChartBucket> charts = transactionService.getCharts(filter("day", null, null));
 
@@ -69,9 +70,9 @@ public class DashboardChartsIntegrationTest {
 
     @Test
     void getChartsFiltersByDateRange() {
-        save(at("2026-06-15T10:00:00Z", TransactionStatus.APPROVED, 100000L));
-        save(at("2026-06-16T10:00:00Z", TransactionStatus.APPROVED, 100000L));
-        save(at("2026-06-17T10:00:00Z", TransactionStatus.APPROVED, 100000L));
+        save(at("2026-06-15T10:00:00Z", TransactionStatus.APPROVED, new BigDecimal("100000")));
+        save(at("2026-06-16T10:00:00Z", TransactionStatus.APPROVED, new BigDecimal("100000")));
+        save(at("2026-06-17T10:00:00Z", TransactionStatus.APPROVED, new BigDecimal("100000")));
 
         List<ChartBucket> charts = transactionService.getCharts(
                 filter("day", Instant.parse("2026-06-16T00:00:00Z"), Instant.parse("2026-06-17T00:00:00Z")));
@@ -97,7 +98,7 @@ public class DashboardChartsIntegrationTest {
     private Transaction save(Transaction transaction) {
         return transactionRepository.save(transaction);
     }
-    private Transaction at(String createdAt, TransactionStatus status, long amount) {
+    private Transaction at(String createdAt, TransactionStatus status, BigDecimal amount) {
         Instant instant = Instant.parse(createdAt);
         Transaction t = new Transaction();
         t.setId(UUID.randomUUID());

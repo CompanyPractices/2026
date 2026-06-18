@@ -35,26 +35,26 @@ public class TransactionCsvWriter {
 
     private void appendRow(StringBuilder csv, TransactionResponse transaction) {
         appendField(csv, transaction.id(), true);
-        appendField(csv, transaction.mti(), true);
-        appendField(csv, transaction.stan(), true);
-        appendField(csv, transaction.rrn(), true);
-        appendField(csv, transaction.pan(), true);
-        appendField(csv, transaction.processingCode(), true);
-        appendField(csv, transaction.amount(), true);
-        appendField(csv, transaction.currencyCode(), true);
-        appendField(csv, transaction.terminalId(), true);
-        appendField(csv, transaction.terminalType(), true);
-        appendField(csv, transaction.merchantId(), true);
-        appendField(csv, transaction.mcc(), true);
-        appendField(csv, transaction.acquirerId(), true);
-        appendField(csv, transaction.issuerId(), true);
-        appendField(csv, transaction.acquiringFee(), true);
-        appendField(csv, transaction.status(), true);
-        appendField(csv, transaction.declineReason(), true);
-        appendField(csv, transaction.authCode(), true);
-        appendField(csv, transaction.processingTimeMs(), true);
-        appendField(csv, transaction.transmissionDateTime(), true);
-        appendField(csv, transaction.createdAt(), true);
+        appendField(csv, transaction.mti(), false);
+        appendField(csv, transaction.stan(), false);
+        appendField(csv, transaction.rrn(), false);
+        appendField(csv, transaction.pan(), false);
+        appendField(csv, transaction.processingCode(), false);
+        appendField(csv, transaction.amount(), false);
+        appendField(csv, transaction.currencyCode(), false);
+        appendField(csv, transaction.terminalId(), false);
+        appendField(csv, transaction.terminalType(), false);
+        appendField(csv, transaction.merchantId(), false);
+        appendField(csv, transaction.mcc(), false);
+        appendField(csv, transaction.acquirerId(), false);
+        appendField(csv, transaction.issuerId(), false);
+        appendField(csv, transaction.acquiringFee(), false);
+        appendField(csv, transaction.status(), false);
+        appendField(csv, transaction.declineReason(), false);
+        appendField(csv, transaction.authCode(), false);
+        appendField(csv, transaction.processingTimeMs(), false);
+        appendField(csv, transaction.transmissionDateTime(), false);
+        appendField(csv, transaction.createdAt(), false);
         csv.append(LINE_END);
     }
 
