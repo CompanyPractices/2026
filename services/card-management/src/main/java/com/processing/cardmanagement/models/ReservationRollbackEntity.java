@@ -7,7 +7,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -36,4 +38,37 @@ public class ReservationRollbackEntity {
     private String rrn;
 
     private Instant createdAt;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || !Objects.equals(this.getClass(), obj.getClass())) {
+            return false;
+        }
+        var other = (ReservationRollbackEntity) obj;
+        return Objects.equals(this.id, other.id)
+            && Objects.equals(
+            this.reservation != null ? this.reservation.getId() : null,
+            other.getReservation() != null ? other.getReservation().getId() : null)
+            && Objects.equals(this.pan, other.pan)
+            && ((this.rollbackAmount == null && other.rollbackAmount == null)
+            || (this.rollbackAmount != null && this.rollbackAmount.compareTo(
+            other.rollbackAmount.setScale(0, RoundingMode.HALF_EVEN)) == 0))
+            && Objects.equals(this.rrn, other.rrn)
+            && Objects.equals(this.createdAt, other.createdAt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+            id,
+            reservation == null ? null : reservation.getId(),
+            pan,
+            rollbackAmount == null ? null : rollbackAmount.setScale(0, RoundingMode.HALF_EVEN),
+            rrn,
+            createdAt
+        );
+    }
 }

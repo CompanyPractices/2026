@@ -1,8 +1,6 @@
 package com.processing.cardmanagement.utils;
 
-import com.processing.cardmanagement.models.Card;
-import com.processing.cardmanagement.models.CardEntity;
-import com.processing.cardmanagement.models.CardStatus;
+import com.processing.cardmanagement.models.*;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import net.datafaker.Faker;
@@ -24,20 +22,20 @@ public final class CardManagementTestUtils {
     }
 
     public static Card generateCard(Faker faker, CardStatus status) {
-        var bin = faker.number().digits(16);
+        var bin = generateBin(faker);
         var dailyLimit = faker.number().numberBetween(1, 15_000_000);
         return new Card(
             UUID.randomUUID(),
-            bin + faker.number().digits(10),
+            generatePan(faker, bin),
             bin,
-            faker.name().fullName().toUpperCase(Locale.ROOT),
+            generateCardholderName(),
             YearMonth.from(faker.timeAndDate().future().atOffset(ZoneOffset.UTC)),
             status,
-            faker.number().digits(3),
+            generateCurrencyCode(faker),
             BigDecimal.valueOf(dailyLimit),
             BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 300_000_000)),
             BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000)),
-            faker.lorem().characters(6)
+            generateIssuerId(faker)
         );
     }
 
@@ -46,20 +44,20 @@ public final class CardManagementTestUtils {
     }
 
     public static CardEntity generateCardEntity(Faker faker, String status) {
-        var bin = faker.number().digits(16);
+        var bin = generateBin(faker);
         var dailyLimit = faker.number().numberBetween(1, 15_000_000);
         return new CardEntity(
             UUID.randomUUID(),
-            bin + faker.number().digits(10),
+            generatePan(faker, bin),
             bin,
-            faker.name().fullName().toUpperCase(Locale.ROOT),
+            generateCardholderName(),
             formatDateToStrExpiryDate(faker.timeAndDate().future()),
             status,
-            faker.number().digits(3),
+            generateCurrencyCode(faker),
             BigDecimal.valueOf(dailyLimit),
             BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 300_000_000)),
             BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000)),
-            faker.lorem().characters(6),
+            generateIssuerId(faker),
             Instant.now()
         );
     }
@@ -69,20 +67,79 @@ public final class CardManagementTestUtils {
     }
 
     public static CardModel generateCardModel(Faker faker, CardModelStatus status) {
-        var bin = faker.number().digits(16);
+        var bin = generateBin(faker);
         var dailyLimit = faker.number().numberBetween(1, 15_000_000);
         return new CardModel(
             UUID.randomUUID(),
-            bin + faker.number().digits(10),
+            generatePan(faker, bin),
             bin,
-            faker.name().fullName().toUpperCase(Locale.ROOT),
+            generateCardholderName(),
             YearMonth.from(faker.timeAndDate().future().atOffset(ZoneOffset.UTC)),
             status,
-            faker.number().digits(3),
+            generateCurrencyCode(faker),
             BigDecimal.valueOf(dailyLimit),
             BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 300_000_000)),
             BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000)),
-            faker.lorem().characters(6),
+            generateIssuerId(faker),
+            Instant.now()
+        );
+    }
+
+    public static Reservation generateReservation() {
+        return generateReservation(faker, BigDecimal.valueOf(faker.number().numberBetween(1, 1_000_000)));
+    }
+
+    public static ReservationEntity generateReservationEntity() {
+        return generateReservationEntity(faker, BigDecimal.valueOf(faker.number().numberBetween(1, 1_000_000)));
+    }
+
+    public static Reservation generateReservation(Faker faker, BigDecimal amount) {
+        return new Reservation(
+            generatePan(faker),
+            amount,
+            generateRrn(faker)
+        );
+    }
+
+    public static ReservationEntity generateReservationEntity(Faker faker, BigDecimal amount) {
+        return new ReservationEntity(
+            UUID.randomUUID(),
+            generatePan(faker),
+            amount,
+            generateRrn(faker),
+            faker.options().option(ReservationStatus.class).name(),
+            Instant.now(),
+            Instant.now()
+        );
+    }
+
+    public static ReservationRollback generateReservationRollback() {
+        return generateReservationRollback(faker, BigDecimal.valueOf(faker.number().numberBetween(1, 1_000_000)));
+    }
+
+    public static ReservationRollbackEntity generateReservationRollbackEntity() {
+        return generateReservationRollbackEntity(faker, BigDecimal.valueOf(faker.number().numberBetween(1, 1_000_000)));
+    }
+
+    public static ReservationRollback generateReservationRollback(Faker faker, BigDecimal amount) {
+        return new ReservationRollback(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            generatePan(faker),
+            amount,
+            generateRrn(faker),
+            Instant.now()
+        );
+    }
+
+    public static ReservationRollbackEntity generateReservationRollbackEntity(Faker faker, BigDecimal amount) {
+        var reservationEntity = generateReservationEntity(faker, amount);
+        return new ReservationRollbackEntity(
+            UUID.randomUUID(),
+            reservationEntity,
+            generatePan(faker),
+            amount,
+            generateRrn(faker),
             Instant.now()
         );
     }
@@ -95,7 +152,7 @@ public final class CardManagementTestUtils {
         return String.format("%02d%02d", date.getMonthValue(), date.getYear() % 100);
     }
 
-    public static java.time.YearMonth strExpiryDateToYearMonth(String strExpiryDate) {
+    public static YearMonth strExpiryDateToYearMonth(String strExpiryDate) {
         if (strExpiryDate == null || strExpiryDate.length() != 4) {
             throw new IllegalArgumentException("Invalid expiry date format. Expected MMyy");
         }
@@ -106,5 +163,45 @@ public final class CardManagementTestUtils {
         int fullYear = currentCentury + shortYear;
 
         return YearMonth.of(fullYear, month);
+    }
+
+    public static String generatePan() {
+        return generatePan(faker);
+    }
+
+    public static String generatePan(Faker faker) {
+        return faker.number().digits(16);
+    }
+
+    public static String generatePan(Faker faker, String bin) {
+        return bin + faker.number().digits(10);
+    }
+
+    public static String generateBin() {
+        return generateBin(faker);
+    }
+
+    public static String generateBin(Faker faker) {
+        return faker.number().digits(6);
+    }
+
+    public static String generateCardholderName() {
+        return generateCardholderName(faker);
+    }
+
+    public static String generateCardholderName(Faker faker) {
+        return faker.name().fullName().toUpperCase(Locale.ROOT);
+    }
+
+    public static String generateCurrencyCode(Faker faker) {
+        return faker.number().digits(3);
+    }
+
+    public static String generateIssuerId(Faker faker) {
+        return faker.number().digits(3);
+    }
+
+    public static String generateRrn(Faker faker) {
+        return faker.number().digits(12);
     }
 }

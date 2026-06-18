@@ -1,9 +1,7 @@
 package com.processing.cardmanagement.components;
 
 import com.processing.cardmanagement.mappers.*;
-import com.processing.cardmanagement.models.Card;
-import com.processing.cardmanagement.models.CardEntity;
-import com.processing.cardmanagement.models.CardStatus;
+import com.processing.cardmanagement.models.*;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import net.datafaker.Faker;
@@ -237,6 +235,103 @@ public class MappersTest {
         var model = generateActiveCardModel();
         var card = cardRestMapper.toDomain(model);
         assertEquals(model, cardRestMapper.toDto(card));
+    }
+
+    @Test
+    void reservationPersistenceMapperToEntityTest() {
+        var reservation = generateReservation();
+        var entity = reservationPersistenceMapper.toEntity(reservation);
+
+        var expectedEntity = new ReservationEntity(
+            reservation.id(),
+            reservation.pan(),
+            reservation.reservationAmount(),
+            reservation.rrn(),
+            reservation.status().name(),
+            reservation.updatedAt(),
+            reservation.createdAt()
+        );
+        assertEquals(expectedEntity, entity);
+    }
+
+    @Test
+    void reservationPersistenceMapperToDomainTest() {
+        var entity = generateReservationEntity();
+        var reservation = reservationPersistenceMapper.toDomain(entity);
+
+        var expectedReservation = new Reservation(
+            entity.getId(),
+            entity.getPan(),
+            entity.getReservationAmount(),
+            entity.getRrn(),
+            ReservationStatus.valueOf(entity.getStatus()),
+            reservation.updatedAt(),
+            entity.getCreatedAt()
+        );
+        assertEquals(expectedReservation, reservation);
+    }
+
+    @Test
+    void reservationPersistenceMapperDomainSelfTest() {
+        var reservation = generateReservation();
+        var entity = reservationPersistenceMapper.toEntity(reservation);
+        assertEquals(reservation, reservationPersistenceMapper.toDomain(entity));
+    }
+
+    @Test
+    void reservationPersistenceMapperEntitySelfTest() {
+        var entity = generateReservationEntity();
+        var reservation = reservationPersistenceMapper.toDomain(entity);
+        assertEquals(entity, reservationPersistenceMapper.toEntity(reservation));
+    }
+
+    @Test
+    void reservationRollbackPersistenceMapperToEntityTest() {
+        var rollback = generateReservationRollback();
+        var entity = reservationRollbackPersistenceMapper.toEntity(rollback);
+        var expectedReservationEntity = new ReservationEntity();
+        expectedReservationEntity.setId(rollback.reservationId());
+
+        var expectedEntity = new ReservationRollbackEntity(
+            rollback.id(),
+            expectedReservationEntity,
+            rollback.pan(),
+            rollback.rollbackAmount(),
+            rollback.rrn(),
+            rollback.createdAt()
+        );
+        assertEquals(expectedEntity, entity);
+    }
+
+    @Test
+    void reservationRollbackPersistenceMapperToDomainTest() {
+        var entity = generateReservationRollbackEntity();
+        var rollback = reservationRollbackPersistenceMapper.toDomain(entity);
+
+        var expectedRollback = new ReservationRollback(
+            rollback.id(),
+            entity.getReservation().getId(),
+            rollback.pan(),
+            rollback.rollbackAmount(),
+            rollback.rrn(),
+            rollback.createdAt()
+        );
+        assertEquals(expectedRollback, rollback);
+    }
+
+    @Test
+    void reservationRollbackPersistenceMapperDomainSelfTest() {
+        var rollback = generateReservationRollback();
+        var entity = reservationRollbackPersistenceMapper.toEntity(rollback);
+        assertEquals(rollback, reservationRollbackPersistenceMapper.toDomain(entity));
+    }
+
+    @Test
+    void reservationRollbackPersistenceMapperEntitySelfTest() {
+        var entity = generateReservationRollbackEntity();
+        var rollback = reservationRollbackPersistenceMapper.toDomain(entity);
+
+        assertEquals(entity, reservationRollbackPersistenceMapper.toEntity(rollback));
     }
 
     private YearMonth createRandomYearMonthDate() {
