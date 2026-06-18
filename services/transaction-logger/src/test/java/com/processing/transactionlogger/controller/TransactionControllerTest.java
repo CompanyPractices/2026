@@ -69,14 +69,14 @@ public class TransactionControllerTest {
         ResponseEntity<String> response = transactionController.export(new TransactionFilter());
 
         assertEquals(new MediaType("text", "csv", StandardCharsets.UTF_8), response.getHeaders().getContentType());
-        assertEquals("transctions.csv", response.getHeaders().getContentDisposition().getFilename());
+        assertEquals("transactions.csv", response.getHeaders().getContentDisposition().getFilename());
     }
 
     @Test
     void exportPassesFilterToService() {
         when(transactionService.exportCsv(any())).thenReturn("id\r\n");
         TransactionFilter filter = new TransactionFilter();
-        filter.setStatus(TransactionStatus.DECLINED.toString());
+        filter.setStatus(TransactionStatus.DECLINED);
 
         transactionController.export(filter);
 

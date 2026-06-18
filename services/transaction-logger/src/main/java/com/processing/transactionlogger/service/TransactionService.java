@@ -7,7 +7,6 @@ import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.common.dto.transactionlogger.TransactionRequest;
 import com.processing.common.dto.transactionlogger.TransactionResponse;
 import com.processing.transactionlogger.dto.TransactionSearchResponse;
-import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.exception.TransactionConflictException;
 import com.processing.transactionlogger.export.TransactionCsvWriter;
 import com.processing.transactionlogger.mapper.TransactionMapper;
