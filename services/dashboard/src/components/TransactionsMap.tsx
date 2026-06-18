@@ -94,7 +94,7 @@ function FitBoundsToClusters({ clusters }: { clusters: CityCluster[] }) {
     return null;
 }
 
-function getClusterStats(transactions: Transaction[]) {
+export function getClusterStats(transactions: Transaction[]) {
     const approved = transactions.filter(t => t.status === 'APPROVED').length;
     const declined = transactions.length - approved;
     const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
