@@ -142,6 +142,8 @@ public class TerminalSimulatorService {
         ConcurrentLinkedQueue<AuthorizationResponse> authResponses = new ConcurrentLinkedQueue<>();
         AtomicInteger approved = new AtomicInteger(0);
         AtomicInteger declined = new AtomicInteger(0);
+
+        AtomicInteger totalSubmitted = new AtomicInteger(0);
         long delayMs = 1000 / tps;
 
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -150,11 +152,13 @@ public class TerminalSimulatorService {
                 // неблокирующий метод, закидывает задачу в пул
                 executor.submit(
                         () -> {  // создаю задачу (объект Runnable), без входящих аргументов, с таким кодом:
+                    totalSubmitted.incrementAndGet();
                     try {
                         AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay, cards,
                                 approved, declined, terminalId);
                         authResponses.add(resp);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e) {
                         log.error("Transaction failed", e);
                         authResponses.add(new AuthorizationResponse(null, null, null, null, null,
                                 null, e.getMessage(), 0));
@@ -164,13 +168,20 @@ public class TerminalSimulatorService {
                 Thread.sleep(delayMs);
             }
             // тут вызывается executor.close() и ждет завершения всех задач(!!) без allOf().join()
+        } catch (InterruptedException e) {  // Если кто-то решит прервать главный поток, то он вызовет у главного потока
+            // метод .interrupt(), который поставит внутри потока флаг interrupted = true. Это увидит Thread.sleep(),
+            // выкинет InterruptedException и поставит обратно interrupted = false. Блок for прервется, успев создать
+            // только часть тасок.
+            log.error("Simulation loop was interrupted", e);
+            Thread.currentThread().interrupt();  // возвращаем interrupted = true, чтобы для внешнего мира не выглядело
+            // так, будто наш поток завершился сам, добровольно и успешно.
+            // Все это делается, чтобы собрать остатки данных и вернуть хотя бы то, что успело выполниться, вместо
+            // ошибки 500.
         } catch (Exception e) {
-            log.error("Execution error", e);
-            authResponses.add(new AuthorizationResponse(null, null, null, null, null,
-                    null, e.getMessage(), 0));
+            log.error("Critical execution error in simulation main loop", e);
         }
 
         long elapsed = System.currentTimeMillis() - start;
-        return new TerminalRunResponse(count, approved.get(), declined.get(), elapsed, authResponses.stream().toList());
+        return new TerminalRunResponse(totalSubmitted.get(), approved.get(), declined.get(), elapsed, authResponses.stream().toList());
     }
 }
