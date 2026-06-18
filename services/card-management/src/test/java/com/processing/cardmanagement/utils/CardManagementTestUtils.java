@@ -18,11 +18,19 @@ public final class CardManagementTestUtils {
     private static final Faker faker = new Faker();
 
     public static Card generateActiveCard() {
-        return generateCard(faker, CardStatus.ACTIVE);
+        return generateCard(faker, generatePan(faker), CardStatus.ACTIVE);
     }
 
-    public static Card generateCard(Faker faker, CardStatus status) {
-        var bin = generateBin(faker);
+    public static Card generateActiveCardByPan(String pan) {
+        return generateCard(faker, pan, CardStatus.ACTIVE);
+    }
+
+    public static Card generateCard(String pan, CardStatus status) {
+        return generateCard(faker, pan, status);
+    }
+
+    public static Card generateCard(Faker faker, String pan, CardStatus status) {
+        var bin = pan.substring(0, 6);
         var dailyLimit = faker.number().numberBetween(1, 15_000_000);
         return new Card(
             UUID.randomUUID(),

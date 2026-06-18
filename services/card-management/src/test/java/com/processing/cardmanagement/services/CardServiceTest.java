@@ -23,11 +23,12 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.UUID;
 
+import static com.processing.cardmanagement.utils.CardManagementTestUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -151,9 +152,8 @@ public class CardServiceTest {
 
     @Test
     void testGetCard() {
-        var pan = generatePan();
-
-        var card = createTestCard(pan);
+        var card = generateActiveCard();
+        var pan = card.pan();
         when(cardRepository.findByPan(pan)).thenReturn(Optional.of(card));
 
         var found = cardService.getCard(pan);
@@ -165,7 +165,7 @@ public class CardServiceTest {
 
     @Test
     void testGetCards() {
-        var testCard = createTestCard(generatePan());
+        var testCard = generateActiveCard();
 
         int limit = faker.number().numberBetween(1, 100);
         long offset = faker.number().numberBetween(0, 100);
@@ -203,7 +203,7 @@ public class CardServiceTest {
         var availableBalance = BigDecimal.valueOf(
             faker.number().numberBetween(0, 10000000)
         );
-        var testCard = createTestCard(pan);
+        var testCard = generateActiveCardByPan(pan);
 
         when(cardRepository.findByPanForUpdate(pan))
             .thenReturn(Optional.of(testCard));
@@ -237,7 +237,7 @@ public class CardServiceTest {
 
     @Test
     void testPatchCardInvalidData() {
-        var testCard = createTestCard(generatePan());
+        var testCard = generateActiveCard();
         when(cardRepository.findByPanForUpdate(testCard.pan()))
             .thenReturn(Optional.of(testCard));
 
@@ -272,8 +272,8 @@ public class CardServiceTest {
 
     @Test
     void testDeleteCard() {
-        var pan = generatePan();
-        var testCard = createTestCard(pan);
+        var testCard = generateActiveCard();
+        var pan = testCard.pan();
         when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
         when(cardRepository.save(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
@@ -335,8 +335,8 @@ public class CardServiceTest {
 
     @Test
     void testReserve() {
-        var pan = generatePan();
-        var testCard = createTestCard(pan);
+        var testCard = generateActiveCard();
+        var pan = testCard.pan();
         var reserveAmount = BigDecimal.valueOf(
             faker.number().numberBetween(0, testCard.availableBalance().intValue())
         );
@@ -383,12 +383,18 @@ public class CardServiceTest {
                 rrn
             )
         );
+        var statuses = Arrays.stream(CardStatus.values())
+            .filter(status -> status != CardStatus.ACTIVE && status != CardStatus.DELETED)
+            .toArray(CardStatus[]::new);
+        when(cardRepository.findByPanForUpdate(pan))
+            .thenReturn(Optional.of(generateCard(pan, faker.options().option(statuses))));
+        assertThrows(IllegalStateException.class, () -> cardService.reserve(pan, reserveAmount, rrn));
     }
 
     @Test
     void testRollbackSuccess() {
-        var pan = generatePan();
-        var testCard = createTestCard(pan);
+        var testCard = generateActiveCard();
+        var pan = testCard.pan();
         var reserveAmount = BigDecimal.valueOf(
             faker.number().numberBetween(0, testCard.availableBalance().intValue())
         );
@@ -447,8 +453,8 @@ public class CardServiceTest {
 
     @Test
     void testRollbackWrongPan() {
-        var pan = generatePan();
-        var testCard = createTestCard(pan);
+        var testCard = generateActiveCard();
+        var pan = testCard.pan();
         var reserveAmount = BigDecimal.valueOf(
             faker.number().numberBetween(0, testCard.availableBalance().intValue())
         );
@@ -466,25 +472,5 @@ public class CardServiceTest {
             reserveAmount,
             rrn
         ));
-    }
-
-    private Card createTestCard(String pan) {
-        return new Card(
-            UUID.randomUUID(),
-            pan,
-            pan.substring(0, 6),
-            faker.name().fullName().toUpperCase(Locale.ROOT),
-            YearMonth.now().plusYears(settings.cardValidityPeriod()),
-            CardStatus.ACTIVE,
-            defaults.currencyCode(),
-            defaults.dailyLimit(),
-            defaults.monthlyLimit(),
-            defaults.balance(),
-            testIssuerId
-        );
-    }
-
-    private String generatePan() {
-        return faker.regexify("[0-9]{16}");
     }
 }
