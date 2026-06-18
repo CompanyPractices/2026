@@ -5,7 +5,7 @@ import { CityCluster, useLocations } from '../hooks/useLocations';
 import { Transaction } from '../types';
 import { getStatusIcon } from '../utils/statusIcon';
 import 'leaflet/dist/leaflet.css';
-import { convertPenniesToRublesDirect, formatAmount } from "../utils/format.ts";
+import { convertPenniesToRubles, formatAmount } from "../utils/format.ts";
 import { ThemeContext } from "../contexts/ThemeContext.ts";
 
 const LIGHT_TILES = {
@@ -115,7 +115,7 @@ export function TransactionMap({ transactions }: TransactionMapProps) {
 
     if (clusters.length === 0) {
         return (
-            <div className="w-full h-full min-h-[400px] rounded-lg overflow-hidden flex items-center justify-center bg-zinc-100 dark:bg-sage-600">
+            <div className="w-full h-full min-h-[400px] rounded-lg overflow-hidden flex items-center justify-center bg-zinc-100 dark:bg-sage-500">
                 <div className="text-center text-zinc-500 dark:text-sage-200">
                     <div className="text-lg font-mono">Ожидание транзакций...</div>
                 </div>
@@ -173,7 +173,7 @@ export function TransactionMap({ transactions }: TransactionMapProps) {
                                         <div>
                                             <div className="text-[11px] text-zinc-500 dark:text-zinc-400">Общая сумма</div>
                                             <div className="font-bold">
-                                                {formatAmount(convertPenniesToRublesDirect(stats.totalAmount)) + ' ₽'}
+                                                {convertPenniesToRubles(stats.totalAmount)}
                                             </div>
                                         </div>
                                         <div>
@@ -206,7 +206,7 @@ export function TransactionMap({ transactions }: TransactionMapProps) {
                                                         />
                                                     </div>
                                                     <div className="text-zinc-700 dark:text-zinc-300">
-                                                        {formatAmount(convertPenniesToRublesDirect(tx.amount)) + ' ₽'}
+                                                        {convertPenniesToRubles(tx.amount)}
                                                     </div>
                                                 </div>
                                             );

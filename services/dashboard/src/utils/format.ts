@@ -12,10 +12,6 @@ export const convertPenniesToRubles = (pennies: number): string => {
     }).replace(',', '.') + ' ₽';
 };
 
-export const convertPenniesToRublesDirect = (pennies: number): number => {
-    return pennies / 100;
-}
-
 export const formatTime = (iso: string): string => {
     return formatInTimeZone(iso, 'UTC','HH:mm:ss');
 };
@@ -25,8 +21,4 @@ export const formatDateTime = (iso: string): string => {
 };
 export const formatDate = (iso: string): string => {
     return formatInTimeZone(iso, 'UTC', 'dd.MM.yyyy')
-}
-
-export const formatAmount = (amount: number): string => {
-    return amount.toLocaleString('ru-RU');
 }
