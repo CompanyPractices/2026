@@ -22,6 +22,7 @@
 | GET   | `/health`                     | Health-check сервиса                  |
 | GET   | `/api/simulator/merchants`    | Получение доступных мерчантов         |
 | POST  | `/api/simulator/merchant/run` | Запуск симулятора отправки транзакций |
+| POST  | `/api/simulator/merchant/fee` | Получение комиссии эквайера по транзакции |
 
 ### Подробно
 
@@ -38,6 +39,12 @@
 }
 ```
 
+**Ошибки:**
+
+| Код | `error` | Условие |
+|-----|---------|---------|
+| 500 | Internal service error | Ошибка обращения к БД при подсчёте мерчантов |
+
 #### `GET /api/simulator/merchants`
 
 **Ответ 200:**
@@ -52,6 +59,12 @@
   "averageCheck": 120000
 }
 ```
+
+**Ошибки:**
+
+| Код | `error` | Условие |
+|-----|---------|---------|
+| 500 | Internal service error | Ошибка обращения к БД при выборке мерчантов |
 
 #### `POST /api/simulator/merchant/run`
 
@@ -75,7 +88,16 @@
 }
 ```
 
-#### `GET /api/simulator/merchant/fee`
+**Ошибки:**
+
+| Код | `error` | Условие |
+|-----|---------|---------|
+| 400 | Invalid request | `count < 1`, не указан `scenario` или некорректное JSON-тело |
+| 404 | Resource not found | Нет мерчантов по заданным MCC, Card Management не вернул карт, либо у мерчанта нет терминалов |
+| 502 | External service error | Недоступен Card Management или API Gateway (ошибка/таймаут вызова) |
+| 500 | Internal service error | Непредвиденная внутренняя ошибка при построении/отправке транзакций |
+
+#### `POST /api/simulator/merchant/fee`
 
 **Тело запроса:**
 ```json
@@ -84,7 +106,7 @@
   "stan": "string",
   "pan": "string",
   "terminalId": "string",
-  "amount": "long"
+  "amount": "BigDecimal"
 }
 ```
 
@@ -95,12 +117,46 @@
 }
 ```
 
-**Ошибки: (TODO)**
+---
+
+**Ошибки:**
+
+| Код | `error` | Условие |
+|-----|---------|---------|
+| 400 | Invalid request | Некорректное тело запроса |
+| 404 | Resource not found | Комиссия по заданным `transmissionDateTime` / `stan` / `terminalId` не найдена |
+| 500 | Internal service error | Непредвиденная внутренняя ошибка |
+
+
+### Формат ошибок
+
+Все ошибки возвращаются в едином формате `ErrorResponse`:
+
+```json
+{
+  "error": "Resource not found",
+  "message": "Merchants with given mcc ([0000]) not found",
+  "timestamp": "2026-06-17T10:03:48.512",
+  "serviceName": "Merchant acquirer simulator",
+  "retryAfterMs": "0"
+}
+```
+
+| Поле | Описание |
+|------|----------|
+| `error` | Краткая категория ошибки |
+| `message` | Детали (поле, MCC, STAN и т.п.) |
+| `serviceName` | Источник ошибки. При `502` — имя **вышестоящего** сервиса (`Card management`, `API Gateway`) |
+| `retryAfterMs` | Через сколько мс повторять: `"0"` — повтор бессмыслен; `>0` — повторить через N мс (приходит из ответа upstream при `502`) |
+
+**Ошибки: **
+
 | Код | Условие |
 |-----|---------|
 | 400 | Ошибка валидации |
 | 404 | {Сущность} не найдена |
-| 503 | Downstream-сервис недоступен |
+| 500 | Непредвиденная внутрення ошибка сервиса |
+| 502 | Внешний сервис не доступен |
 
 ---
 
@@ -108,15 +164,16 @@
 
 Все параметры через переменные окружения (файл `.env` в корне проекта):
 
-| Переменная          | Значение по умолчанию | Описание |
-|---------------------|----------------------|----------|
-| `PORT`              | `{8080}` | Порт сервиса |
-| `POSTGRES_HOST`     | `postgres` | Хост PostgreSQL |
-| `POSTGRES_PORT`     | `5432` | Порт PostgreSQL |
-| `POSTGRES_DB`       | `smp_db` | Имя базы данных |
-| `POSTGRES_USER`     | `smp_user` | Пользователь БД |
-| `POSTGRES_PASSWORD` | `smp_password` | Пароль БД |
-| `GATEWAY_URL`       | `http://localhost:{port}` | URL смежного сервиса |
+| Переменная          | Значение по умолчанию     | Описание                                                 |
+|---------------------|---------------------------|----------------------------------------------------------|
+| `PORT`              | `{8080}`                  | Порт сервиса                                             |
+| `POSTGRES_HOST`     | `postgres`                | Хост PostgreSQL                                          |
+| `POSTGRES_PORT`     | `5432`                    | Порт PostgreSQL                                          |
+| `POSTGRES_DB`       | `smp_db`                  | Имя базы данных                                          |
+| `POSTGRES_USER`     | `smp_user`                | Пользователь БД                                          |
+| `POSTGRES_PASSWORD` | `smp_password`            | Пароль БД                                                |
+| `GATEWAY_URL`       | `http://localhost:{port}` | URL смежного сервиса                                     |
+| `CONCURRENCY`       | `50`                      | Количество потоков при параллельной отправки авторизаций |
 
 ---
 

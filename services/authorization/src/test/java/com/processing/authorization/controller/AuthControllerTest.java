@@ -20,9 +20,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import com.processing.common.dto.authorization.RollbackRequest;
-import com.processing.common.dto.authorization.RollbackResponse;
-import java.math.BigDecimal;
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc
@@ -101,29 +98,29 @@ class AuthControllerTest {
         );
 
         rollbackApprovedResponse = RollbackResponse.approved(
-                TEST_RRN,
+                validRollbackRequest,
                 Instant.now()
         );
         rollbackDeclinedResponse = RollbackResponse.declined(
-                TEST_RRN,
+                validRollbackRequest,
                 ROLLBACK_FAILED.reason(),
                 ROLLBACK_FAILED.code(),
                 Instant.now()
         );
         rollbackNotFoundResponse = RollbackResponse.declined(
-                TEST_RRN,
+                validRollbackRequest,
                 TRANSACTION_NOT_FOUND.reason(),
                 TRANSACTION_NOT_FOUND.code(),
                 Instant.now()
         );
         rollbackConflictResponse = RollbackResponse.declined(
-                TEST_RRN,
+                validRollbackRequest,
                 ALREADY_ROLLED_BACK.reason(),
                 ALREADY_ROLLED_BACK.code(),
                 Instant.now()
         );
         rollbackServiceUnavailableResponse = RollbackResponse.declined(
-                TEST_RRN,
+                validRollbackRequest,
                 SERVICE_UNAVAILABLE.reason(),
                 SERVICE_UNAVAILABLE.code(),
                 Instant.now()
@@ -214,7 +211,7 @@ class AuthControllerTest {
 
     @Test
     void rollbackReturn200WhenRollbackApproved() throws Exception {
-        when(authService.rollback(any(RollbackRequest.class), any(LocalDateTime.class)))
+        when(authService.rollback(any(RollbackRequest.class), any(Instant.class)))
                 .thenReturn(rollbackApprovedResponse);
 
         mockMvc.perform(post("/api/internal/rollback")
@@ -230,7 +227,7 @@ class AuthControllerTest {
 
     @Test
     void rollbackReturn404WhenTransactionNotFound() throws Exception {
-        when(authService.rollback(any(RollbackRequest.class), any(LocalDateTime.class)))
+        when(authService.rollback(any(RollbackRequest.class), any(Instant.class)))
                 .thenReturn(rollbackNotFoundResponse);
 
         mockMvc.perform(post("/api/internal/rollback")
@@ -245,7 +242,7 @@ class AuthControllerTest {
 
     @Test
     void rollbackReturn409WhenAlreadyRolledBack() throws Exception {
-        when(authService.rollback(any(RollbackRequest.class), any(LocalDateTime.class)))
+        when(authService.rollback(any(RollbackRequest.class), any(Instant.class)))
                 .thenReturn(rollbackConflictResponse);
 
         mockMvc.perform(post("/api/internal/rollback")
@@ -260,7 +257,7 @@ class AuthControllerTest {
 
     @Test
     void rollbackReturn503WhenServiceUnavailable() throws Exception {
-        when(authService.rollback(any(RollbackRequest.class), any(LocalDateTime.class)))
+        when(authService.rollback(any(RollbackRequest.class), any(Instant.class)))
                 .thenReturn(rollbackServiceUnavailableResponse);
 
         mockMvc.perform(post("/api/internal/rollback")

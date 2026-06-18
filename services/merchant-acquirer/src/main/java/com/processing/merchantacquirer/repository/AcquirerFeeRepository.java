@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 
 @Repository
-public interface AcquirerFeeRepository extends JpaRepository<AcquirerFee, BigDecimal> {
+public interface AcquirerFeeRepository extends JpaRepository<AcquirerFee, Long> {
     AcquirerFee findByTransmissionDateTimeAndStanAndTerminalIdAndAmountAndPan(
             String transmissionDateTime, String stan, String terminalId, BigDecimal amount, String pan);
 }

@@ -2,6 +2,7 @@ package com.processing.authorization.constants;
 
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
 
 import java.time.Instant;
@@ -96,7 +97,7 @@ public record DeclineOutcome(String reason, String code) {
         return AuthorizationResponse.declined(request, reason, code, requestInputTime);
     }
 
-    public RollbackResponse buildRollback(String rrn, Instant requestInputTime) {
-        return RollbackResponse.declined(rrn, reason, code, requestInputTime);
+    public RollbackResponse buildRollback(RollbackRequest request, Instant requestInputTime) {
+        return RollbackResponse.declined(request, reason, code, requestInputTime);
     }
 }
