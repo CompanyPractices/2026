@@ -12,7 +12,9 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -32,6 +34,31 @@ public class TransactionControllerIntegrationTest {
         mockMvc.perform(get("/api/transactions/search"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(5))
+                .andExpect(jsonPath("$.transactions").isArray());
+    }
+
+    @Test
+    void searchReturns200WithDeclineReasonParameter() throws Exception {
+        when(transactionService.search(argThat(filter -> "card not found".equals(filter.getDeclineReason()))))
+                .thenReturn(new TransactionSearchResponse(1L, List.of()));
+
+        mockMvc.perform(get("/api/transactions/search")
+                        .param("declineReason", "card not found"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.transactions").isArray());
+
+        verify(transactionService).search(argThat(filter -> "card not found".equals(filter.getDeclineReason())));
+    }
+
+    @Test
+    void searchReturns200WhenDeclineReasonIsBlank() throws Exception {
+        when(transactionService.search(any())).thenReturn(new TransactionSearchResponse(2L, List.of()));
+
+        mockMvc.perform(get("/api/transactions/search")
+                        .param("declineReason", ""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
                 .andExpect(jsonPath("$.transactions").isArray());
     }
 

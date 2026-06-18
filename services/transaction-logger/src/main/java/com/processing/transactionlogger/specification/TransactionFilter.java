@@ -22,6 +22,7 @@ public class TransactionFilter {
     private String merchantId;
     private String issuerId;
     private String mcc;
+    private String declineReason;
     @Positive
     @Max(value = 500, message = "limit must not exceed 500")
     private int limit = 50;

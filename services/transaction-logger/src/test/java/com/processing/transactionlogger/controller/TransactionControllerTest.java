@@ -47,6 +47,7 @@ public class TransactionControllerTest {
         TransactionFilter filter = new TransactionFilter();
         filter.setPan("4000001234560001");
         filter.setStatus(TransactionStatus.APPROVED);
+        filter.setDeclineReason("CARD_NOT_FOUND");
 
         transactionController.search(filter);
 

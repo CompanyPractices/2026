@@ -97,9 +97,9 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
         doNothing().when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(Instant.class), any(Instant.class)))
+        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
@@ -282,9 +282,9 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
         doThrow(new ReserveException("Reserve failed")).when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
-        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(Instant.class), any(Instant.class)))
+        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
@@ -324,7 +324,7 @@ class AuthServiceTest {
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(BigDecimal.valueOf(50000));
         usage.setMonthlyAmount(BigDecimal.valueOf(200000));
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
 
 
@@ -345,7 +345,7 @@ class AuthServiceTest {
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(BigDecimal.valueOf(96000));
         usage.setMonthlyAmount(BigDecimal.valueOf(200000));
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
 
         AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
@@ -365,7 +365,7 @@ class AuthServiceTest {
         LimitUsage usage = new LimitUsage();
         usage.setDailyAmount(BigDecimal.valueOf(50000));
         usage.setMonthlyAmount(BigDecimal.valueOf(498000));
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(Instant.class)))
+        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
                 .thenReturn(Optional.of(usage));
 
         AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
