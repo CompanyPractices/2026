@@ -1,7 +1,5 @@
 package com.processing.cardmanagement.models;
 
-import com.processing.cardmanagement.exceptions.InsufficientFundsException;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -69,6 +67,18 @@ public record Card(
     }
 
     /**
+     * Проверяет статус карты и после этого возвращает запрос на списание средств
+     *
+     * @param amount размер списания
+     * @param rrn    RRN-номер
+     * @return информация о списании
+     */
+    public Reservation startReservation(BigDecimal amount, String rrn) {
+        checkStatusOrThrow();
+        return new Reservation(this.pan, amount, rrn);
+    }
+
+    /**
      * Создает копию карты с зарезервированным количеством средств
      *
      * @param reservation информация о резервировании
@@ -77,10 +87,6 @@ public record Card(
     public Card withReservation(Reservation reservation) {
         if (!Objects.equals(this.pan, reservation.pan())) {
             throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
-        }
-        BigDecimal amount = reservation.reservationAmount();
-        if (this.availableBalance.compareTo(amount) < 0) {
-            throw new InsufficientFundsException();
         }
 
         return new Card(
@@ -93,7 +99,7 @@ public record Card(
             currencyCode,
             dailyLimit,
             monthlyLimit,
-            availableBalance.subtract(amount),
+            availableBalance.subtract(reservation.reservationAmount()),
             issuerId,
             createdAt
         );
@@ -219,5 +225,14 @@ public record Card(
             draft.initialBalance(),
             issuerId
         );
+    }
+
+    /**
+     * Проверяет перед операцией, что карта активна
+     */
+    public void checkStatusOrThrow() {
+        if (status != CardStatus.ACTIVE) {
+            throw new IllegalStateException("Card status is \"" + status.name() + "\"");
+        }
     }
 }

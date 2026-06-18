@@ -56,7 +56,7 @@ management:
 
 spring:
   lifecycle:
-    timeout-per-shutdown-phase: ${GATEWAY_SHUTDOWN_DRAIN_PERIOD}
+    timeout-per-shutdown-phase: ${GATEWAY_SHUTDOWN_DRAIN_PERIOD:30s}
   cloud:
     gateway:
       mvc:
@@ -165,7 +165,7 @@ gateway:
     request-timeout: 3
     url: /health
   shutdown:
-    drain-period: ${GATEWAY_SHUTDOWN_DRAIN_PERIOD}
+    drain-period: ${GATEWAY_SHUTDOWN_DRAIN_PERIOD:30s}
 
 #---
 # Swagger

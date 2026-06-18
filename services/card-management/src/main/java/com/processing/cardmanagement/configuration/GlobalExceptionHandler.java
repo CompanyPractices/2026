@@ -96,7 +96,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleIllegalStateException(
         IllegalStateException ex
     ) {
@@ -116,7 +116,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TooLargeLimitException.class)
     @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
     public ErrorResponse handleTooLargeLimitException(
-            TooLargeLimitException ex
+        TooLargeLimitException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
@@ -179,7 +179,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CardGenerationLimitException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleCardGenerationLimitException(
-            CardGenerationLimitException ex
+        CardGenerationLimitException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);

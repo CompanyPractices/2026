@@ -17,6 +17,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
 
     const textColor = isDark ? '#ECF6DA' : '#273338';
     const gridColor = isDark ? '#E5E7EB' : '#344148';
+    const lineColor = isDark ? 'oklch(79.2% 0.209 151.711)' : 'green'
 
 
     function prepareData(transactions: Transaction[]){
@@ -60,7 +61,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                     data = {txData}
-                    margin={{ top: 30, right: 10, left: 20, bottom: 20 }}
+                    margin={{ top: 30, right: 30, left: 20, bottom: 20 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
                     <XAxis
@@ -83,7 +84,7 @@ export default function TransactionLineChart({transactions, loading, error} : Li
                     <Line
                         type="monotone"
                         dataKey="count"
-                        stroke="green"
+                        stroke={lineColor}
                         animationDuration={2000}
                     />
                 </LineChart>
