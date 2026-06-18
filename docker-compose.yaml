@@ -165,7 +165,7 @@ services:
   autoscaler:
     image: docker:27-cli
     environment:
-      - GITHUB_ACTOR=${GITHUB_ACTOR}
+      - GITHUB_ACTOR
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./scripts/autoscaler.sh:/app/autoscaler.sh

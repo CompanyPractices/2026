@@ -262,11 +262,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Normalize GHCR namespace to lowercase
+        run: echo "GITHUB_ACTOR=${ACTOR,,}" >> "$GITHUB_ENV"
+        env:
+          ACTOR: ${{ github.actor }}
+
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ env.GITHUB_ACTOR }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
@@ -274,6 +280,8 @@ jobs:
 
       - name: Build and push Docker images
         run: docker compose build --push
+        env:
+          GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
 
       - name: Copy config files to server
         uses: appleboy/scp-action@master
@@ -281,7 +289,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.yaml,infra/**,scripts/**"
+          source: "docker-compose.yaml,infra/**,scripts/**,.env.example"
           target: "~/app/2026/"
 
       - name: Deploy on server via SSH
@@ -293,8 +301,9 @@ jobs:
           envs: GITHUB_ACTOR
           script: |
             cd ~/app/2026
+            if [ ! -f .env ]; then cp .env.example .env; fi
             docker compose pull
             chmod -R o+rx ./infra/grafana
             docker compose up -d --remove-orphans --no-build
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
