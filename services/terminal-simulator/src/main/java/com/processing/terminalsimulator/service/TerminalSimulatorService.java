@@ -157,8 +157,7 @@ public class TerminalSimulatorService {
                         AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay, cards,
                                 approved, declined, terminalId);
                         authResponses.add(resp);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         log.error("Transaction failed", e);
                         authResponses.add(new AuthorizationResponse(null, null, null, null, null,
                                 null, e.getMessage(), 0));
@@ -182,6 +181,7 @@ public class TerminalSimulatorService {
         }
 
         long elapsed = System.currentTimeMillis() - start;
-        return new TerminalRunResponse(totalSubmitted.get(), approved.get(), declined.get(), elapsed, authResponses.stream().toList());
+        return new TerminalRunResponse(totalSubmitted.get(), approved.get(), declined.get(), elapsed,
+                authResponses.stream().toList());
     }
 }
