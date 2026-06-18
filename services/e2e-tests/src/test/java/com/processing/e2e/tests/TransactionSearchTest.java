@@ -10,7 +10,7 @@ import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  TC-19 — Transaction search with filters and pagination.
@@ -127,7 +127,7 @@ public class TransactionSearchTest extends E2EBaseTest {
                 .processingCode("000000")
                 .amount(amount)
                 .currencyCode("643")
-                .transmissionDateTime(LocalDateTime.now().toString())
+                .transmissionDateTime(Instant.now())
                 .terminalId("TERM0001")
                 .terminalType("POS")
                 .merchantId("MERCH0000000001")

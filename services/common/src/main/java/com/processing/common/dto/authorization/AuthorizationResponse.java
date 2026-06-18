@@ -1,7 +1,7 @@
 package com.processing.common.dto.authorization;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.Duration;
 
 public record AuthorizationResponse(
@@ -49,52 +49,50 @@ public record AuthorizationResponse(
 
     public static AuthorizationResponse unknownBin(String stan) {
         return new AuthorizationResponse(
-            "0110", stan, null, null, "14", "DECLINED",
-            "CARD_NOT_FOUND", 0
+                "0110", stan, null, null, "14", "DECLINED",
+                "CARD_NOT_FOUND", 0
         );
     }
-
 
     public static AuthorizationResponse authUnavailable(String stan) {
         return new AuthorizationResponse(
-            "0110", stan, null, null, "05", "DECLINED",
-            "Authorization service unavailable", 0
+                "0110", stan, null, null, "05", "DECLINED",
+                "Authorization service unavailable", 0
         );
     }
 
-
     public static AuthorizationResponse systemError(String stan) {
         return new AuthorizationResponse(
-            "0110", stan, null, null, "96", "DECLINED",
-            "System error", 0
+                "0110", stan, null, null, "96", "DECLINED",
+                "System error", 0
         );
     }
 
     public static AuthorizationResponse approved(AuthorizationRequest request, String rrn,
-        String authCode, LocalDateTime requestInputTime) {
+                                                 String authCode, Instant requestInputTime) {
         return new AuthorizationResponse(
-            request.mti(),
-            request.stan(),
-            rrn,
-            authCode,
-            CODE_APPROVED,
-            STATUS_APPROVED,
-            null,
-            Math.toIntExact(Duration.between(requestInputTime, LocalDateTime.now()).toMillis())
+                request.mti(),
+                request.stan(),
+                rrn,
+                authCode,
+                CODE_APPROVED,
+                STATUS_APPROVED,
+                null,
+                Math.toIntExact(Duration.between(requestInputTime, Instant.now()).toMillis())
         );
     }
 
     public static AuthorizationResponse declined(AuthorizationRequest request, String reason,
-        String code, LocalDateTime requestInputTime) {
+                                                 String code, Instant requestInputTime) {
         return new AuthorizationResponse(
-            request.mti(),
-            request.stan(),
-            null,
-            null,
-            code,
-            STATUS_DECLINED,
-            reason,
-            Math.toIntExact(Duration.between(requestInputTime, LocalDateTime.now()).toMillis())
+                request.mti(),
+                request.stan(),
+                null,
+                null,
+                code,
+                STATUS_DECLINED,
+                reason,
+                Math.toIntExact(Duration.between(requestInputTime, Instant.now()).toMillis())
         );
     }
 }

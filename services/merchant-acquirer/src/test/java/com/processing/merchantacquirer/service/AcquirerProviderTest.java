@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Instant;
+
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,7 +31,7 @@ public class AcquirerProviderTest {
     void getFee(){
         BigDecimal amount = BigDecimal.valueOf(139_999);
         String stan = "000004";
-        String transmissionDateTime = "2026-06-10T18:19:25.843989500";
+        Instant transmissionDateTime = Instant.now();
         String terminalId = "TERM001";
         String pan = "4000005310852539";
         BigDecimal fee = amount.multiply(BigDecimal.valueOf(67)).multiply(BigDecimal.valueOf(0.001));
@@ -44,7 +46,7 @@ public class AcquirerProviderTest {
 
     @Test
     void getUnrealFeeInMap() {
-        String transmissionDateTime = "2026-06-10T18:19:25.843989500";
+        Instant transmissionDateTime = Instant.now();
         String stan = "000004";
         String terminalId = "TERM001";
         AcquirerFeeRequest acquirerFeeRequest = new AcquirerFeeRequest(transmissionDateTime, null, stan, null, terminalId);

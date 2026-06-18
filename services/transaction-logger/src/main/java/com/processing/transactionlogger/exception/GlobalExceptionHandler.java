@@ -129,7 +129,7 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(
                 error,
                 message,
-                Instant.now().toString(),
+                Instant.now(),
                 SERVICE_NAME,
                 retryAfterMs
         );

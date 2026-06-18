@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.*;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +29,6 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Random;
@@ -94,7 +94,7 @@ public class AuthService {
      * @see AuthorizationResponse
      */
     @Transactional(rollbackFor = { Exception.class })
-    public AuthorizationResponse authorize(AuthorizationRequest request, LocalDateTime requestInputTime) {
+    public AuthorizationResponse authorize(AuthorizationRequest request, Instant requestInputTime) {
         CardModel cardResponse;
         try {
             cardResponse = getCard(request.pan());
@@ -122,14 +122,9 @@ public class AuthService {
             };
         }
 
-        LocalDate transmissionDate;
-        if (request.transmissionDateTime().endsWith("Z")) {
-            transmissionDate = OffsetDateTime.parse(request.transmissionDateTime()).toLocalDate();
-        } else {
-            transmissionDate = LocalDateTime.parse(request.transmissionDateTime()).toLocalDate();
-        }
+        Instant transmissionDate = request.transmissionDateTime();
 
-        LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
+        Instant lastValidDay = cardResponse.expiryDate().atEndOfMonth().atStartOfDay().toInstant(ZoneOffset.UTC);
         if (lastValidDay.isBefore(transmissionDate)) {
             return DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
         }
@@ -141,12 +136,19 @@ public class AuthService {
         Optional<LimitUsage> currLimitUsage = limitUsageRepository
                 .findByPanAndUsageDate(request.pan(), transmissionDate);
 
+        LocalDate transmissionLocalDate = request.transmissionDateTime()
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate();
+
         Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
                 ? currLimitUsage
                 : limitUsageRepository
                         .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
                                 request.pan(),
-                                transmissionDate.withDayOfMonth(1),
+                                transmissionLocalDate.withDayOfMonth(1)
+                                        .atStartOfDay()
+                                        .atZone(ZoneOffset.UTC)
+                                        .toInstant(),
                                 transmissionDate);
         if (monthLimitUsage.isPresent()) {
             LimitUsage monthUsage = monthLimitUsage.get();

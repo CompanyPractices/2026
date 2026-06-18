@@ -49,7 +49,7 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     private static final String TERMINAL_ID = "TERM0001";
     private static final String TERMINAL_TYPE = "POS";
     private static final String MERCHANT_ID = "MERCH0000000001";
-    private static final String TRANSMISSION_DATE_TIME = "2026-06-01T10:30:00";
+    private static final Instant TRANSMISSION_DATE_TIME = Instant.parse("2026-06-01T10:30:00Z");
     private static final Duration STACK_READY_TIMEOUT = Duration.ofMinutes(3);
     private static final Duration STACK_READY_POLL_INTERVAL = Duration.ofSeconds(3);
     private static final List<String> REQUIRED_SERVICES =
