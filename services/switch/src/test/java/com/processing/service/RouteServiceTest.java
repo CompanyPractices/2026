@@ -3,6 +3,7 @@ package com.processing.service;
 import com.processing.SwitchTestData;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.support.CapturingAuthorizationClient;
@@ -18,12 +19,18 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Unit-тесты оркестрации {@link RouteService}: маршрутизация, логирование, rollback.
+ */
 class RouteServiceTest {
 
     private static final String TEST_RRN = "012345678901";
+    private static final String TEST_PAN = "4000001234560001";
+    private static final BigDecimal TEST_AMOUNT = BigDecimal.valueOf(150000);
 
     private final RoutingService routingService = new RoutingService(SwitchTestData.defaultProperties());
 
+    /** Неизвестный BIN → DECLINED/14, Logger вызывается, Authorization — нет. */
     @Test
     void route_unknownBin_declinesAndLogsWithoutCallingAuthorization() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
@@ -50,6 +57,7 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().issuerId()).isNull();
     }
 
+    /** Authorization недоступен → DECLINED/05, транзакция всё равно логируется. */
     @Test
     void route_authUnavailable_declinesAndLogsTransaction() {
         TrackingLoggerClient logger = new TrackingLoggerClient(true);
@@ -68,6 +76,7 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().issuerId()).isEqualTo("ISS001");
     }
 
+    /** Успешный цикл: BIN → ISS001, APPROVED, запись в Logger. */
     @Test
     void route_knownBin_authorizesAndLogsTransaction() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
@@ -94,6 +103,7 @@ class RouteServiceTest {
         assertThat(authorizationClient.rollbackCalled()).isFalse();
     }
 
+    /** Smoke-test идентификаторы нормализуются до отправки в Authorization. */
     @Test
     void route_smokeTestIds_areNormalizedBeforeAuthorization() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
@@ -106,7 +116,7 @@ class RouteServiceTest {
 
         AuthorizationRequest request = new AuthorizationRequest(
                 "0100", "000001", "4000001234560001", "000000", new BigDecimal("150000"), "643",
-                "2026-06-01T10:30:00Z",
+                Instant.parse("2026-06-01T10:30:00Z"),
                 "TERM001", SwitchTestData.TERMINAL_TYPE, "MERCH00000000001", "5411", "ACQ001", null);
 
         AuthorizationResponse response = routeService.route(request);
@@ -119,6 +129,7 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().merchantId()).isEqualTo("MERCH0000000001");
     }
 
+    /** Комиссия эквайринга из Merchant Acquirer попадает в TransactionRequest. */
     @Test
     void route_includesAcquiringFeeFromMerchantAcquirer() {
         CapturingAuthorizationClient authorizationClient = new CapturingAuthorizationClient();
@@ -134,6 +145,11 @@ class RouteServiceTest {
         assertThat(logger.lastTransaction().acquiringFee()).isEqualByComparingTo(new BigDecimal("2250"));
     }
 
+    /**
+     * Logger недоступен после APPROVED → rollback и DECLINED/96 независимо от кода rollback.
+     *
+     * @param rollbackResponse симулированный ответ Authorization на rollback
+     */
     @ParameterizedTest(name = "rollback response code {0}")
     @MethodSource("rollbackResponses")
     void route_loggerFailureAfterApproved_triggersRollbackAndReturns96(RollbackResponse rollbackResponse) {
@@ -156,25 +172,29 @@ class RouteServiceTest {
                 .isEqualByComparingTo(new BigDecimal("150000"));
     }
 
+    /**
+     * @return набор ответов rollback (успех и все decline-коды)
+     */
     private static Stream<RollbackResponse> rollbackResponses() {
         Instant now = Instant.now();
         return Stream.of(
-                RollbackResponse.approved(TEST_RRN, now),
+                RollbackResponse.approved(new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), now),
                 RollbackResponse.declined(
-                        TEST_RRN, "TRANSACTION_NOT_FOUND",
+                        new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), "TRANSACTION_NOT_FOUND",
                         RollbackResponse.CODE_TRANSACTION_NOT_FOUND, now),
                 RollbackResponse.declined(
-                        TEST_RRN, "ALREADY_ROLLED_BACK",
+                        new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), "ALREADY_ROLLED_BACK",
                         RollbackResponse.CODE_DECLINED_GENERAL, now),
                 RollbackResponse.declined(
-                        TEST_RRN, "ROLLBACK_FAILED",
+                        new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), "ROLLBACK_FAILED",
                         RollbackResponse.CODE_SERVICE_UNAVAILABLE, now),
                 RollbackResponse.declined(
-                        TEST_RRN, "SERVICE_UNAVAILABLE",
+                        new RollbackRequest(TEST_RRN, TEST_PAN, TEST_AMOUNT), "SERVICE_UNAVAILABLE",
                         RollbackResponse.CODE_SERVICE_UNAVAILABLE, now)
         );
     }
 
+    /** DECLINED от Authorization → логируется, rollback не вызывается. */
     @Test
     void route_declinedByAuth_stillLogsAndReturnsDecline() {
         AuthorizationResponse declined = new AuthorizationResponse(

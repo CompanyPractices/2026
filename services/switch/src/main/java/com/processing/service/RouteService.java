@@ -14,11 +14,11 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
 import java.util.UUID;
 
+/**
+ * Оркестратор маршрутизации: BIN → Authorization → Logger с обработкой ошибок и rollback.
+ */
 @Service
 public class RouteService {
 
@@ -29,6 +29,12 @@ public class RouteService {
     private final AcquiringFeeClient acquiringFeeClient;
     private final LoggerClient loggerClient;
 
+    /**
+     * @param routingService        сервис определения issuerId по BIN
+     * @param authorizationClient   HTTP-клиент Authorization Service
+     * @param acquiringFeeClient    клиент получения комиссии эквайринга
+     * @param loggerClient          HTTP-клиент Transaction Logger
+     */
     public RouteService(
             RoutingService routingService,
             AuthorizationClient authorizationClient,
@@ -40,6 +46,13 @@ public class RouteService {
         this.loggerClient = loggerClient;
     }
 
+    /**
+     * Выполняет полный цикл обработки транзакции: маршрутизация, авторизация, логирование.
+     * При недоступности Logger после APPROVED инициирует rollback и возвращает код {@code 96}.
+     *
+     * @param request входящий запрос авторизации от Gateway
+     * @return ответ авторизации для клиента
+     */
     public AuthorizationResponse route(AuthorizationRequest request) {
         long startMs = System.currentTimeMillis();
         String pan = request.pan();
@@ -86,6 +99,12 @@ public class RouteService {
         return response;
     }
 
+    /**
+     * Отправляет транзакцию в Logger, перехватывая {@link LoggerException}.
+     *
+     * @param transaction DTO для записи в Logger
+     * @return {@code true}, если Logger принял транзакцию
+     */
     private boolean tryLog(TransactionRequest transaction) {
         try {
             return loggerClient.log(transaction);
@@ -95,6 +114,12 @@ public class RouteService {
         }
     }
 
+    /**
+     * Логирует результат rollback-запроса в Authorization.
+     *
+     * @param stan     STAN исходной транзакции
+     * @param rollback ответ Authorization на rollback; может быть {@code null}
+     */
     private void logRollbackResult(String stan, RollbackResponse rollback) {
         if (rollback == null) {
             LOG.error("Rollback failed for TX {} — no response from Authorization", stan);
@@ -108,6 +133,14 @@ public class RouteService {
                 stan, rollback.rrn(), rollback.responseCode(), rollback.declineReason());
     }
 
+    /**
+     * Собирает {@link TransactionRequest} из запроса, ответа Authorization и комиссии.
+     *
+     * @param request      нормализованный запрос с issuerId
+     * @param response     ответ Authorization
+     * @param acquiringFee комиссия эквайринга или {@code null}
+     * @return DTO для Logger
+     */
     private TransactionRequest buildTransaction(
             AuthorizationRequest request,
             AuthorizationResponse response,
@@ -132,23 +165,18 @@ public class RouteService {
                 response.declineReason(),
                 response.authCode(),
                 response.processingTimeMs() != null ? response.processingTimeMs() : 0,
-                toInstant(request.transmissionDateTime()),
+                request.transmissionDateTime(),
                 Instant.now()
         );
     }
 
+    /**
+     * Преобразует строковый статус ответа в {@link TransactionStatus}.
+     *
+     * @param status значение поля {@code status} из {@link AuthorizationResponse}
+     * @return соответствующий enum
+     */
     private static TransactionStatus toTransactionStatus(String status) {
         return TransactionStatus.valueOf(status);
-    }
-
-    private static Instant toInstant(String dateTime) {
-        if (dateTime == null || dateTime.isBlank()) {
-            return Instant.now();
-        }
-        try {
-            return Instant.parse(dateTime);
-        } catch (DateTimeParseException e) {
-            return LocalDateTime.parse(dateTime).atZone(ZoneOffset.UTC).toInstant();
-        }
     }
 }

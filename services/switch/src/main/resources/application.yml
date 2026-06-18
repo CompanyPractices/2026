@@ -17,6 +17,12 @@ switch:
       - 1000
       - 2000
       - 4000
+  circuit-breaker:
+    authorization:
+      failure-rate-threshold: 50
+      sliding-window-size: 10
+      minimum-number-of-calls: 5
+      wait-duration-in-open-state-ms: 30000
   bin-routing:
     "400000": ISS001
     "400001": ISS002

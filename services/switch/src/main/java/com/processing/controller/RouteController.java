@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
+/**
+ * Внутренний REST-эндпоинт маршрутизации транзакций (вызывается Gateway).
+ */
 @RestController
 @RequestMapping("/api/internal")
 public class RouteController {
@@ -24,11 +27,20 @@ public class RouteController {
     private final RouteService routeService;
 
 
+    /**
+     * @param routeService сервис оркестрации маршрутизации
+     */
     public RouteController(RouteService routeService) {
         this.routeService = routeService;
     }
 
 
+    /**
+     * Принимает запрос авторизации, выполняет маршрутизацию и возвращает ответ.
+     *
+     * @param request тело {@link AuthorizationRequest} от Gateway
+     * @return {@link AuthorizationResponse} для передачи клиенту
+     */
     @PostMapping("/route")
     public ResponseEntity<AuthorizationResponse> routeTransaction(
             @RequestBody AuthorizationRequest request) {
@@ -38,6 +50,12 @@ public class RouteController {
     }
 
 
+    /**
+     * Маскирует PAN для безопасного логирования (первые 4 + **** + последние 4).
+     *
+     * @param pan номер карты
+     * @return замаскированный PAN
+     */
     private String maskPan(String pan) {
         if (pan == null || pan.length() < 8) {
             return "****";

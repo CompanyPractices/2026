@@ -1,6 +1,9 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
+import com.processing.merchantacquirer.domain.FeeCalculator;
+import com.processing.merchantacquirer.domain.MaskerPan;
+import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
 import com.processing.merchantacquirer.domain.entity.Terminal;
@@ -11,8 +14,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.processing.merchantacquirer.service.dto.RequestFeeData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -21,39 +28,71 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class TransactionBuilder {
-  private final AuthorizationRequestFactory authorizationRequestFactory;
+    private final AuthorizationRequestFactory authorizationRequestFactory;
+    private final TerminalProvider terminalProvider;
+    private final FeeCalculator feeCalculator;
 
-  public List<AuthorizationRequest> build(
-      int count,
-      List<CardDataResponse> cardDataResponses,
-      List<Merchant> merchants,
-      Terminal terminal,
-      Scenario scenario) {
-    List<AuthorizationRequest> requests = new ArrayList<>(count);
+    public List<RequestFeeData> build(
+            int count,
+            List<CardDataResponse> cardDataResponses,
+            List<Merchant> merchants,
+            Scenario scenario) {
 
-    for (int i = 0; i < count; i++) {
-      CardDataResponse card = cardDataResponses.get(i % cardDataResponses.size());
-      Merchant merchant = merchants.get(ThreadLocalRandom.current().nextInt(merchants.size()));
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<RequestFeeData>> futures = new ArrayList<>(count);
 
-      // Логика вычисления цены: берется поле "Средний чек мерчанта", задается диапазон [avg * 0.5, avg * 2].
-      // Из данного диапазона рандом выбирает значение и проверяется попадание в диапазон цен сценария,
-      // если выше, то берется верхняя отмета цены Сценария, если ниже, то нижняя отметка сценария
-      // если попал в промежуток - то сгенерированное рандомом число.
-      BigDecimal amount = new BigDecimal(
-              Math.clamp(
-                      ThreadLocalRandom.current().nextDouble(
-                      merchant.getAverageCheck().doubleValue() * 0.5,
-                      merchant.getAverageCheck().doubleValue() * 2),
-              scenario.getCountLower().doubleValue(),
-              scenario.getCountUpper().doubleValue()
-      )).setScale(0, RoundingMode.HALF_EVEN);
+            for (int i = 0; i < count; i++) {
+                int finalI = i;
+                Future<RequestFeeData> future = executor.submit(
+                        () -> {
+                            CardDataResponse card = cardDataResponses.get(finalI % cardDataResponses.size());
+                            Merchant merchant = merchants.get(ThreadLocalRandom.current().nextInt(merchants.size()));
+                            Terminal terminal = terminalProvider.getByMerchant(merchant.getId());
+                            BigDecimal amount = new BigDecimal(
+                                    Math.clamp(
+                                            ThreadLocalRandom.current().nextDouble(
+                                                    merchant.getAverageCheck().doubleValue() * 0.5,
+                                                    merchant.getAverageCheck().doubleValue() * 2),
+                                            scenario.getCountLower().doubleValue(),
+                                            scenario.getCountUpper().doubleValue()
+                                    )).setScale(0, RoundingMode.HALF_EVEN);
 
-      AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
-              card.pan(), card.currencyCode(), amount, terminal, merchant);
-      requests.add(authorizationRequest);
-      log.info(String.valueOf(authorizationRequest));
+                            AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
+                                    card.pan(), card.currencyCode(), amount, terminal, merchant);
+
+                            log.info("AuthorizationRequest: STAN: {}, PAN: {}, amount: {}, "
+                                            + "TerminalID: {}, MerchantID: {}, AcquirerID: {}, MCC: {} ",
+                                    authorizationRequest.stan(),
+                                    MaskerPan.mask(authorizationRequest.pan()),
+                                    authorizationRequest.amount(),
+                                    authorizationRequest.terminalId(),
+                                    authorizationRequest.merchantId(),
+                                    authorizationRequest.acquirerId(),
+                                    authorizationRequest.mcc());
+                            BigDecimal fee = feeCalculator.calculate(
+                                    merchant.getAcquiringFee(),
+                                    authorizationRequest.amount());
+                            AcquirerFee acquirerFee = AcquirerFee.of(fee, authorizationRequest);
+
+                            return new RequestFeeData(authorizationRequest, acquirerFee);
+                        }
+                );
+                futures.add(future);
+            }
+
+            List<RequestFeeData> requests = new ArrayList<>(count);
+
+            for (Future<RequestFeeData> future : futures) {
+                try {
+                    requests.add(future.get());
+                } catch (ExecutionException e) {
+                    throw new IllegalStateException("Failed build authorization request", e.getCause());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while build auhtorization request", e);
+                }
+            }
+            return requests;
+        }
     }
-
-    return requests;
-  }
 }

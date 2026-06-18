@@ -8,7 +8,7 @@ import static org.mockito.Mockito.doReturn;
 import java.net.URI;
 import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.util.UUID;
 
@@ -55,7 +55,7 @@ public class DBIntegrationTest {
     @Mock
     private RestClient.RequestBodySpec requestBodySpec;
 
-    private LocalDateTime now;
+    private Instant now;
     private AuthorizationRequest correctRequest;
 
     @BeforeEach
@@ -64,7 +64,7 @@ public class DBIntegrationTest {
                 requestBodyUriSpec, requestBodySpec);
 
         limitUsageRepository.deleteAll();
-        now = LocalDateTime.now();
+        now = Instant.now();
         correctRequest = new AuthorizationRequest(
                 "0100",
                 "123456",
@@ -72,7 +72,7 @@ public class DBIntegrationTest {
                 "000000",
                 BigDecimal.valueOf(5000),
                 "810",
-                "2026-06-05T18:12:49.070",
+                Instant.parse("2026-06-05T18:12:49.070Z"),
                 "T0000001",
                 null,
                 "M00000000000001",
@@ -158,7 +158,7 @@ public class DBIntegrationTest {
     }
 
     @Test
-    void authorizeShouldReturnDeclinedWhenReservationFails() throws Exception {
+    void authorizeShouldReturnDeclinedWhenReservationFails() {
         CardModel mockCard = createActiveCardModel();
         mockGetCard(mockCard);
         AuthorizationResponse response = authService.authorize(correctRequest, now);
@@ -209,7 +209,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createBlockedCardModel() {
@@ -225,7 +225,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createExpiredCardModel() {
@@ -241,7 +241,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createInactiveCardModel() {
@@ -257,7 +257,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createCardWithLowBalance() {
@@ -273,7 +273,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(1000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createActiveCardModelWithLowMonthlyLimit() {
@@ -289,7 +289,7 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 
     private CardModel createCardExpiredByDate() {
@@ -305,6 +305,6 @@ public class DBIntegrationTest {
                 BigDecimal.valueOf(500000),
                 BigDecimal.valueOf(10000),
                 "I001",
-                now);
+                Instant.now());
     }
 }
