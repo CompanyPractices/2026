@@ -33,22 +33,26 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
 
     // @Modifying
     // @Query(value = """
-    //         INSERT INTO limit_usage (id, pan, usage_date, daily_amount, monthly_amount)
-    //         VALUES (gen_random_uuid(), :pan, :date, :daily_amount, :monthly_amount)
-    //         ON CONFLICT (pan, usage_date)
-    //         DO UPDATE SET
-    //             daily_amount = limit_usage.daily_amount + :amount,
-    //             monthly_amount = limit_usage.monthly_amount + :amount,
-    //             updated_at = NOW()
-    //         WHERE
-    //             limit_usage.daily_amount + :amount <= :dailyLimit
-    //             AND limit_usage.monthly_amount + :amount <= :monthlyLimit
-    //         """, nativeQuery = true)
+    // INSERT INTO limit_usage (id, pan, usage_date, daily_amount, monthly_amount)
+    // VALUES (gen_random_uuid(), :pan, :date, :daily_amount, :monthly_amount)
+    // ON CONFLICT (pan, usage_date)
+    // DO UPDATE SET
+    // daily_amount = limit_usage.daily_amount + :amount,
+    // monthly_amount = limit_usage.monthly_amount + :amount,
+    // updated_at = NOW()
+    // WHERE
+    // limit_usage.daily_amount + :amount <= :dailyLimit
+    // AND limit_usage.monthly_amount + :amount <= :monthlyLimit
+    // """, nativeQuery = true)
     // // @Lock(LockModeType.PESSIMISTIC_WRITE)
     // int upsertWithLimitCheck(
-    //         @Param("pan") String pan,
-    //         @Param("date") LocalDate date,
-    //         @Param("amount") BigDecimal amount,
-    //         @Param("dailyLimit") BigDecimal dailyLimit,
-    //         @Param("monthlyLimit") BigDecimal monthlyLimit);
+    // @Param("pan") String pan,
+    // @Param("date") LocalDate date,
+    // @Param("amount") BigDecimal amount,
+    // @Param("dailyLimit") BigDecimal dailyLimit,
+    // @Param("monthlyLimit") BigDecimal monthlyLimit);
+
+    int deleteByUsageDateBetween(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

@@ -2,6 +2,7 @@ package com.processing.gateway.shutdown;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
+import com.processing.gateway.metrics.GatewayMetrics;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +28,7 @@ public class GracefulShutdownFilter extends OncePerRequestFilter {
     private final GracefulShutdownState shutdownState;
     private final ShutdownProperties shutdownProperties;
     private final ObjectMapper objectMapper;
+    private final GatewayMetrics gatewayMetrics;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -38,6 +40,7 @@ public class GracefulShutdownFilter extends OncePerRequestFilter {
             return;
         }
 
+        gatewayMetrics.recordGracefulShutdownRejected();
         writeServiceUnavailable(response);
     }
 

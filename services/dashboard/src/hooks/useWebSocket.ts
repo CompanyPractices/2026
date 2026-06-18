@@ -13,8 +13,13 @@ function calculateBackoffDelay(retryCount: number, retryDelayMs: number, maxRetr
     return Math.min(delay, maxRetryDelayMs);
 }
 
+const getDefaultWsUrl = () => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/ws/transactions`;
+};
+
 export function useWebSocket({
-      url = 'ws://localhost:8088/ws/transactions',
+                                 url = getDefaultWsUrl(),
       maxRetries = 5,
       retryDelayMs = 2000,
       maxRetryDelayMs = 30000

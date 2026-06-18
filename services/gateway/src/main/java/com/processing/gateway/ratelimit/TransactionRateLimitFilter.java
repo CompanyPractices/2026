@@ -1,6 +1,7 @@
 package com.processing.gateway.ratelimit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.gateway.metrics.GatewayMetrics;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ public class TransactionRateLimitFilter extends OncePerRequestFilter {
     private final InMemoryRateLimiter rateLimiter;
     private final ClientIpResolver clientIpResolver;
     private final ObjectMapper objectMapper;
+    private final GatewayMetrics gatewayMetrics;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -48,6 +50,7 @@ public class TransactionRateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
+        gatewayMetrics.recordRateLimitRejected();
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setHeader(HttpHeaders.RETRY_AFTER, "1");

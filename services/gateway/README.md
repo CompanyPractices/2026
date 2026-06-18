@@ -144,6 +144,19 @@ Prometheus metrics:
 http://localhost:8080/actuator/prometheus
 ```
 
+Локальная генерация событий для кастомных gateway-метрик:
+
+```bash
+GATEWAY_URL=http://localhost:8080 ./scripts/gateway-metrics-demo.sh
+```
+
+Скрипт отправляет невалидную транзакцию, делает burst транзакционных запросов
+для проверки rate-limit и дважды дергает Card Management endpoint для cache
+hit/miss. Для стабильной проверки rate-limit удобно временно запустить gateway с
+низким лимитом, например `TRANSACTIONS_RATE_LIMIT=1`. Если локальный endpoint
+карт отличается, передайте `CARD_CACHE_PATH`, например
+`CARD_CACHE_PATH=/api/cards/4000003458730237`.
+
 ## Структура модуля
 
 ```text

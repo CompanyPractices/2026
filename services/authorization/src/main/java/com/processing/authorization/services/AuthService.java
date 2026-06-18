@@ -132,9 +132,9 @@ public class AuthService {
             };
         }
 
-        Instant transmissionDate = request.transmissionDateTime();
+        LocalDate transmissionDate = request.transmissionDateTime().atZone(ZoneOffset.UTC).toLocalDate();
 
-        Instant lastValidDay = cardResponse.expiryDate().atEndOfMonth().atStartOfDay().toInstant(ZoneOffset.UTC);
+        LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
         if (lastValidDay.isBefore(transmissionDate)) {
             return DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
         }
@@ -225,7 +225,7 @@ public class AuthService {
                     throw new InvalidGetCardRequestException("Invalid pan");
                 })
                 .onStatus(status -> status.value() == 402, (req, res) -> {
-                    throw new PaymentRequiredException("Payment Required from card-managment");
+                    throw new PaymentRequiredException("Payment Required from card-management");
                 })
                 .onStatus(status -> status.value() == 404, (req, res) -> {
                     throw new CardNotFoundException("Card not found");
@@ -283,7 +283,7 @@ public class AuthService {
                     throw new InvalidReserveRequestException("Invalid reserve request");
                 })
                 .onStatus(status -> status.value() == 402, (req, res) -> {
-                    throw new InsufficientFundsException("Insufficient Funds from card-managment");
+                    throw new InsufficientFundsException("Insufficient Funds from card-management");
                 })
                 .onStatus(status -> status.value() == 404, (req, res) -> {
                     throw new CardNotFoundException("Card not found");

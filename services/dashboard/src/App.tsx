@@ -19,15 +19,24 @@ function App() {
             ...liveTransactions,
             ...(initialTransactions || []),
         ];
-        return allTransactions.filter((tx, index, self) =>
-            index === self.findIndex(t => t.id === tx.id));
+        const seen = new Set();
+        return allTransactions.filter(tx => {
+            if (seen.has(tx.id)) return false;
+            seen.add(tx.id);
+            return true;
+        });
     }, [liveTransactions, initialTransactions]);
 
     const displayedTransactions = useMemo(() => {
         if (isFiltered){
             const filtered = filteredTransactions || [];
+            const seen = new Set();
             return filtered
-                .filter((tx, index, self) => index === self.findIndex(t => t.id === tx.id))
+                .filter(tx => {
+                    if (seen.has(tx.id)) return false;
+                    seen.add(tx.id);
+                    return true;
+                })
                 .slice(0, 20);
         }
         return uniqueTransactions.slice(0, 20)
