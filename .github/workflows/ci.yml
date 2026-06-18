@@ -21,9 +21,6 @@ on:
       - 'docs/api/**'
       - 'scripts/smoke-test.sh'
 
-env:
-  GHCR_USER: ${{ toLower(github.repository_owner) }}
-
 jobs:
   base-lint:
     runs-on: ubuntu-latest
@@ -120,6 +117,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Normalize GHCR namespace to lowercase
+        run: echo "GHCR_USER=${OWNER,,}" >> "$GITHUB_ENV"
+        env:
+          OWNER: ${{ github.repository_owner }}
+
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y jq bc
 
@@ -189,6 +191,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Normalize GHCR namespace to lowercase
+        run: echo "GHCR_USER=${OWNER,,}" >> "$GITHUB_ENV"
+        env:
+          OWNER: ${{ github.repository_owner }}
 
       - name: Set up JDK 21 for E2E
         uses: actions/setup-java@v4
@@ -272,6 +279,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Normalize GHCR namespace to lowercase
+        run: echo "GHCR_USER=${OWNER,,}" >> "$GITHUB_ENV"
+        env:
+          OWNER: ${{ github.repository_owner }}
 
       - name: Create .env file
         run: cp .env.example .env
