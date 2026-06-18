@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import TransactionHistogram from "../TransactionHistogram";
 import {Transaction} from "../../types";
-import TransactionLineChart from "../TransactionLineChart";
 
 class MockResizeObserver {
     constructor(private callback: ResizeObserverCallback) {}

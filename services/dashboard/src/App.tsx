@@ -19,7 +19,7 @@ function App() {
             ...(initialTransactions || []),
         ];
         return allTransactions.filter((tx, index, self) =>
-            index === self.findIndex(t => t.id === tx.id));
+            index === self.findIndex(t => t.id === tx.id)).slice(0, 20);
     }, [liveTransactions, initialTransactions]);
 
     const displayedTransactions = useMemo(() => {
@@ -29,7 +29,7 @@ function App() {
                 .filter((tx, index, self) => index === self.findIndex(t => t.id === tx.id))
                 .slice(0, 20);
         }
-        return uniqueTransactions.slice(0, 20)
+        return uniqueTransactions
     }, [isFiltered, filteredTransactions, uniqueTransactions]);
 
     return (
