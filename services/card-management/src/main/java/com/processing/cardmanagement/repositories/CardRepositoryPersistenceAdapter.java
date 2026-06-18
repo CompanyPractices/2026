@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,8 +39,8 @@ public class CardRepositoryPersistenceAdapter implements CardRepository {
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         return jpaRepository
             .findCards(
@@ -62,8 +62,8 @@ public class CardRepositoryPersistenceAdapter implements CardRepository {
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         return jpaRepository.countCards(
             status != null ? status.name() : null,

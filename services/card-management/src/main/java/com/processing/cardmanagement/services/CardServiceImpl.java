@@ -17,7 +17,7 @@ import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -93,8 +93,8 @@ public class CardServiceImpl implements CardService {
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         if (limit != null && limit > settings.maxPageLimit()) {
             throw new TooLargeLimitException(limit, settings.maxPageLimit());
@@ -147,8 +147,8 @@ public class CardServiceImpl implements CardService {
         @Nullable CardStatus status,
         @Nullable String bin,
         @Nullable String issuerId,
-        @Nullable LocalDateTime startDate,
-        @Nullable LocalDateTime endDate
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         return cardRepository.countCardsFiltered(
             status,
