@@ -7,9 +7,13 @@ import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.model.Transaction;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.RecordComponent;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -126,6 +130,22 @@ class TransactionMapperTest {
         boolean matches = mapper.matches(transaction, request);
 
         assertThat(matches).isTrue();
+    }
+
+    @Test
+    void matchesCoverageAccountsForAllTransactionRequestFields() {
+        Set<String> requestFields = Arrays.stream(TransactionRequest.class.getRecordComponents())
+                .map(RecordComponent::getName)
+                .collect(Collectors.toUnmodifiableSet());
+        Set<String> matchedFields = TransactionMapper.matchedRequestFields();
+        Set<String> ignoredFields = TransactionMapper.ignoredRequestFieldsForMatches();
+        Set<String> accountedFields = java.util.stream.Stream.concat(matchedFields.stream(), ignoredFields.stream())
+                .collect(Collectors.toUnmodifiableSet());
+
+        assertThat(matchedFields).doesNotContain("createdAt");
+        assertThat(ignoredFields).containsExactly("createdAt");
+        assertThat(matchedFields).doesNotContainAnyElementsOf(ignoredFields);
+        assertThat(accountedFields).isEqualTo(requestFields);
     }
 
     private static TransactionRequest transactionRequest() {

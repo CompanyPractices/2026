@@ -7,7 +7,10 @@ import com.processing.transactionlogger.model.Transaction;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiPredicate;
 
 /**
  * Конвертирует объекты транзакций между слоями: DTO ↔ Entity ↔ Response.
@@ -16,6 +19,44 @@ import java.util.Objects;
 public class TransactionMapper {
 
     private static final String STORED_STATUS = "stored";
+    private static final Set<String> IGNORED_REQUEST_FIELDS_FOR_MATCHES = Set.of("createdAt");
+    private static final Map<String, BiPredicate<Transaction, TransactionRequest>> REQUEST_FIELD_MATCHERS =
+            Map.ofEntries(
+                    Map.entry("id", (transaction, request) -> Objects.equals(transaction.getId(), request.id())),
+                    Map.entry("mti", (transaction, request) -> Objects.equals(transaction.getMti(), request.mti())),
+                    Map.entry("stan", (transaction, request) -> Objects.equals(transaction.getStan(), request.stan())),
+                    Map.entry("rrn", (transaction, request) -> Objects.equals(transaction.getRrn(), request.rrn())),
+                    Map.entry("pan", (transaction, request) -> Objects.equals(transaction.getPan(), request.pan())),
+                    Map.entry("processingCode", (transaction, request) ->
+                            Objects.equals(transaction.getProcessingCode(), request.processingCode())),
+                    Map.entry("amount", (transaction, request) ->
+                            compareBigDecimal(transaction.getAmount(), request.amount())),
+                    Map.entry("currencyCode", (transaction, request) ->
+                            Objects.equals(transaction.getCurrencyCode(), request.currencyCode())),
+                    Map.entry("terminalId", (transaction, request) ->
+                            Objects.equals(transaction.getTerminalId(), request.terminalId())),
+                    Map.entry("terminalType", (transaction, request) ->
+                            Objects.equals(transaction.getTerminalType(), request.terminalType())),
+                    Map.entry("merchantId", (transaction, request) ->
+                            Objects.equals(transaction.getMerchantId(), request.merchantId())),
+                    Map.entry("mcc", (transaction, request) -> Objects.equals(transaction.getMcc(), request.mcc())),
+                    Map.entry("acquirerId", (transaction, request) ->
+                            Objects.equals(transaction.getAcquirerId(), request.acquirerId())),
+                    Map.entry("issuerId", (transaction, request) ->
+                            Objects.equals(transaction.getIssuerId(), request.issuerId())),
+                    Map.entry("acquiringFee", (transaction, request) ->
+                            compareBigDecimal(transaction.getAcquiringFee(), request.acquiringFee())),
+                    Map.entry("status", (transaction, request) ->
+                            Objects.equals(transaction.getStatus(), request.status())),
+                    Map.entry("declineReason", (transaction, request) ->
+                            Objects.equals(transaction.getDeclineReason(), request.declineReason())),
+                    Map.entry("authCode", (transaction, request) ->
+                            Objects.equals(transaction.getAuthCode(), request.authCode())),
+                    Map.entry("processingTimeMs", (transaction, request) ->
+                            Objects.equals(transaction.getProcessingTimeMs(), request.processingTimeMs())),
+                    Map.entry("transmissionDateTime", (transaction, request) ->
+                            Objects.equals(transaction.getTransmissionDateTime(), request.transmissionDateTime()))
+            );
 
     public Transaction toEntity(TransactionRequest request) {
         Transaction transaction = new Transaction();
@@ -83,26 +124,16 @@ public class TransactionMapper {
      * @return {@code true} если все поля идентичны
      */
     public boolean matches(Transaction transaction, TransactionRequest request) {
-        return Objects.equals(transaction.getId(), request.id())
-                && Objects.equals(transaction.getMti(), request.mti())
-                && Objects.equals(transaction.getStan(), request.stan())
-                && Objects.equals(transaction.getRrn(), request.rrn())
-                && Objects.equals(transaction.getPan(), request.pan())
-                && Objects.equals(transaction.getProcessingCode(), request.processingCode())
-                && compareBigDecimal(transaction.getAmount(), request.amount())
-                && Objects.equals(transaction.getCurrencyCode(), request.currencyCode())
-                && Objects.equals(transaction.getTerminalId(), request.terminalId())
-                && Objects.equals(transaction.getTerminalType(), request.terminalType())
-                && Objects.equals(transaction.getMerchantId(), request.merchantId())
-                && Objects.equals(transaction.getMcc(), request.mcc())
-                && Objects.equals(transaction.getAcquirerId(), request.acquirerId())
-                && Objects.equals(transaction.getIssuerId(), request.issuerId())
-                && compareBigDecimal(transaction.getAcquiringFee(), request.acquiringFee())
-                && Objects.equals(transaction.getStatus(), request.status())
-                && Objects.equals(transaction.getDeclineReason(), request.declineReason())
-                && Objects.equals(transaction.getAuthCode(), request.authCode())
-                && Objects.equals(transaction.getProcessingTimeMs(), request.processingTimeMs())
-                && Objects.equals(transaction.getTransmissionDateTime(), request.transmissionDateTime());
+        return REQUEST_FIELD_MATCHERS.values().stream()
+                .allMatch(matcher -> matcher.test(transaction, request));
+    }
+
+    static Set<String> matchedRequestFields() {
+        return REQUEST_FIELD_MATCHERS.keySet();
+    }
+
+    static Set<String> ignoredRequestFieldsForMatches() {
+        return IGNORED_REQUEST_FIELDS_FOR_MATCHES;
     }
 
     private static boolean compareBigDecimal(BigDecimal a, BigDecimal b) {
