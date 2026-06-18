@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -177,27 +178,6 @@ public class AuthService {
         String rrn = generateRRN();
         try {
             reserve(request.amount(), rrn, request.pan());
-            if (currLimitUsage.isPresent()) {
-                LimitUsage usage = currLimitUsage.get();
-                usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
-                usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
-                limitUsageRepository.save(usage);
-            } else if (monthLimitUsage.isPresent()) {
-                LimitUsage monthUsage = monthLimitUsage.get();
-                LimitUsage usage = new LimitUsage();
-                usage.setPan(request.pan());
-                usage.setUsageDate(transmissionDate);
-                usage.setDailyAmount(request.amount());
-                usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
-                limitUsageRepository.save(usage);
-            } else {
-                LimitUsage usage = new LimitUsage();
-                usage.setPan(request.pan());
-                usage.setUsageDate(transmissionDate);
-                usage.setDailyAmount(request.amount());
-                usage.setMonthlyAmount(request.amount());
-                limitUsageRepository.save(usage);
-            }
         } catch (CardNotFoundException e) {
             log.error("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
@@ -218,6 +198,15 @@ public class AuthService {
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         }
 
+        try {
+            updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
+        } catch (DuplicateKeyException  e) {
+            log.warn("data race for pan {}", logPan(request.pan()));
+            updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
+        } catch (Exception e) {
+            log.error("updating limits in db failed for pan {}", logPan(request.pan()));
+            // TODO call rollbackCard
+        }
         String authCode = generateAuthCode();
         return AuthorizationResponse.approved(request, rrn, authCode, requestInputTime);
     }
@@ -341,6 +330,32 @@ public class AuthService {
                 .toBodilessEntity();
 
         log.debug("Reserve successful for card {}", logPan(pan));
+    }
+
+    // TODO change transmissionDate to Instant type
+    public void updateLimits(AuthorizationRequest request, LocalDate transmissionDate,
+            Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
+        if (currLimitUsage.isPresent()) {
+            LimitUsage usage = currLimitUsage.get();
+            usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
+            usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
+            limitUsageRepository.save(usage);
+        } else if (monthLimitUsage.isPresent()) {
+            LimitUsage monthUsage = monthLimitUsage.get();
+            LimitUsage usage = new LimitUsage();
+            usage.setPan(request.pan());
+            usage.setUsageDate(transmissionDate);
+            usage.setDailyAmount(request.amount());
+            usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
+            limitUsageRepository.save(usage);
+        } else {
+            LimitUsage usage = new LimitUsage();
+            usage.setPan(request.pan());
+            usage.setUsageDate(transmissionDate);
+            usage.setDailyAmount(request.amount());
+            usage.setMonthlyAmount(request.amount());
+            limitUsageRepository.save(usage);
+        }
     }
 
     private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
