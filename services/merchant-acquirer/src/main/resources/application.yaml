@@ -24,7 +24,7 @@ logging.level.org.hibernate.engine.jdbc.batch.internal.BatchingBatch: WARN
 # Настройки параллельности
 spring.threads.virtual.enabled: true
 spring.datasource.hikari.maximum-pool-size: 30
-simulation.sender.concurrency: ${CONCURRENCY:1000}
+simulation.sender.concurrency: ${CONCURRENCY:50}
 simulation.sender.tps: ${TPS:100}
 
 # Actuator

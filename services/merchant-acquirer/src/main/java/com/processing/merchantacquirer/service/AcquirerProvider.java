@@ -31,8 +31,7 @@ public class AcquirerProvider {
                     request.transmissionDateTime(), request.stan(), request.terminalId());
             throw new ResourceNotFoundException("Acquirer fee not found for stan = " + request.stan());
         }
-        log.info("Request for get acquirer fee: DataTime: {} STAN: {} Acquirer fee: {}",
-                request.transmissionDateTime(), request.stan(), acquirerFee.getAcquirerFee());
+
 
         return new AcquirerFeeResponse(acquirerFee.getAcquirerFee());
     }
