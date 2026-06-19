@@ -10,15 +10,17 @@ import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.terminalsimulator.factory.TransactionFactory;
 import com.processing.terminalsimulator.client.GatewayClient;
 import com.processing.terminalsimulator.model.PartofDay;
-import com.processing.terminalsimulator.model.TransactionType;
+import com.processing.common.dto.terminalsimulator.TransactionType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -29,6 +31,11 @@ public class TerminalSimulatorService {
     private final TransactionFactory transactionFactory;
     private final int tps;
     private final int cardsAmount;
+
+    private final AtomicBoolean isContinuousRunning = new AtomicBoolean(false);
+    private Thread continuousLoopThread;
+    private ExecutorService continuousExecutor;
+
 
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
                                      @Value("${simulator.tps:100}") int tps,
@@ -133,6 +140,17 @@ public class TerminalSimulatorService {
         return tasks;
     }
 
+    private TransactionTask generateSingleTask(TransactionType transactionType) {
+        TransactionTask task = new TransactionTask(transactionType, PartofDay.DAY);;
+        return task;
+    }
+
+    private void cleanupContinuous() {
+        isContinuousRunning.set(false);
+        this.continuousLoopThread = null;
+        this.continuousExecutor = null;
+    }
+
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
         long start = System.currentTimeMillis();
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
@@ -183,5 +201,23 @@ public class TerminalSimulatorService {
         long elapsed = System.currentTimeMillis() - start;
         return new TerminalRunResponse(totalSubmitted.get(), approved.get(), declined.get(), elapsed,
                 authResponses.stream().toList());
+    }
+
+    public void startContinuous(int tps, TransactionType transactionType) {
+        if (!isContinuousRunning.compareAndSet(false, true)) {
+            throw new IllegalStateException("Continuous simulation is already running!");
+        }
+        log.info("Starting continuous simulation. TPS: {}, Scenario: {}", tps, transactionType);
+
+        long delayMs = 1000 / tps;
+        String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
+        List<CardModel> cards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, cardsAmount);
+
+    }
+
+    public void stopContinuous() {
+        if (isContinuousRunning.compareAndSet(true, false)) {
+            log.info("Stopping continuous simulation...");
+        }
     }
 }

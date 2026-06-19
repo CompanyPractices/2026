@@ -2,6 +2,7 @@ package com.processing.terminalsimulator.controller;
 
 import com.processing.common.dto.terminalsimulator.TerminalRunRequest;
 import com.processing.common.dto.terminalsimulator.TerminalRunResponse;
+import com.processing.common.dto.terminalsimulator.TerminalStartContinuousRequest;
 import com.processing.terminalsimulator.service.TerminalSimulatorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,5 +23,18 @@ public class TerminalSimulatorController {
     public ResponseEntity<TerminalRunResponse> run(@Valid @RequestBody TerminalRunRequest request) {
         TerminalRunResponse response = simulatorService.run(request.count(), request.scenario());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/start-continuous")
+    public ResponseEntity<Void> startContinuous(
+            @Valid @RequestBody TerminalStartContinuousRequest request) {
+        simulatorService.startContinuous(request.tps(), request.transactionType());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/stop")
+    public ResponseEntity<Void> stopContinuous() {
+        simulatorService.stopContinuous();
+        return ResponseEntity.ok().build();
     }
 }
