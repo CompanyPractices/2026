@@ -1,7 +1,7 @@
 package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.events.CardEventNotifier;
-import com.processing.cardmanagement.events.CardGeneratedEvent;
+import com.processing.cardmanagement.events.CardsBatchGeneratedEvent;
 import com.processing.cardmanagement.exceptions.CardGenerationLimitException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
@@ -13,8 +13,7 @@ import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -48,6 +47,9 @@ public class CardGeneratorService {
             throw new CardGenerationLimitException(generatorOptions.maxCount());
         }
 
+        Map<CardStatus, Long> statusCounts = new HashMap<>();
+        List<CardStatus> cardStatuses = generateStatuses(count);
+
         log.info("Generating {} cards for bins: {}", count, bins);
         List<CardDraft> cards = new ArrayList<>();
 
@@ -76,33 +78,45 @@ public class CardGeneratorService {
             CardDraft card = new CardDraft(
                     bin,
                     cardholderName,
-                    generateStatus(),
+                    cardStatuses.get(i),
                     generatorOptions.currencyCode(),
                     dailyLimit,
                     monthlyLimit,
                     balance
             );
+
+            statusCounts.merge(card.status(), 1L, Long::sum);
             cards.add(card);
         }
 
         List<Card> result = cardService.createCards(cards);
-        result.forEach(c -> eventNotifier.onEvent(new CardGeneratedEvent(c.status())));
+        eventNotifier.onEvent(new CardsBatchGeneratedEvent(statusCounts));
 
         log.info("Successfully generated {} cards", count);
         return result;
     }
 
-    private CardStatus generateStatus() {
-        int roll = ThreadLocalRandom.current().nextInt(100);
+    private List<CardStatus> generateStatuses(int count) {
+        List<CardStatus> cardStatuses = new ArrayList<>();
 
-        if (roll < 95) {
-            return CardStatus.ACTIVE;
+        int activeStatuses = count * 95 / 100;
+        int inactiveStatuses = count * 3 / 100;
+        int blockedStatuses = count - activeStatuses - inactiveStatuses;
+
+        for (int i = 0; i < activeStatuses; i++) {
+            cardStatuses.add(CardStatus.ACTIVE);
         }
 
-        if (roll < 98) {
-            return CardStatus.INACTIVE;
+        for (int i = 0; i < inactiveStatuses; i++) {
+            cardStatuses.add(CardStatus.INACTIVE);
         }
 
-        return CardStatus.BLOCKED;
+        for (int i = 0; i < blockedStatuses; i++) {
+            cardStatuses.add(CardStatus.BLOCKED);
+        }
+
+        Collections.shuffle(cardStatuses);
+
+        return cardStatuses;
     }
 }

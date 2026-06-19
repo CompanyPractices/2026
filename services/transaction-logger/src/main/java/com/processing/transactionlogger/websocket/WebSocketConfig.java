@@ -1,5 +1,6 @@
 package com.processing.transactionlogger.websocket;
 
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +23,10 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry) {
-        registry.addHandler(handler, "/ws/transactions").setAllowedOrigins(allowedOrigins);
+        String[] origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toArray(String[]::new);
+        registry.addHandler(handler, "/ws/transactions").setAllowedOrigins(origins);
     }
 }

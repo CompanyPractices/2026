@@ -61,8 +61,8 @@ public class DefaultWebSocketManagerTest {
         manager.broadcast(TEST_MESSAGE);
 
         verify(session1).sendMessage(new TextMessage(TEST_MESSAGE));
-        verify(session1).sendMessage(new TextMessage(TEST_MESSAGE));
-        verify(session1).sendMessage(new TextMessage(TEST_MESSAGE));
+        verify(session2).sendMessage(new TextMessage(TEST_MESSAGE));
+        verify(session3).sendMessage(new TextMessage(TEST_MESSAGE));
     }
 
     @Test
