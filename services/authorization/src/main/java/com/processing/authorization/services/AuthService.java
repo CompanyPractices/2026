@@ -14,6 +14,7 @@ import com.processing.common.utils.MaskPan;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -143,10 +144,26 @@ public class AuthService {
         }
 
         LocalDate transmissionLocalDate = request.transmissionDateTime()
-                .atZone(ZoneOffset.UTC)
+                .atZone(ZoneOffset.UTC) // TODO: msc
                 .toLocalDate();
 
-        if (checkAndUpdateLimits(request, cardResponse, transmissionLocalDate)) {
+        boolean areLimitsUpdated = false;
+        try {
+            areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
+        } catch (DuplicateKeyException e) {
+            log.warn("key duplication detected, checking limits again: {}", logPan(request.pan()), e);
+            try {
+                areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
+            } catch(Exception ex) {
+                log.error("db failed after rechecking: {}", logPan(request.pan()), ex);
+                return DeclineOutcome.DB_UNAVAILABLE.buildAuthorization(request, requestInputTime);
+            }
+        } catch (Exception e) {
+            log.error("db failed: {}", logPan(request.pan()), e);
+            return DeclineOutcome.DB_UNAVAILABLE.buildAuthorization(request, requestInputTime);
+        }
+
+        if (!areLimitsUpdated) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
@@ -296,17 +313,16 @@ public class AuthService {
     }
 
 
-    // @Transactional(rollbackFor = Exception.class)
-    public boolean checkAndUpdateLimits(AuthorizationRequest request, CardModel cardResponse,
-            LocalDate transmissionLocalDate) {
+    @Transactional(rollbackFor = Exception.class)
+    public boolean checkAndUpdateLimits(CardModel cardResponse, BigDecimal amount, LocalDate transmissionLocalDate) {
         Optional<LimitUsage> currLimitUsage = limitUsageRepository
-                .findByPanAndUsageDate(request.pan(), transmissionLocalDate);
+                .findByPanAndUsageDate(cardResponse.pan(), transmissionLocalDate);
 
         Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
                 ? currLimitUsage
                 : limitUsageRepository
                         .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
-                                request.pan(),
+                                cardResponse.pan(),
                                 transmissionLocalDate.withDayOfMonth(1)
                                         .atStartOfDay()
                                         .toLocalDate(),
@@ -314,44 +330,44 @@ public class AuthService {
 
         if (monthLimitUsage.isPresent()) {
             LimitUsage monthUsage = monthLimitUsage.get();
-            if (monthUsage.getMonthlyAmount().add(request.amount()).compareTo(cardResponse.monthlyLimit()) > 0) {
-                return true;
+            if (monthUsage.getMonthlyAmount().add(amount).compareTo(cardResponse.monthlyLimit()) > 0) {
+                return false;
             }
-        } else if (request.amount().compareTo(cardResponse.monthlyLimit()) > 0) {
-            return true;
+        } else if (amount.compareTo(cardResponse.monthlyLimit()) > 0) {
+            return false;
         }
 
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
-            if (usage.getDailyAmount().add(request.amount()).compareTo(cardResponse.dailyLimit()) > 0) {
-                return true;
+            if (usage.getDailyAmount().add(amount).compareTo(cardResponse.dailyLimit()) > 0) {
+                return false;
             }
-        } else if (request.amount().compareTo(cardResponse.dailyLimit()) > 0) {
-            return true;
+        } else if (amount.compareTo(cardResponse.dailyLimit()) > 0) {
+            return false;
         }
 
         if (currLimitUsage.isPresent()) {
             LimitUsage usage = currLimitUsage.get();
-            usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
-            usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
+            usage.setMonthlyAmount(usage.getMonthlyAmount().add(amount));
+            usage.setDailyAmount(usage.getDailyAmount().add(amount));
             limitUsageRepository.save(usage);
         } else if (monthLimitUsage.isPresent()) {
             LimitUsage monthUsage = monthLimitUsage.get();
             LimitUsage usage = new LimitUsage();
-            usage.setPan(request.pan());
+            usage.setPan(cardResponse.pan());
             usage.setUsageDate(transmissionLocalDate);
-            usage.setDailyAmount(request.amount());
-            usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
+            usage.setDailyAmount(amount);
+            usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(amount));
             limitUsageRepository.save(usage);
         } else {
             LimitUsage usage = new LimitUsage();
-            usage.setPan(request.pan());
+            usage.setPan(cardResponse.pan());
             usage.setUsageDate(transmissionLocalDate);
-            usage.setDailyAmount(request.amount());
-            usage.setMonthlyAmount(request.amount());
+            usage.setDailyAmount(amount);
+            usage.setMonthlyAmount(amount);
             limitUsageRepository.save(usage);
         }
-        return false;
+        return true;
     }
 
     private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
