@@ -1,64 +1,123 @@
 import { useEffect, useState, useCallback } from 'react';
 import fetchApi from "../api/client";
-import { Transaction } from "../types/index.ts";
-import { Filter } from "../types/index.ts";
-import { SearchResponse } from "../types/index.ts";
+import { Transaction, Filter, SearchResponse, FilterStatus } from "../types/index.ts";
+import { useSearchParams } from 'react-router-dom';
+
+const DEFAULT_PAGE_SIZE = 20;
 
 function useTransactions() {
+    const [searchParams, setSearchParams] = useSearchParams();
+
     const [transactions, setTransactions] = useState<Transaction[] | null>(null);
     const [filteredTransactions, setFilteredTransactions] = useState<Transaction[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isFiltered, setIsFiltered] = useState(false)
+
+    const currentPage = parseInt(searchParams.get('page') || '0', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || DEFAULT_PAGE_SIZE.toString(), 10);
+
+    const currentFilter: Filter = {
+        status: (searchParams.get('status') as FilterStatus) || undefined,
+        dateFrom: searchParams.get('dateFrom') || undefined,
+        dateTo: searchParams.get('dateTo') || undefined,
+        issuerId: searchParams.get('issuerId') || undefined,
+        mcc: searchParams.get('mcc') || undefined,
+    };
+
+    const hasFilter = Object.values(currentFilter).some(v => v);
+    const totalElements = parseInt(searchParams.get('total') || '0', 10);
+    const totalPages = Math.ceil(totalElements / pageSize);
 
     useEffect(() => {
-        fetchApi<Transaction[]>("/api/dashboard/recent?limit=20")
+        fetchApi<Transaction[]>(`/api/dashboard/recent?limit=${DEFAULT_PAGE_SIZE}`)
             .then((data) => {
                 setTransactions(data);
-                setFilteredTransactions(data)
+                setFilteredTransactions(data);
                 setLoading(false);
             })
             .catch((error) => {
                 setError(error.message);
-                setLoading(false)});
+                setLoading(false);
+            });
     }, []);
 
-    const searchTransactions = useCallback((filter: Filter) => {
-        const hasFilter = Object.values(filter).some(v => v);
+    useEffect(() => {
         if (!hasFilter) {
-            setIsFiltered(false);
             return;
         }
-        setIsFiltered(true)
+
+        setLoading(true);
         setError(null);
 
         const requestParams = new URLSearchParams();
-        if (filter.status){
-            requestParams.append('status', filter.status);
-        }
-        if (filter.dateFrom){
-            requestParams.append('dateFrom', filter.dateFrom.slice(0, 10));
-        }
-        if (filter.dateTo){
-            requestParams.append('dateTo', filter.dateTo.slice(0, 10));
-        }
-        if (filter.issuerId){
-            requestParams.append('issuerId', filter.issuerId);
-        }
-        if (filter.mcc){
-            requestParams.append('mcc', filter.mcc);
-        }
+        requestParams.append('limit', pageSize.toString());
+        requestParams.append('offset', (currentPage * pageSize).toString());
+
+        if (currentFilter.status) requestParams.append('status', currentFilter.status);
+        if (currentFilter.dateFrom) requestParams.append('dateFrom', currentFilter.dateFrom.slice(0, 10));
+        if (currentFilter.dateTo) requestParams.append('dateTo', currentFilter.dateTo.slice(0, 10));
+        if (currentFilter.issuerId) requestParams.append('issuerId', currentFilter.issuerId);
+        if (currentFilter.mcc) requestParams.append('mcc', currentFilter.mcc);
+
         fetchApi<SearchResponse>(`/api/transactions/search?${requestParams.toString()}`)
             .then((data) => {
                 setFilteredTransactions(data.transactions);
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set('total', data.total.toString());
+                setSearchParams(newParams, { replace: true });
             })
             .catch((error) => {
                 setError(error.message);
+            })
+            .finally(() => {
+                setLoading(false);
             });
+    }, [currentPage, pageSize, currentFilter.status, currentFilter.dateFrom, currentFilter.dateTo, currentFilter.issuerId, currentFilter.mcc, hasFilter, searchParams, setSearchParams]);
 
-    }, []);
+    const applyFilter = useCallback((filter: Filter) => {
+        const newParams = new URLSearchParams();
 
-    return {transactions, filteredTransactions, isFiltered, error, loading, searchTransactions}
+        if (filter.status) newParams.set('status', filter.status);
+        if (filter.dateFrom) newParams.set('dateFrom', filter.dateFrom);
+        if (filter.dateTo) newParams.set('dateTo', filter.dateTo);
+        if (filter.issuerId) newParams.set('issuerId', filter.issuerId);
+        if (filter.mcc) newParams.set('mcc', filter.mcc);
+
+        newParams.set('page', '0');
+        newParams.set('pageSize', pageSize.toString());
+
+        setSearchParams(newParams);
+    }, [pageSize, setSearchParams]);
+
+    const goToPage = useCallback((page: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('page', page.toString());
+        setSearchParams(newParams);
+    }, [searchParams, setSearchParams]);
+
+    const changePageSize = useCallback((size: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('pageSize', size.toString());
+        newParams.set('page', '0');
+        setSearchParams(newParams);
+    }, [searchParams, setSearchParams]);
+
+    return {
+        transactions,
+        filteredTransactions,
+        isFiltered: hasFilter,
+        error,
+        loading,
+        applyFilter,
+        goToPage,
+        changePageSize,
+        pagination: {
+            currentPage,
+            pageSize,
+            totalElements,
+            totalPages,
+        },
+    };
 }
 
 export default useTransactions;

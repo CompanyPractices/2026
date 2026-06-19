@@ -1,6 +1,6 @@
 import {hidePan, convertPenniesToRubles, formatTime, formatDate, formatDateTime} from '../utils/format';
 import { getStatusIcon } from '../utils/statusIcon';
-import {Filter, Transaction} from '../types';
+import {Filter, PaginationMeta, Transaction} from '../types';
 import { useState, useMemo } from 'react';
 import { TransactionModal } from './TransactionModal';
 import { ArrowDownToLine } from 'lucide-react';
@@ -26,9 +26,12 @@ const mapTransactionToCsvRow = (tx: Transaction) => ({
 
 type TransactionTableProps = {
     liveTransactions: Transaction[],
-    error: string | null
-    loading: boolean
-    search: (filter: Filter) => void;
+    error: string | null,
+    loading: boolean,
+    search: (filter: Filter) => void,
+    pagination: PaginationMeta,
+    onPageChange: (page: number) => void,
+    onPageSizeChange: (size: number) => void,
 };
 
 export function TransactionTable({ liveTransactions, error, loading, search }: TransactionTableProps){

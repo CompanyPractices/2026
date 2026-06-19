@@ -8,10 +8,21 @@ import useTransactions from './hooks/useTransactions.ts'
 import { useMemo } from 'react'
 import {TransactionMap} from "./components/TransactionsMap.tsx";
 import TransactionHistogram from './components/TransactionHistogram.tsx'
+import {Transaction} from "./types";
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
-    const { transactions: initialTransactions, filteredTransactions, isFiltered, loading, error, searchTransactions } = useTransactions();
+    const {
+        transactions: initialTransactions,
+        filteredTransactions,
+        isFiltered,
+        loading,
+        error,
+        applyFilter,
+        goToPage,
+        changePageSize,
+        pagination,
+    } = useTransactions();
     const { stats, loading: liveLoading, error: liveError } = useLiveStats(liveTransactions);
 
     const uniqueTransactions = useMemo(() => {
@@ -20,8 +31,7 @@ function App() {
             ...(initialTransactions || []),
         ];
         const seen = new Set();
-        return allTransactions
-            .filter(tx => {
+        return allTransactions.filter(tx => {
                 if (seen.has(tx.id)) return false;
                 seen.add(tx.id);
                 return true;
@@ -29,19 +39,17 @@ function App() {
     }, [liveTransactions, initialTransactions]);
 
     const displayedTransactions = useMemo(() => {
-        if (isFiltered){
+        if (isFiltered) {
             const filtered = filteredTransactions || [];
             const seen = new Set();
-            return filtered
-                .filter(tx => {
-                    if (seen.has(tx.id)) return false;
-                    seen.add(tx.id);
-                    return true;
-                })
-                .slice(0, 20);
+            return filtered.filter((tx: Transaction) => {
+                if (seen.has(tx.id)) return false;
+                seen.add(tx.id);
+                return true;
+            });
         }
-        return uniqueTransactions.slice(0, 20);
-    }, [isFiltered, filteredTransactions, uniqueTransactions]);
+        return uniqueTransactions.slice(0, pagination.pageSize);
+    }, [isFiltered, filteredTransactions, uniqueTransactions, pagination.pageSize]);
 
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
@@ -79,7 +87,15 @@ function App() {
                 </div>
 
                 <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
-                    <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
+                    <TransactionTable
+                        liveTransactions={displayedTransactions}
+                        error={error}
+                        loading={loading}
+                        search={applyFilter}
+                        pagination={pagination}
+                        onPageChange={goToPage}
+                        onPageSizeChange={changePageSize}
+                    />
                 </div>
 
                 <div className="col-span-1 md:col-span-2 pt-6 bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
