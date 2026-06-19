@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useLocations } from './useLocations';
-import { Transaction } from '../types';
+import { useLocations } from '../useLocations';
+import { Transaction } from '../../types';
 
 const { mockedGetLocation } = vi.hoisted(() => {
     return {
