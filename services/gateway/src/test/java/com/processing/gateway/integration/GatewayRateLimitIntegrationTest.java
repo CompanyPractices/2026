@@ -24,7 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "TERMINAL_SIM_URL=http://localhost:${wiremock.server.port}",
                 "MERCHANT_SIM_URL=http://localhost:${wiremock.server.port}",
                 "CARD_MGMT_URL=http://localhost:${wiremock.server.port}",
-                "gateway.rate-limit.transactions-per-second=0"
+                "TRANSACTIONS_RATE_LIMIT_CAPACITY=0",
+                "TRANSACTIONS_RATE_LIMIT_REFILL_PER_SECOND=0",
+                "TRANSACTIONS_RATE_LIMIT_BUCKET_TTL=10m",
+                "TRANSACTIONS_RATE_LIMIT_MAX_BUCKETS=10000"
         }
 )
 @AutoConfigureWireMock(port = 0)

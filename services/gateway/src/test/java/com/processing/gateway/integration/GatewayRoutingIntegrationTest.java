@@ -20,7 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "gateway.rate-limit.transactions-per-second=100",
+                "TRANSACTIONS_RATE_LIMIT_CAPACITY=100",
+                "TRANSACTIONS_RATE_LIMIT_REFILL_PER_SECOND=100",
+                "TRANSACTIONS_RATE_LIMIT_BUCKET_TTL=10m",
+                "TRANSACTIONS_RATE_LIMIT_MAX_BUCKETS=10000",
                 "gateway.open-api.url=http://gateway.test"
         }
 )

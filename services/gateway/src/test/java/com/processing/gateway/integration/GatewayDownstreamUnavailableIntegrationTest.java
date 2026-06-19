@@ -17,7 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "spring.cloud.gateway.mvc.routes[0].uri=http://localhost:1",
                 "spring.cloud.gateway.mvc.routes[0].metadata.serviceName=authorization",
                 "spring.cloud.gateway.mvc.routes[0].predicates[0]=Path=/api/internal/authorize",
-                "spring.cloud.gateway.mvc.routes[0].predicates[1]=Method=POST"
+                "spring.cloud.gateway.mvc.routes[0].predicates[1]=Method=POST",
+                "TRANSACTIONS_RATE_LIMIT_CAPACITY=100",
+                "TRANSACTIONS_RATE_LIMIT_REFILL_PER_SECOND=100",
+                "TRANSACTIONS_RATE_LIMIT_BUCKET_TTL=10m",
+                "TRANSACTIONS_RATE_LIMIT_MAX_BUCKETS=10000"
         }
 )
 class GatewayDownstreamUnavailableIntegrationTest {

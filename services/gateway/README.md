@@ -56,7 +56,6 @@ http://localhost:8080/v3/api-docs
 | `TRANSACTIONS_RATE_LIMIT_REFILL_PER_SECOND` | `100` | Скорость пополнения token bucket в токенах в секунду. |
 | `TRANSACTIONS_RATE_LIMIT_BUCKET_TTL` | `10m` | Время жизни неактивного rate-limit bucket. |
 | `TRANSACTIONS_RATE_LIMIT_MAX_BUCKETS` | `10000` | Максимальное число rate-limit bucket'ов в памяти. |
-| `TRANSACTIONS_RATE_LIMIT` | `100` | Legacy-переменная: используется как capacity/refill, если новые rate-limit переменные не заданы. |
 | `CIRCUIT_BREAKER_FAILURE_THRESHOLD` | `3` | Количество ошибок до открытия circuit breaker. |
 | `CIRCUIT_BREAKER_OPEN_DURATION` | `10s` | Время, на которое circuit breaker остается открытым. |
 | `GATEWAY_PUBLIC_URL` | `http://localhost:${GATEWAY_PORT:8080}` | Публичный URL, который подставляется в OpenAPI-документы. |
@@ -160,8 +159,7 @@ GATEWAY_URL=http://localhost:8080 ./scripts/gateway-metrics-demo.sh
 для проверки rate-limit и дважды дергает Card Management endpoint для cache
 hit/miss. Для стабильной проверки rate-limit удобно временно запустить gateway с
 низким лимитом, например `TRANSACTIONS_RATE_LIMIT_CAPACITY=1` и
-`TRANSACTIONS_RATE_LIMIT_REFILL_PER_SECOND=0`. Legacy-вариант
-`TRANSACTIONS_RATE_LIMIT=1` тоже поддерживается. Если локальный endpoint карт
+`TRANSACTIONS_RATE_LIMIT_REFILL_PER_SECOND=0`. Если локальный endpoint карт
 отличается, передайте `CARD_CACHE_PATH`, например
 `CARD_CACHE_PATH=/api/cards/4000003458730237`.
 
