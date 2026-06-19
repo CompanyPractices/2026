@@ -57,7 +57,10 @@ public class TransactionSender {
 
                       AuthorizationResponse response = gatewayClient.processAuthorize(request);
                       transactionMetrics.record(request.mcc(), response.status());
-                      log.info("AuthorizationResponse: {}", response);
+                      if (response.status().equals("DECLINED")) {
+                        log.error("AuthorizationResponse returned as declined: {}", response);
+                      }
+
                       return response;
                     } catch (ExternalServiceException e) {
                       transactionMetrics.record(request.mcc(), "ERROR");
