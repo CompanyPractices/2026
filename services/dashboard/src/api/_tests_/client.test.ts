@@ -56,7 +56,7 @@ describe('fetchApi', () => {
         const promise = fetchApi(('http://localhost/api/test', {retries: 2}));
         await vi.advanceTimersByTimeAsync(2000);
         const answer = await promise;
-        await expect(answer).toEqual({ success: true });
+        expect(answer).toEqual({ success: true });
         expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
