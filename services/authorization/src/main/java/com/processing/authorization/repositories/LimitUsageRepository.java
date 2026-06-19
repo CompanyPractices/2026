@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,7 +23,6 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
                         @Param("endDate") LocalDate endDate);
 
         @Modifying
-        //@Transactional
         @Query(value =
                 "INSERT INTO limit_usage (id, pan, usage_date, daily_amount, monthly_amount) "
                 + "SELECT gen_random_uuid(), :pan, :date, :amount, "
@@ -34,7 +32,8 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
                 + "                 AND lu.usage_date = (SELECT MAX(lu2.usage_date) "
                 + "                                      FROM limit_usage lu2 "
                 + "                                      WHERE lu2.pan = :pan "
-                + "                                      AND DATE_TRUNC('month', lu2.usage_date) = DATE_TRUNC('month', CAST(:date AS date)))), 0) + :amount "
+                + "                                      AND DATE_TRUNC('month', lu2.usage_date) "
+                + "                                      = DATE_TRUNC('month', CAST(:date AS date)))), 0) + :amount "
                 + "WHERE :amount <= :dailyLimit "
                 + "AND COALESCE((SELECT lu.monthly_amount "
                 + "              FROM limit_usage lu "
@@ -42,7 +41,9 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
                 + "              AND lu.usage_date = (SELECT MAX(lu2.usage_date) "
                 + "                                   FROM limit_usage lu2 "
                 + "                                   WHERE lu2.pan = :pan "
-                + "                                   AND DATE_TRUNC('month', lu2.usage_date) = DATE_TRUNC('month', CAST(:date AS date)))), 0) + :amount <= :monthlyLimit "
+                + "                                   AND DATE_TRUNC('month', lu2.usage_date) "
+                + "                                   = DATE_TRUNC('month', CAST(:date AS date)))), 0) "
+                + "                                   + :amount <= :monthlyLimit "
                 + "ON CONFLICT (pan, usage_date) DO UPDATE SET "
                 + "daily_amount = limit_usage.daily_amount + :amount, "
                 + "monthly_amount = limit_usage.monthly_amount + :amount "
