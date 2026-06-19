@@ -15,10 +15,12 @@ Terminal Simulator генерирует транзакции по различн
 
 ## Endpoints
 
-| Метод | Путь   | Описание                    |
-|-------|--------|-----------------------------|
-| GET | `/health` | Health-check сервиса        |
-| POST | `/api/simulator/terminal/run` | Запуск симулятора терминала |
+| Метод | Путь                                       | Описание                                   |
+|-------|--------------------------------------------|--------------------------------------------|
+| GET | `/health`                                  | Health-check сервиса                       |
+| POST | `/api/simulator/terminal/run`              | Запуск симулятора терминала                |
+| POST | `/api/simulator/terminal/start-continuous` | Шлёт транзакции постоянно                  |
+| POST | `/api/simulator/terminal/stop`             | Останавливает непрерывную отправку транзакций |
 
 ### Подробно
 
@@ -83,6 +85,52 @@ declines_test — тест отклонений
   "elapsedMs": 2300,
   "transactions": [ "массив AuthorizationResponse" ]
 }
+```
+
+#### `POST /api/simulator/terminal/start-continuous`
+
+**Тело запроса:**
+```json
+{
+  "tps": 50,
+  "transactionType": "NORMAL"
+}
+```
+
+enum transactionType:
+
+NORMAL :
+*  100% транзакций с небольшими суммами (100–5 000 ₽)
+*  Все карты ACTIVE
+*  Дневное время (09:00–22:00)
+*  MCC: 5411 (супермаркеты)
+
+HIGH_VALUE :
+*  Суммы 100 000 – 500 000 ₽
+
+ALMOST_DAILY_LIMIT :
+* на грани лимита (почти дневной лимит)
+
+BLOCKED :
+* с заблокированными картами
+
+NO_MONEY :
+* с недостаточным балансом
+
+MORE_THAN_DAILY_LIMIT :
+* с превышением дневного лимита
+
+INVALID_PAN :
+* с несуществующими PAN (ожидаем DECLINED, responseCode="14")
+
+**Ответ 200: без тела**
+
+#### `POST /api/simulator/terminal/stop`
+
+**Запрос: без тела**
+
+**Ответ 200: без тела**
+
 ```
 
 
