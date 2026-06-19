@@ -164,7 +164,7 @@ public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
                 .contentType(ContentType.JSON)
                 .body("""
                 {
-                    "count": 50,
+                    "count": 1000,
                     "bins": ["400000","400001","400002","400003","400004"]
                 }""")
                 .when()
