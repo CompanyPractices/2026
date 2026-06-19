@@ -5,6 +5,7 @@ import com.processing.cardmanagement.exceptions.InsufficientFundsException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.YearMonth;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -68,14 +69,29 @@ public record Card(
     }
 
     /**
+     * Проверяет статус карты и после этого возвращает запрос на списание средств
+     *
+     * @param amount размер списания
+     * @param rrn    RRN-номер
+     * @return информация о списании
+     */
+    public Reservation startReservation(BigDecimal amount, String rrn) {
+        checkStatusOrThrow();
+        if (availableBalance.compareTo(amount) < 0) {
+            throw new InsufficientFundsException();
+        }
+        return new Reservation(this.pan, amount, rrn);
+    }
+
+    /**
      * Создает копию карты с зарезервированным количеством средств
      *
-     * @param amount размер резервирования
+     * @param reservation информация о резервировании
      * @return карта с измененным балансом
      */
-    public Card withReserved(BigDecimal amount) {
-        if (this.availableBalance.compareTo(amount) < 0) {
-            throw new InsufficientFundsException();
+    public Card withReservation(Reservation reservation) {
+        if (!Objects.equals(this.pan, reservation.pan())) {
+            throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
         }
 
         return new Card(
@@ -88,7 +104,34 @@ public record Card(
             currencyCode,
             dailyLimit,
             monthlyLimit,
-            availableBalance.subtract(amount),
+            availableBalance.subtract(reservation.reservationAmount()),
+            issuerId,
+            createdAt
+        );
+    }
+
+    /**
+     * Создает копию карты с возвращенным количеством средств
+     *
+     * @param rollback информация о возврате средств
+     * @return карта с измененным балансом
+     */
+    public Card withRollback(ReservationRollback rollback) {
+        if (!Objects.equals(this.pan, rollback.pan())) {
+            throw new IllegalArgumentException("Reservation PAN number and card PAN number differ");
+        }
+
+        return new Card(
+            id,
+            pan,
+            bin,
+            cardholderName,
+            expiryDate,
+            status,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            availableBalance.add(rollback.rollbackAmount()),
             issuerId,
             createdAt
         );
@@ -187,5 +230,14 @@ public record Card(
             draft.initialBalance(),
             issuerId
         );
+    }
+
+    /**
+     * Проверяет перед операцией, что карта активна
+     */
+    public void checkStatusOrThrow() {
+        if (status != CardStatus.ACTIVE) {
+            throw new IllegalStateException("Card status is \"" + status.name() + "\"");
+        }
     }
 }

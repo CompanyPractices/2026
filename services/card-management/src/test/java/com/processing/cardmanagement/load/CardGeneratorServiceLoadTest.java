@@ -1,10 +1,14 @@
 package com.processing.cardmanagement.load;
 
+import com.processing.cardmanagement.models.BinIssuerEntity;
+import com.processing.cardmanagement.repositories.BinIssuerJpaRepository;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
+import com.processing.cardmanagement.services.BinIssuerService;
 import com.processing.common.dto.cardmanagement.GenerateCardsRequest;
 import io.restassured.http.ContentType;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +20,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -27,6 +33,8 @@ import static io.restassured.RestAssured.given;
 public class CardGeneratorServiceLoadTest {
 
     private static final String POSTGRES_IMAGE = "postgres:16-alpine";
+    private static final int BINS_AMOUNT = 100;
+    private static List<String> bins;
 
     @Value("${local.server.port}")
     private int port;
@@ -43,12 +51,30 @@ public class CardGeneratorServiceLoadTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(POSTGRES_IMAGE);
 
-    private final ThreadLocal<Faker> faker = ThreadLocal.withInitial(() ->
+    private final static ThreadLocal<Faker> faker = ThreadLocal.withInitial(() ->
         new Faker(ThreadLocalRandom.current())
     );
 
     @Autowired
+    private BinIssuerService binIssuerService;
+
+    @Autowired
     private CardJpaRepository cardJpaRepository;
+
+    @BeforeAll
+    static void setUpBin(@Autowired BinIssuerJpaRepository binIssuerJpaRepository) {
+        var binsIssuers = new ArrayList<BinIssuerEntity>(BINS_AMOUNT);
+        for (int i = 0; i < BINS_AMOUNT; ++i) {
+            binsIssuers.add(
+                new BinIssuerEntity(
+                    faker.get().number().digits(6),
+                    faker.get().lorem().characters(6).toUpperCase(Locale.ROOT)
+                )
+            );
+        }
+        binIssuerJpaRepository.saveAll(binsIssuers);
+        bins = binsIssuers.stream().map(BinIssuerEntity::getBin).toList();
+    }
 
     @BeforeEach
     void setUp() {
@@ -65,42 +91,34 @@ public class CardGeneratorServiceLoadTest {
     @Test
     void cardGenerationConcurrentLoadTest() throws ExecutionException, InterruptedException {
         int count = 1;
-        int beansAmount = 100;
         int totalRequests = 5000;
 
         loadTestEngine.execute(
             maximumParallelRequests,
             totalRequests,
-            () -> testCardGeneration(count, beansAmount)
+            () -> testCardGeneration(count)
         ).get();
     }
 
     @Test
     void cardGenerationManyLargeDataLoadTest() throws ExecutionException, InterruptedException {
         int count = 1000;
-        int beansAmount = 100;
         int totalRequests = 10;
 
         loadTestEngine.execute(
             Math.min(maximumParallelRequests, totalRequests),
             totalRequests,
-            () -> testCardGeneration(count, beansAmount)
+            () -> testCardGeneration(count)
         ).get();
     }
 
     @Test
     void cardGenerationSingleLargeDataLoadTest() {
         int count = 10000;
-        int beansAmount = 100;
-        testCardGeneration(count, beansAmount);
+        testCardGeneration(count);
     }
 
-    private void testCardGeneration(int count, int beansAmount) {
-        var f = faker.get();
-        var bins = new ArrayList<String>(beansAmount);
-        for (int i = 0; i < beansAmount; i++) {
-            bins.add(f.number().digits(6));
-        }
+    private void testCardGeneration(int count) {
         var request = new GenerateCardsRequest(count, bins);
         given()
             .contentType(ContentType.JSON)

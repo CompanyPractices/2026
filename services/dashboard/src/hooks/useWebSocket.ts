@@ -58,7 +58,7 @@ export function useWebSocket({
                     const newTransaction: Transaction = JSON.parse(event.data);
                     console.log('Новая транзакция:', newTransaction);
 
-                    setLiveTransactions((prev) => [newTransaction, ...prev].slice(0, 20));
+                    setLiveTransactions((prev) => [newTransaction, ...prev]);
                 } catch (error) {
                     console.error('Ошибка парсинга WebSocket-сообщения:', error);
                 }

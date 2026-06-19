@@ -1,12 +1,12 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useState } from 'react';
-import { TransactionTable } from '../components/TransactionTable';
-import { Transaction, Filter } from '../types';
-import { hidePan, convertPenniesToRubles, formatTime, formatDate, formatDateTime } from '../utils/format';
-import { exportToCsv } from '../utils/exportToCsv';
+import { TransactionTable } from '../TransactionTable';
+import { Transaction, Filter } from '../../types';
+import { hidePan, convertPenniesToRubles, formatTime, formatDate, formatDateTime } from '../../utils/format';
+import { exportToCsv } from '../../utils/exportToCsv';
 
-vi.mock('../utils/format', () => ({
+vi.mock('../../utils/format', () => ({
     hidePan: vi.fn((pan: string) => `****${pan.slice(-4)}`),
     convertPenniesToRubles: vi.fn((amount: number) => `${(amount / 100).toFixed(2)} ₽`),
     formatTime: vi.fn(() => '10:00:00'),
@@ -14,7 +14,7 @@ vi.mock('../utils/format', () => ({
     formatDateTime: vi.fn(() => '27.10.2023, 10:00:00'),
 }));
 
-vi.mock('../utils/statusIcon', () => ({
+vi.mock('../../utils/statusIcon', () => ({
     getStatusIcon: vi.fn(() => ({
         icon: () => <span data-testid="status-icon">Icon</span>,
         color: 'text-green-500',
@@ -23,11 +23,11 @@ vi.mock('../utils/statusIcon', () => ({
     })),
 }));
 
-vi.mock('../utils/exportToCsv', () => ({
+vi.mock('../../utils/exportToCsv', () => ({
     exportToCsv: vi.fn(),
 }));
 
-vi.mock('../components/TransactionModal', () => ({
+vi.mock('../../components/TransactionModal', () => ({
     TransactionModal: ({ transaction, onClose }: { transaction: Transaction; onClose: () => void }) => (
         <div data-testid="transaction-modal" onClick={onClose}>
             Modal for {transaction.id}
@@ -35,7 +35,7 @@ vi.mock('../components/TransactionModal', () => ({
     ),
 }));
 
-vi.mock('../components/Filters', () => {
+vi.mock('../../components/Filters', () => {
     return {
         Filters: ({ onSearch }: { onSearch: (f: Filter) => void }) => {
             const [mockStatus, setMockStatus] = useState('');
@@ -71,7 +71,7 @@ vi.mock('../components/Filters', () => {
     };
 });
 
-vi.mock('../mockData', () => ({
+vi.mock('../../mockData', () => ({
     ISSUERS_NAMES: ['Issuer A', 'Issuer B'],
     MCC_NAMES: ['MCC 1', 'MCC 2'],
 }));

@@ -3,10 +3,22 @@ package com.processing.e2e;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.processing.common.dto.cardmanagement.CardModel;
+import com.processing.common.dto.cardmanagement.CardModelStatus;
+import com.processing.common.dto.cardmanagement.CreateCardRequest;
+import com.processing.e2e.utility.DBUtils;
 import com.processing.e2e.utility.HttpUtils;
 import io.restassured.RestAssured;
 import org.testng.annotations.BeforeClass;
-import com.processing.e2e.utility.DBUtils;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.UUID;
 
 public abstract class E2EBaseTest {
 
@@ -25,6 +37,15 @@ public abstract class E2EBaseTest {
     public static final String DB_NAME = env("DB_NAME", "smp_db");
     public static final String DB_USER = env("DB_USER", "smp_user");
     public static final String DB_PASSWORD = env("DB_PASSWORD", "smp_password");
+
+    protected static final CreateCardRequest createCardRequest = new CreateCardRequest(
+            "400000",
+            "IVAN PETROV",
+            "643",
+            new BigDecimal(15000000),
+            new BigDecimal(300000000),
+            new BigDecimal(100000000)
+    );
 
 
     protected final ObjectMapper mapper = new ObjectMapper()
@@ -61,6 +82,7 @@ public abstract class E2EBaseTest {
     protected void assertGetStatus(String baseUrl, String path, int expectedStatus) {
         httpUtils.assertGetStatus(baseUrl, path, expectedStatus);
     }
+
     protected JsonNode httpPostRaw(String baseUrl, String path, String jsonBody, int expectedStatus) {
         return httpUtils.httpPostRaw(baseUrl, path, jsonBody, expectedStatus);
     }
@@ -70,4 +92,23 @@ public abstract class E2EBaseTest {
     }
 
     protected DBUtils db = new DBUtils();
+
+    protected CardModel cardFromRow(Map<String, Object> row) {
+        LocalDateTime ldt = ((Timestamp) row.get("created_at")).toLocalDateTime();
+
+        return new CardModel(
+                (UUID) row.get("id"),
+                (String) row.get("pan"),
+                (String) row.get("bin"),
+                (String) row.get("cardholder_name"),
+                YearMonth.parse(row.get("expiry_date").toString(), DateTimeFormatter.ofPattern("MMyy")),
+                CardModelStatus.valueOf((String) row.get("status")),
+                (String) row.get("currency_code"),
+                new BigDecimal(row.get("daily_limit").toString()),
+                new BigDecimal(row.get("monthly_limit").toString()),
+                new BigDecimal(row.get("available_balance").toString()),
+                (String) row.get("issuer_id"),
+                ((Timestamp) row.get("created_at")).toLocalDateTime().toInstant(ZoneOffset.UTC)
+        );
+    }
 }

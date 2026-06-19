@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.transactionlogger.TransactionResponse;
 import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.transactionlogger.dto.TransactionSearchResponse;
+import com.processing.transactionlogger.export.TransactionCsvWriter;
 import com.processing.transactionlogger.mapper.TransactionMapper;
 import com.processing.transactionlogger.model.Transaction;
 import com.processing.transactionlogger.repository.TransactionRepository;
@@ -43,7 +44,8 @@ public class TransactionServiceSearchTest {
                 transactionRepository,
                 new TransactionMapper(),
                 webSocketManager,
-                new ObjectMapper().findAndRegisterModules());
+                new ObjectMapper().findAndRegisterModules(),
+                new TransactionCsvWriter());
     }
 
     @Test

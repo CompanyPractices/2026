@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useWebSocket } from './useWebSocket';
+import { useWebSocket } from '../useWebSocket';
 
 class MockWebSocket {
     url: string;
@@ -75,28 +75,6 @@ describe('useWebSocket', () => {
 
         expect(result.current.liveTransactions).toHaveLength(1);
         expect(result.current.liveTransactions[0].id).toBe('test-1');
-    });
-
-    it('should limit transactions to 20', () => {
-        const { result } = renderHook(() => useWebSocket());
-
-        act(() => {
-            for (let i = 0; i < 25; i++) {
-                MockWebSocket.instances[0].onmessage?.({
-                    data: JSON.stringify({
-                        id: `tx-${i}`,
-                        amount: 1000,
-                        status: 'APPROVED',
-                        transmissionDateTime: '2026-06-09T10:00:00Z',
-                        pan: '4111111111111111',
-                        merchantId: 'MERCH001',
-                    }),
-                } as MessageEvent);
-            }
-        });
-
-        expect(result.current.liveTransactions).toHaveLength(20);
-        expect(result.current.liveTransactions[0].id).toBe('tx-24');
     });
 
     it('should close WebSocket on unmount', () => {

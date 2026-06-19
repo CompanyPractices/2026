@@ -2,11 +2,11 @@ package com.processing.e2e.utility;
 
 import com.processing.e2e.E2EBaseTest;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DBUtils {
 
@@ -16,7 +16,7 @@ public class DBUtils {
 
     public long queryLong(String sql, Object... params) throws SQLException {
         try (Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -29,7 +29,7 @@ public class DBUtils {
 
     public String queryString(String sql, Object... params) throws SQLException {
         try (Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -40,9 +40,42 @@ public class DBUtils {
         }
     }
 
+    public Map<String, Object> queryRow(String sql, Object... params) throws SQLException {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new SQLException(("No result for: " + sql));
+                }
+                Map<String, Object> row = new HashMap<>();
+                ResultSetMetaData meta = rs.getMetaData();
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    row.put(meta.getColumnName(i), rs.getObject(i));
+                }
+
+                return row;
+            }
+        }
+    }
+
+    public List<String> queryStringList(String sql, Object... params) throws SQLException {
+        List<String> result = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(rs.getString(1));
+                }
+            }
+        }
+        return result;
+    }
+
     public int executeUpdate(String sql, Object... params) throws SQLException {
         try (Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             bindParams(ps, params);
             return ps.executeUpdate();
         }

@@ -1,8 +1,9 @@
 package com.processing.cardmanagement.events;
 
 public sealed interface CardEvent permits
-    CardGeneratedEvent,
+    CardsBatchGeneratedEvent,
     CardServiceCreationEvent,
     CardServiceDeletionEvent,
     CardServicePatchEvent,
-    CardServiceReserveEvent {}
+    CardServiceReserveEvent,
+    CardServiceRollbackEvent {}

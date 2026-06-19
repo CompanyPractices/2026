@@ -19,7 +19,7 @@ import java.time.Instant;
  Setup creates one card with 3 APPROVED + 1 DECLINED transactions.
  */
 
-public class TransactionSearchTest extends E2EBaseTest {
+public class TC_19_TransactionSearchTest extends E2EBaseTest {
     private final DBUtils dbUtils = new DBUtils();
 
     private String knownPan;
