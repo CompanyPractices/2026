@@ -22,7 +22,6 @@ public class TerminalProvider {
 
     public Terminal getByMerchant(String merchantId) {
         List<Terminal> terminals = terminalsByMerchants.computeIfAbsent(merchantId, terminalRepository::findByMerchantId);
-        log.info("Loaded {} terminals for merchantdID: {}", terminals.size(), merchantId);
 
         if (terminals.isEmpty()) {
             throw new ResourceNotFoundException("Merchant not have terminals, merchant id: " + merchantId);
