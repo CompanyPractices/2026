@@ -24,26 +24,31 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
                         @Param("endDate") LocalDate endDate);
 
         @Modifying
-        @Transactional
-        @Query(value = "INSERT INTO limit_usage (id, pan, usage_date, daily_amount, monthly_amount) " +
-                        "VALUES (gen_random_uuid(), :pan, :date, :amount, " +
-                        "        COALESCE((SELECT lu.monthly_amount " +
-                        "                  FROM limit_usage lu " +
-                        "                  WHERE lu.pan = :pan " +
-                        "                  AND lu.usage_date = (SELECT MAX(lu2.usage_date) " +
-                        "                                       FROM limit_usage lu2 " +
-                        "                                       WHERE lu2.pan = :pan " +
-                        "                                       AND DATE_TRUNC('month', lu2.usage_date) = DATE_TRUNC('month', CAST(:date AS date)))), 0) + :amount) "
-                        +
-                        "ON CONFLICT (pan, usage_date) DO UPDATE SET " +
-                        "daily_amount = CASE WHEN limit_usage.daily_amount + :amount <= :dailyLimit " +
-                        "                     AND limit_usage.monthly_amount + :amount <= :monthlyLimit " +
-                        "                THEN limit_usage.daily_amount + :amount " +
-                        "                ELSE limit_usage.daily_amount END, " +
-                        "monthly_amount = CASE WHEN limit_usage.daily_amount + :amount <= :dailyLimit " +
-                        "                       AND limit_usage.monthly_amount + :amount <= :monthlyLimit " +
-                        "                  THEN limit_usage.monthly_amount + :amount " +
-                        "                  ELSE limit_usage.monthly_amount END", nativeQuery = true)
+        //@Transactional
+        @Query(value =
+                "INSERT INTO limit_usage (id, pan, usage_date, daily_amount, monthly_amount) "
+                + "SELECT gen_random_uuid(), :pan, :date, :amount, "
+                + "       COALESCE((SELECT lu.monthly_amount "
+                + "                 FROM limit_usage lu "
+                + "                 WHERE lu.pan = :pan "
+                + "                 AND lu.usage_date = (SELECT MAX(lu2.usage_date) "
+                + "                                      FROM limit_usage lu2 "
+                + "                                      WHERE lu2.pan = :pan "
+                + "                                      AND DATE_TRUNC('month', lu2.usage_date) = DATE_TRUNC('month', CAST(:date AS date)))), 0) + :amount "
+                + "WHERE :amount <= :dailyLimit "
+                + "AND COALESCE((SELECT lu.monthly_amount "
+                + "              FROM limit_usage lu "
+                + "              WHERE lu.pan = :pan "
+                + "              AND lu.usage_date = (SELECT MAX(lu2.usage_date) "
+                + "                                   FROM limit_usage lu2 "
+                + "                                   WHERE lu2.pan = :pan "
+                + "                                   AND DATE_TRUNC('month', lu2.usage_date) = DATE_TRUNC('month', CAST(:date AS date)))), 0) + :amount <= :monthlyLimit "
+                + "ON CONFLICT (pan, usage_date) DO UPDATE SET "
+                + "daily_amount = limit_usage.daily_amount + :amount, "
+                + "monthly_amount = limit_usage.monthly_amount + :amount "
+                + "WHERE limit_usage.daily_amount + :amount <= :dailyLimit "
+                + "AND limit_usage.monthly_amount + :amount <= :monthlyLimit", nativeQuery = true
+        )
         int upsertLimitUsage(@Param("pan") String pan,
                         @Param("date") LocalDate date,
                         @Param("amount") BigDecimal amount,
