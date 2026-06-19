@@ -18,10 +18,10 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 public class WebSocketConfig implements WebSocketConfigurer {
     private final TransactionWebSocketHandler handler;
     @Value("${websocket.allowed-origins}")
-    private String[] allowedOrigins;
+    private String allowedOrigins;
 
     @Override
     public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry) {
-        registry.addHandler(handler, "/ws/transactions").setAllowedOrigins(allowedOrigins);
+        registry.addHandler(handler, "/ws/transactions").setAllowedOrigins(allowedOrigins.split(","));
     }
 }
