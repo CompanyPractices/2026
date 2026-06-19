@@ -62,6 +62,48 @@ public class TransactionServiceIntegrationTest {
     }
 
     @Test
+    void searchByDeclineReasonReturnsOnlyMatchingTransactions() {
+        save(transaction("4000000000000001", TransactionStatus.DECLINED, "CARD_NOT_FOUND"));
+        save(transaction("4000000000000002", TransactionStatus.DECLINED, "INSUFFICIENT_FUNDS"));
+        save(transaction("4000000000000003", TransactionStatus.APPROVED));
+
+        TransactionFilter filter = new TransactionFilter();
+        filter.setDeclineReason("card not found");
+        TransactionSearchResponse result = transactionService.search(filter);
+
+        assertEquals(1, result.total());
+        assertEquals("4000000000000001", result.transactions().get(0).pan());
+        assertEquals("CARD_NOT_FOUND", result.transactions().get(0).declineReason());
+    }
+
+    @Test
+    void searchByDeclineReasonMatchesSingleWord() {
+        save(transaction("4000000000000001", TransactionStatus.DECLINED, "CARD_NOT_FOUND"));
+        save(transaction("4000000000000002", TransactionStatus.DECLINED, "INSUFFICIENT_FUNDS"));
+
+        TransactionFilter filter = new TransactionFilter();
+        filter.setDeclineReason("funds");
+        TransactionSearchResponse result = transactionService.search(filter);
+
+        assertEquals(1, result.total());
+        assertEquals("4000000000000002", result.transactions().get(0).pan());
+        assertEquals("INSUFFICIENT_FUNDS", result.transactions().get(0).declineReason());
+    }
+
+    @Test
+    void searchByBlankDeclineReasonDoesNotFilterTransactions() {
+        save(transaction("4000000000000001", TransactionStatus.DECLINED, "CARD_NOT_FOUND"));
+        save(transaction("4000000000000002", TransactionStatus.APPROVED));
+
+        TransactionFilter filter = new TransactionFilter();
+        filter.setDeclineReason("   ");
+        TransactionSearchResponse result = transactionService.search(filter);
+
+        assertEquals(2, result.total());
+        assertThat(result.transactions()).hasSize(2);
+    }
+
+    @Test
     void searchByDateRangeReturnsTransactionsWithinRange() {
         Transaction old = transaction("4000000000000001", TransactionStatus.APPROVED);
         old.setTransmissionDateTime(Instant.now().minus(2, ChronoUnit.DAYS));
@@ -177,5 +219,11 @@ public class TransactionServiceIntegrationTest {
         t.setTransmissionDateTime(Instant.now());
         t.setCreatedAt(Instant.now());
         return t;
+    }
+
+    private Transaction transaction(String pan, TransactionStatus status, String declineReason) {
+        Transaction transaction = transaction(pan, status);
+        transaction.setDeclineReason(declineReason);
+        return transaction;
     }
 }

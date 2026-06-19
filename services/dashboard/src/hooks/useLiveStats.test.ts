@@ -133,6 +133,42 @@ describe('useLiveStats', () => {
         expect(result.current.stats.avgProcessingTimeMs).toBe(186);
     });
 
+    it('should correctly update stats when receiving multiple new transactions in a single render', () => {
+        mockedUseStats.mockReturnValue({
+            transactionStats: mockStats,
+            loading: false,
+            error: null,
+        });
+
+        const { result, rerender } = renderHook(
+            ({ transactions }: { transactions: Transaction[] }) => useLiveStats(transactions),
+            { initialProps: { transactions: [] } }
+        );
+
+        const tx1 = createMockTransaction({
+            id: 'tx-1',
+            status: 'APPROVED',
+            amount: 500,
+            processingTimeMs: 100,
+        });
+
+        const tx2 = createMockTransaction({
+            id: 'tx-2',
+            status: 'DECLINED',
+            amount: 300,
+            processingTimeMs: 50,
+        });
+
+        act(() => {
+            rerender({ transactions: [tx1, tx2] });
+        });
+
+        expect(result.current.stats.totalTransactions).toBe(12);
+        expect(result.current.stats.approvalRate).toBe(50);
+        expect(result.current.stats.totalAmount).toBe(1800);
+        expect(result.current.stats.avgProcessingTimeMs).toBe(179);
+    });
+
     it('should propagate errors from useStats', () => {
         mockedUseStats.mockReturnValue({
             transactionStats: null,

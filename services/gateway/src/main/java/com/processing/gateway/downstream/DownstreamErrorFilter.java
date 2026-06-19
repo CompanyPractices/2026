@@ -2,6 +2,7 @@ package com.processing.gateway.downstream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
+import com.processing.gateway.metrics.GatewayMetrics;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,7 @@ import java.util.Optional;
 public class DownstreamErrorFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
     private final DownstreamServiceResolver serviceResolver;
+    private final GatewayMetrics gatewayMetrics;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -44,6 +46,7 @@ public class DownstreamErrorFilter extends OncePerRequestFilter {
             if (serviceName.isPresent()
                     && DownstreamExceptionUtils.isDownstreamUnavailable(e)
                     && !response.isCommitted()) {
+                gatewayMetrics.recordDownstreamUnavailable(serviceName.get());
                 writeServiceUnavailable(response, serviceName.get());
                 return;
             }

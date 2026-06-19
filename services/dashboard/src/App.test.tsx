@@ -28,12 +28,12 @@ class MockWebSocket {
   send = vi.fn();
 }
 
-const mockUseStats = vi.hoisted(() => vi.fn());
+const mockUseLiveStats = vi.hoisted(() => vi.fn());
 const mockUseWebSocket = vi.hoisted(() => vi.fn());
 const mockUseTransactions = vi.hoisted(() => vi.fn());
 
-const MOCK_STATS_SUCCESS = {
-  transactionStats: {
+const MOCK_LIVE_STATS_SUCCESS = {
+  stats: {
     totalTransactions: 100,
     approvedTransactions: 80,
     totalAmount: 500000,
@@ -43,8 +43,8 @@ const MOCK_STATS_SUCCESS = {
   error: null,
 };
 
-const MOCK_STATS_ERROR = {
-  transactionStats: null,
+const MOCK_LIVE_STATS_ERROR = {
+  stats: null,
   loading: false,
   error: 'Network error',
 };
@@ -73,8 +73,8 @@ vi.mock('./hooks/useTransactions.ts', () => ({
   default: mockUseTransactions
 }));
 
-vi.mock('./hooks/useStats', () => ({
-  default: mockUseStats,
+vi.mock('./hooks/useLiveStats', () => ({
+  useLiveStats: mockUseLiveStats,
 }));
 
 vi.mock('./hooks/useWebSocket', () => ({
@@ -120,7 +120,7 @@ describe('App', () => {
   });
 
   it('renders dashboard title', async () => {
-    mockUseStats.mockReturnValue(MOCK_STATS_SUCCESS);
+    mockUseLiveStats.mockReturnValue(MOCK_LIVE_STATS_SUCCESS);
 
     render(<App />);
 
@@ -130,7 +130,7 @@ describe('App', () => {
   });
 
   it('renders footer with all three texts', async () => {
-    mockUseStats.mockReturnValue(MOCK_STATS_SUCCESS);
+    mockUseLiveStats.mockReturnValue(MOCK_LIVE_STATS_ERROR);
 
     render(<App />);
 
@@ -142,7 +142,7 @@ describe('App', () => {
   });
 
   it('has correct structure', async () => {
-    mockUseStats.mockReturnValue(MOCK_STATS_SUCCESS);
+    mockUseLiveStats.mockReturnValue(MOCK_LIVE_STATS_SUCCESS);
 
     render(<App />);
 
@@ -154,7 +154,7 @@ describe('App', () => {
   });
 
   it('shows loading then error for stats', async () => {
-    mockUseStats.mockReturnValue(MOCK_STATS_ERROR);
+    mockUseLiveStats.mockReturnValue(MOCK_LIVE_STATS_ERROR);
 
     render(<App />);
 
@@ -164,7 +164,7 @@ describe('App', () => {
   });
 
   it('after reset filters table shows live data', async() => {
-    mockUseStats.mockReturnValue(MOCK_STATS_SUCCESS);
+    mockUseLiveStats.mockReturnValue(MOCK_LIVE_STATS_SUCCESS);
 
     const wsTransaction = createMockTransaction({id: 'ws-1', merchantId: 'WS_MERCHANT'});
     const searchTransaction = createMockTransaction({id: 'search-1', merchantId: 'SEARCH_MERCHANT'});

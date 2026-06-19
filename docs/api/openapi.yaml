@@ -480,6 +480,16 @@ paths:
             type: string
             pattern: '^\d{4}$'
           description: Фильтр по коду категории мерчанта (MCC)
+        - name: declineReason
+          in: query
+          required: false
+          schema:
+            type: string
+          description: |
+            Полнотекстовый поиск по причине отказа.
+            Перед поиском `_` и `-` нормализуются в пробелы, регистр игнорируется.
+            Примеры совпадающих запросов для `CARD_NOT_FOUND`:
+            `CARD_NOT_FOUND`, `card_not_found`, `card not found`, `card`, `found`.
         - name: limit
           in: query
           required: false

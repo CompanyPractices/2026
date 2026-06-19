@@ -6,6 +6,7 @@ import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
 import { useMemo } from 'react'
+import {TransactionMap} from "./components/TransactionsMap.tsx";
 import TransactionHistogram from './components/TransactionHistogram.tsx'
 
 function App() {
@@ -18,15 +19,24 @@ function App() {
             ...liveTransactions,
             ...(initialTransactions || []),
         ];
-        return allTransactions.filter((tx, index, self) =>
-            index === self.findIndex(t => t.id === tx.id));
+        const seen = new Set();
+        return allTransactions.filter(tx => {
+            if (seen.has(tx.id)) return false;
+            seen.add(tx.id);
+            return true;
+        });
     }, [liveTransactions, initialTransactions]);
 
     const displayedTransactions = useMemo(() => {
         if (isFiltered){
             const filtered = filteredTransactions || [];
+            const seen = new Set();
             return filtered
-                .filter((tx, index, self) => index === self.findIndex(t => t.id === tx.id))
+                .filter(tx => {
+                    if (seen.has(tx.id)) return false;
+                    seen.add(tx.id);
+                    return true;
+                })
                 .slice(0, 20);
         }
         return uniqueTransactions.slice(0, 20)
@@ -69,6 +79,15 @@ function App() {
 
                 <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
                     <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
+                </div>
+
+                <div className="col-span-1 md:col-span-2 pt-6 bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                        Карта последних 20 транзакций
+                    </h2>
+                    <div className="flex-grow min-h-[550px]">
+                        <TransactionMap transactions={displayedTransactions} />
+                    </div>
                 </div>
             </main>
 

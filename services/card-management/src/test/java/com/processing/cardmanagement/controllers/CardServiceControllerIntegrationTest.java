@@ -1,8 +1,11 @@
 package com.processing.cardmanagement.controllers;
 
 import com.processing.cardmanagement.models.BinIssuer;
+import com.processing.cardmanagement.models.CardDraft;
+import com.processing.cardmanagement.models.CardStatus;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.cardmanagement.services.BinIssuerService;
+import com.processing.cardmanagement.services.CardService;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.cardmanagement.*;
 import io.restassured.http.ContentType;
@@ -19,8 +22,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -48,6 +54,9 @@ public class CardServiceControllerIntegrationTest {
 
     @Autowired
     private CardJpaRepository cardJpaRepository;
+
+    @Autowired
+    private CardService cardService;
 
     @AfterEach
     void cleanUp() {
@@ -151,6 +160,130 @@ public class CardServiceControllerIntegrationTest {
 
         assertEquals(cardAmount, jsonPath.getInt("total"));
         assertEquals(limit, jsonPath.getList("cards").size());
+    }
+
+    @Test
+    void cardServiceGetShouldGetFilteredResults() {
+        var cardsAmount = 10;
+        var statuses = CardModelStatus.values();
+        var cards = Stream.generate(this::createRandomValidCreationRequest)
+            .limit(cardsAmount)
+            .map(request -> new CardDraft(
+                request.bin(),
+                request.cardholderName(),
+                CardStatus.valueOf(
+                    faker.options().option(statuses).name()
+                ),
+                request.currencyCode(),
+                request.dailyLimit(),
+                request.monthlyLimit(),
+                request.initialBalance()
+            ))
+            .toList();
+
+        cardService.createCards(cards);
+
+        var limit = 9;
+        var jsonPath = given()
+            .port(port)
+            .queryParam("limit", limit)
+            .when()
+            .get("/api/cards")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath();
+        assertEquals(limit, jsonPath.getList("cards").size());
+
+        var offset = 9;
+        jsonPath = given()
+            .port(port)
+            .queryParam("offset", offset)
+            .when()
+            .get("/api/cards")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath();
+        assertEquals(cardsAmount - offset, jsonPath.getList("cards").size());
+
+        var status = CardModelStatus.ACTIVE;
+        var gotCards = given()
+            .port(port)
+            .queryParam("status", status)
+            .when()
+            .get("/api/cards")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(GetCardsResponse.class);
+        for (var c : gotCards.cards()) {
+            assertEquals(status, c.status());
+        }
+
+        var bin = binIssuerService.getAll().getFirst().bin();
+        gotCards = given()
+            .port(port)
+            .queryParam("bin", bin)
+            .when()
+            .get("/api/cards")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(GetCardsResponse.class);
+        for (var c : gotCards.cards()) {
+            assertEquals(bin, c.bin());
+        }
+
+        var issuerId = binIssuerService.getAll().getFirst().issuerId();
+        gotCards = given()
+            .port(port)
+            .queryParam("issuerId", issuerId)
+            .when()
+            .get("/api/cards")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(GetCardsResponse.class);
+        for (var c : gotCards.cards()) {
+            assertEquals(issuerId, c.issuerId());
+        }
+
+        var startDate = Instant.now().minus(1, ChronoUnit.HOURS).toString();
+        var endDate = Instant.now().plus(1, ChronoUnit.HOURS).toString();
+        jsonPath = given()
+            .port(port)
+            .queryParam("startDate", startDate)
+            .queryParam("endDate", endDate)
+            .when()
+            .get("/api/cards")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath();
+        assertEquals(cardsAmount, jsonPath.getList("cards").size());
+
+        jsonPath = given()
+            .port(port)
+            .queryParam("endDate", startDate)
+            .when()
+            .get("/api/cards")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath();
+        assertEquals(0, jsonPath.getList("cards").size());
+
+        jsonPath = given()
+            .port(port)
+            .queryParam("startDate", endDate)
+            .when()
+            .get("/api/cards")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath();
+        assertEquals(0, jsonPath.getList("cards").size());
     }
 
     @Test

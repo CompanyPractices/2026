@@ -2,17 +2,15 @@ package com.processing.cardmanagement.models;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Getter
-@Setter
+@Data
 @Table(
     name = "reservations",
     indexes = @Index(name = "uk_reservations_rrn", columnList = "rrn", unique = true)

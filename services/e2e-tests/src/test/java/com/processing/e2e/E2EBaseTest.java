@@ -13,7 +13,9 @@ import org.testng.annotations.BeforeClass;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.UUID;
@@ -92,6 +94,8 @@ public abstract class E2EBaseTest {
     protected DBUtils db = new DBUtils();
 
     protected CardModel cardFromRow(Map<String, Object> row) {
+        LocalDateTime ldt = ((Timestamp) row.get("created_at")).toLocalDateTime();
+
         return new CardModel(
                 (UUID) row.get("id"),
                 (String) row.get("pan"),
@@ -104,7 +108,7 @@ public abstract class E2EBaseTest {
                 new BigDecimal(row.get("monthly_limit").toString()),
                 new BigDecimal(row.get("available_balance").toString()),
                 (String) row.get("issuer_id"),
-                ((Timestamp) row.get("created_at")).toLocalDateTime()
+                ((Timestamp) row.get("created_at")).toLocalDateTime().toInstant(ZoneOffset.UTC)
         );
     }
 }

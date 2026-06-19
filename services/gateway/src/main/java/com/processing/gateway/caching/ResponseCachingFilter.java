@@ -3,6 +3,7 @@ package com.processing.gateway.caching;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
 import com.processing.gateway.downstream.DownstreamExceptionUtils;
+import com.processing.gateway.metrics.GatewayMetrics;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,6 +40,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
 
     private final Cache cache;
     private final ObjectMapper objectMapper;
+    private final GatewayMetrics gatewayMetrics;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -50,6 +52,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             if (isCardMutation(request) && isSuccessfulStatus(response.getStatus())) {
                 cache.clear();
+                gatewayMetrics.recordCardsCacheInvalidation();
             }
             return;
         }
@@ -58,6 +61,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
         String cachedBody = cache.get(requestKey, String.class);
 
         if (cachedBody != null) {
+            gatewayMetrics.recordCardsCacheHit();
             response.setStatus(HttpServletResponse.SC_OK);
             response.setHeader(CACHE_HEADER_NAME, CACHE_HIT);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -68,6 +72,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
         }
 
         var wrappedResponse = new ContentCachingResponseWrapper(response);
+        gatewayMetrics.recordCardsCacheMiss();
 
         try {
             filterChain.doFilter(request, wrappedResponse);
@@ -82,6 +87,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             if (DownstreamExceptionUtils.isDownstreamUnavailable(e) && !response.isCommitted()) {
                 log.error("Card Management service is unavailable while caching response", e);
+                gatewayMetrics.recordDownstreamUnavailable("cardManagement");
                 response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                 objectMapper.writeValue(response.getWriter(), new ServiceUnavailableResponse(

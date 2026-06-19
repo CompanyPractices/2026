@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.gateway.metrics.GatewayMetrics;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;
@@ -45,6 +46,7 @@ public class TransactionValidationFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
     private final TransactionRequestValidator validator;
+    private final GatewayMetrics gatewayMetrics;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -62,9 +64,11 @@ public class TransactionValidationFilter extends OncePerRequestFilter {
             AuthorizationRequest authorizationRequest = objectMapper.readValue(requestBody, AuthorizationRequest.class);
             validator.validate(authorizationRequest);
         } catch (JsonProcessingException e) {
+            gatewayMetrics.recordValidationRejected("invalid_json");
             writeValidationError(response, "Request body must be valid JSON");
             return;
         } catch (TransactionValidationException e) {
+            gatewayMetrics.recordValidationRejected("invalid_request");
             writeValidationError(response, e.getMessage());
             return;
         }
