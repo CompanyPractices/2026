@@ -44,7 +44,8 @@ public class TransactionBuilder {
             for (int i = 0; i < count; i++) {
                 Future<RequestFeeData> future = executor.submit(
                         () -> {
-                            CardDataResponse card = cardDataResponses.get(ThreadLocalRandom.current().nextInt(cardDataResponses.size()));
+                            CardDataResponse card = cardDataResponses.get(
+                                    ThreadLocalRandom.current().nextInt(cardDataResponses.size()));
                             Merchant merchant = merchants.get(ThreadLocalRandom.current().nextInt(merchants.size()));
                             Terminal terminal = terminalProvider.getByMerchant(merchant.getId());
                             BigDecimal amount = new BigDecimal(
