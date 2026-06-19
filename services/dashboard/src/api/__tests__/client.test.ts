@@ -36,7 +36,7 @@ describe('fetchApi', () => {
             statusText: 'Not Found',
         })
 
-        const promise = fetchApi(('http://localhost/api/test'));
+        const promise = fetchApi('http://localhost/api/test');
         await expect(promise).rejects.toThrow('Client Error 404');
         expect(mockFetch).toHaveBeenCalledTimes(1);
     });
@@ -53,7 +53,7 @@ describe('fetchApi', () => {
                 json: async () => ({success: true})
             });
 
-        const promise = fetchApi(('http://localhost/api/test', {retries: 2}));
+        const promise = fetchApi('http://localhost/api/test', {retries: 2});
         await vi.advanceTimersByTimeAsync(2000);
         const answer = await promise;
         expect(answer).toEqual({ success: true });
