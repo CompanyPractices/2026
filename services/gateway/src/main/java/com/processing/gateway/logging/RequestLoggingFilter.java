@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.processing.gateway.common.models.Headers;
 import com.processing.gateway.logging.models.RequestLog;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -39,8 +40,6 @@ import java.util.regex.Pattern;
 public class RequestLoggingFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
 
-    private static final String ID_HEADER_NAME = "X-Request-Id";
-
     private static final Pattern PAN_PATTERN = Pattern.compile("(?i)\"pan\"\\s*:\\s*\"(\\d{6})\\d{6,9}(\\d{4})\"");
     private static final Pattern CVV_PATTERN = Pattern.compile("(?i)\"cvv\"\\s*:\\s*\"\\d{3,4}\"");
 
@@ -58,13 +57,13 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         long startTime = System.currentTimeMillis();
 
-        String incoming = request.getHeader(ID_HEADER_NAME);
+        String incoming = request.getHeader(Headers.X_REQUEST_ID.getValue());
         String requestId = incoming != null ? incoming : UUID.randomUUID().toString();
 
         var wrappedRequest = new MutableHeadersRequestWrapper(request);
-        wrappedRequest.setHeader(ID_HEADER_NAME, requestId);
+        wrappedRequest.setHeader(Headers.X_REQUEST_ID.getValue(), requestId);
 
-        response.setHeader(ID_HEADER_NAME, requestId);
+        response.setHeader(Headers.X_REQUEST_ID.getValue(), requestId);
 
         var contentCachedRequest = new ContentCachingRequestWrapper(wrappedRequest);
         var contentCachedResponse = new ContentCachingResponseWrapper(response);

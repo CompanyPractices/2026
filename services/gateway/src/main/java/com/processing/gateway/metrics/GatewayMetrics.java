@@ -1,5 +1,7 @@
 package com.processing.gateway.metrics;
 
+import com.processing.gateway.common.models.Headers;
+import com.processing.gateway.common.models.Services;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
@@ -18,7 +20,6 @@ public class GatewayMetrics {
     private static final String CACHE_REQUESTS = "gateway.cache.requests";
     private static final String CACHE_INVALIDATIONS = "gateway.cache.invalidations";
     private static final String CARDS_CACHE = "cards";
-    private static final String GATEWAY_SERVICE = "gateway";
 
     private final MeterRegistry meterRegistry;
 
@@ -28,29 +29,29 @@ public class GatewayMetrics {
      */
     @PostConstruct
     void registerMeters() {
-        rejectedRequests("rate_limit", GATEWAY_SERVICE);
-        rejectedRequests("validation_invalid_json", GATEWAY_SERVICE);
-        rejectedRequests("validation_invalid_request", GATEWAY_SERVICE);
-        rejectedRequests("shutting_down", GATEWAY_SERVICE);
+        rejectedRequests("rate_limit", Services.GATEWAY.getValue());
+        rejectedRequests("validation_invalid_json", Services.GATEWAY.getValue());
+        rejectedRequests("validation_invalid_request", Services.GATEWAY.getValue());
+        rejectedRequests("shutting_down", Services.GATEWAY.getValue());
 
-        registerDownstreamUnavailable("switch");
-        registerDownstreamUnavailable("authorization");
-        registerDownstreamUnavailable("cardManagement");
-        registerDownstreamUnavailable("logger");
-        registerDownstreamUnavailable("terminalSimulator");
-        registerDownstreamUnavailable("merchantSimulator");
+        registerDownstreamUnavailable(Services.SWITCH.getValue());
+        registerDownstreamUnavailable(Services.AUTH.getValue());
+        registerDownstreamUnavailable(Services.CARDS.getValue());
+        registerDownstreamUnavailable(Services.LOGGER.getValue());
+        registerDownstreamUnavailable(Services.TERMINAL.getValue());
+        registerDownstreamUnavailable(Services.MERCHANT.getValue());
 
-        registerCardsCacheRequest("hit");
-        registerCardsCacheRequest("miss");
+        registerCardsCacheRequest(Headers.Values.CACHE_HIT.getValue());
+        registerCardsCacheRequest(Headers.Values.CACHE_MISS.getValue());
         registerCardsCacheInvalidation();
     }
 
     public void recordRateLimitRejected() {
-        rejectedRequests("rate_limit", GATEWAY_SERVICE).increment();
+        rejectedRequests("rate_limit", Services.GATEWAY.getValue()).increment();
     }
 
     public void recordValidationRejected(String reason) {
-        rejectedRequests("validation_" + reason, GATEWAY_SERVICE).increment();
+        rejectedRequests("validation_" + reason, Services.GATEWAY.getValue()).increment();
     }
 
     public void recordCircuitOpen(String serviceName) {
@@ -58,7 +59,7 @@ public class GatewayMetrics {
     }
 
     public void recordGracefulShutdownRejected() {
-        rejectedRequests("shutting_down", GATEWAY_SERVICE).increment();
+        rejectedRequests("shutting_down", Services.GATEWAY.getValue()).increment();
     }
 
     public void recordDownstreamUnavailable(String serviceName) {
@@ -66,11 +67,11 @@ public class GatewayMetrics {
     }
 
     public void recordCardsCacheHit() {
-        recordCardsCacheRequest("hit");
+        recordCardsCacheRequest(Headers.Values.CACHE_HIT.getValue());
     }
 
     public void recordCardsCacheMiss() {
-        recordCardsCacheRequest("miss");
+        recordCardsCacheRequest(Headers.Values.CACHE_MISS.getValue());
     }
 
     public void recordCardsCacheInvalidation() {

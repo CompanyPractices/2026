@@ -1,5 +1,6 @@
 package com.processing.gateway.health;
 
+import com.processing.gateway.common.models.Headers;
 import com.processing.gateway.health.models.HealthStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.UUID;
 
 /**
  * HTTP client wrapper used by gateway health checks.
@@ -38,6 +40,7 @@ public class HealthClient {
             HttpRequest request = HttpRequest.newBuilder()
                     .GET()
                     .uri(URI.create(url))
+                    .header(Headers.X_REQUEST_ID.getValue(), UUID.randomUUID().toString())
                     .timeout(Duration.ofSeconds(healthProperties.getRequestTimeout()))
                     .build();
 

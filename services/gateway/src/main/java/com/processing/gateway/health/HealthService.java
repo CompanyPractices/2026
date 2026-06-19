@@ -2,8 +2,9 @@ package com.processing.gateway.health;
 
 import com.processing.gateway.health.models.HealthResponse;
 import com.processing.gateway.health.models.HealthStatus;
-import com.processing.gateway.properties.GatewayProperties;
-import com.processing.gateway.properties.ServiceProperties;
+import com.processing.gateway.common.properties.GatewayProperties;
+import com.processing.gateway.common.properties.ServiceProperties;
+import com.processing.gateway.common.models.Services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,11 +18,6 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class HealthService {
-    private static final String GATEWAY_SERVICE_NAME = "gateway";
-    private static final String SWITCH_SERVICE_NAME = "switch";
-    private static final String AUTH_SERVICE_NAME = "authorization";
-    private static final String CARD_MGMT_SERVICE_NAME = "cardManagement";
-    private static final String LOGGER_SERVICE_NAME = "logger";
 
     private final HealthClient healthClient;
     private final ServiceProperties serviceProperties;
@@ -40,17 +36,17 @@ public class HealthService {
         String cardsUrl = serviceProperties.getCardsUrl() + healthProperties.getUrl();
 
         Map<String, HealthStatus> downstreamServices = Map.of(
-                SWITCH_SERVICE_NAME, healthClient.sendHealthCheckRequest(switchUrl, SWITCH_SERVICE_NAME),
-                AUTH_SERVICE_NAME, healthClient.sendHealthCheckRequest(authUrl, AUTH_SERVICE_NAME),
-                CARD_MGMT_SERVICE_NAME, healthClient.sendHealthCheckRequest(cardsUrl, CARD_MGMT_SERVICE_NAME),
-                LOGGER_SERVICE_NAME, healthClient.sendHealthCheckRequest(loggerUrl, LOGGER_SERVICE_NAME));
+                Services.SWITCH.getValue(), healthClient.sendHealthCheckRequest(switchUrl, Services.SWITCH.getValue()),
+                Services.AUTH.getValue(), healthClient.sendHealthCheckRequest(authUrl, Services.AUTH.getValue()),
+                Services.CARDS.getValue(), healthClient.sendHealthCheckRequest(cardsUrl, Services.CARDS.getValue()),
+                Services.LOGGER.getValue(), healthClient.sendHealthCheckRequest(loggerUrl, Services.LOGGER.getValue()));
 
         HealthStatus gatewayStatus = downstreamServices.containsValue(HealthStatus.UNAVAILABLE)
                 ? HealthStatus.DEGRADED : HealthStatus.OK;
 
         return new HealthResponse(
                 gatewayStatus,
-                GATEWAY_SERVICE_NAME,
+                Services.GATEWAY.getValue(),
                 gatewayProperties.getVersion(),
                 downstreamServices);
     }

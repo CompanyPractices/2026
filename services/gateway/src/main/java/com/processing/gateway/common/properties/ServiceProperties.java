@@ -1,4 +1,4 @@
-package com.processing.gateway.properties;
+package com.processing.gateway.common.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

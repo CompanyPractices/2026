@@ -2,7 +2,7 @@ package com.processing.gateway.circuitbreaker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.gateway.metrics.GatewayMetrics;
-import com.processing.gateway.properties.GatewayRouteProperties;
+import com.processing.gateway.common.properties.GatewayRouteProperties;
 import com.processing.gateway.downstream.DownstreamServiceResolver;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package com.processing.gateway.downstream;
 
-import com.processing.gateway.properties.GatewayRouteProperties;
+import com.processing.gateway.common.properties.GatewayRouteProperties;
 import org.springframework.http.server.PathContainer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.pattern.PathPattern;

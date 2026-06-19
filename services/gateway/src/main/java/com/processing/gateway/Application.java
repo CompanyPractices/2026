@@ -1,7 +1,8 @@
 package com.processing.gateway;
 
+import com.processing.gateway.common.properties.GatewayProperties;
+import com.processing.gateway.common.properties.ServiceProperties;
 import com.processing.gateway.openapi.OpenApiProperties;
-import com.processing.gateway.properties.*;
 import com.processing.gateway.shutdown.ShutdownProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

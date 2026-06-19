@@ -1,6 +1,6 @@
 package com.processing.gateway.downstream;
 
-import com.processing.gateway.properties.GatewayRouteProperties;
+import com.processing.gateway.common.properties.GatewayRouteProperties;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

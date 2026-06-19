@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.gateway.common.models.Routes;
 import com.processing.gateway.metrics.GatewayMetrics;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
@@ -42,8 +43,6 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class TransactionValidationFilter extends OncePerRequestFilter {
 
-    private static final String TRANSACTIONS_PATH = "/api/transactions";
-
     private final ObjectMapper objectMapper;
     private final TransactionRequestValidator validator;
     private final GatewayMetrics gatewayMetrics;
@@ -78,7 +77,7 @@ public class TransactionValidationFilter extends OncePerRequestFilter {
 
     private boolean isTransactionRequest(HttpServletRequest request) {
         return "POST".equalsIgnoreCase(request.getMethod())
-                && TRANSACTIONS_PATH.equals(request.getRequestURI());
+                && Routes.API_TRANSACTIONS.getValue().equals(request.getRequestURI());
     }
 
     private void writeValidationError(HttpServletResponse response, String message) throws IOException {

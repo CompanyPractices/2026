@@ -2,6 +2,7 @@ package com.processing.gateway.shutdown;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
+import com.processing.gateway.common.models.Services;
 import com.processing.gateway.metrics.GatewayMetrics;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,7 +24,6 @@ import java.io.IOException;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RequiredArgsConstructor
 public class GracefulShutdownFilter extends OncePerRequestFilter {
-    private static final String GATEWAY_SERVICE_NAME = "gateway";
 
     private final GracefulShutdownState shutdownState;
     private final ShutdownProperties shutdownProperties;
@@ -52,7 +52,7 @@ public class GracefulShutdownFilter extends OncePerRequestFilter {
         objectMapper.writeValue(response.getWriter(), new ServiceUnavailableResponse(
                 "SERVICE_UNAVAILABLE",
                 "Gateway is shutting down, retry later",
-                GATEWAY_SERVICE_NAME
+                Services.GATEWAY.getValue()
         ));
     }
 }

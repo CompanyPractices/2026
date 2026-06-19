@@ -2,6 +2,9 @@ package com.processing.gateway.caching;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
+import com.processing.gateway.common.models.Headers;
+import com.processing.gateway.common.models.Routes;
+import com.processing.gateway.common.models.Services;
 import com.processing.gateway.downstream.DownstreamExceptionUtils;
 import com.processing.gateway.metrics.GatewayMetrics;
 import jakarta.servlet.FilterChain;
@@ -33,11 +36,6 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 @Slf4j
 public class ResponseCachingFilter extends OncePerRequestFilter {
-    private static final String CARDS_MGMT_SERVICE_PREFIX = "/api/cards";
-    private static final String CACHE_HEADER_NAME = "X-Cache";
-    private static final String CACHE_HIT = "HIT";
-    private static final String CACHE_MISS = "MISS";
-
     private final Cache cache;
     private final ObjectMapper objectMapper;
     private final GatewayMetrics gatewayMetrics;
@@ -47,7 +45,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
-        if (!request.getRequestURI().startsWith(CARDS_MGMT_SERVICE_PREFIX)
+        if (!request.getRequestURI().startsWith(Routes.API_CARDS.getValue())
                 || !isCacheableMethod(request)) {
             filterChain.doFilter(request, response);
             if (isCardMutation(request) && isSuccessfulStatus(response.getStatus())) {
@@ -63,7 +61,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
         if (cachedBody != null) {
             gatewayMetrics.recordCardsCacheHit();
             response.setStatus(HttpServletResponse.SC_OK);
-            response.setHeader(CACHE_HEADER_NAME, CACHE_HIT);
+            response.setHeader(Headers.X_CACHE.getValue(), Headers.Values.CACHE_HIT.getValue());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setContentLength(cachedBody.getBytes(StandardCharsets.UTF_8).length);
             response.getWriter().write(cachedBody);
@@ -80,20 +78,22 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
             if (wrappedResponse.getStatus() == HttpServletResponse.SC_OK) {
                 cachedBody = new String(wrappedResponse.getContentAsByteArray(), StandardCharsets.UTF_8);
                 cache.put(requestKey, cachedBody);
-                response.setHeader(CACHE_HEADER_NAME, CACHE_MISS);
+                response.setHeader(Headers.X_CACHE.getValue(), Headers.Values.CACHE_MISS.getValue());
             }
 
             wrappedResponse.copyBodyToResponse();
         } catch (Exception e) {
             if (DownstreamExceptionUtils.isDownstreamUnavailable(e) && !response.isCommitted()) {
                 log.error("Card Management service is unavailable while caching response", e);
+
                 gatewayMetrics.recordDownstreamUnavailable("cardManagement");
                 response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
                 objectMapper.writeValue(response.getWriter(), new ServiceUnavailableResponse(
                         "SERVICE_UNAVAILABLE",
                         "Card Management Service is temporarily unavailable",
-                        "cardManagement"
+                        Services.CARDS.getValue()
                 ));
                 return;
             }
@@ -107,7 +107,7 @@ public class ResponseCachingFilter extends OncePerRequestFilter {
     }
 
     private boolean isCardMutation(HttpServletRequest request) {
-        return request.getRequestURI().startsWith(CARDS_MGMT_SERVICE_PREFIX)
+        return request.getRequestURI().startsWith(Routes.API_CARDS.getValue())
                 && !request.getMethod().equalsIgnoreCase(HttpMethod.GET.name());
     }
 

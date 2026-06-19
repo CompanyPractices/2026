@@ -3,7 +3,7 @@ package com.processing.gateway.downstream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.processing.gateway.metrics.GatewayMetrics;
-import com.processing.gateway.properties.GatewayRouteProperties;
+import com.processing.gateway.common.properties.GatewayRouteProperties;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;

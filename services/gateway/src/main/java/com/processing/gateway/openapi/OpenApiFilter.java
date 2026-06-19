@@ -1,5 +1,6 @@
 package com.processing.gateway.openapi;
 
+import com.processing.gateway.common.models.Routes;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Paths;
@@ -29,9 +30,6 @@ import java.util.List;
 @Slf4j
 public class OpenApiFilter extends OncePerRequestFilter {
     private static final String DOCS_ROUTE_SUFFIX = "-docs";
-    private static final String INTERNAL_ROUTE_PREFIX = "/internal";
-    private static final String TRANSACTIONS_INTERNAL_ROUTE = "/api/internal/route";
-    private static final String TRANSACTIONS_PUBLIC_ROUTE = "/api/transactions";
 
     private final OpenApiProperties openApiProperties;
 
@@ -59,10 +57,10 @@ public class OpenApiFilter extends OncePerRequestFilter {
             Paths adjustedPaths = new Paths();
 
             paths.forEach((k, v) -> {
-                if (!k.contains(INTERNAL_ROUTE_PREFIX)) {
+                if (!k.contains(Routes.INTERNAL.getValue())) {
                     adjustedPaths.addPathItem(k, v);
-                } else if (k.equals(TRANSACTIONS_INTERNAL_ROUTE)) {
-                    adjustedPaths.addPathItem(TRANSACTIONS_PUBLIC_ROUTE, v);
+                } else if (k.equals(Routes.API_INTERNAL_ROUTE.getValue())) {
+                    adjustedPaths.addPathItem(Routes.API_TRANSACTIONS.getValue(), v);
                 }
             });
 
