@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,9 +32,7 @@ public class TerminalSimulatorService {
     private final int cardsAmount;
 
     private final AtomicBoolean isContinuousRunning = new AtomicBoolean(false);
-    private Thread continuousLoopThread;
-    private ExecutorService continuousExecutor;
-
+    private volatile Thread continuousLoopThread;  // видимость из разных потоков (методы start-continuous и stop)
 
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
                                      @Value("${simulator.tps:100}") int tps,
@@ -141,14 +138,8 @@ public class TerminalSimulatorService {
     }
 
     private TransactionTask generateSingleTask(TransactionType transactionType) {
-        TransactionTask task = new TransactionTask(transactionType, PartofDay.DAY);;
+        TransactionTask task = new TransactionTask(transactionType, PartofDay.DAY);
         return task;
-    }
-
-    private void cleanupContinuous() {
-        isContinuousRunning.set(false);
-        this.continuousLoopThread = null;
-        this.continuousExecutor = null;
     }
 
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
@@ -211,13 +202,60 @@ public class TerminalSimulatorService {
 
         long delayMs = 1000 / tps;
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
-        List<CardModel> cards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE, cardsAmount);
+        CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
+        List<CardModel> cards = gatewayClient.getCardsFromCardManager(requiredStatus, cardsAmount);
+
+        if (cards == null || cards.isEmpty()) {
+            isContinuousRunning.set(false);
+            throw new IllegalStateException("No cards available for status: " + requiredStatus);
+        }
+
+        // хочу создать виртуальный поток, один-единственный фоновый поток-диспетчер
+        this.continuousLoopThread = Thread.ofVirtual().start(() -> {
+            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                // когда я в методе stopContinuous() вызываю continuousLoopThread.interrupt(), я не убиваю поток,
+                // а ставлю ему внутренний флаг interrupted=true
+                while (isContinuousRunning.get() && !Thread.currentThread().isInterrupted()) {
+                    TransactionTask task = generateSingleTask(transactionType);
+                    executor.submit(() -> {
+                        try {
+                            executeSingleTransaction(task.type, task.partOfDay, cards, new AtomicInteger(),
+                                    new AtomicInteger(), terminalId);
+                        } catch (Exception e) {
+                            log.error("Continuous transaction execution failed", e);
+                        }
+                    });
+
+                    Thread.sleep(delayMs);
+                }
+            } catch (InterruptedException e) {
+                log.info("Continuous simulation loop was interrupted: {}", e.getMessage());
+            } finally {
+                isContinuousRunning.set(false);
+                continuousLoopThread = null;
+            }
+        });
 
     }
 
     public void stopContinuous() {
         if (isContinuousRunning.compareAndSet(true, false)) {
             log.info("Stopping continuous simulation...");
+
+            // прерываю поток-диспетчер, чтобы он вышел из Thread.sleep()
+            Thread threadToInterrupt = this.continuousLoopThread;
+            if (threadToInterrupt != null) {
+                threadToInterrupt.interrupt();
+                try {
+                    // жду, пока поток завершится и закроет свой экзекутор внутри try-with-resources
+                    threadToInterrupt.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            log.info("Continuous simulation stopped completely.");
+        } else {
+            log.warn("Stop requested, but continuous simulation was not running.");
         }
     }
 }
