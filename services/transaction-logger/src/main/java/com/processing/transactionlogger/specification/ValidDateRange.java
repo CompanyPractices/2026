@@ -6,11 +6,12 @@ import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
 /**
- * Проверяет, что {@code dateFrom} не позже {@code dateTo} в {@link TransactionFilter}.
+ * Проверяет, что начало диапазона не позже его конца.
+ * Применяется к фильтрам с диапазонами дат.
  * Если одно из полей не задано — считается валидным.
  */
 @Documented
-@Constraint(validatedBy = DateRangeValidator.class)
+@Constraint(validatedBy = {DateRangeValidator.class, ChartRangeValidator.class})
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidDateRange {

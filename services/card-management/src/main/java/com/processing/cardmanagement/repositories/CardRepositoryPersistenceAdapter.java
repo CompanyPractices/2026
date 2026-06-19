@@ -3,17 +3,17 @@ package com.processing.cardmanagement.repositories;
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.UnaryOperator;
 
+@Repository
 @RequiredArgsConstructor
-public class JavaPersistenceAdapter implements CardRepository {
+public class CardRepositoryPersistenceAdapter implements CardRepository {
 
     private final CardPersistenceMapper persistenceMapper;
     private final CardJpaRepository jpaRepository;
@@ -22,6 +22,13 @@ public class JavaPersistenceAdapter implements CardRepository {
     public Optional<Card> findByPan(String pan) {
         return jpaRepository
             .findByPan(pan)
+            .map(persistenceMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Card> findByPanForUpdate(String pan) {
+        return jpaRepository
+            .findWithPessimisticLockByPan(pan)
             .map(persistenceMapper::toDomain);
     }
 
@@ -88,17 +95,5 @@ public class JavaPersistenceAdapter implements CardRepository {
             .stream()
             .map(persistenceMapper::toDomain)
             .toList();
-    }
-
-    @Override
-    @Transactional
-    public Card updateWithPessimisticLock(String pan, UnaryOperator<Card> businessLogic) {
-        var cardEntity = jpaRepository
-            .findWithPessimisticLockByPan(pan)
-            .orElseThrow();
-
-        var card = businessLogic.apply(persistenceMapper.toDomain(cardEntity));
-        persistenceMapper.updateEntityFromDomain(card, cardEntity);
-        return persistenceMapper.toDomain(jpaRepository.save(cardEntity));
     }
 }

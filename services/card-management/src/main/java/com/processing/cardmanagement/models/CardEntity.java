@@ -2,9 +2,8 @@ package com.processing.cardmanagement.models;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
@@ -12,8 +11,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Getter
-@Setter
+@Data
 @Table(name = "cards", indexes = {
     @Index(name = "uk_cards_pan", columnList = "pan", unique = true),
     @Index(name = "idx_cards_issuer_id_created_at", columnList = "issuer_id, created_at"),
@@ -46,14 +44,18 @@ public class CardEntity {
     @Column(length = 3, nullable = false)
     private String currencyCode;
 
+    @Column(nullable = false, precision = 19)
     private BigDecimal dailyLimit;
 
+    @Column(nullable = false, precision = 19)
     private BigDecimal monthlyLimit;
 
+    @Column(nullable = false, precision = 19)
     private BigDecimal availableBalance;
 
     @Column(length = 10, nullable = false)
     private String issuerId;
 
+    @Column(nullable = false)
     private Instant createdAt = Instant.now();
 }

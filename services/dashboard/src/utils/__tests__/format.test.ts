@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {hidePan, convertPenniesToRubles, formatTime, formatDateTime, formatDate} from './format';
+import {hidePan, convertPenniesToRubles, formatTime, formatDateTime, formatDate} from '../format';
 
 describe('formatAmount', () => {
     it('converts pennies to rubles with 2 decimal places', () => {

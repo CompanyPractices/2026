@@ -6,13 +6,19 @@ import jakarta.annotation.Nullable;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.function.UnaryOperator;
 
 public interface CardRepository {
 
     Optional<Card> findByPan(String pan);
+
+    /**
+     * Находит карту по номеру PAN и блокирует ее параллельное изменение
+     *
+     * @param pan номер карты
+     * @return найденная карта
+     */
+    Optional<Card> findByPanForUpdate(String pan);
 
     /**
      * Возвращает список карт с фильтрацией и пагинацией
@@ -51,15 +57,4 @@ public interface CardRepository {
     Card save(Card card);
 
     List<Card> saveAll(List<Card> cards);
-
-    /**
-     * Обновляет значение в БД, используя пессимистичную блокировку
-     * Работает в рамках одной транзакции
-     *
-     * @param pan           номер карты
-     * @param businessLogic логика изменения карты
-     * @return измененная карта
-     * @throws NoSuchElementException если не была найдена карта
-     */
-    Card updateWithPessimisticLock(String pan, UnaryOperator<Card> businessLogic);
 }
