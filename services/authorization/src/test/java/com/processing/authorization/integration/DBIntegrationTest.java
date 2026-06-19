@@ -3,19 +3,15 @@ package com.processing.authorization.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import java.net.URI;
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
-
-import javax.sql.DataSource;
 
 import com.processing.authorization.entities.LimitUsage;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,8 +40,6 @@ public class DBIntegrationTest {
     private AuthService authService;
     @Autowired
     private LimitUsageRepository limitUsageRepository;
-    @Autowired
-    private DataSource dataSource;
     @MockitoBean
     private RestClient restClient;
 
@@ -62,6 +56,7 @@ public class DBIntegrationTest {
 
     private Instant now;
     private AuthorizationRequest correctRequest;
+    private AuthorizationRequest correctRequestOther;
 
     @BeforeEach
     void setUp() {
@@ -232,6 +227,21 @@ public class DBIntegrationTest {
                 "1234567890123456",
                 "123456",
                 "John Golt",
+                YearMonth.of(2026, 12),
+                CardModelStatus.ACTIVE,
+                "810",
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000),
+                "I001",
+                Instant.now());
+    }
+    private CardModel createActiveCardModelOther() {
+        return new CardModel(
+                UUID.randomUUID(),
+                "6543210987654321",
+                "654321",
+                "John Snow",
                 YearMonth.of(2026, 12),
                 CardModelStatus.ACTIVE,
                 "810",
