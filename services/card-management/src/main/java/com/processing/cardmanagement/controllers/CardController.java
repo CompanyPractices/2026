@@ -7,6 +7,7 @@ import com.processing.common.dto.ErrorResponse;
 import com.processing.common.dto.annotations.Bin;
 import com.processing.common.dto.annotations.NotNegative;
 import com.processing.common.dto.annotations.Pan;
+import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.cardmanagement.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -210,6 +211,8 @@ public class CardController {
         @ApiResponse(responseCode = "402", description = "Insufficient funds",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404", description = "Card not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "409", description = "RRN is already in database or illegal state",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{pan}/reserve")
@@ -220,7 +223,32 @@ public class CardController {
         return ResponseEntity.ok(
             restMapper.toDto(cardService.reserve(
                 pan,
-                data.amount()
+                data.amount(),
+                data.rrn()
+            ))
+        );
+    }
+
+    @Operation(summary = "Rollback funds on a card")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Funds reserve successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request data or state",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Card not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "409", description = "Rollback already satisfied or illegal state",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping("/{pan}/rollback")
+    public ResponseEntity<CardModel> rollback(
+        @PathVariable @Pan String pan,
+        @Valid @RequestBody RollbackRequest data
+    ) {
+        return ResponseEntity.ok(
+            restMapper.toDto(cardService.rollback(
+                pan,
+                data.amount(),
+                data.rrn()
             ))
         );
     }

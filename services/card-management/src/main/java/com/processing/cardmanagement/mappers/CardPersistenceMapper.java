@@ -11,7 +11,8 @@ public interface CardPersistenceMapper {
 
     CardEntity toEntity(Card card);
 
-    @Mapping(target = "withReserved", ignore = true)
+    @Mapping(target = "withReservation", ignore = true)
+    @Mapping(target = "withRollback", ignore = true)
     Card toDomain(CardEntity entity);
 
     @Mapping(target = "id", ignore = true)

@@ -37,7 +37,7 @@ public class ProxyingToCardsTest extends E2EBaseTest {
                     "currencyCode": "643",
                     "dailyLimit": 1000000,
                     "monthlyLimit": 10000000,
-                    "initialBalance": 5000000.0
+                    "initialBalance": 5000000
                 }
                 """;
 
@@ -67,7 +67,7 @@ public class ProxyingToCardsTest extends E2EBaseTest {
         directResponseJson = response;
 
         assertEquals(response.path("cardholderName").asText(), "PROXY TEST");
-        assertEquals(response.path("availableBalance").asText(), "5000000.0");
+        assertEquals(response.path("availableBalance").asText(), "5000000");
     }
 
     @Test(priority = 1203)
