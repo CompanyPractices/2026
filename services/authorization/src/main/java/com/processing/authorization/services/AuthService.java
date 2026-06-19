@@ -6,7 +6,6 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
-import com.processing.authorization.entities.LimitUsage;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.authorization.exceptions.*;
 import com.processing.common.dto.cardmanagement.ReserveRequest;
@@ -28,7 +27,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -314,57 +312,10 @@ public class AuthService {
 
     @Transactional(rollbackFor = Exception.class)
     public boolean checkAndUpdateLimits(CardModel cardResponse, BigDecimal amount, LocalDate transmissionLocalDate) {
-        Optional<LimitUsage> currLimitUsage = limitUsageRepository
-                .findByPanAndUsageDate(cardResponse.pan(), transmissionLocalDate);
-
-        Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
-                ? currLimitUsage
-                : limitUsageRepository
-                        .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
-                                cardResponse.pan(),
-                                transmissionLocalDate.withDayOfMonth(1)
-                                        .atStartOfDay()
-                                        .toLocalDate(),
-                                transmissionLocalDate);
-
-        if (monthLimitUsage.isPresent()) {
-            LimitUsage monthUsage = monthLimitUsage.get();
-            if (monthUsage.getMonthlyAmount().add(amount).compareTo(cardResponse.monthlyLimit()) > 0) {
-                return false;
-            }
-        } else if (amount.compareTo(cardResponse.monthlyLimit()) > 0) {
+        int updatedCount = limitUsageRepository.upsertLimitUsage(cardResponse.pan(), transmissionLocalDate,
+                amount, cardResponse.dailyLimit(), cardResponse.monthlyLimit());
+        if (updatedCount == 0) {
             return false;
-        }
-
-        if (currLimitUsage.isPresent()) {
-            LimitUsage usage = currLimitUsage.get();
-            if (usage.getDailyAmount().add(amount).compareTo(cardResponse.dailyLimit()) > 0) {
-                return false;
-            }
-        } else if (amount.compareTo(cardResponse.dailyLimit()) > 0) {
-            return false;
-        }
-
-        if (currLimitUsage.isPresent()) {
-            LimitUsage usage = currLimitUsage.get();
-            usage.setMonthlyAmount(usage.getMonthlyAmount().add(amount));
-            usage.setDailyAmount(usage.getDailyAmount().add(amount));
-            limitUsageRepository.save(usage);
-        } else if (monthLimitUsage.isPresent()) {
-            LimitUsage monthUsage = monthLimitUsage.get();
-            LimitUsage usage = new LimitUsage();
-            usage.setPan(cardResponse.pan());
-            usage.setUsageDate(transmissionLocalDate);
-            usage.setDailyAmount(amount);
-            usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(amount));
-            limitUsageRepository.save(usage);
-        } else {
-            LimitUsage usage = new LimitUsage();
-            usage.setPan(cardResponse.pan());
-            usage.setUsageDate(transmissionLocalDate);
-            usage.setDailyAmount(amount);
-            usage.setMonthlyAmount(amount);
-            limitUsageRepository.save(usage);
         }
         return true;
     }
