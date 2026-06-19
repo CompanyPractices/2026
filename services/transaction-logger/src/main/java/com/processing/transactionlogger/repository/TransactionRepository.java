@@ -1,13 +1,11 @@
 package com.processing.transactionlogger.repository;
 
-import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.model.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -16,13 +14,6 @@ import java.util.UUID;
  * JPA-репозиторий транзакций с поддержкой Specification-фильтрации
  */
 public interface TransactionRepository extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
-
-    long countByStatus(TransactionStatus status);
-
-    /** @return суммарный объём всех транзакций в минорных единицах */
-    @Query("SELECT SUM(t.amount) FROM Transaction t")
-    BigDecimal sumAmount();
-
     /**
      * Возвращает агрегированную статистику одним запросом.
      */
@@ -37,11 +28,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
             FROM transactions
 """, nativeQuery = true)
     TransactionStats findStats();
-    long countByCreatedAtAfter(Instant since);
-
-    /** @return среднее время обработки транзакции в миллисекундах */
-    @Query("SELECT AVG(t.processingTimeMs) FROM Transaction t")
-    double averageProcessingTimeMs();
 
     /**
      * Агрегирует транзакции по временным корзинам для графиков Dashboard.

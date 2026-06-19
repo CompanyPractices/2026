@@ -44,7 +44,7 @@ public class TransactionController {
                     @ApiResponse(responseCode = "200", description = "Результаты поиска"),
                     @ApiResponse(responseCode = "400", description = "Невалидные параметры",
                     content = @Content(schema = @Schema(example = "{\"limit\": "
-                            + "\"must be greater than 0\"")))
+                            + "\"must be greater than 0\"}")))
             }
     )
     @GetMapping("/search")

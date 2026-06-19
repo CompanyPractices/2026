@@ -5,12 +5,12 @@ import com.processing.transactionlogger.repository.ChartBucketRow;
 import java.time.Instant;
 
 /**
- *Одна временная корзина агрегации для графиков Dashboard.
- *@param timestamp начало интервала (усечённое до часа или дня, UTC)
- *@param total     всего транзакций в интервале
- *@param approved  одобренных транзакций
- *@param declined  отклонённых транзакций
- *@param amount    суммарный объём транзакций в минорных единицах валюты
+ * Одна временная корзина агрегации для графиков Dashboard.
+ * @param timestamp начало интервала (усечённое до часа или дня, UTC)
+ * @param total     всего транзакций в интервале
+ * @param approved  одобренных транзакций
+ * @param declined  отклонённых транзакций
+ * @param amount    суммарный объём транзакций в минорных единицах валюты
  */
 public record ChartBucket(
             Instant timestamp,
