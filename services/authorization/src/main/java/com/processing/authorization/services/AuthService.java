@@ -154,7 +154,7 @@ public class AuthService {
             log.warn("key duplication detected, checking limits again: {}", logPan(request.pan()), e);
             try {
                 areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 log.error("db failed after rechecking: {}", logPan(request.pan()), ex);
                 return DeclineOutcome.DB_UNAVAILABLE.buildAuthorization(request, requestInputTime);
             }
@@ -311,7 +311,6 @@ public class AuthService {
 
         log.debug("Reserve successful for card {}", logPan(pan));
     }
-
 
     @Transactional(rollbackFor = Exception.class)
     public boolean checkAndUpdateLimits(CardModel cardResponse, BigDecimal amount, LocalDate transmissionLocalDate) {
