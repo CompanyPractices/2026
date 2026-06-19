@@ -1,6 +1,5 @@
 package com.processing.gateway.common.models;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 

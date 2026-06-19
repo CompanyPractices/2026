@@ -1,5 +1,6 @@
 package com.processing.gateway.health;
 
+import com.processing.gateway.health.models.HealthRequest;
 import com.processing.gateway.health.models.HealthResponse;
 import com.processing.gateway.health.models.HealthStatus;
 import com.processing.gateway.common.properties.GatewayProperties;
@@ -35,11 +36,11 @@ public class HealthService {
         String authUrl = serviceProperties.getAuthUrl() + healthProperties.getUrl();
         String cardsUrl = serviceProperties.getCardsUrl() + healthProperties.getUrl();
 
-        Map<String, HealthStatus> downstreamServices = Map.of(
-                Services.SWITCH.getValue(), healthClient.sendHealthCheckRequest(switchUrl, Services.SWITCH.getValue()),
-                Services.AUTH.getValue(), healthClient.sendHealthCheckRequest(authUrl, Services.AUTH.getValue()),
-                Services.CARDS.getValue(), healthClient.sendHealthCheckRequest(cardsUrl, Services.CARDS.getValue()),
-                Services.LOGGER.getValue(), healthClient.sendHealthCheckRequest(loggerUrl, Services.LOGGER.getValue()));
+        Map<String, HealthStatus> downstreamServices = healthClient.sendHealthCheckRequests(
+                new HealthRequest(switchUrl, Services.SWITCH.getValue()),
+                new HealthRequest(authUrl, Services.AUTH.getValue()),
+                new HealthRequest(cardsUrl, Services.CARDS.getValue()),
+                new HealthRequest(loggerUrl, Services.LOGGER.getValue()));
 
         HealthStatus gatewayStatus = downstreamServices.containsValue(HealthStatus.UNAVAILABLE)
                 ? HealthStatus.DEGRADED : HealthStatus.OK;

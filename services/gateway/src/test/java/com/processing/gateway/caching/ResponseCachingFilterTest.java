@@ -2,6 +2,7 @@ package com.processing.gateway.caching;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.ServiceUnavailableResponse;
+import com.processing.gateway.common.models.Headers;
 import com.processing.gateway.metrics.GatewayMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
@@ -92,7 +93,7 @@ class ResponseCachingFilterTest {
         assertEquals(1, meterRegistry.counter(
                 "gateway.cache.requests",
                 "cache", "cards",
-                "result", "hit"
+                "result", Headers.Values.CACHE_HIT.getValue()
         ).count());
     }
 
@@ -122,7 +123,7 @@ class ResponseCachingFilterTest {
         assertEquals(1, meterRegistry.counter(
                 "gateway.cache.requests",
                 "cache", "cards",
-                "result", "miss"
+                "result", Headers.Values.CACHE_MISS.getValue()
         ).count());
     }
 

@@ -8,11 +8,11 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.web.client.RestClient;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,11 +29,24 @@ public class BeanConfiguration {
      * @return HTTP client with configured connect timeout
      */
     @Bean
-    public HttpClient httpClient() {
+    public HttpClient httpClient(Executor executor) {
         return HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(healthProperties.getConnectionTimeout()))
                 .followRedirects(HttpClient.Redirect.NORMAL)
+                .executor(executor)
                 .build();
+    }
+
+    @Bean
+    public Executor executorService() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(500);
+        executor.setThreadNamePrefix("health-check-");
+        executor.initialize();
+
+        return executor;
     }
 
     /**
