@@ -48,10 +48,10 @@ export default function TransactionLineChart({transactions, loading, error} : Li
         )
     }
 
-    if (!loading && !error && transactions.length === 0) {
+    if (!loading && !error && txData.length === 0) {
         return (
             <div className="text-center py-8 text-gray-500 dark:text-sage-50 font-mono">
-                Транзакций не найдено
+                Транзакций за последний час не найдено
             </div>
         )
     }

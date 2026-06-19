@@ -20,11 +20,12 @@ function App() {
             ...(initialTransactions || []),
         ];
         const seen = new Set();
-        return allTransactions.filter(tx => {
-            if (seen.has(tx.id)) return false;
-            seen.add(tx.id);
-            return true;
-        });
+        return allTransactions
+            .filter(tx => {
+                if (seen.has(tx.id)) return false;
+                seen.add(tx.id);
+                return true;
+            });
     }, [liveTransactions, initialTransactions]);
 
     const displayedTransactions = useMemo(() => {
@@ -39,7 +40,7 @@ function App() {
                 })
                 .slice(0, 20);
         }
-        return uniqueTransactions.slice(0, 20)
+        return uniqueTransactions.slice(0, 20);
     }, [isFiltered, filteredTransactions, uniqueTransactions]);
 
     return (

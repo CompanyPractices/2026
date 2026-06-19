@@ -1,10 +1,10 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import useStats from './useStats';
-import fetchApi from '../api/client';
-import { DashboardStats } from '../types';
+import useStats from '../useStats';
+import fetchApi from '../../api/client';
+import { DashboardStats } from '../../types';
 
-vi.mock('../api/client', () => ({
+vi.mock('../../api/client', () => ({
     default: vi.fn(),
 }));
 
