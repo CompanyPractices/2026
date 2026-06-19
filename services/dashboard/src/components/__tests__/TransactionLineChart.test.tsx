@@ -58,7 +58,7 @@ describe('TransactionLineChart', () => {
 
     it('should display empty state when no transactions exist', () => {
         render(<TransactionLineChart transactions={[]} loading={false} error={null} />);
-        expect(screen.getByText(/Транзакций не найдено/i)).toBeInTheDocument();
+        expect(screen.getByText(/Транзакций за последний час не найдено/i)).toBeInTheDocument();
     });
 
     it('should render chart when transactions exist', () => {
@@ -88,7 +88,10 @@ describe('TransactionLineChart', () => {
 
         render(<TransactionLineChart transactions={[recentTx, oldTx]} loading={false} error={null} />);
 
-        expect(screen.queryByText(/не найдено/i)).not.toBeInTheDocument();
+        const expectedLabel1 = formatInTimeZone(new Date(), 'UTC', 'HH:mm');
+        const expectedLabel2 = formatInTimeZone(subMinutes(new Date(), 90), 'UTC', 'HH:mm');
+        expect(screen.getByText(expectedLabel1)).toBeInTheDocument();
+        expect(screen.queryByText(expectedLabel2)).not.toBeInTheDocument();
     });
 
     it('should show empty state when all transactions are older than 1 hour', () => {
@@ -100,7 +103,8 @@ describe('TransactionLineChart', () => {
             createdAt: subMinutes(new Date(), 120).toISOString()});
 
         render(<TransactionLineChart transactions={[oldTx1, oldTx2]} loading={false} error={null} />);
-        expect(screen.queryByText(/не найдено/i)).not.toBeInTheDocument();
+
+        expect(screen.queryByText(/не найдено/i)).toBeInTheDocument();
     });
 
     it('should display time label for recent transaction', () => {
