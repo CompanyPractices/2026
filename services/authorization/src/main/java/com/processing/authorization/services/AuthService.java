@@ -14,6 +14,7 @@ import com.processing.common.utils.MaskPan;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,23 +97,20 @@ public class AuthService {
         CardModel cardResponse;
         try {
             cardResponse = getCard(request.pan());
-        } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", logPan(request.pan()), e);
+        } catch (CardNotFoundException | InvalidGetCardRequestException e) {
+            log.info("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
+            log.info("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
-        } catch (InvalidGetCardRequestException e) {
-            log.error("card not found for pan: {}", logPan(request.pan()), e);
-            return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (PaymentRequiredException e) {
-            log.error("card required payment for pan: {}", logPan(request.pan()), e);
+            log.info("card required payment for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
         } catch (GetCardException e) {
-            log.error("get card from card-management service failed for pan: {}", logPan(request.pan()), e);
+            log.info("get card from card-management service failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.error("getting card failed for pan: {}", logPan(request.pan()), e);
+            log.info("getting card failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
@@ -150,7 +148,7 @@ public class AuthService {
         boolean areLimitsUpdated = false;
         try {
             areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
-        } catch (DuplicateKeyException e) {
+        } catch (DuplicateKeyException | ConstraintViolationException e) {
             log.warn("key duplication detected, checking limits again: {}", logPan(request.pan()), e);
             try {
                 areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
@@ -171,22 +169,22 @@ public class AuthService {
         try {
             reserve(request.amount(), rrn, request.pan());
         } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", logPan(request.pan()), e);
+            log.info("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
+            log.info("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (InvalidReserveRequestException e) {
-            log.error("invalid reverse request for pan: {}", logPan(request.pan()), e);
+            log.info("invalid reverse request for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (InsufficientFundsException e) {
-            log.error("Insufficient funds from card-management for pan: {}", logPan(request.pan()), e);
+            log.info("Insufficient funds from card-management for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         } catch (ReserveException e) {
-            log.error("reserve from card-management service failed for pan: {}", logPan(request.pan()), e);
+            log.info("reserve from card-management service failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.error("reserve failed for card {}", cardResponse.id(), e);
+            log.info("reserve failed for card {}", cardResponse.id(), e);
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         }
 
@@ -465,22 +463,22 @@ public class AuthService {
         try {
             rollbackCard(request);
         } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", logPan(request.pan()), e);
+            log.info("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
+            log.info("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildRollback(request, requestInputTime);
         } catch (InvalidRollbackRequestException e) {
-            log.error("invalid rollback request for pan: {}", logPan(request.pan()), e);
+            log.info("invalid rollback request for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
         } catch (RollbackConflictException e) {
-            log.error("rollback request already completed for pan: {}", logPan(request.pan()), e);
+            log.info("rollback request already completed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.ALREADY_ROLLED_BACK.buildRollback(request, requestInputTime);
         } catch (RollbackFailureException e) {
-            log.error("rollback from card-management service failed for pan: {}", logPan(request.pan()), e);
+            log.info("rollback from card-management service failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.ROLLBACK_FAILED.buildRollback(request, requestInputTime);
         } catch (Exception e) {
-            log.error("rollback failed for pan: {}", logPan(request.pan()), e);
+            log.info("rollback failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.buildRollback(request, requestInputTime);
         }
         return RollbackResponse.approved(request, requestInputTime);
