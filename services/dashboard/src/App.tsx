@@ -88,7 +88,8 @@ function App() {
 
                 <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
                     <TransactionTable
-                        liveTransactions={displayedTransactions}
+                        transactions={displayedTransactions}
+                        isFiltered={isFiltered}
                         error={error}
                         loading={loading}
                         search={applyFilter}
