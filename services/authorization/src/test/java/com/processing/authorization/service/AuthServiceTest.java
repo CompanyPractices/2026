@@ -6,7 +6,6 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
-import com.processing.authorization.entities.LimitUsage;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import com.processing.authorization.services.AuthService;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
@@ -25,7 +24,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,10 +94,9 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
         doNothing().when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
-                .thenReturn(Optional.empty());
-        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(Optional.empty());
+        when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
+                any(BigDecimal.class), any(BigDecimal.class)))
+                .thenReturn(1);
 
         AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
@@ -135,7 +132,7 @@ class AuthServiceTest {
                 activeCardResponse.bin(),
                 activeCardResponse.cardholderName(),
                 activeCardResponse.expiryDate(),
-            CardModelStatus.EXPIRED,
+                CardModelStatus.EXPIRED,
                 activeCardResponse.currencyCode(),
                 activeCardResponse.dailyLimit(),
                 activeCardResponse.monthlyLimit(),
@@ -280,11 +277,11 @@ class AuthServiceTest {
     void authorizeDeclineWhenReserveThrowsException() {
         AuthService spyService = spy(authService);
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doThrow(new ReserveException("Reserve failed")).when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
-                .thenReturn(Optional.empty());
-        when(limitUsageRepository.findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(anyString(), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(Optional.empty());
+        when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
+                any(BigDecimal.class), any(BigDecimal.class)))
+                .thenReturn(1);
+        doThrow(new ReserveException("Reserve failed")).when(spyService).reserve(any(BigDecimal.class), anyString(),
+                anyString());
 
         AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
@@ -320,12 +317,9 @@ class AuthServiceTest {
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
         doNothing().when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
 
-        LimitUsage usage = new LimitUsage();
-        usage.setDailyAmount(BigDecimal.valueOf(50000));
-        usage.setMonthlyAmount(BigDecimal.valueOf(200000));
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
-                .thenReturn(Optional.of(usage));
-
+        when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
+                any(BigDecimal.class), any(BigDecimal.class)))
+                .thenReturn(1);
 
         AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
@@ -341,11 +335,9 @@ class AuthServiceTest {
         AuthService spyService = spy(authService);
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        LimitUsage usage = new LimitUsage();
-        usage.setDailyAmount(BigDecimal.valueOf(96000));
-        usage.setMonthlyAmount(BigDecimal.valueOf(200000));
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
-                .thenReturn(Optional.of(usage));
+        when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
+                any(BigDecimal.class), any(BigDecimal.class)))
+                .thenReturn(0);
 
         AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
@@ -361,11 +353,9 @@ class AuthServiceTest {
 
         doReturn(activeCardResponse).when(spyService).getCard(anyString());
 
-        LimitUsage usage = new LimitUsage();
-        usage.setDailyAmount(BigDecimal.valueOf(50000));
-        usage.setMonthlyAmount(BigDecimal.valueOf(498000));
-        when(limitUsageRepository.findByPanAndUsageDate(anyString(), any(LocalDate.class)))
-                .thenReturn(Optional.of(usage));
+        when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
+                any(BigDecimal.class), any(BigDecimal.class)))
+                .thenReturn(0);
 
         AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
 
