@@ -22,6 +22,10 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry) {
-        registry.addHandler(handler, "/ws/transactions").setAllowedOrigins(allowedOrigins.split(","));
+        String[] origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toArray(String[]::new);
+        registry.addHandler(handler, "/ws/transactions").setAllowedOrigins(origins);
     }
 }
