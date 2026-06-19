@@ -9,7 +9,7 @@ const { mockedGetLocation } = vi.hoisted(() => {
     };
 });
 
-vi.mock('../utils/geoGenerator', () => ({
+vi.mock('../../utils/geoGenerator', () => ({
     getTransactionLocation: mockedGetLocation,
 }));
 
