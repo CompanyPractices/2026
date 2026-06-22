@@ -87,7 +87,7 @@ public class GlobalExceptionHandler {
             .body(
                     new ErrorResponse(
                             "Internal service error",
-                            "Unexpected error in merchant acquirer simulator service",
+                            "Unexpected error in merchant acquirer simulator service" + ex,
                             Instant.now(),
                             SERVICE_NAME,
                             NO_RETRY));
