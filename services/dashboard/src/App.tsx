@@ -36,7 +36,22 @@ function App() {
         });
     }, [liveTransactions, transactions]);
 
-    const pageTransactions = transactions || [];
+    const pageTransactions = useMemo(() => {
+        const base = transactions || [];
+
+        if (pagination.currentPage === 0 && !isFiltered) {
+            const all = [...liveTransactions, ...base];
+            const seen = new Set();
+            const unique = all.filter(tx => {
+                if (seen.has(tx.id)) return false;
+                seen.add(tx.id);
+                return true;
+            });
+            return unique.slice(0, pagination.pageSize);
+        }
+
+        return base;
+    }, [transactions, liveTransactions, pagination.currentPage, isFiltered, pagination.pageSize]);
 
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
