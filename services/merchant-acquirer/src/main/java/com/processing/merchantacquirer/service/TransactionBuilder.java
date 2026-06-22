@@ -58,8 +58,10 @@ public class TransactionBuilder {
                                     )).setScale(0, RoundingMode.HALF_EVEN);
 
                             LocalDate date = LocalDate.now();
-                            Instant beforeTime = date.atTime(LocalTime.parse(scenario.getTimeLower())).toInstant(ZoneOffset.ofHours(3));
-                            Instant afterTime = date.atTime(LocalTime.parse(scenario.getTimeUpper())).toInstant(ZoneOffset.ofHours(3));
+                            Instant beforeTime = date.atTime(
+                                    LocalTime.parse(scenario.getTimeLower())).toInstant(ZoneOffset.ofHours(3));
+                            Instant afterTime = date.atTime(
+                                    LocalTime.parse(scenario.getTimeUpper())).toInstant(ZoneOffset.ofHours(3));
                             var duration = Duration.between(beforeTime, afterTime).toMillis();
                             Instant transactionTime = beforeTime.plusMillis(ThreadLocalRandom.current().nextLong(0, duration));
 
