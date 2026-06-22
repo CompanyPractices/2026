@@ -2,7 +2,6 @@ package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
 import com.processing.merchantacquirer.domain.FeeCalculator;
-import com.processing.merchantacquirer.domain.MaskerPan;
 import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Scenario;
