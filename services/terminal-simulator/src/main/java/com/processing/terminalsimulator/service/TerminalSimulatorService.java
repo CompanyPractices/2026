@@ -29,6 +29,9 @@ public class TerminalSimulatorService {
     private final TransactionFactory transactionFactory;
     private final int tps;
     private final int cardsAmount;
+    private final AtomicInteger currentErrors = new AtomicInteger(0);
+    private final int ERROR_THRESHOLD = 1;
+    private volatile boolean circuitOpen = false;
 
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
                                      @Value("${simulator.tps:100}") int tps,
@@ -135,6 +138,9 @@ public class TerminalSimulatorService {
 
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
         long start = System.currentTimeMillis();
+        circuitOpen = false;
+        currentErrors.set(0);
+
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
         List<CardModel> cards = loadCards(scenario);
         List<TransactionTask> tasks = generateTasks(scenario, count);
@@ -153,14 +159,31 @@ public class TerminalSimulatorService {
                 executor.submit(
                         () -> {  // создаю задачу (объект Runnable), без входящих аргументов, с таким кодом:
                     totalSubmitted.incrementAndGet();
+
+                    if (circuitOpen) {
+                        authResponses.add(new AuthorizationResponse(null, null, null, null,
+                                null, null, "Circuit Breaker in transaction-simulator: " +
+                                "Gateway is down, request skipped", 0));
+                        return;
+                    }
                     try {
                         AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay, cards,
                                 approved, declined, terminalId);
                         authResponses.add(resp);
+
+                        currentErrors.set(0);
                     } catch (Exception e) {
-                        log.error("Transaction failed", e);
+                        log.warn("Transaction failed: {}", e.getMessage());
                         authResponses.add(new AuthorizationResponse(null, null, null, null, null,
                                 null, e.getMessage(), 0));
+
+                        if (currentErrors.incrementAndGet() >= ERROR_THRESHOLD) {
+                            if (!circuitOpen) {
+                                log.error("terminal-simulator: GATEWAY IS DOWN. Opening circuit breaker to save " +
+                                        "resources.");
+                                circuitOpen = true;
+                            }
+                        }
                     }
                 });
 
@@ -171,13 +194,13 @@ public class TerminalSimulatorService {
             // метод .interrupt(), который поставит внутри потока флаг interrupted = true. Это увидит Thread.sleep(),
             // выкинет InterruptedException и поставит обратно interrupted = false. Блок for прервется, успев создать
             // только часть тасок.
-            log.error("Simulation loop was interrupted", e);
+            log.error("Simulation loop was interrupted: {}", e.getMessage());
             Thread.currentThread().interrupt();  // возвращаем interrupted = true, чтобы для внешнего мира не выглядело
             // так, будто наш поток завершился сам, добровольно и успешно.
             // Все это делается, чтобы собрать остатки данных и вернуть хотя бы то, что успело выполниться, вместо
             // ошибки 500.
         } catch (Exception e) {
-            log.error("Critical execution error in simulation main loop", e);
+            log.error("Critical execution error in simulation main loop: {}", e.getMessage());
         }
 
         long elapsed = System.currentTimeMillis() - start;

@@ -1,14 +1,26 @@
 package com.processing.terminalsimulator.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
 
 @Configuration
 public class AppConfig {
 
     @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
+    public RestClient restClient(@Value("${gateway.url:http://gateway:8080}") String gatewayUrl) {
+        // время на установку сетевого соединения с gateway
+        HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+
+        // время на ожидание ответа на запрос (когда gateway завис)
+        requestFactory.setReadTimeout(Duration.ofSeconds(3));
+
+        return RestClient.builder().baseUrl(gatewayUrl).requestFactory(requestFactory).build();
     }
 }
