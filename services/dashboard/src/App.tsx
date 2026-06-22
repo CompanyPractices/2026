@@ -8,13 +8,11 @@ import useTransactions from './hooks/useTransactions.ts'
 import { useMemo } from 'react'
 import {TransactionMap} from "./components/TransactionsMap.tsx";
 import TransactionHistogram from './components/TransactionHistogram.tsx'
-import {Transaction} from "./types";
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
     const {
-        transactions: initialTransactions,
-        filteredTransactions,
+        transactions,
         isFiltered,
         loading,
         error,
@@ -25,31 +23,20 @@ function App() {
     } = useTransactions();
     const { stats, loading: liveLoading, error: liveError } = useLiveStats(liveTransactions);
 
-    const uniqueTransactions = useMemo(() => {
+    const chartTransactions = useMemo(() => {
         const allTransactions = [
             ...liveTransactions,
-            ...(initialTransactions || []),
+            ...(transactions || []),
         ];
         const seen = new Set();
         return allTransactions.filter(tx => {
-                if (seen.has(tx.id)) return false;
-                seen.add(tx.id);
-                return true;
-            });
-    }, [liveTransactions, initialTransactions]);
+            if (seen.has(tx.id)) return false;
+            seen.add(tx.id);
+            return true;
+        });
+    }, [liveTransactions, transactions]);
 
-    const displayedTransactions = useMemo(() => {
-        if (isFiltered) {
-            const filtered = filteredTransactions || [];
-            const seen = new Set();
-            return filtered.filter((tx: Transaction) => {
-                if (seen.has(tx.id)) return false;
-                seen.add(tx.id);
-                return true;
-            });
-        }
-        return uniqueTransactions.slice(0, pagination.pageSize);
-    }, [isFiltered, filteredTransactions, uniqueTransactions, pagination.pageSize]);
+    const pageTransactions = transactions || [];
 
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
@@ -62,7 +49,7 @@ function App() {
                         Распределение сумм транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionHistogram transactions={uniqueTransactions} loading={loading} error={error} />
+                        <TransactionHistogram transactions={chartTransactions} loading={loading} error={error} />
                     </div>
                 </div>
 
@@ -71,7 +58,7 @@ function App() {
                         Статистика одобрения транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionPieChart transactions={uniqueTransactions} loading={loading} error={error} />
+                        <TransactionPieChart transactions={chartTransactions} loading={loading} error={error} />
                     </div>
                 </div>
 
@@ -81,14 +68,14 @@ function App() {
                             Транзакции за последний час
                         </h2>
                         <div className="flex-grow min-h-[300px]">
-                            <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
+                            <TransactionLineChart transactions={chartTransactions} loading={loading} error={error} />
                         </div>
                     </div>
                 </div>
 
                 <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
                     <TransactionTable
-                        transactions={displayedTransactions}
+                        transactions={pageTransactions}
                         isFiltered={isFiltered}
                         error={error}
                         loading={loading}
@@ -101,10 +88,10 @@ function App() {
 
                 <div className="col-span-1 md:col-span-2 pt-6 bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
                     <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                        Карта последних 20 транзакций
+                        Карта транзакций на текущей странице
                     </h2>
                     <div className="flex-grow min-h-[550px]">
-                        <TransactionMap transactions={displayedTransactions} />
+                        <TransactionMap transactions={pageTransactions} />
                     </div>
                 </div>
             </main>

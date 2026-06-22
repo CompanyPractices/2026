@@ -9,7 +9,6 @@ function useTransactions() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [transactions, setTransactions] = useState<Transaction[] | null>(null);
-    const [filteredTransactions, setFilteredTransactions] = useState<Transaction[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -25,26 +24,12 @@ function useTransactions() {
     };
 
     const hasFilter = Object.values(currentFilter).some(v => v);
+
     const totalElements = parseInt(searchParams.get('total') || '0', 10);
-    const totalPages = Math.ceil(totalElements / pageSize);
+    const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
 
     useEffect(() => {
-        fetchApi<Transaction[]>(`/api/dashboard/recent?limit=${DEFAULT_PAGE_SIZE}`)
-            .then((data) => {
-                setTransactions(data);
-                setFilteredTransactions(data);
-                setLoading(false);
-            })
-            .catch((error) => {
-                setError(error.message);
-                setLoading(false);
-            });
-    }, []);
-
-    useEffect(() => {
-        if (!hasFilter) {
-            return;
-        }
+        let cancelled = false;
 
         setLoading(true);
         setError(null);
@@ -61,18 +46,32 @@ function useTransactions() {
 
         fetchApi<SearchResponse>(`/api/transactions/search?${requestParams.toString()}`)
             .then((data) => {
-                setFilteredTransactions(data.transactions);
-                const newParams = new URLSearchParams(searchParams);
-                newParams.set('total', data.total.toString());
-                setSearchParams(newParams, { replace: true });
+                if (cancelled) return;
+                setTransactions(data.transactions);
+
+                setSearchParams((prev) => {
+                    const newParams = new URLSearchParams(prev);
+                    const currentTotal = newParams.get('total');
+                    if (currentTotal !== data.total.toString()) {
+                        newParams.set('total', data.total.toString());
+                        return newParams;
+                    }
+                    return prev;
+                }, { replace: true });
             })
-            .catch((error) => {
-                setError(error.message);
+            .catch((err) => {
+                if (cancelled) return;
+                setError(err.message);
+                setTransactions([]);
             })
             .finally(() => {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             });
-    }, [currentPage, pageSize, currentFilter.status, currentFilter.dateFrom, currentFilter.dateTo, currentFilter.issuerId, currentFilter.mcc, hasFilter, searchParams, setSearchParams]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentPage, pageSize, currentFilter.status, currentFilter.dateFrom, currentFilter.dateTo, currentFilter.issuerId, currentFilter.mcc, setSearchParams]);
 
     const applyFilter = useCallback((filter: Filter) => {
         const newParams = new URLSearchParams();
@@ -90,21 +89,24 @@ function useTransactions() {
     }, [pageSize, setSearchParams]);
 
     const goToPage = useCallback((page: number) => {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('page', page.toString());
-        setSearchParams(newParams);
-    }, [searchParams, setSearchParams]);
+        setSearchParams((prev) => {
+            const newParams = new URLSearchParams(prev);
+            newParams.set('page', page.toString());
+            return newParams;
+        });
+    }, [setSearchParams]);
 
     const changePageSize = useCallback((size: number) => {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('pageSize', size.toString());
-        newParams.set('page', '0');
-        setSearchParams(newParams);
-    }, [searchParams, setSearchParams]);
+        setSearchParams((prev) => {
+            const newParams = new URLSearchParams(prev);
+            newParams.set('pageSize', size.toString());
+            newParams.set('page', '0');
+            return newParams;
+        });
+    }, [setSearchParams]);
 
     return {
         transactions,
-        filteredTransactions,
         isFiltered: hasFilter,
         error,
         loading,
