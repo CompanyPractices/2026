@@ -1,7 +1,6 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.GatewayClient;
-import com.processing.merchantacquirer.domain.MaskerPan;
 import com.processing.merchantacquirer.exception.ExternalServiceException;
 import com.processing.merchantacquirer.metrics.TransactionMetrics;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
