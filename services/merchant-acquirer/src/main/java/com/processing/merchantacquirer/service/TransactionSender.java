@@ -60,7 +60,7 @@ public class TransactionSender {
 
                   try {
                     semaphore.acquire();
-                  } catch (InterruptedException e){
+                  } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new IllegalStateException("Interrupet while acquiring sender permin", e);
                   }
@@ -109,7 +109,7 @@ public class TransactionSender {
         }
       }
 
-      if (declined > 0){
+      if (declined > 0) {
         log.warn("Declined {} of {}. Stats: {}", declined, responses.size(), declinedByReason);
       }
       return new SimulatorStats(responses, approved, declined);
