@@ -71,9 +71,6 @@ public class AuthorizationLogEventListenerImpl implements AuthorizationEventList
                     maskPan(e.pan()));
             case AuthServiceRollbackDeclineUnknownEvent e -> log.warn("{} {} for pan {}",
                     LogMessages.MESSAGE_ROLLBACK_DECLINED_UNKNOWN, e.reason(), maskPan(e.pan()));
-
-            default -> {
-            }
         }
     }
 }
