@@ -1,5 +1,7 @@
-package com.processing.cardmanagement.events;
+package com.processing.cardmanagement.outbox;
 
+import com.processing.cardmanagement.events.CardEventListener;
+import com.processing.cardmanagement.events.OutboxProcessor;
 import com.processing.cardmanagement.models.BinIssuerEntity;
 import com.processing.cardmanagement.models.EventStatus;
 import com.processing.cardmanagement.models.OutboxEventEntity;

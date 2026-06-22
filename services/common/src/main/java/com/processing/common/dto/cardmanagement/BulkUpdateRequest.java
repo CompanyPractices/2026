@@ -9,7 +9,7 @@ import java.util.List;
 
 public record BulkUpdateRequest(
         @Nullable
-        List<@Bin String> bin,
+        List<@Bin String> bins,
 
         @Nullable
         List<@Pan String> pans,

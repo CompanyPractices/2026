@@ -258,7 +258,7 @@ public class CardController {
             @Valid @RequestBody BulkUpdateRequest request
     ) {
         int updated = cardService.bulkUpdateStatus(
-                request.bin(),
+                request.bins(),
                 request.pans(),
                 cardStatusMapper.toCardStatus(request.status())
         );
