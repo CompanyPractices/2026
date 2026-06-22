@@ -15,6 +15,7 @@ public class StanGenerator {
 
         int stan = stanCounter.incrementAndGet();
 
+        // TODO: race
         if (stan > MAX_STAN_COUNT) {
             stanCounter.set(1);
             stan = 1;

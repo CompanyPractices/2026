@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Внутренний контроллер для приёма транзакций от Switch.
- * Доступен только для внутренних вызовов от Switch.
+ * Предназначен для внутренних вызовов от Switch.
  */
 @RestController
 @RequestMapping("/api/internal")
