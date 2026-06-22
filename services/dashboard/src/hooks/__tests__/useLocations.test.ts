@@ -30,15 +30,15 @@ describe('useLocations', () => {
 
     it('should group transactions by city and count them correctly', () => {
         mockedGetLocation.mockImplementation((issuerId) => {
-            if (issuerId === 'issuer_msk_1') return { city: 'Владивосток', coordinates: [43.1056, 131.874] };
-            if (issuerId === 'issuer_msk_2') return { city: 'Владивосток', coordinates: [43.1056, 131.874] };
-            if (issuerId === 'issuer_ldn') return { city: 'Красноярск', coordinates: [56.0184, 92.8672] };
+            if (issuerId === 'issuer_vdk_1') return { city: 'Владивосток', coordinates: [43.1056, 131.874] };
+            if (issuerId === 'issuer_vdk_2') return { city: 'Владивосток', coordinates: [43.1056, 131.874] };
+            if (issuerId === 'issuer_kry') return { city: 'Красноярск', coordinates: [56.0184, 92.8672] };
             return { city: 'Unknown', coordinates: [0, 0] };
         });
 
-        const tx1 = createMockTx('tx1', 'issuer_msk_1');
-        const tx2 = createMockTx('tx2', 'issuer_msk_2');
-        const tx3 = createMockTx('tx3', 'issuer_ldn');
+        const tx1 = createMockTx('tx1', 'issuer_vdk_1');
+        const tx2 = createMockTx('tx2', 'issuer_vdk_2');
+        const tx3 = createMockTx('tx3', 'issuer_kry');
 
         const { result } = renderHook(() => useLocations([tx1, tx2, tx3]));
 
@@ -56,12 +56,12 @@ describe('useLocations', () => {
 
     it('should call getTransactionLocation with correct issuerId', () => {
         mockedGetLocation.mockReturnValue({ city: 'Красноярск', coordinates: [56.0184, 92.8672] });
-        const tx = createMockTx('tx1', 'issuer_ber_1');
+        const tx = createMockTx('tx1', 'issuer_kry');
 
         renderHook(() => useLocations([tx]));
 
         expect(mockedGetLocation).toHaveBeenCalledTimes(1);
-        expect(mockedGetLocation).toHaveBeenCalledWith('issuer_ber_1');
+        expect(mockedGetLocation).toHaveBeenCalledWith('issuer_kry');
     });
 
     describe('Memoization', () => {

@@ -1,6 +1,7 @@
 package com.processing.authorization.service;
 
 import com.processing.authorization.events.AuthorizationEventNotifier;
+import com.processing.authorization.client.CardManagementClient;
 import com.processing.authorization.exceptions.*;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
@@ -52,6 +53,9 @@ class AuthServiceTest {
     @Mock
     private AuthorizationEventNotifier eventNotifier;
 
+    @Mock
+    private CardManagementClient cardManagementClient;
+
     @BeforeEach
     void setUp() {
         correctRequest = new AuthorizationRequest(
@@ -91,15 +95,13 @@ class AuthServiceTest {
 
     @Test
     void authorizeApprovedWhenAllChecksPassed() {
-        AuthService spyService = spy(authService);
-
-        doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doNothing().when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
+        doReturn(activeCardResponse).when(cardManagementClient).getCard(anyString());
+        doNothing().when(cardManagementClient).reserve(any(BigDecimal.class), anyString(), anyString());
         when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
                 any(BigDecimal.class), any(BigDecimal.class)))
                 .thenReturn(1);
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_APPROVED);
         assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_APPROVED);
@@ -107,22 +109,21 @@ class AuthServiceTest {
         assertThat(response.authCode()).isNotNull();
         assertThat(response.declineReason()).isNull();
 
-        verify(spyService, times(1)).getCard(correctRequest.pan());
-        verify(spyService, times(1)).reserve(eq(correctRequest.amount()), anyString(), eq(correctRequest.pan()));
+        verify(cardManagementClient, times(1)).getCard(correctRequest.pan());
+        verify(cardManagementClient, times(1)).reserve(eq(correctRequest.amount()), anyString(), eq(correctRequest.pan()));
     }
 
     @Test
     void authorizeReturnServiceUnavailableWhenGetCardThrowsException() {
-        AuthService spyService = spy(authService);
         doThrow(new ServiceUnavailableException("Card Management service unavailable"))
-                .when(spyService).getCard(anyString());
+                .when(cardManagementClient).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(response.responseCode()).isEqualTo(SERVICE_UNAVAILABLE.code());
         assertThat(response.declineReason()).isEqualTo(SERVICE_UNAVAILABLE.reason());
-        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
+        verify(cardManagementClient, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
@@ -140,14 +141,13 @@ class AuthServiceTest {
                 activeCardResponse.availableBalance(),
                 activeCardResponse.issuerId(),
                 activeCardResponse.createdAt());
-        AuthService spyService = spy(authService);
-        doReturn(expiredCard).when(spyService).getCard(anyString());
+        doReturn(expiredCard).when(cardManagementClient).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(CARD_EXPIRED.code());
         assertThat(response.declineReason()).isEqualTo(CARD_EXPIRED.reason());
-        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
+        verify(cardManagementClient, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
@@ -165,10 +165,9 @@ class AuthServiceTest {
                 activeCardResponse.availableBalance(),
                 activeCardResponse.issuerId(),
                 activeCardResponse.createdAt());
-        AuthService spyService = spy(authService);
-        doReturn(blockedCard).when(spyService).getCard(anyString());
+        doReturn(blockedCard).when(cardManagementClient).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(CARD_BLOCKED.code());
         assertThat(response.declineReason()).isEqualTo(CARD_BLOCKED.reason());
@@ -189,10 +188,9 @@ class AuthServiceTest {
                 activeCardResponse.availableBalance(),
                 activeCardResponse.issuerId(),
                 activeCardResponse.createdAt());
-        AuthService spyService = spy(authService);
-        doReturn(inactiveCard).when(spyService).getCard(anyString());
+        doReturn(inactiveCard).when(cardManagementClient).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(CARD_INACTIVE.code());
         assertThat(response.declineReason()).isEqualTo(CARD_INACTIVE.reason());
@@ -213,10 +211,9 @@ class AuthServiceTest {
                 activeCardResponse.availableBalance(),
                 activeCardResponse.issuerId(),
                 activeCardResponse.createdAt());
-        AuthService spyService = spy(authService);
-        doReturn(unknownStatusCard).when(spyService).getCard(anyString());
+        doReturn(unknownStatusCard).when(cardManagementClient).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(UNKNOWN_REASON.code());
         assertThat(response.declineReason()).isEqualTo(UNKNOWN_REASON.reason());
@@ -239,14 +236,13 @@ class AuthServiceTest {
                 activeCardResponse.availableBalance(),
                 activeCardResponse.issuerId(),
                 activeCardResponse.createdAt());
-        AuthService spyService = spy(authService);
-        doReturn(activeButExpiredCard).when(spyService).getCard(anyString());
+        doReturn(activeButExpiredCard).when(cardManagementClient).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(CARD_EXPIRED.code());
         assertThat(response.declineReason()).isEqualTo(CARD_EXPIRED.reason());
-        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
+        verify(cardManagementClient, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
@@ -264,31 +260,29 @@ class AuthServiceTest {
                 BigDecimal.valueOf(1000),
                 activeCardResponse.issuerId(),
                 activeCardResponse.createdAt());
-        AuthService spyService = spy(authService);
-        doReturn(lowBalanceCard).when(spyService).getCard(anyString());
+        doReturn(lowBalanceCard).when(cardManagementClient).getCard(anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(INSUFFICIENT_FUNDS.code());
         assertThat(response.declineReason()).isEqualTo(INSUFFICIENT_FUNDS.reason());
-        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
+        verify(cardManagementClient, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
     void authorizeDeclineWhenReserveThrowsException() {
-        AuthService spyService = spy(authService);
-        doReturn(activeCardResponse).when(spyService).getCard(anyString());
+        doReturn(activeCardResponse).when(cardManagementClient).getCard(anyString());
         when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
                 any(BigDecimal.class), any(BigDecimal.class)))
                 .thenReturn(1);
-        doThrow(new ReserveException("Reserve failed")).when(spyService).reserve(any(BigDecimal.class), anyString(),
+        doThrow(new ReserveException("Reserve failed")).when(cardManagementClient).reserve(any(BigDecimal.class), anyString(),
                 anyString());
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.responseCode()).isEqualTo(RESERVATION_FAILED.code());
         assertThat(response.declineReason()).isEqualTo(RESERVATION_FAILED.reason());
-        verify(spyService, times(1)).reserve(eq(correctRequest.amount()), anyString(), eq(correctRequest.pan()));
+        verify(cardManagementClient, times(1)).reserve(eq(correctRequest.amount()), anyString(), eq(correctRequest.pan()));
     }
 
     @Test
@@ -313,16 +307,14 @@ class AuthServiceTest {
 
     @Test
     void authorizeApprovedWhenDailyLimitNotReached() {
-        AuthService spyService = spy(authService);
-
-        doReturn(activeCardResponse).when(spyService).getCard(anyString());
-        doNothing().when(spyService).reserve(any(BigDecimal.class), anyString(), anyString());
+        doReturn(activeCardResponse).when(cardManagementClient).getCard(anyString());
+        doNothing().when(cardManagementClient).reserve(any(BigDecimal.class), anyString(), anyString());
 
         when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
                 any(BigDecimal.class), any(BigDecimal.class)))
                 .thenReturn(1);
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_APPROVED);
         assertThat(response.responseCode()).isEqualTo(AuthorizationResponse.CODE_APPROVED);
@@ -333,37 +325,33 @@ class AuthServiceTest {
 
     @Test
     void authorizeDeclineWhenDailyLimitReached() {
-        AuthService spyService = spy(authService);
-
-        doReturn(activeCardResponse).when(spyService).getCard(anyString());
+        doReturn(activeCardResponse).when(cardManagementClient).getCard(anyString());
         when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
                 any(BigDecimal.class), any(BigDecimal.class)))
                 .thenReturn(0);
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(response.responseCode()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.code());
         assertThat(response.declineReason()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.reason());
-        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
+        verify(cardManagementClient, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
     void authorizeDeclineWhenMonthlyLimitReached() {
-        AuthService spyService = spy(authService);
-
-        doReturn(activeCardResponse).when(spyService).getCard(anyString());
+        doReturn(activeCardResponse).when(cardManagementClient).getCard(anyString());
 
         when(limitUsageRepository.upsertLimitUsage(anyString(), any(LocalDate.class), any(BigDecimal.class),
                 any(BigDecimal.class), any(BigDecimal.class)))
                 .thenReturn(0);
 
-        AuthorizationResponse response = spyService.authorize(correctRequest, Instant.now());
+        AuthorizationResponse response = authService.authorize(correctRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(AuthorizationResponse.STATUS_DECLINED);
         assertThat(response.responseCode()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.code());
         assertThat(response.declineReason()).isEqualTo(EXCEEDS_AMOUNT_LIMIT.reason());
-        verify(spyService, never()).reserve(any(BigDecimal.class), anyString(), anyString());
+        verify(cardManagementClient, never()).reserve(any(BigDecimal.class), anyString(), anyString());
     }
 
     @Test
@@ -419,26 +407,22 @@ class AuthServiceTest {
 
     @Test
     void rollbackReturnApprovedWhenCmsRollbackSucceeds() {
-        AuthService spyService = spy(authService);
+        doNothing().when(cardManagementClient).rollback(any(RollbackRequest.class));
 
-        doNothing().when(spyService).rollbackCard(any(RollbackRequest.class));
-
-        RollbackResponse response = spyService.rollback(rollbackRequest, Instant.now());
+        RollbackResponse response = authService.rollback(rollbackRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(RollbackResponse.STATUS_APPROVED);
         assertThat(response.rrn()).isEqualTo("123456789012");
         assertThat(response.declineReason()).isNull();
-        verify(spyService, times(1)).rollbackCard(rollbackRequest);
+        verify(cardManagementClient, times(1)).rollback(rollbackRequest);
     }
 
     @Test
     void rollbackShouldReturnDeclinedWhenCmsReturnsInternalError() {
-        AuthService spyService = spy(authService);
-
         doThrow(new InternalCardManagerException("Internal card management error"))
-                .when(spyService).rollbackCard(any(RollbackRequest.class));
+                .when(cardManagementClient).rollback(any(RollbackRequest.class));
 
-        RollbackResponse response = spyService.rollback(rollbackRequest, Instant.now());
+        RollbackResponse response = authService.rollback(rollbackRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(RollbackResponse.STATUS_DECLINED);
         assertThat(response.declineReason()).isEqualTo(SERVICE_UNAVAILABLE.reason());
@@ -446,12 +430,10 @@ class AuthServiceTest {
 
     @Test
     void rollbackShouldReturnDeclinedWhenCardNotFound() {
-        AuthService spyService = spy(authService);
-
         doThrow(new CardNotFoundException("Card not found"))
-                .when(spyService).rollbackCard(any(RollbackRequest.class));
+                .when(cardManagementClient).rollback(any(RollbackRequest.class));
 
-        RollbackResponse response = spyService.rollback(rollbackRequest, Instant.now());
+        RollbackResponse response = authService.rollback(rollbackRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(RollbackResponse.STATUS_DECLINED);
         assertThat(response.declineReason()).isEqualTo(TRANSACTION_NOT_FOUND.reason());
@@ -459,12 +441,10 @@ class AuthServiceTest {
 
     @Test
     void rollbackShouldReturnDeclinedWhenAlreadyRolledBack() {
-        AuthService spyService = spy(authService);
-
         doThrow(new RollbackConflictException("Rollback conflict"))
-                .when(spyService).rollbackCard(any(RollbackRequest.class));
+                .when(cardManagementClient).rollback(any(RollbackRequest.class));
 
-        RollbackResponse response = spyService.rollback(rollbackRequest, Instant.now());
+        RollbackResponse response = authService.rollback(rollbackRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(RollbackResponse.STATUS_DECLINED);
         assertThat(response.declineReason()).isEqualTo(ALREADY_ROLLED_BACK.reason());
@@ -472,12 +452,10 @@ class AuthServiceTest {
 
     @Test
     void rollbackShouldReturnDeclinedWhenServiceUnavailable() {
-        AuthService spyService = spy(authService);
-
         doThrow(new ServiceUnavailableException("Card Management service unavailable"))
-                .when(spyService).rollbackCard(any(RollbackRequest.class));
+                .when(cardManagementClient).rollback(any(RollbackRequest.class));
 
-        RollbackResponse response = spyService.rollback(rollbackRequest, Instant.now());
+        RollbackResponse response = authService.rollback(rollbackRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(RollbackResponse.STATUS_DECLINED);
         assertThat(response.declineReason()).isEqualTo(SERVICE_UNAVAILABLE.reason());
@@ -485,12 +463,10 @@ class AuthServiceTest {
 
     @Test
     void rollbackShouldReturnDeclinedWhenInvalidRequest() {
-        AuthService spyService = spy(authService);
-
         doThrow(new InvalidRollbackRequestException("Invalid rollback request"))
-                .when(spyService).rollbackCard(any(RollbackRequest.class));
+                .when(cardManagementClient).rollback(any(RollbackRequest.class));
 
-        RollbackResponse response = spyService.rollback(rollbackRequest, Instant.now());
+        RollbackResponse response = authService.rollback(rollbackRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(RollbackResponse.STATUS_DECLINED);
         assertThat(response.declineReason()).isEqualTo(TRANSACTION_NOT_FOUND.reason());
@@ -498,12 +474,10 @@ class AuthServiceTest {
 
     @Test
     void rollbackShouldReturnDeclinedWhenUnexpectedError() {
-        AuthService spyService = spy(authService);
-
         doThrow(new RuntimeException("Unexpected error"))
-                .when(spyService).rollbackCard(any(RollbackRequest.class));
+                .when(cardManagementClient).rollback(any(RollbackRequest.class));
 
-        RollbackResponse response = spyService.rollback(rollbackRequest, Instant.now());
+        RollbackResponse response = authService.rollback(rollbackRequest, Instant.now());
 
         assertThat(response.status()).isEqualTo(RollbackResponse.STATUS_DECLINED);
         assertThat(response.declineReason()).isEqualTo(UNKNOWN_REASON.reason());
