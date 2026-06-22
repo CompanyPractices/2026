@@ -7,6 +7,7 @@ import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactor
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,7 +24,8 @@ public class AuthorizationRequestFactoryTest {
                 "643",
                 new BigDecimal("1000"),
                 terminal,
-                merchant
+                merchant,
+                Instant.now()
         );
 
         assertEquals("0100", request.mti());
@@ -47,14 +49,16 @@ public class AuthorizationRequestFactoryTest {
                 "643",
                 new BigDecimal("1000"),
                 terminal,
-                merchant
+                merchant,
+                Instant.now()
         );
         AuthorizationRequest request2 = authorizationRequestFactory.build(
                 "40000012345678911235",
                 "643",
                 new BigDecimal("1000"),
                 terminal,
-                merchant
+                merchant,
+                Instant.now()
         );
 
         assertEquals("000001", request1.stan());

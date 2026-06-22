@@ -16,7 +16,7 @@ public class AuthorizationRequestFactory {
   private final StanGenerator stanGenerator;
 
   public AuthorizationRequest build(
-          String pan, String currencyCode, BigDecimal amount, Terminal terminal, Merchant merchant) {
+          String pan, String currencyCode, BigDecimal amount, Terminal terminal, Merchant merchant, Instant time) {
 
     return AuthorizationRequest.builder()
         .mti("0100")
@@ -25,7 +25,7 @@ public class AuthorizationRequestFactory {
         .processingCode("000000")
         .amount(amount)
         .currencyCode(currencyCode)
-        .transmissionDateTime(Instant.now())
+        .transmissionDateTime(time)
         .terminalId(terminal.getId())
         .terminalType(terminal.getType())
         .merchantId(merchant.getId())
