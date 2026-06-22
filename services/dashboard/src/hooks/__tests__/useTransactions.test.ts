@@ -2,7 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import useTransactions from '../useTransactions';
 import fetchApi from '../../api/client';
-import { Transaction, SearchResponse, Filter } from '../../types';
+import { Transaction, SearchResponse } from '../../types';
 
 vi.mock('../../api/client');
 
@@ -14,20 +14,34 @@ vi.mock('../../contexts/ToastContext', () => ({
 
 const mockedFetchApi = vi.mocked(fetchApi);
 
+const mockSearchParams = new URLSearchParams();
+const mockSetSearchParams = vi.fn((params) => {
+    const newParams = typeof params === 'function' ? params(mockSearchParams) : params;
+    [...mockSearchParams.keys()].forEach((key) => mockSearchParams.delete(key));
+    newParams.forEach((value, key) => mockSearchParams.set(key, value));
+});
+
+vi.mock('react-router-dom', () => ({
+    useSearchParams: () => [mockSearchParams, mockSetSearchParams],
+}));
+
 const createMockTransaction = (overrides: Partial<Transaction>): Transaction => ({
     id: 'tx-default',
     mti: '0200',
     stan: '123456',
+    rrn: '123',
     pan: '4111111111111111',
     processingCode: '000000',
     processingTimeMs: 100,
-    amount: 1000,
-    currencyCode: 'USD',
-    terminalId: 'T123',
+    amount: 150000,
+    currencyCode: '643',
+    terminalId: 'TERM3171',
+    terminalType: 'POS',
     responseCode: '00',
-    merchantId: 'M123',
+    merchantId: 'MERCH1328400148',
     mcc: '5411',
-    acquirerId: 'A123',
+    acquirerId: 'ACQ650',
+    issuerId: 'ISS002',
     status: 'APPROVED',
     transmissionDateTime: '2023-10-27T10:00:00Z',
     createdAt: '2023-10-27T10:00:00Z',
@@ -39,235 +53,91 @@ const mockTransactions: Transaction[] = [
     createMockTransaction({ id: 'tx-2', status: 'DECLINED', amount: 300 }),
 ];
 
-const mockSearchResponse: SearchResponse = {
-    total: 2,
-    transactions: mockTransactions,
-};
+const mockSearchResponse: SearchResponse = { total: 25, transactions: mockTransactions };
 
 describe('useTransactions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        [...mockSearchParams.keys()].forEach((key) => mockSearchParams.delete(key));
     });
 
     it('should return loading=true and null data on initial render', () => {
         mockedFetchApi.mockReturnValue(new Promise(() => {}));
-
         const { result } = renderHook(() => useTransactions());
-
         expect(result.current.loading).toBe(true);
         expect(result.current.transactions).toBeNull();
         expect(result.current.error).toBeNull();
     });
 
-    it('should fetch recent transactions on mount', async () => {
-        mockedFetchApi.mockResolvedValue(mockTransactions);
-
+    it('should fetch from /search with default pagination on mount', async () => {
+        mockedFetchApi.mockResolvedValue(mockSearchResponse);
         const { result } = renderHook(() => useTransactions());
 
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
+        await waitFor(() => expect(result.current.loading).toBe(false));
 
         expect(result.current.transactions).toEqual(mockTransactions);
-        expect(result.current.error).toBeNull();
-        expect(mockedFetchApi).toHaveBeenCalledWith('/api/dashboard/recent?limit=20');
+        expect(mockedFetchApi).toHaveBeenCalledTimes(1);
+        const url = mockedFetchApi.mock.calls[0][0];
+        expect(url).toContain('/api/transactions/search?');
+        expect(url).toContain('limit=20');
+        expect(url).toContain('offset=0');
     });
 
     it('should handle network error on mount', async () => {
-        const errorMessage = 'Network Error';
-        mockedFetchApi.mockRejectedValue(new Error(errorMessage));
-
+        mockedFetchApi.mockRejectedValue(new Error('Network Error'));
         const { result } = renderHook(() => useTransactions());
 
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-
-        expect(result.current.transactions).toBeNull();
-        expect(result.current.error).toBe(errorMessage);
+        await waitFor(() => expect(result.current.loading).toBe(false));
+        expect(result.current.error).toBe('Network Error');
+        expect(result.current.transactions).toEqual([]);
     });
 
-    it('should search transactions with all filters', async () => {
-        mockedFetchApi.mockResolvedValueOnce(mockTransactions);
+    it('should call applyFilter and reset page in URL', async () => {
+        mockedFetchApi.mockResolvedValue(mockSearchResponse);
         const { result } = renderHook(() => useTransactions());
-
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-
-        mockedFetchApi.mockResolvedValueOnce(mockSearchResponse);
-
-        const filter: Filter = {
-            status: 'APPROVED',
-            dateFrom: '2023-10-01T12:00:00Z',
-            dateTo: '2023-10-31T23:59:59Z',
-            issuerId: 'ISSUER123',
-            mcc: '5411',
-        };
+        await waitFor(() => expect(result.current.loading).toBe(false));
 
         act(() => {
-            result.current.searchTransactions(filter);
+            result.current.applyFilter({ status: 'APPROVED', mcc: '5411' });
         });
 
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-
-        expect(result.current.transactions).toEqual(mockTransactions);
-        expect(result.current.error).toBeNull();
-
-        expect(mockedFetchApi).toHaveBeenLastCalledWith(
-            expect.stringContaining('/api/transactions/search?'),
-            expect.objectContaining({ onError: expect.any(Function) })
-        );
-
-        const searchCall = mockedFetchApi.mock.calls.find(call =>
-            call[0].includes('/api/transactions/search')
-        );
-        expect(searchCall?.[0]).toContain('status=APPROVED');
-        expect(searchCall?.[0]).toContain('dateFrom=2023-10-01');
-        expect(searchCall?.[0]).toContain('dateTo=2023-10-31');
-        expect(searchCall?.[0]).toContain('issuerId=ISSUER123');
-        expect(searchCall?.[0]).toContain('mcc=5411');
+        expect(mockSearchParams.get('status')).toBe('APPROVED');
+        expect(mockSearchParams.get('mcc')).toBe('5411');
+        expect(mockSearchParams.get('page')).toBe('0');
     });
 
-    it('should search transactions with partial filters', async () => {
-        mockedFetchApi.mockResolvedValueOnce(mockTransactions);
+    it('should call goToPage and update URL', async () => {
+        mockedFetchApi.mockResolvedValue(mockSearchResponse);
         const { result } = renderHook(() => useTransactions());
-
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-
-        mockedFetchApi.mockResolvedValueOnce(mockSearchResponse);
-
-        const filter: Filter = {
-            status: 'DECLINED',
-            mcc: '5411',
-        };
+        await waitFor(() => expect(result.current.loading).toBe(false));
 
         act(() => {
-            result.current.searchTransactions(filter);
+            result.current.goToPage(2);
         });
 
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-
-        const searchCall = mockedFetchApi.mock.calls.find(call =>
-            call[0].includes('/api/transactions/search')
-        );
-        expect(searchCall?.[0]).toContain('status=DECLINED');
-        expect(searchCall?.[0]).toContain('mcc=5411');
-        expect(searchCall?.[0]).not.toContain('dateFrom');
-        expect(searchCall?.[0]).not.toContain('dateTo');
-        expect(searchCall?.[0]).not.toContain('issuerId');
+        expect(mockSearchParams.get('page')).toBe('2');
     });
 
-    it('should clear error when searching', async () => {
-        mockedFetchApi.mockResolvedValueOnce(mockTransactions);
+    it('should call changePageSize, reset page and update URL', async () => {
+        mockedFetchApi.mockResolvedValue(mockSearchResponse);
         const { result } = renderHook(() => useTransactions());
-
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-
-        mockedFetchApi.mockImplementationOnce(() => new Promise(() => {}));
+        await waitFor(() => expect(result.current.loading).toBe(false));
 
         act(() => {
-            result.current.searchTransactions({ status: 'APPROVED' });
+            result.current.changePageSize(50);
         });
 
-        expect(result.current.error).toBeNull();
+        expect(mockSearchParams.get('pageSize')).toBe('50');
+        expect(mockSearchParams.get('page')).toBe('0');
     });
 
-    it('should handle network error during search', async () => {
-        mockedFetchApi.mockResolvedValueOnce(mockTransactions);
+    it('should update totalElements in state after successful fetch', async () => {
+        mockedFetchApi.mockResolvedValue(mockSearchResponse);
         const { result } = renderHook(() => useTransactions());
 
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
+        await waitFor(() => expect(result.current.loading).toBe(false));
 
-        const errorMessage = 'Network Error';
-        mockedFetchApi.mockRejectedValueOnce(new Error(errorMessage));
-
-        act(() => {
-            result.current.searchTransactions({ status: 'APPROVED' });
-        });
-
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-
-        expect(result.current.transactions).toEqual(mockTransactions);
-        expect(result.current.error).toBe(errorMessage);
-    });
-
-    it('should extract only date part from dateFrom and dateTo', async () => {
-        mockedFetchApi.mockResolvedValueOnce(mockTransactions);
-        const { result } = renderHook(() => useTransactions());
-
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-
-        mockedFetchApi.mockResolvedValueOnce(mockSearchResponse);
-
-        const filter: Filter = {
-            dateFrom: '2023-10-01T12:34:56.789Z',
-            dateTo: '2023-10-31T23:59:59.999Z',
-        };
-
-        act(() => {
-            result.current.searchTransactions(filter);
-        });
-
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-
-        const searchCall = mockedFetchApi.mock.calls.find(call =>
-            call[0].includes('/api/transactions/search')
-        );
-        expect(searchCall?.[0]).toContain('dateFrom=2023-10-01');
-        expect(searchCall?.[0]).toContain('dateTo=2023-10-31');
-        expect(searchCall?.[0]).not.toContain('12:34:56');
-        expect(searchCall?.[0]).not.toContain('23:59:59');
-    });
-
-    it('should change isFiltered to true when filter is active and false when reset', async () => {
-        mockedFetchApi.mockResolvedValueOnce(mockTransactions);
-        const { result } = renderHook(() => useTransactions());
-
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
-        expect(result.current.isFiltered).toBe(false);
-
-        mockedFetchApi.mockResolvedValueOnce(mockSearchResponse)
-        const filter: Filter = {
-            mcc: '5411',
-        };
-        act(() => {
-            result.current.searchTransactions(filter)
-        });
-        await waitFor(() => {
-            expect(result.current.isFiltered).toBe(true);
-        });
-
-        const searchCall = mockedFetchApi.mock.calls.find(call =>
-            call[0].includes('/api/transactions/search')
-        );
-        expect(searchCall?.[0]).toContain('5411');
-        expect(searchCall?.[0]).not.toContain('status');
-
-        const emptyFilter: Filter = {};
-        act(() => {
-            result.current.searchTransactions(emptyFilter)
-        });
-        await waitFor(() => {
-            expect(result.current.isFiltered).toBe(false);
-        });
+        expect(result.current.pagination.totalElements).toBe(25);
+        expect(result.current.pagination.totalPages).toBe(2);
     });
 });

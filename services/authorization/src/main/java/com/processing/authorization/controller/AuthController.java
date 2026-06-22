@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -62,7 +61,7 @@ public class AuthController {
      * <ol>
      * <li>Фиксирует время начала обработки запроса</li>
      * <li>Делегирует авторизацию сервису
-     * {@link AuthService#authorize(AuthorizationRequest, LocalDateTime)}</li>
+     * {@link AuthService#authorize(AuthorizationRequest, Instant)}</li>
      * <li>Вычисляет время обработки запроса в миллисекундах</li>
      * <li>Устанавливает время обработки в ответе</li>
      * <li>Определяет HTTP-статус на основе результата авторизации</li>
@@ -98,7 +97,7 @@ public class AuthController {
      *         </ul>
      *         HTTP-статус зависит от результата.
      *
-     * @see AuthService#authorize(AuthorizationRequest, LocalDateTime)
+     * @see AuthService#authorize(AuthorizationRequest, Instant)
      * @see AuthorizationRequest
      * @see AuthorizationResponse
      */
