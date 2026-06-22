@@ -1,9 +1,8 @@
 package com.processing.cardmanagement.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.cardmanagement.events.CardEventListener;
 import com.processing.cardmanagement.events.CardEventNotifier;
-import com.processing.cardmanagement.events.OutboxEventProcessor;
+import com.processing.cardmanagement.mappers.CardOutboxEventDataPersistenceMapper;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.options.OutboxOptions;
@@ -24,9 +23,10 @@ public class AppConfig {
 
     @Bean
     public CardEventNotifier cardEventNotifier(
-            OutboxRepository outboxRepository,
-            ObjectMapper objectMapper) {
-        return new CardEventNotifier(outboxRepository, objectMapper);
+        OutboxEventProcessor outboxEventProcessor,
+        List<CardEventListener> eventListeners
+    ) {
+        return new CardEventNotifier(outboxEventProcessor, eventListeners);
     }
 
     @Bean
@@ -40,41 +40,44 @@ public class AppConfig {
     }
 
     @Bean
-    public OutboxRepository outboxRepository(OutboxEventJpaRepository jpaRepository) {
-        return new OutboxJpaAdapter(jpaRepository);
+    public OutboxRepository outboxRepository(
+        OutboxEventJpaRepository jpaRepository,
+        CardOutboxEventDataPersistenceMapper persistenceMapper
+    ) {
+        return new OutboxJpaAdapter(jpaRepository, persistenceMapper);
     }
 
     @Bean
-    public OutboxEventProcessor outboxEventProcessor(
-            OutboxRepository outboxRepository,
-            List<CardEventListener> listeners,
-            ObjectMapper objectMapper,
-            OutboxOptions outboxOptions) {
-        return new OutboxEventProcessor(outboxRepository, listeners, objectMapper, outboxOptions);
+    public OutboxEventProcessorImpl outboxEventProcessor(
+        OutboxRepository outboxRepository,
+        List<CardEventListener> listeners,
+        OutboxOptions outboxOptions
+    ) {
+        return new OutboxEventProcessorImpl(outboxRepository, listeners, outboxOptions);
     }
 
     @Bean
     public CardService cardService(
-            CardRepository cardRepository,
-            ReservationRepository reservationRepository,
-            ReservationRollbackRepository reservationRollbackRepository,
-            CardServiceSettings serviceConfigurationProperties,
-            CardServiceDefaults defaultsConfigurationProperties,
-            PanGenerator panGenerator,
-            CardEventNotifier cardEventNotifier,
-            BinIssuerService binIssuerService
+        CardRepository cardRepository,
+        ReservationRepository reservationRepository,
+        ReservationRollbackRepository reservationRollbackRepository,
+        CardServiceSettings serviceConfigurationProperties,
+        CardServiceDefaults defaultsConfigurationProperties,
+        PanGenerator panGenerator,
+        CardEventNotifier cardEventNotifier,
+        BinIssuerService binIssuerService
     ) {
         return new CardServiceTransactionalDecorator(
-                new CardServiceImpl(
-                        cardRepository,
-                        reservationRepository,
-                        reservationRollbackRepository,
-                        serviceConfigurationProperties,
-                        defaultsConfigurationProperties,
-                        panGenerator,
-                        cardEventNotifier,
-                        binIssuerService
-                )
+            new CardServiceImpl(
+                cardRepository,
+                reservationRepository,
+                reservationRollbackRepository,
+                serviceConfigurationProperties,
+                defaultsConfigurationProperties,
+                panGenerator,
+                cardEventNotifier,
+                binIssuerService
+            )
         );
     }
 }

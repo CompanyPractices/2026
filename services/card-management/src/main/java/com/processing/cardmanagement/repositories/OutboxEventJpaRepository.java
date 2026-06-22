@@ -1,16 +1,17 @@
 package com.processing.cardmanagement.repositories;
 
-import com.processing.cardmanagement.models.EventStatus;
-import com.processing.cardmanagement.models.OutboxEventEntity;
+import com.processing.cardmanagement.models.CardOutboxEventDataEntity;
+import com.processing.cardmanagement.models.OutboxEventDataStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.UUID;
 
-public interface OutboxEventJpaRepository extends JpaRepository<OutboxEventEntity, UUID> {
-    List<OutboxEventEntity> findByStatusAndRetryCountLessThan(EventStatus status, int maxRetry);
+public interface OutboxEventJpaRepository extends JpaRepository<CardOutboxEventDataEntity, UUID> {
 
-    List<OutboxEventEntity> findByStatus(EventStatus status);
+    List<CardOutboxEventDataEntity> findByStatusAndRetryCountLessThan(OutboxEventDataStatus status, int maxRetry);
 
-    long countByStatus(EventStatus status);
+    List<CardOutboxEventDataEntity> findByStatus(OutboxEventDataStatus status);
+
+    long countByStatus(OutboxEventDataStatus status);
 }

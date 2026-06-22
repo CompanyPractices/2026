@@ -2,20 +2,18 @@ package com.processing.cardmanagement.models;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "outbox_event")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class OutboxEventEntity {
+public class CardOutboxEventDataEntity {
 
     @Id
     private UUID id;
@@ -40,5 +38,5 @@ public class OutboxEventEntity {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private EventStatus status = EventStatus.PENDING;
+    private OutboxEventDataStatus status = OutboxEventDataStatus.PENDING;
 }

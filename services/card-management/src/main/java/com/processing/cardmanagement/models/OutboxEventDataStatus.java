@@ -1,6 +1,6 @@
 package com.processing.cardmanagement.models;
 
-public enum EventStatus {
+public enum OutboxEventDataStatus {
     PENDING,
     PROCESSED,
     FAILED

@@ -1,6 +1,7 @@
 package com.processing.cardmanagement.exceptions;
 
-public class OutboxDeserializationException extends RuntimeException {
+public final class OutboxDeserializationException extends CardManagementException {
+
     public OutboxDeserializationException(String eventType) {
         super("Failed to deserialize event: " + eventType);
     }

@@ -1,13 +1,13 @@
 package com.processing.cardmanagement.outbox;
 
 import com.processing.cardmanagement.events.CardEventListener;
-import com.processing.cardmanagement.events.OutboxProcessor;
 import com.processing.cardmanagement.models.BinIssuerEntity;
-import com.processing.cardmanagement.models.EventStatus;
-import com.processing.cardmanagement.models.OutboxEventEntity;
+import com.processing.cardmanagement.models.CardOutboxEventDataEntity;
+import com.processing.cardmanagement.models.OutboxEventDataStatus;
 import com.processing.cardmanagement.repositories.BinIssuerJpaRepository;
 import com.processing.cardmanagement.repositories.CardJpaRepository;
 import com.processing.cardmanagement.repositories.OutboxEventJpaRepository;
+import com.processing.cardmanagement.services.OutboxProcessor;
 import com.processing.common.dto.cardmanagement.CreateCardRequest;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
@@ -58,12 +58,12 @@ public class OutboxIntegrationTest {
     private int port;
 
     private static final CreateCardRequest createCardRequest = new CreateCardRequest(
-            "400000",
-            "IVAN IVANOV",
-            "643",
-            new BigDecimal(5_000_000),
-            new BigDecimal(15_000_000),
-            new BigDecimal(1_000_000)
+        "400000",
+        "IVAN IVANOV",
+        "643",
+        new BigDecimal(5_000_000),
+        new BigDecimal(15_000_000),
+        new BigDecimal(1_000_000)
     );
 
     @BeforeEach
@@ -82,61 +82,61 @@ public class OutboxIntegrationTest {
     @Test
     void shouldSaveEventToOutboxWhenCardCreated() {
         given()
-                .port(port)
-                .contentType(ContentType.JSON)
-                .body(createCardRequest)
-                .when()
-                .post("/api/cards")
-                .then()
-                .log().all()
-                .statusCode(201);
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(createCardRequest)
+            .when()
+            .post("/api/cards")
+            .then()
+            .log().all()
+            .statusCode(201);
 
-        List<OutboxEventEntity> outboxEvents = outboxRepository.findAll();
+        List<CardOutboxEventDataEntity> outboxEvents = outboxRepository.findAll();
         assertEquals(1, outboxEvents.size());
-        assertEquals(EventStatus.PENDING, outboxEvents.getFirst().getStatus());
+        assertEquals(OutboxEventDataStatus.PENDING, outboxEvents.getFirst().getStatus());
     }
 
     @Test
     void shouldSaveEventToOutboxWhenCardCreatedAndMarkAsProcessed() throws InterruptedException {
         given()
-                .port(port)
-                .contentType(ContentType.JSON)
-                .body(createCardRequest)
-                .when()
-                .post("/api/cards")
-                .then()
-                .log().all()
-                .statusCode(201);
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(createCardRequest)
+            .when()
+            .post("/api/cards")
+            .then()
+            .log().all()
+            .statusCode(201);
 
         outboxProcessor.process();
 
-        List<OutboxEventEntity> outboxEvents = outboxRepository.findAll();
+        List<CardOutboxEventDataEntity> outboxEvents = outboxRepository.findAll();
         assertEquals(1, outboxEvents.size());
-        assertEquals(EventStatus.PROCESSED, outboxEvents.getFirst().getStatus());
+        assertEquals(OutboxEventDataStatus.PROCESSED, outboxEvents.getFirst().getStatus());
     }
 
     @Test
     void shouldIncrementRetryCountAndSaveErrorWhenListenerFails() {
         String exceptionMsg = "some exception";
         doThrow(new RuntimeException(exceptionMsg))
-                .when(mockListener).onEvent(org.mockito.Mockito.any());
+            .when(mockListener).onEvent(org.mockito.Mockito.any());
 
         given()
-                .port(port)
-                .contentType(ContentType.JSON)
-                .body(createCardRequest)
-                .when()
-                .post("/api/cards")
-                .then()
-                .statusCode(201);
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(createCardRequest)
+            .when()
+            .post("/api/cards")
+            .then()
+            .statusCode(201);
 
         outboxProcessor.process();
 
-        List<OutboxEventEntity> outboxEvents = outboxRepository.findAll();
+        List<CardOutboxEventDataEntity> outboxEvents = outboxRepository.findAll();
         assertEquals(1, outboxEvents.size());
 
-        OutboxEventEntity failedEvent = outboxEvents.getFirst();
-        assertEquals(EventStatus.PENDING, failedEvent.getStatus());
+        CardOutboxEventDataEntity failedEvent = outboxEvents.getFirst();
+        assertEquals(OutboxEventDataStatus.PENDING, failedEvent.getStatus());
         assertEquals(1, failedEvent.getRetryCount());
         assertEquals(exceptionMsg, failedEvent.getLastError());
     }
@@ -145,23 +145,23 @@ public class OutboxIntegrationTest {
     void shouldMarkAsFailedAfterMaxRetries() {
         String exceptionMsg = "some exception";
         doThrow(new RuntimeException(exceptionMsg))
-                .when(mockListener).onEvent(org.mockito.Mockito.any());
+            .when(mockListener).onEvent(org.mockito.Mockito.any());
 
         given()
-                .port(port)
-                .contentType(ContentType.JSON)
-                .body(createCardRequest)
-                .when()
-                .post("/api/cards")
-                .then()
-                .statusCode(201);
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(createCardRequest)
+            .when()
+            .post("/api/cards")
+            .then()
+            .statusCode(201);
 
         outboxProcessor.process();
         outboxProcessor.process();
         outboxProcessor.process();
 
-        OutboxEventEntity event = outboxRepository.findAll().getFirst();
-        assertEquals(EventStatus.FAILED, event.getStatus());
+        CardOutboxEventDataEntity event = outboxRepository.findAll().getFirst();
+        assertEquals(OutboxEventDataStatus.FAILED, event.getStatus());
         assertEquals(3, event.getRetryCount());
     }
 }

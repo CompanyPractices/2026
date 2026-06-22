@@ -1,39 +1,22 @@
 package com.processing.cardmanagement.events;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.cardmanagement.exceptions.OutboxSerializationException;
-import com.processing.cardmanagement.models.EventStatus;
-import com.processing.cardmanagement.models.OutboxEventEntity;
-import com.processing.cardmanagement.repositories.OutboxRepository;
+import com.processing.cardmanagement.models.CardOutboxEventData;
+import com.processing.cardmanagement.services.OutboxEventProcessor;
 import lombok.RequiredArgsConstructor;
 
-import java.time.Instant;
-import java.util.UUID;
+import java.util.List;
 
 @RequiredArgsConstructor
 public class CardEventNotifier {
 
-    private final OutboxRepository outboxRepository;
-    private final ObjectMapper mapper;
+    private final OutboxEventProcessor outboxEventProcessor;
+    private final List<CardEventListener> eventListeners;
 
     public void onEvent(CardEvent event) {
-        try {
-            String eventName = event.getClass().getSimpleName();
-            String payload = mapper.writeValueAsString(event);
-
-            outboxRepository.save(new OutboxEventEntity(
-                    UUID.randomUUID(),
-                    eventName,
-                    payload,
-                    Instant.now(),
-                    null,
-                    0,
-                    null,
-                    EventStatus.PENDING
-            ));
-        } catch (JsonProcessingException e) {
-            throw new OutboxSerializationException(event.getClass().getSimpleName());
+        if (event instanceof CardOutboxEvent outboxEvent) {
+            outboxEventProcessor.save(new CardOutboxEventData(outboxEvent));
+        } else {
+            eventListeners.forEach(el -> el.onEvent(event));
         }
     }
 }

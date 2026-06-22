@@ -2,8 +2,9 @@ package com.processing.cardmanagement.exceptions;
 
 import java.util.UUID;
 
-public class OutboxEventNotFoundException extends RuntimeException {
+public final class OutboxEventNotFoundException extends CardManagementException {
+
     public OutboxEventNotFoundException(UUID id) {
-        super("outbox event not found: " + id);
+        super("Outbox event not found: " + id);
     }
 }

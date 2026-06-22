@@ -1,20 +1,21 @@
 package com.processing.cardmanagement.repositories;
 
-import com.processing.cardmanagement.models.EventStatus;
-import com.processing.cardmanagement.models.OutboxEventEntity;
+import com.processing.cardmanagement.models.CardOutboxEventData;
+import com.processing.cardmanagement.models.OutboxEventDataStatus;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface OutboxRepository {
-    OutboxEventEntity save(OutboxEventEntity event);
 
-    Optional<OutboxEventEntity> findById(UUID id);
+    CardOutboxEventData save(CardOutboxEventData event);
 
-    List<OutboxEventEntity> findPending(int maxRetry);
+    Optional<CardOutboxEventData> findById(UUID id);
 
-    List<OutboxEventEntity> findFailed();
+    List<CardOutboxEventData> findPending(int maxRetry);
 
-    long countByStatus(EventStatus status);
+    List<CardOutboxEventData> findFailed();
+
+    long countByStatus(OutboxEventDataStatus status);
 }

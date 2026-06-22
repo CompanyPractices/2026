@@ -1,23 +1,22 @@
 package com.processing.cardmanagement.outbox;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.cardmanagement.events.CardEventListener;
 import com.processing.cardmanagement.events.CardServiceCreationEvent;
-import com.processing.cardmanagement.events.OutboxEventProcessor;
-import com.processing.cardmanagement.events.OutboxProcessor;
-import com.processing.cardmanagement.models.EventStatus;
-import com.processing.cardmanagement.models.OutboxEventEntity;
+import com.processing.cardmanagement.models.CardOutboxEventData;
+import com.processing.cardmanagement.models.OutboxEventDataStatus;
 import com.processing.cardmanagement.options.OutboxOptions;
 import com.processing.cardmanagement.repositories.OutboxRepository;
+import com.processing.cardmanagement.services.OutboxEventProcessorImpl;
+import com.processing.cardmanagement.services.OutboxProcessor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -32,122 +31,87 @@ public class OutboxProcessorTest {
     @Mock
     private CardEventListener listener;
 
-    @Mock
-    private OutboxOptions outboxOptions;
+    private final OutboxOptions outboxOptions = new OutboxOptions(1000, 3);
+
+    private final ArgumentCaptor<CardOutboxEventData> eventDataCaptor =
+        ArgumentCaptor.forClass(CardOutboxEventData.class);
 
     private OutboxProcessor outboxProcessor;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final int MAX_COUNT_RETRY = 3;
-
     @BeforeEach
     void setUp() {
-        when(outboxOptions.maxRetryCount()).thenReturn(MAX_COUNT_RETRY);
-        OutboxEventProcessor eventProcessor = new OutboxEventProcessor(
-                outboxRepository, List.of(listener), objectMapper, outboxOptions);
+        OutboxEventProcessorImpl eventProcessor = new OutboxEventProcessorImpl(
+            outboxRepository,
+            List.of(listener),
+            outboxOptions
+        );
         outboxProcessor = new OutboxProcessor(
-                outboxRepository, eventProcessor, outboxOptions);
+            outboxRepository, eventProcessor, outboxOptions);
     }
 
     @Test
-    void shouldProcessPendingEvent() throws Exception {
+    void shouldProcessPendingEvent() {
         CardServiceCreationEvent cardEvent = new CardServiceCreationEvent(1);
-        String payload = objectMapper.writeValueAsString(cardEvent);
 
-        OutboxEventEntity outboxEvent = new OutboxEventEntity(
-                UUID.randomUUID(),
-                "CardServiceCreationEvent",
-                payload,
-                Instant.now(),
-                null,
-                0,
-                null,
-                EventStatus.PENDING
-        );
-        when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of(outboxEvent));
+        CardOutboxEventData outboxEvent = new CardOutboxEventData(cardEvent);
+        when(outboxRepository.findPending(outboxOptions.maxRetryCount()))
+            .thenReturn(List.of(outboxEvent));
         outboxProcessor.process();
+        verify(outboxRepository, times(1)).save(eventDataCaptor.capture());
+        var updatedEvent = eventDataCaptor.getValue();
 
-        assertEquals(EventStatus.PROCESSED, outboxEvent.getStatus());
-        assertNotNull(outboxEvent.getProcessedAt());
+        assertEquals(OutboxEventDataStatus.PROCESSED, updatedEvent.status());
+        assertNotNull(updatedEvent.processedAt());
         verify(listener, times(1)).onEvent(any(CardServiceCreationEvent.class));
-        verify(outboxRepository, times(1)).save(outboxEvent);
     }
 
     @Test
-    void shouldIncrementRetryCountOnFail() throws Exception {
+    void shouldIncrementRetryCountOnFail() {
         CardServiceCreationEvent cardEvent = new CardServiceCreationEvent(1);
-        String payload = objectMapper.writeValueAsString(cardEvent);
 
-        OutboxEventEntity outboxEvent = new OutboxEventEntity(
-                UUID.randomUUID(),
-                "CardServiceCreationEvent",
-                payload,
-                Instant.now(),
-                null,
-                0,
-                null,
-                EventStatus.PENDING
-        );
-        when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of(outboxEvent));
+        CardOutboxEventData outboxEvent = new CardOutboxEventData(cardEvent);
+        when(outboxRepository.findPending(outboxOptions.maxRetryCount()))
+            .thenReturn(List.of(outboxEvent));
         doThrow(new RuntimeException("listener failed")).when(listener).onEvent(any());
         outboxProcessor.process();
+        verify(outboxRepository, times(1)).save(eventDataCaptor.capture());
+        var updatedEvent = eventDataCaptor.getValue();
 
-        assertEquals(1, outboxEvent.getRetryCount());
-        assertEquals(EventStatus.PENDING, outboxEvent.getStatus());
-        assertNotNull(outboxEvent.getLastError());
-        verify(outboxRepository, times(1)).save(outboxEvent);
+        assertEquals(1, updatedEvent.retryCount());
+        assertEquals(OutboxEventDataStatus.PENDING, updatedEvent.status());
+        assertNotNull(updatedEvent.lastError());
     }
 
     @Test
-    void shouldSetFailedStatusAfterMaxRetries() throws Exception {
+    void shouldSetFailedStatusAfterMaxRetries() {
         CardServiceCreationEvent cardEvent = new CardServiceCreationEvent(1);
-        String payload = objectMapper.writeValueAsString(cardEvent);
 
-        OutboxEventEntity outboxEvent = new OutboxEventEntity(
-                UUID.randomUUID(),
-                "CardServiceCreationEvent",
-                payload,
-                Instant.now(),
-                null,
-                2,
-                null,
-                EventStatus.PENDING
-        );
-        when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of(outboxEvent));
+        CardOutboxEventData outboxEvent = new CardOutboxEventData(cardEvent);
         doThrow(new RuntimeException("listener failed")).when(listener).onEvent(any());
-        outboxProcessor.process();
 
-        assertEquals(3, outboxEvent.getRetryCount());
-        assertEquals(EventStatus.FAILED, outboxEvent.getStatus());
-        assertNotNull(outboxEvent.getLastError());
-        verify(outboxRepository, times(1)).save(outboxEvent);
+        for (int i = 0; i < outboxOptions.maxRetryCount(); ++i) {
+            when(outboxRepository.findPending(outboxOptions.maxRetryCount()))
+                .thenReturn(List.of(outboxEvent));
+            outboxProcessor.process();
+            outboxEvent = Mockito.mockingDetails(outboxRepository)
+                .getInvocations()
+                .stream()
+                .filter(inv -> inv.getMethod().getName().equals("save"))
+                .map(inv -> (CardOutboxEventData) inv.getArguments()[0])
+                .reduce((first, second) -> second)
+                .orElse(outboxEvent);
+        }
+        verify(outboxRepository, times(outboxOptions.maxRetryCount())).save(eventDataCaptor.capture());
+        CardOutboxEventData finalEvent = eventDataCaptor.getAllValues().getLast();
+        assertEquals(outboxOptions.maxRetryCount(), finalEvent.retryCount());
+        assertEquals(OutboxEventDataStatus.FAILED, finalEvent.status());
+        assertNotNull(finalEvent.lastError());
     }
 
     @Test
-    void shouldSkipFailedEvents() throws Exception {
-        when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of());
+    void shouldSkipFailedEvents() {
+        when(outboxRepository.findPending(outboxOptions.maxRetryCount())).thenReturn(List.of());
         outboxProcessor.process();
-        verify(listener, times(0)).onEvent(any());
-    }
-
-    @Test
-    void shouldHandleUnknownEventType() {
-        OutboxEventEntity outboxEvent = new OutboxEventEntity(
-                UUID.randomUUID(),
-                "UnknownError",
-                "Error",
-                Instant.now(),
-                null,
-                0,
-                null,
-                EventStatus.PENDING
-        );
-
-        when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of(outboxEvent));
-        outboxProcessor.process();
-
-        assertEquals(1, outboxEvent.getRetryCount());
-        assertNotNull(outboxEvent.getLastError());
         verify(listener, times(0)).onEvent(any());
     }
 }

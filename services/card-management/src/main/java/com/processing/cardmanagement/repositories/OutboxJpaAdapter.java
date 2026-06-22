@@ -1,40 +1,54 @@
 package com.processing.cardmanagement.repositories;
 
-import com.processing.cardmanagement.models.EventStatus;
-import com.processing.cardmanagement.models.OutboxEventEntity;
+import com.processing.cardmanagement.mappers.CardOutboxEventDataPersistenceMapper;
+import com.processing.cardmanagement.models.CardOutboxEventData;
+import com.processing.cardmanagement.models.OutboxEventDataStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository
 @RequiredArgsConstructor
 public class OutboxJpaAdapter implements OutboxRepository {
 
     private final OutboxEventJpaRepository jpaRepository;
+    private final CardOutboxEventDataPersistenceMapper persistenceMapper;
 
     @Override
-    public OutboxEventEntity save(OutboxEventEntity event) {
-        return jpaRepository.save(event);
+    public CardOutboxEventData save(CardOutboxEventData event) {
+        return persistenceMapper.toDomain(
+            jpaRepository.save(persistenceMapper.toEntity(event))
+        );
     }
 
     @Override
-    public Optional<OutboxEventEntity> findById(UUID id) {
-        return jpaRepository.findById(id);
+    public Optional<CardOutboxEventData> findById(UUID id) {
+        return jpaRepository.findById(id).map(persistenceMapper::toDomain);
     }
 
     @Override
-    public List<OutboxEventEntity> findPending(int maxRetry) {
-        return jpaRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING, maxRetry);
+    public List<CardOutboxEventData> findPending(int maxRetry) {
+        return jpaRepository
+            .findByStatusAndRetryCountLessThan(OutboxEventDataStatus.PENDING, maxRetry)
+            .stream()
+            .map(persistenceMapper::toDomain)
+            .toList();
     }
 
     @Override
-    public List<OutboxEventEntity> findFailed() {
-        return jpaRepository.findByStatus(EventStatus.FAILED);
+    public List<CardOutboxEventData> findFailed() {
+        return jpaRepository
+            .findByStatus(OutboxEventDataStatus.FAILED)
+            .stream()
+            .map(persistenceMapper::toDomain)
+            .toList();
     }
 
     @Override
-    public long countByStatus(EventStatus status) {
+    public long countByStatus(OutboxEventDataStatus status) {
         return jpaRepository.countByStatus(status);
     }
 }
