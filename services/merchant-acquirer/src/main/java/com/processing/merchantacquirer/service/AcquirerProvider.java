@@ -3,8 +3,8 @@ package com.processing.merchantacquirer.service;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeResponse;
 import com.processing.merchantacquirer.domain.entity.AcquirerFee;
+import com.processing.merchantacquirer.domain.repository.AcquirerFeeRepositoryPort;
 import com.processing.merchantacquirer.exception.ResourceNotFoundException;
-import com.processing.merchantacquirer.repository.AcquirerFeeRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,10 +15,10 @@ import java.util.List;
 @Component
 @AllArgsConstructor
 public class AcquirerProvider {
-    private final AcquirerFeeRepository repository;
+    private final AcquirerFeeRepositoryPort repository;
 
     public void saveAll(List<AcquirerFee> fees) {
-        repository.saveAll(fees);
+        repository.saveFees(fees);
         log.info("Saved {} acquiring fees", fees.size());
     }
 

@@ -5,8 +5,8 @@ import static org.mockito.Mockito.*;
 
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.model.Scenario;
+import com.processing.merchantacquirer.domain.repository.MerchantRepositoryPort;
 import com.processing.merchantacquirer.exception.ResourceNotFoundException;
-import com.processing.merchantacquirer.repository.MerchantRepository;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class MerchantProviderTest {
-  @Mock private MerchantRepository merchantRepository;
+  @Mock private MerchantRepositoryPort merchantRepository;
   private MerchantProvider merchantProvider;
 
   private final Scenario scenario =
