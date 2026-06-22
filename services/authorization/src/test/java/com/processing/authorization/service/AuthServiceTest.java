@@ -1,5 +1,6 @@
 package com.processing.authorization.service;
 
+import com.processing.authorization.events.AuthorizationEventNotifier;
 import com.processing.authorization.exceptions.*;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
@@ -14,9 +15,9 @@ import com.processing.common.utils.MaskPan;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestClient;
 import static com.processing.authorization.constants.DeclineOutcome.*;
 
@@ -35,7 +36,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    @Autowired
+    @InjectMocks
     private AuthService authService;
 
     private AuthorizationRequest correctRequest;
@@ -46,12 +47,13 @@ class AuthServiceTest {
 
     @Mock
     private LimitUsageRepository limitUsageRepository;
+    @Mock
+    private RestClient restClient;
+    @Mock
+    private AuthorizationEventNotifier eventNotifier;
 
     @BeforeEach
     void setUp() {
-        RestClient restClient = RestClient.create();
-        authService = new AuthService(restClient, limitUsageRepository);
-
         correctRequest = new AuthorizationRequest(
                 "0100",
                 "123456",
@@ -84,8 +86,7 @@ class AuthServiceTest {
         rollbackRequest = new RollbackRequest(
                 "123456789012",
                 "1234567890123456",
-                BigDecimal.valueOf(5000)
-        );
+                BigDecimal.valueOf(5000));
     }
 
     @Test

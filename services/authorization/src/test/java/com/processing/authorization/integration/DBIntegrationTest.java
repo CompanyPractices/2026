@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.math.BigDecimal;
@@ -14,6 +15,8 @@ import java.util.List;
 import java.util.UUID;
 
 import com.processing.authorization.entities.LimitUsage;
+import com.processing.authorization.exceptions.ReserveException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -99,6 +102,15 @@ public class DBIntegrationTest {
         doReturn(null).when(responseSpec).toBodilessEntity();
     }
 
+    private void mockReserveFailure() {
+        doReturn(requestBodyUriSpec).when(restClient).post();
+        doReturn(requestBodySpec).when(requestBodyUriSpec).uri(any(URI.class));
+        doReturn(requestBodySpec).when(requestBodySpec).contentType(any());
+        doReturn(requestBodySpec).when(requestBodySpec).body(any(Object.class));
+        doReturn(responseSpec).when(requestBodySpec).retrieve();
+        when(responseSpec.toBodilessEntity()).thenThrow(new ReserveException("Reservation failed"));
+    }
+
     @Test
     void authorizeShouldReturnDeclinedWhenCardIsBlocked() {
         CardModel mockCard = createBlockedCardModel();
@@ -150,6 +162,7 @@ public class DBIntegrationTest {
     void authorizeShouldReturnDeclinedWhenReservationFails() {
         CardModel mockCard = createActiveCardModel();
         mockGetCard(mockCard);
+        mockReserveFailure();
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("RESERVATION_FAILED", response.declineReason());
