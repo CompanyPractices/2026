@@ -56,8 +56,9 @@ public class TransactionService {
     private final TransactionCsvWriter csvWriter;
 
     /**
-     * Сохраняет транзакцию в БД и рассылает её через WebSocket.
-     * Идемпотентен: повторный запрос с тем же {@code id} вернёт существующую запись.
+     * Сохраняет новую транзакцию в БД и рассылает её через WebSocket.
+     * Идемпотентен: повторный запрос с тем же {@code id} вернёт существующую запись
+     * без повторной WebSocket-рассылки.
      *
      * @param request данные транзакции от Switch
      * @return {@link TransactionStoreResult} с флагом {@code created=true} если запись новая,
