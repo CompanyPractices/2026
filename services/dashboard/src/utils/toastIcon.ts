@@ -3,40 +3,50 @@ import { ToastType } from '../types/toast.ts';
 
 type ToastIconType = {
     icon: LucideIcon,
-    textColor: string,
     backgroundColor: string,
-    label: string,
-    size: number,
+    borderColor: string;
+    titleColor: string;
+    messageColor: string;
+    iconColor: string;
+    label: string;
 }
 
 const ICON_TYPE: Record<ToastType, ToastIconType> = {
     'SUCCESS': {
         icon: MessageCircleCheck,
-        textColor: 'text-green-500',
-        backgroundColor: 'bg-green-100',
-        label: 'УСПЕШНО',
-        size: 18,
+        backgroundColor: 'bg-green-50',
+        borderColor: 'border-green-500',
+        titleColor: 'text-green-800',
+        messageColor: 'text-green-700',
+        iconColor: '#006303',
+        label: 'SUCCESS',
     },
     'ERROR': {
         icon: SquareX,
-        textColor: 'text-red-500',
-        backgroundColor: 'bg-red-100',
-        label: 'ОШИБКА',
-        size: 18,
+        backgroundColor: 'bg-red-50',
+        borderColor: 'border-red-500',
+        titleColor: 'text-red-800',
+        messageColor: 'text-red-700',
+        iconColor: '#680000',
+        label: 'ERROR',
     },
     'WARNING': {
         icon: TriangleAlert,
-        textColor: 'text-orange-500',
-        backgroundColor: 'bg-orange-100',
-        label: 'ПРЕДУПРЕЖДЕНИЕ',
-        size: 18,
+        backgroundColor: 'bg-orange-50',
+        borderColor: 'border-orange-500',
+        titleColor: 'text-orange-800',
+        messageColor: 'text-orange-700',
+        iconColor: '#ae4e00',
+        label: 'WARNING',
     },
     'INFO': {
         icon: Info,
-        textColor: 'text-blue-500',
-        backgroundColor: 'bg-blue-100',
-        label: 'ИНФОРМАЦИЯ',
-        size: 18,
+        backgroundColor: 'bg-blue-50',
+        borderColor: 'border-blue-500',
+        titleColor: 'text-blue-800',
+        messageColor: 'text-blue-700',
+        iconColor: '#0071ae',
+        label: 'INFO',
     }
 }
 
