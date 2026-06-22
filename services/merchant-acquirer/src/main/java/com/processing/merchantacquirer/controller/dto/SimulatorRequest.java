@@ -1,6 +1,6 @@
 package com.processing.merchantacquirer.controller.dto;
 
-import com.processing.merchantacquirer.domain.entity.ScenarioType;
+import com.processing.merchantacquirer.domain.model.ScenarioType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

@@ -1,10 +1,10 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
-import com.processing.merchantacquirer.domain.FeeCalculator;
-import com.processing.merchantacquirer.domain.StanGenerator;
+import com.processing.merchantacquirer.domain.service.FeeCalculator;
+import com.processing.merchantacquirer.domain.service.StanGenerator;
 import com.processing.merchantacquirer.domain.entity.Merchant;
-import com.processing.merchantacquirer.domain.entity.Scenario;
+import com.processing.merchantacquirer.domain.model.Scenario;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactory;
 import com.processing.merchantacquirer.repository.TerminalRepository;

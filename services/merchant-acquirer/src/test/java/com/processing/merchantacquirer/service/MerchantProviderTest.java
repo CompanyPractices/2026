@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.processing.merchantacquirer.domain.entity.Merchant;
-import com.processing.merchantacquirer.domain.entity.Scenario;
+import com.processing.merchantacquirer.domain.model.Scenario;
 import com.processing.merchantacquirer.exception.ResourceNotFoundException;
 import com.processing.merchantacquirer.repository.MerchantRepository;
 

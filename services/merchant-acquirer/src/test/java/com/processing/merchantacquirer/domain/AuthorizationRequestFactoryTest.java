@@ -4,6 +4,7 @@ import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.merchantacquirer.domain.entity.Merchant;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactory;
+import com.processing.merchantacquirer.domain.service.StanGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
