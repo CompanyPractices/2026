@@ -12,9 +12,9 @@ import java.math.BigDecimal;
  * <p>
  * Предоставляет методы для выполнения операций с картами:
  * <ul>
- *   <li>Получение информации о карте</li>
- *   <li>Резервирование средств</li>
- *   <li>Откат транзакций</li>
+ *  <li>Получение информации о карте</li>
+ *  <li>Резервирование средств</li>
+ *  <li>Откат транзакций</li>
  * </ul>
  * </p>
  * <p>
@@ -64,15 +64,15 @@ public interface CardManagementClient {
      * </p>
      *
      * @param amount сумма для резервирования в минимальных единицах валюты (копейки, центы)
-     * @param rrn    уникальный идентификатор транзакции (Retrieval Reference Number)
-     * @param pan    номер карты для резервирования средств
+     * @param rrn уникальный идентификатор транзакции (Retrieval Reference Number)
+     * @param pan номер карты для резервирования средств
      *
      * @throws CardNotFoundException если карта не найдена (HTTP 404)
      * @throws ServiceUnavailableException если CMS недоступен (HTTP 503)
      * @throws InternalCardManagerException если произошла внутренняя ошибка CMS (HTTP 500)
      * @throws InvalidReserveRequestException если запрос на резервирование некорректен (HTTP 400)
      * @throws InsufficientFundsException если на карте недостаточно средств (HTTP 402)
-     * @throws ReserveException если произошла другая ошибка при резервировании (не 2xx статус)              
+     * @throws ReserveException если произошла другая ошибка при резервировании (не 2xx статус)
      *
      * @see ReserveRequest
      * @see ReserveException
