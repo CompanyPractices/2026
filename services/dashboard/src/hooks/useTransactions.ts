@@ -101,6 +101,7 @@ function useTransactions() {
     return {
         transactions,
         isFiltered: hasFilter,
+        currentFilter,
         error,
         loading,
         applyFilter,

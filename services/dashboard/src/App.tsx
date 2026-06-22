@@ -14,6 +14,7 @@ function App() {
     const {
         transactions,
         isFiltered,
+        currentFilter,
         loading,
         error,
         applyFilter,
@@ -92,6 +93,7 @@ function App() {
                     <TransactionTable
                         transactions={pageTransactions}
                         isFiltered={isFiltered}
+                        currentFilter={currentFilter}
                         error={error}
                         loading={loading}
                         search={applyFilter}
