@@ -2,7 +2,9 @@ package com.processing.terminalsimulator.controller;
 
 import com.processing.common.dto.terminalsimulator.TerminalRunRequest;
 import com.processing.common.dto.terminalsimulator.TerminalRunResponse;
+import com.processing.common.dto.terminalsimulator.TerminalStartContinuousRequest;
 import com.processing.terminalsimulator.service.TerminalSimulatorService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,5 +24,22 @@ public class TerminalSimulatorController {
     public ResponseEntity<TerminalRunResponse> run(@Valid @RequestBody TerminalRunRequest request) {
         TerminalRunResponse response = simulatorService.run(request.count(), request.scenario());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/start-continuous")
+    @Operation(summary = "Старт непрерывного режима",
+            description = "Запускает бесконечную генерацию транзакций с фиксированным TPS")
+    public ResponseEntity<Void> startContinuous(
+            @Valid @RequestBody TerminalStartContinuousRequest request) {
+        simulatorService.startContinuous(request.tps(), request.transactionType());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/stop")
+    @Operation(summary = "Остановка симуляции",
+            description = "Мягко останавливает бесконечный режим, дожидаясь завершения летящих транзакций")
+    public ResponseEntity<Void> stopContinuous() {
+        simulatorService.stopContinuous();
+        return ResponseEntity.ok().build();
     }
 }
