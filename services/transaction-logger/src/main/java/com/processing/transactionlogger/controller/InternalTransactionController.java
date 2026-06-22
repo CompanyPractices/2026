@@ -48,7 +48,7 @@ public class InternalTransactionController {
     @ApiResponse(
             responseCode = "201",
             description = "Транзакция сохранена",
-            content = @Content(schema = @Schema(implementation = TransactionStoredResponse.class))
+            content = @Content(schema  = @Schema(implementation = TransactionStoredResponse.class))
     )
     @ApiResponse(
             responseCode = "200",
@@ -68,6 +68,11 @@ public class InternalTransactionController {
     @ApiResponse(
             responseCode = "503",
             description = "База данных transaction-logger недоступна",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+    )
+    @ApiResponse(
+            responseCode = "500",
+            description = "Внутренняя ошибка сервиса",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
     )
     public ResponseEntity<?> store(@Valid @RequestBody TransactionRequest request) {

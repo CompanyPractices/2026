@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Transaction } from '../types';
-import {getClusterStats} from "./getClusterStats";
+import { Transaction } from '../../types';
+import {getClusterStats} from "../getClusterStats";
 
 const createMockTx = (status: Transaction['status'], amount: number): Transaction =>
     ({ status, amount } as Transaction);

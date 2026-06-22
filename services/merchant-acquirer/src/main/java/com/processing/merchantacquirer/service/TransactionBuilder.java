@@ -42,10 +42,10 @@ public class TransactionBuilder {
             List<Future<RequestFeeData>> futures = new ArrayList<>(count);
 
             for (int i = 0; i < count; i++) {
-                int finalI = i;
                 Future<RequestFeeData> future = executor.submit(
                         () -> {
-                            CardDataResponse card = cardDataResponses.get(finalI % cardDataResponses.size());
+                            CardDataResponse card = cardDataResponses.get(
+                                    ThreadLocalRandom.current().nextInt(cardDataResponses.size()));
                             Merchant merchant = merchants.get(ThreadLocalRandom.current().nextInt(merchants.size()));
                             Terminal terminal = terminalProvider.getByMerchant(merchant.getId());
                             BigDecimal amount = new BigDecimal(

@@ -6,7 +6,6 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
-import com.processing.authorization.entities.LimitUsage;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.authorization.exceptions.*;
 import com.processing.common.dto.cardmanagement.ReserveRequest;
@@ -14,10 +13,11 @@ import com.processing.common.utils.MaskPan;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -27,11 +27,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -99,23 +95,20 @@ public class AuthService {
         CardModel cardResponse;
         try {
             cardResponse = getCard(request.pan());
-        } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", logPan(request.pan()), e);
+        } catch (CardNotFoundException | InvalidGetCardRequestException e) {
+            log.info("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
+            log.info("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
-        } catch (InvalidGetCardRequestException e) {
-            log.error("card not found for pan: {}", logPan(request.pan()), e);
-            return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (PaymentRequiredException e) {
-            log.error("card required payment for pan: {}", logPan(request.pan()), e);
+            log.info("card required payment for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
         } catch (GetCardException e) {
-            log.error("get card from card-management service failed for pan: {}", logPan(request.pan()), e);
+            log.info("get card from card-management service failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.error("getting card failed for pan: {}", logPan(request.pan()), e);
+            log.info("getting card failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
@@ -146,23 +139,27 @@ public class AuthService {
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         }
 
-        Optional<LimitUsage> currLimitUsage = limitUsageRepository
-                .findByPanAndUsageDate(request.pan(), transmissionDate);
-
         LocalDate transmissionLocalDate = request.transmissionDateTime()
-                .atZone(ZoneOffset.UTC)
+                .atZone(ZoneOffset.UTC) // TODO: msc
                 .toLocalDate();
 
-        Optional<LimitUsage> monthLimitUsage = currLimitUsage.isPresent()
-                ? currLimitUsage
-                : limitUsageRepository
-                        .findTopByPanAndUsageDateBetweenOrderByUsageDateDesc(
-                                request.pan(),
-                                transmissionLocalDate.withDayOfMonth(1),
-                                transmissionDate);
-        boolean isExceedsLimit = isExceedsAmountLimit(request, requestInputTime, cardResponse, currLimitUsage,
-                monthLimitUsage);
-        if (isExceedsLimit) {
+        boolean areLimitsUpdated = false;
+        try {
+            areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
+        } catch (DuplicateKeyException | ConstraintViolationException e) {
+            log.warn("key duplication detected, checking limits again: {}", logPan(request.pan()), e);
+            try {
+                areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
+            } catch (Exception ex) {
+                log.error("db failed after rechecking: {}", logPan(request.pan()), ex);
+                return DeclineOutcome.DB_UNAVAILABLE.buildAuthorization(request, requestInputTime);
+            }
+        } catch (Exception e) {
+            log.error("db failed: {}", logPan(request.pan()), e);
+            return DeclineOutcome.DB_UNAVAILABLE.buildAuthorization(request, requestInputTime);
+        }
+
+        if (!areLimitsUpdated) {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
@@ -170,54 +167,25 @@ public class AuthService {
         try {
             reserve(request.amount(), rrn, request.pan());
         } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", logPan(request.pan()), e);
+            log.info("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
+            log.info("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (InvalidReserveRequestException e) {
-            log.error("invalid reverse request for pan: {}", logPan(request.pan()), e);
+            log.info("invalid reverse request for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (InsufficientFundsException e) {
-            log.error("Insufficient funds from card-management for pan: {}", logPan(request.pan()), e);
+            log.info("Insufficient funds from card-management for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         } catch (ReserveException e) {
-            log.error("reserve from card-management service failed for pan: {}", logPan(request.pan()), e);
+            log.info("reserve from card-management service failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.error("reserve failed for card {}", cardResponse.id(), e);
+            log.info("reserve failed for card {}", cardResponse.id(), e);
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         }
 
-        try {
-            updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
-        } catch (DuplicateKeyException e) {
-            log.warn("data race for pan {}", logPan(request.pan()));
-            // TODO: get new limits and check them
-            isExceedsLimit = isExceedsAmountLimit(request, requestInputTime, cardResponse, currLimitUsage,
-                    monthLimitUsage);
-            if (isExceedsLimit) {
-                RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
-                RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
-                if (rollbackResponse.status().equals(RollbackResponse.STATUS_APPROVED)) {
-                    return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
-                }
-                // TODO ask about business logic
-                log.error("rollback from card-management service failed for pan: {}", logPan(request.pan()), e);
-                return DeclineOutcome.ROLLBACK_FAILED.buildAuthorization(request, requestInputTime);
-            }
-            updateLimits(request, transmissionDate, currLimitUsage, monthLimitUsage);
-        } catch (Exception e) {
-            log.error("Update limits failed for pan {}", logPan(request.pan()), e);
-            RollbackRequest rollbackRequest = new RollbackRequest(rrn, request.pan(), request.amount());
-            RollbackResponse rollbackResponse = rollback(rollbackRequest, Instant.now());
-            if (!rollbackResponse.status().equals(RollbackResponse.STATUS_APPROVED)) {
-                // TODO ask about business logic
-                log.error("rollback after failing to update limit_usage table from "
-                        + "card-management service failed for pan: {}", logPan(request.pan()), e);
-                return DeclineOutcome.ROLLBACK_FAILED.buildAuthorization(request, requestInputTime);
-            }
-        }
         String authCode = generateAuthCode();
         return AuthorizationResponse.approved(request, rrn, authCode, requestInputTime);
     }
@@ -340,55 +308,14 @@ public class AuthService {
         log.debug("Reserve successful for card {}", logPan(pan));
     }
 
-    // TODO change transmissionDate to Instant type
-    public void updateLimits(AuthorizationRequest request, LocalDate transmissionDate,
-            Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
-        if (currLimitUsage.isPresent()) {
-            LimitUsage usage = currLimitUsage.get();
-            usage.setMonthlyAmount(usage.getMonthlyAmount().add(request.amount()));
-            usage.setDailyAmount(usage.getDailyAmount().add(request.amount()));
-            limitUsageRepository.save(usage);
-        } else if (monthLimitUsage.isPresent()) {
-            LimitUsage monthUsage = monthLimitUsage.get();
-            LimitUsage usage = new LimitUsage();
-            usage.setPan(request.pan());
-            usage.setUsageDate(transmissionDate);
-            usage.setDailyAmount(request.amount());
-            usage.setMonthlyAmount(monthUsage.getMonthlyAmount().add(request.amount()));
-            limitUsageRepository.save(usage);
-        } else {
-            LimitUsage usage = new LimitUsage();
-            usage.setPan(request.pan());
-            usage.setUsageDate(transmissionDate);
-            usage.setDailyAmount(request.amount());
-            usage.setMonthlyAmount(request.amount());
-            limitUsageRepository.save(usage);
-        }
-    }
-
-    // TODO change requestInputTime to Instant type
     @Transactional(rollbackFor = Exception.class)
-    public boolean isExceedsAmountLimit(AuthorizationRequest request, Instant requestInputTime,
-            CardModel cardResponse,
-            Optional<LimitUsage> currLimitUsage, Optional<LimitUsage> monthLimitUsage) {
-        if (monthLimitUsage.isPresent()) {
-            LimitUsage monthUsage = monthLimitUsage.get();
-            if (monthUsage.getMonthlyAmount().add(request.amount()).compareTo(cardResponse.monthlyLimit()) > 0) {
-                return true;
-            }
-        } else if (request.amount().compareTo(cardResponse.monthlyLimit()) > 0) {
-            return true;
+    public boolean checkAndUpdateLimits(CardModel cardResponse, BigDecimal amount, LocalDate transmissionLocalDate) {
+        int updatedCount = limitUsageRepository.upsertLimitUsage(cardResponse.pan(), transmissionLocalDate,
+                amount, cardResponse.dailyLimit(), cardResponse.monthlyLimit());
+        if (updatedCount == 0) {
+            return false;
         }
-
-        if (currLimitUsage.isPresent()) {
-            LimitUsage usage = currLimitUsage.get();
-            if (usage.getDailyAmount().add(request.amount()).compareTo(cardResponse.dailyLimit()) > 0) {
-                return true;
-            }
-        } else if (request.amount().compareTo(cardResponse.dailyLimit()) > 0) {
-            return true;
-        }
-        return false;
+        return true;
     }
 
     private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
@@ -486,22 +413,22 @@ public class AuthService {
         try {
             rollbackCard(request);
         } catch (CardNotFoundException e) {
-            log.error("card not found for pan: {}", logPan(request.pan()), e);
+            log.info("card not found for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.error("service unavailable for pan: {}", logPan(request.pan()), e);
+            log.info("service unavailable for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildRollback(request, requestInputTime);
         } catch (InvalidRollbackRequestException e) {
-            log.error("invalid rollback request for pan: {}", logPan(request.pan()), e);
+            log.info("invalid rollback request for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
         } catch (RollbackConflictException e) {
-            log.error("rollback request already completed for pan: {}", logPan(request.pan()), e);
+            log.info("rollback request already completed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.ALREADY_ROLLED_BACK.buildRollback(request, requestInputTime);
         } catch (RollbackFailureException e) {
-            log.error("rollback from card-management service failed for pan: {}", logPan(request.pan()), e);
+            log.info("rollback from card-management service failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.ROLLBACK_FAILED.buildRollback(request, requestInputTime);
         } catch (Exception e) {
-            log.error("rollback failed for pan: {}", logPan(request.pan()), e);
+            log.info("rollback failed for pan: {}", logPan(request.pan()), e);
             return DeclineOutcome.UNKNOWN_REASON.buildRollback(request, requestInputTime);
         }
         return RollbackResponse.approved(request, requestInputTime);
