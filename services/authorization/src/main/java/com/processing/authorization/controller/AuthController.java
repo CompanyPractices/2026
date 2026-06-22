@@ -62,7 +62,7 @@ public class AuthController {
      * <ol>
      * <li>Фиксирует время начала обработки запроса</li>
      * <li>Делегирует авторизацию сервису
-     * {@link AuthService#authorize(AuthorizationRequest, LocalDateTime)}</li>
+     * {@link AuthService#authorize(AuthorizationRequest, Instant)}</li>
      * <li>Вычисляет время обработки запроса в миллисекундах</li>
      * <li>Устанавливает время обработки в ответе</li>
      * <li>Определяет HTTP-статус на основе результата авторизации</li>
@@ -98,7 +98,7 @@ public class AuthController {
      *         </ul>
      *         HTTP-статус зависит от результата.
      *
-     * @see AuthService#authorize(AuthorizationRequest, LocalDateTime)
+     * @see AuthService#authorize(AuthorizationRequest, Instant)
      * @see AuthorizationRequest
      * @see AuthorizationResponse
      */
