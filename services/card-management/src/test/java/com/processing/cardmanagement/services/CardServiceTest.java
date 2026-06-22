@@ -474,4 +474,49 @@ public class CardServiceTest {
                 rrn
         ));
     }
+
+    @Test
+    void testBulkUpdateByBin() {
+        var bin = generateBin();
+        var card1 = generateActiveCardByPan(generatePan());
+        var card2 = generateActiveCardByPan(generatePan());
+
+        when(cardRepository.findCards(Integer.MAX_VALUE, 0L, null, bin, null, null, null))
+                .thenReturn(List.of(card1, card2));
+        when(cardRepository.save(any(Card.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        int updated = cardService.bulkUpdateStatus(List.of(bin), null, CardStatus.BLOCKED);
+
+        assertEquals(2, updated);
+        verify(cardRepository, times(2)).save(any(Card.class));
+    }
+
+    @Test
+    void testBulkUpdateByPans() {
+        var card1 = generateActiveCardByPan(generatePan());
+        var card2 = generateActiveCardByPan(generatePan());
+
+        when(cardRepository.findByPan(card1.pan())).thenReturn(Optional.of(card1));
+        when(cardRepository.findByPan(card2.pan())).thenReturn(Optional.of(card2));
+        when(cardRepository.save(any(Card.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        int updated = cardService.bulkUpdateStatus(null, List.of(card1.pan(), card2.pan()), CardStatus.BLOCKED);
+
+        assertEquals(2, updated);
+        verify(cardRepository, times(2)).save(any(Card.class));
+    }
+
+    @Test
+    void bulkUpdateBothNullThrows() {
+        assertThrows(IllegalArgumentException.class, () ->
+                cardService.bulkUpdateStatus(null, null, CardStatus.BLOCKED));
+    }
+
+    @Test
+    void bulkUpdateBothThrows() {
+        assertThrows(IllegalArgumentException.class, () ->
+                cardService.bulkUpdateStatus(List.of(generateBin()), List.of(generatePan()), CardStatus.BLOCKED));
+    }
 }
