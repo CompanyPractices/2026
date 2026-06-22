@@ -5,25 +5,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.processing.gateway.logging.models.RequestLog;
-import com.processing.gateway.properties.GatewayProperties;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.processing.gateway.properties.SmpGatewayProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
-import org.springframework.http.MediaType;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
-import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Adds request correlation and writes a structured log record for every request.
@@ -33,19 +25,14 @@ import java.util.regex.Pattern;
  */
 @Component
 @Slf4j
-public class RequestLoggingFilter extends OncePerRequestFilter {
+public class RequestLoggingFilter implements GlobalFilter {
     private final ObjectMapper mapper;
-    private final GatewayProperties properties;
+    private final SmpGatewayProperties properties;
 
     private static final String ID_HEADER_NAME = "X-Request-Id";
+    private static final String MDC_KEY = "requestId";
 
-    private static final Pattern PAN_PATTERN = Pattern.compile("(?i)\"pan\"\\s*:\\s*\"(\\d{6})\\d{6,9}(\\d{4})\"");
-    private static final Pattern CVV_PATTERN = Pattern.compile("(?i)\"cvv\"\\s*:\\s*\"\\d{3,4}\"");
-
-    private static final String MASKED_PAN = "\"pan\":\"$1****$2\"";
-    private static final String MASKED_CVV = "\"cvv\":\"***\"";
-
-    public RequestLoggingFilter(ObjectMapper mapper, GatewayProperties properties) {
+    public RequestLoggingFilter(ObjectMapper mapper, SmpGatewayProperties properties) {
         this.properties = properties;
         this.mapper = mapper.copy()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -56,95 +43,44 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain)
-            throws ServletException, IOException {
-        if (properties.getLogging().getExcludedRoutes().contains(request.getRequestURI())) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         long startTime = System.currentTimeMillis();
 
-        String incoming = request.getHeader(ID_HEADER_NAME);
-        String requestId = incoming != null ? incoming : UUID.randomUUID().toString();
+        String incoming = exchange.getRequest().getHeaders().getFirst(ID_HEADER_NAME);
+        String requestId = (incoming != null && !incoming.isBlank()) ? incoming : UUID.randomUUID().toString();
 
-        var wrappedRequest = new MutableHeadersRequestWrapper(request);
-        wrappedRequest.setHeader(ID_HEADER_NAME, requestId);
+        var mutatedRequest = exchange.getRequest().mutate()
+                .header(ID_HEADER_NAME, requestId)
+                .build();
+        exchange.getResponse().getHeaders().add(ID_HEADER_NAME, requestId);
 
-        response.setHeader(ID_HEADER_NAME, requestId);
+        var mutatedExchange = exchange.mutate().request(mutatedRequest).build();
 
-        var contentCachedRequest = new ContentCachingRequestWrapper(wrappedRequest);
-        var contentCachedResponse = new ContentCachingResponseWrapper(response);
+        var requestLogBuilder = RequestLog.builder()
+                .requestId(requestId)
+                .method(mutatedRequest.getMethod().name())
+                .path(mutatedRequest.getPath().value());
 
-        MDC.put("requestId", requestId);
-
-        try {
-            filterChain.doFilter(contentCachedRequest, contentCachedResponse);
-        } finally {
+        return chain.filter(mutatedExchange).doFinally(signalType -> {
             long responseTime = System.currentTimeMillis() - startTime;
 
-            var requestLogBuilder = RequestLog.builder()
-                    .requestId(requestId)
-                    .method(request.getMethod())
-                    .path(request.getRequestURI())
-                    .responseCode(response.getStatus())
-                    .responseTime(responseTime);
+            HttpStatusCode statusCode = mutatedExchange.getResponse().getStatusCode();
+            int rawStatusCode = (statusCode != null) ? statusCode.value() : 0;
 
-            if (properties.getLogging().getBodies()) {
-                logBodies(contentCachedRequest, contentCachedResponse, requestLogBuilder);
-            }
+            var requestLog = requestLogBuilder
+                    .responseCode(rawStatusCode)
+                    .responseTime(responseTime)
+                    .build();
 
-            contentCachedResponse.copyBodyToResponse();
-
+            MDC.put(MDC_KEY, requestId);
             try {
-                String mappedLog = mapper.writeValueAsString(requestLogBuilder.build());
+                String mappedLog = mapper.writeValueAsString(requestLog);
                 log.info(mappedLog);
             } catch (JsonProcessingException e) {
                 log.error("Exception occurred while mapping log message", e);
             } finally {
-                MDC.remove("requestId");
+                MDC.remove(MDC_KEY);
             }
-
-        }
-    }
-
-    private void logBodies(ContentCachingRequestWrapper request,
-                           ContentCachingResponseWrapper response,
-                           RequestLog.RequestLogBuilder logBuilder) {
-        String reqBodyStr = request.getContentAsString();
-        String resBodyStr = new String(response.getContentAsByteArray(), StandardCharsets.UTF_8);
-
-        String reqContentType = request.getContentType();
-        String resContentType = response.getContentType();
-
-        if (reqContentType != null
-                && request.getContentType().equals(MediaType.APPLICATION_JSON_VALUE)
-                && !reqBodyStr.isEmpty()) {
-            reqBodyStr = maskData(PAN_PATTERN, MASKED_PAN, reqBodyStr);
-            reqBodyStr = maskData(CVV_PATTERN, MASKED_CVV, reqBodyStr);
-
-            logBuilder.requestBody(reqBodyStr);
-        }
-
-        if (resContentType != null
-                && response.getContentType().equals(MediaType.APPLICATION_JSON_VALUE)
-                && !resBodyStr.isEmpty()) {
-            resBodyStr = maskData(PAN_PATTERN, MASKED_PAN, resBodyStr);
-            resBodyStr = maskData(CVV_PATTERN, MASKED_CVV, resBodyStr);
-
-            logBuilder.responseBody(resBodyStr);
-        }
-    }
-
-    private String maskData(Pattern pattern, String mask, String data) {
-        Matcher matcher = pattern.matcher(data);
-
-        if (matcher.find()) {
-            return matcher.replaceAll(mask);
-        }
-
-        return data;
+        });
     }
 }

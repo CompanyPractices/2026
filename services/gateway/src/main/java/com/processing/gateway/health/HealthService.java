@@ -2,7 +2,7 @@ package com.processing.gateway.health;
 
 import com.processing.gateway.health.models.HealthResponse;
 import com.processing.gateway.health.models.HealthStatus;
-import com.processing.gateway.properties.GatewayProperties;
+import com.processing.gateway.properties.SmpGatewayProperties;
 import com.processing.gateway.properties.ServiceProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ public class HealthService {
     private final HealthClient healthClient;
     private final ServiceProperties serviceProperties;
     private final HealthProperties healthProperties;
-    private final GatewayProperties gatewayProperties;
+    private final SmpGatewayProperties smpGatewayProperties;
 
     /**
      * Checks configured downstream services and builds the gateway health response.
@@ -51,7 +51,7 @@ public class HealthService {
         return new HealthResponse(
                 gatewayStatus,
                 GATEWAY_SERVICE_NAME,
-                gatewayProperties.getVersion(),
+                smpGatewayProperties.getVersion(),
                 downstreamServices);
     }
 }
