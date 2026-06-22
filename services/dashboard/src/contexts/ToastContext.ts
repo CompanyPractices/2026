@@ -1,12 +1,17 @@
-import { createContext } from 'react';
-import { Toast } from '../types/toast.ts'
+import { createContext, useContext } from 'react';
+import { Toast, ToastType } from '../types/toast.ts'
 
 export interface ToastContextType {
     addToast: (message: string, type: ToastType) => void;
     removeToast: (id: string) => void;
 }
 
-export const ToastContext = createContext<ToastContextType>({
-    addToast: () => {},
-    removeToast: () => {},
-});
+export const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+export function useToastContext(){
+    const context = useContext(ToastContext);
+    if (!context){
+        throw new Error('Use toast context within provider');
+    }
+    return context;
+}
