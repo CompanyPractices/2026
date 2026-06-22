@@ -27,8 +27,6 @@ public class AcquirerProvider {
                 request.transmissionDateTime(), request.stan(), request.terminalId(),
                 request.amount(), request.pan());
         if (acquirerFee == null) {
-            log.warn("AcquirerFee not found for request: TransmissiontDataTime: {}, STAN: {}, TerminalId: {}",
-                    request.transmissionDateTime(), request.stan(), request.terminalId());
             throw new ResourceNotFoundException("Acquirer fee not found for stan = " + request.stan());
         }
 
