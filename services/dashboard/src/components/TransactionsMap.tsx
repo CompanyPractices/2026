@@ -108,7 +108,7 @@ export function TransactionMap({ transactions }: TransactionMapProps) {
     if (clusters.length === 0) {
         return (
             <div className="w-full h-full min-h-[400px] rounded-lg overflow-hidden flex items-center justify-center bg-zinc-100 dark:bg-sage-500">
-                <div className="text-center text-zinc-500 dark:text-sage-200">
+                <div className="text-center text-gray-500 dark:text-sage-50">
                     <div className="text-lg font-mono">Ожидание транзакций...</div>
                 </div>
             </div>

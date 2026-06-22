@@ -19,7 +19,7 @@ const getDefaultWsUrl = () => {
 };
 
 export function useWebSocket({
-                                 url = getDefaultWsUrl(),
+      url = getDefaultWsUrl(),
       maxRetries = 5,
       retryDelayMs = 2000,
       maxRetryDelayMs = 30000
