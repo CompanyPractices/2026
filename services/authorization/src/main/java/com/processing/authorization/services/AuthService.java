@@ -193,7 +193,7 @@ public class AuthService {
      * Генерирует уникальный Retrieval Reference Number (RRN) для транзакции.
      *
      * <p>
-     * Формат RRN: 10 цифр
+     * Формат RRN: 12 цифр
      * </p>
      * <ul>
      * <li>Позиция 1: последняя цифра года (0-9)</li>
