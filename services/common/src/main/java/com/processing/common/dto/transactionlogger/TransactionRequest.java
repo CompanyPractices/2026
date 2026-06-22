@@ -11,6 +11,31 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Запрос на сохранение транзакции в transaction-logger.
+ *
+ * @param id идентификатор транзакции, сгенерированный Switch
+ * @param mti тип ISO 8583 сообщения
+ * @param stan системный трассировочный номер операции
+ * @param rrn ссылочный номер транзакции, сгенерированный сервисом авторизации
+ * @param pan номер тестовой или замаскированной карты
+ * @param processingCode код обработки транзакции
+ * @param amount сумма транзакции
+ * @param currencyCode числовой код валюты по ISO 4217
+ * @param terminalId идентификатор терминала
+ * @param terminalType тип терминала
+ * @param merchantId идентификатор мерчанта
+ * @param mcc код категории мерчанта
+ * @param acquirerId идентификатор эквайера
+ * @param issuerId идентификатор эмитента
+ * @param acquiringFee комиссия эквайринга
+ * @param status статус результата авторизации
+ * @param declineReason причина отказа для отклонённой транзакции
+ * @param authCode код авторизации
+ * @param processingTimeMs время обработки транзакции в миллисекундах
+ * @param transmissionDateTime дата и время передачи транзакции
+ * @param createdAt дата и время создания транзакции, переданные Switch
+ */
 @Schema(description = "Данные транзакции, полученные от Switch")
 public record TransactionRequest(
         @Schema(description = "Идентификатор транзакции, сгенерированный Switch")

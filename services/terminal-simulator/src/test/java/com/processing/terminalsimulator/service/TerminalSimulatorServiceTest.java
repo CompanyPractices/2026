@@ -11,7 +11,7 @@ import com.processing.terminalsimulator.TransactionStatus;
 import com.processing.terminalsimulator.factory.TransactionFactory;
 import com.processing.terminalsimulator.client.GatewayClient;
 import com.processing.terminalsimulator.model.PartofDay;
-import com.processing.terminalsimulator.model.TransactionType;
+import com.processing.common.dto.terminalsimulator.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

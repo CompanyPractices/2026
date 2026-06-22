@@ -1,7 +1,7 @@
 package com.processing.terminalsimulator.strategy;
 
 import com.processing.common.dto.cardmanagement.CardModel;
-import com.processing.terminalsimulator.model.TransactionType;
+import com.processing.common.dto.terminalsimulator.TransactionType;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
