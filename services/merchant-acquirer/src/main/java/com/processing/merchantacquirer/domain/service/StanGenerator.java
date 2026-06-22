@@ -1,4 +1,4 @@
-package com.processing.merchantacquirer.domain;
+package com.processing.merchantacquirer.domain.service;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
