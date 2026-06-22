@@ -5,7 +5,7 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.dto.terminalsimulator.TerminalType;
 import com.processing.terminalsimulator.model.PartofDay;
-import com.processing.terminalsimulator.model.TransactionType;
+import com.processing.common.dto.terminalsimulator.TransactionType;
 import com.processing.terminalsimulator.strategy.TransactionStrategy;
 import com.processing.terminalsimulator.util.DateTimeGenerator;
 import com.processing.terminalsimulator.util.StanGenerator;
