@@ -26,9 +26,11 @@ public class LoggingFilterTests {
     @BeforeEach
     void setUp() {
         var props = new GatewayProperties();
-        props.getLogging().setBodies(false);
-        props.getLogging().setPretty(false);
-        props.getLogging().setExcludedRoutes(Set.of());
+        props.setLogging(new GatewayProperties.LoggingProperties(
+                false,
+                false,
+                Set.of()
+        ));
 
         filter = new RequestLoggingFilter(new ObjectMapper(), props);
         request = mock(HttpServletRequest.class);

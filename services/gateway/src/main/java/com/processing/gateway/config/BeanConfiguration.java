@@ -1,7 +1,5 @@
 package com.processing.gateway.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.gateway.health.HealthProperties;
 import lombok.RequiredArgsConstructor;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -10,8 +8,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Scope;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
@@ -63,12 +59,5 @@ public class BeanConfiguration {
     @Bean
     public Cache gatewayCache(CacheManager cacheManager) {
         return cacheManager.getCache("gateway-cache");
-    }
-
-    @Bean
-    @Primary
-    @Scope("prototype")
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper().registerModule(new JavaTimeModule());
     }
 }
