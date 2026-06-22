@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TransactionTable } from '../TransactionTable';
 import { Transaction, Filter } from '../../types';
 
-// --- Mocks ---
 vi.mock('../../utils/format', () => ({
     hidePan: vi.fn((pan: string) => `****${pan.slice(-4)}`),
     convertPenniesToRubles: vi.fn((amount: number) => `${(amount / 100).toFixed(2)} ₽`),
@@ -42,35 +41,18 @@ vi.mock('lucide-react', () => ({
     ChevronRight: () => <span>→</span>,
 }));
 
-import { hidePan, convertPenniesToRubles, formatDateTime } from '../../utils/format';
+import { formatDateTime } from '../../utils/format';
 import { exportToCsv } from '../../utils/exportToCsv';
 
-const mockedHidePan = vi.mocked(hidePan);
-const mockedConvertPennies = vi.mocked(convertPenniesToRubles);
 const mockedFormatDateTime = vi.mocked(formatDateTime);
 const mockedExportToCsv = vi.mocked(exportToCsv);
 
 const createMockTransaction = (overrides: Partial<Transaction>): Transaction => ({
-    id: 'tx-default',
-    mti: '0200',
-    stan: '123456',
-    rrn: '123',
-    pan: '4111111111111111',
-    processingCode: '000000',
-    processingTimeMs: 100,
-    amount: 150000,
-    currencyCode: '643',
-    terminalId: 'TERM3171',
-    terminalType: 'POS',
-    responseCode: '00',
-    merchantId: 'MERCH1328400148',
-    mcc: '5411',
-    acquirerId: 'ACQ650',
-    issuerId: 'ISS002',
-    status: 'APPROVED',
-    transmissionDateTime: '2023-10-27T10:00:00Z',
-    createdAt: '2023-10-27T10:00:00Z',
-    ...overrides,
+    id: 'tx-default', mti: '0200', stan: '123456', rrn: '123', pan: '4111111111111111',
+    processingCode: '000000', processingTimeMs: 100, amount: 150000, currencyCode: 'RUB',
+    terminalId: 'T123', terminalType: 'POS', responseCode: '00', merchantId: 'M123',
+    mcc: '5411', acquirerId: 'A123', issuerId: 'ISS001', status: 'APPROVED',
+    transmissionDateTime: '2023-10-27T10:00:00Z', createdAt: '2023-10-27T10:00:00Z', ...overrides,
 });
 
 const basePagination = { currentPage: 0, pageSize: 10, totalElements: 1, totalPages: 1 };
@@ -109,7 +91,7 @@ describe('TransactionTable', () => {
 
         expect(screen.getByRole('table')).toBeInTheDocument();
         const rows = screen.getAllByRole('row');
-        expect(rows).toHaveLength(3); // header + 2 rows
+        expect(rows).toHaveLength(3);
 
         expect(rows[1]).toHaveTextContent('SHOP-NEW');
         expect(rows[2]).toHaveTextContent('SHOP-OLD');

@@ -62,7 +62,7 @@ export function TransactionTable({
         exportToCsv(filename, csvRows);
     };
 
-    const showNavigation = pagination.totalPages > 1;
+    const showNavigation = !loading && !error && pagination.totalElements > 0;
 
     const pageNumbers = useMemo(() => {
         const pages: (number | string)[] = [];

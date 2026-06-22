@@ -9,6 +9,7 @@ function useTransactions() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [transactions, setTransactions] = useState<Transaction[] | null>(null);
+    const [totalElements, setTotalElements] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -25,7 +26,6 @@ function useTransactions() {
 
     const hasFilter = Object.values(currentFilter).some(v => v);
 
-    const totalElements = parseInt(searchParams.get('total') || '0', 10);
     const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
 
     useEffect(() => {
@@ -48,16 +48,7 @@ function useTransactions() {
             .then((data) => {
                 if (cancelled) return;
                 setTransactions(data.transactions);
-
-                setSearchParams((prev) => {
-                    const newParams = new URLSearchParams(prev);
-                    const currentTotal = newParams.get('total');
-                    if (currentTotal !== data.total.toString()) {
-                        newParams.set('total', data.total.toString());
-                        return newParams;
-                    }
-                    return prev;
-                }, { replace: true });
+                setTotalElements(data.total);
             })
             .catch((err) => {
                 if (cancelled) return;
@@ -71,22 +62,24 @@ function useTransactions() {
         return () => {
             cancelled = true;
         };
-    }, [currentPage, pageSize, currentFilter.status, currentFilter.dateFrom, currentFilter.dateTo, currentFilter.issuerId, currentFilter.mcc, setSearchParams]);
+    }, [currentPage, pageSize, currentFilter.status, currentFilter.dateFrom, currentFilter.dateTo, currentFilter.issuerId, currentFilter.mcc]);
 
     const applyFilter = useCallback((filter: Filter) => {
-        const newParams = new URLSearchParams();
+        setSearchParams((prev) => {
+            const newParams = new URLSearchParams();
 
-        if (filter.status) newParams.set('status', filter.status);
-        if (filter.dateFrom) newParams.set('dateFrom', filter.dateFrom);
-        if (filter.dateTo) newParams.set('dateTo', filter.dateTo);
-        if (filter.issuerId) newParams.set('issuerId', filter.issuerId);
-        if (filter.mcc) newParams.set('mcc', filter.mcc);
+            if (filter.status) newParams.set('status', filter.status);
+            if (filter.dateFrom) newParams.set('dateFrom', filter.dateFrom);
+            if (filter.dateTo) newParams.set('dateTo', filter.dateTo);
+            if (filter.issuerId) newParams.set('issuerId', filter.issuerId);
+            if (filter.mcc) newParams.set('mcc', filter.mcc);
 
-        newParams.set('page', '0');
-        newParams.set('pageSize', pageSize.toString());
+            newParams.set('page', '0');
+            newParams.set('pageSize', prev.get('pageSize') || DEFAULT_PAGE_SIZE.toString());
 
-        setSearchParams(newParams);
-    }, [pageSize, setSearchParams]);
+            return newParams;
+        });
+    }, [setSearchParams]);
 
     const goToPage = useCallback((page: number) => {
         setSearchParams((prev) => {
