@@ -51,7 +51,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         if (properties.getLogging().getPretty()) {
-            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+            this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
         }
     }
 
