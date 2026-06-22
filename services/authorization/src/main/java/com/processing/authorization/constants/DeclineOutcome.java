@@ -32,6 +32,8 @@ public record DeclineOutcome(String reason, String code) {
 
     public static final String REASON_ROLLBACK_FAILED = "ROLLBACK_FAILED";
 
+    public static final String REASON_DB_UNAVAILABLE = "DB_UNAVAILABLE";
+
     public static final DeclineOutcome CARD_NOT_FOUND = new DeclineOutcome(
             REASON_CARD_NOT_FOUND,
             AuthorizationResponse.CODE_CARD_NOT_FOUND
@@ -90,6 +92,11 @@ public record DeclineOutcome(String reason, String code) {
     public static final DeclineOutcome ROLLBACK_FAILED = new DeclineOutcome(
             REASON_ROLLBACK_FAILED,
             RollbackResponse.CODE_SERVICE_UNAVAILABLE
+    );
+
+    public static final DeclineOutcome DB_UNAVAILABLE = new DeclineOutcome(
+            REASON_DB_UNAVAILABLE,
+            AuthorizationResponse.CODE_SERVICE_UNAVAILABLE
     );
 
     public AuthorizationResponse buildAuthorization(AuthorizationRequest request, Instant requestInputTime) {

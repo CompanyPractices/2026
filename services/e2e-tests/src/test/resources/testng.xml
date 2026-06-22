@@ -26,7 +26,7 @@
 
     <test name="Transaction search">
         <classes>
-            <class name="com.processing.e2e.tests.TransactionSearchTest" />
+            <class name="com.processing.e2e.tests.TC_19_TransactionSearchTest" />
         </classes>
     </test>
 

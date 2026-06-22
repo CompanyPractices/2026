@@ -3,7 +3,7 @@ import {
     getTransactionLocation,
     ISSUER_LOCATIONS,
     DEFAULT_LOCATION,
-} from './geoGenerator';
+} from '../geoGenerator';
 
 describe('getTransactionLocation', () => {
     describe('when issuerId is known', () => {
