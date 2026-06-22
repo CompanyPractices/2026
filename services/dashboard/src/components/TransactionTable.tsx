@@ -62,11 +62,7 @@ export function TransactionTable({
         exportToCsv(filename, csvRows);
     };
 
-    const showNavigation = isFiltered && pagination.totalPages > 1;
-
-    /*const displayTotal = isFiltered ? pagination.totalElements : sortedTransactions.length;
-    const startItem = sortedTransactions.length > 0 ? pagination.currentPage * pagination.pageSize + 1 : 0;
-    const endItem = Math.min((pagination.currentPage + 1) * pagination.pageSize, displayTotal);*/
+    const showNavigation = pagination.totalPages > 1;
 
     const pageNumbers = useMemo(() => {
         const pages: (number | string)[] = [];
