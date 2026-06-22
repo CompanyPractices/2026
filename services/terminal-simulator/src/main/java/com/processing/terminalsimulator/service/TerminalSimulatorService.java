@@ -145,8 +145,7 @@ public class TerminalSimulatorService {
     }
 
     private TransactionTask generateSingleTask(TransactionType transactionType) {
-        TransactionTask task = new TransactionTask(transactionType, PartofDay.DAY);
-        return task;
+        return new TransactionTask(transactionType, PartofDay.DAY);
     }
 
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
@@ -289,7 +288,8 @@ public class TerminalSimulatorService {
         }
     }
 
-    private void handleInternalFailure(String contextMessage, Exception e, ConcurrentLinkedQueue<AuthorizationResponse> authResponses) {
+    private void handleInternalFailure(String contextMessage, Exception e,
+                                       ConcurrentLinkedQueue<AuthorizationResponse> authResponses) {
         log.error("{}, but keeping simulation", contextMessage, e);
         authResponses.add(new AuthorizationResponse(null, null, null, null,
                 null, null, "Internal simulation error: " + e.getMessage(), 0));
