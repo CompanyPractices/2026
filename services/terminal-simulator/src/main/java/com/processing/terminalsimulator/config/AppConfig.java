@@ -14,12 +14,10 @@ public class AppConfig {
 
     @Bean
     public RestClient restClient(@Value("${gateway.url:http://gateway:8080}") String gatewayUrl) {
-        // время на установку сетевого соединения с gateway
         HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
 
-        // время на ожидание ответа на запрос (когда gateway завис)
-        requestFactory.setReadTimeout(Duration.ofSeconds(3));
+        requestFactory.setReadTimeout(Duration.ofSeconds(20));
 
         return RestClient.builder().baseUrl(gatewayUrl).requestFactory(requestFactory).build();
     }
