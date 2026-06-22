@@ -1,13 +1,9 @@
-import { Toast } from '../types/toast.ts'
 import { ToastItem } from './ToastItem.tsx'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useToastContext } from '../contexts/ToastContext.ts'
 
-type ToastContainerProps = {
-    toasts: Toast[];
-    onClose: (id: string) => void;
-}
-
-export function ToastContainer({toasts, onClose}: ToastContainerProps){
+export function ToastContainer(){
+    const { toasts, removeToast } = useToastContext();
     return (
         <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none
                         max-h-[80vh] overflow-y-auto w-full max-w-sm sm:max-w-md">
@@ -20,7 +16,7 @@ export function ToastContainer({toasts, onClose}: ToastContainerProps){
                         transition={{ duration: 0.3 }}
                         key={ts.id}
                         className="pointer-events-auto">
-                        <ToastItem toast={ts} onClose={onclose} />
+                        <ToastItem toast={ts} onClose={removeToast} />
                     </motion.div>
                 ))}
             </AnimatePresence>

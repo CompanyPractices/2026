@@ -1,6 +1,6 @@
-import { Toast, ToastType } from '../types/toast.ts';
+import { Toast } from '../types/toast.ts';
 import { getTypeIcon } from '../utils/toastIcon.ts';
-import { X, type LucideIcon } from 'lucide-react';
+import { X } from 'lucide-react';
 
 type ToastItemProps = {
     toast: Toast,

@@ -7,6 +7,7 @@ import { ArrowDownToLine } from 'lucide-react';
 import {exportToCsv} from '../utils/exportToCsv';
 import {Filters} from './Filters';
 import {ISSUERS_NAMES, MCC_NAMES} from '../mockData';
+import { useToastContext } from '../contexts/ToastContext.ts'
 
 const mapTransactionToCsvRow = (tx: Transaction) => ({
     'STAN': tx.stan,
@@ -40,13 +41,26 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
         });
     }, [liveTransactions]);
 
+    const { addToast } = useToastContext();
+
     const handleExportCsv = () => {
-        const csvRows = sortedTransactions.map(mapTransactionToCsvRow);
-        const now = new Date();
-        const dateStr = now.toISOString().slice(0, 10);
-        const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
-        const filename = `transactions_${dateStr}_${timeStr}.csv`;
-        exportToCsv(filename, csvRows);
+        try {
+            const csvRows = sortedTransactions.map(mapTransactionToCsvRow);
+            if (csvRows.length === 0){
+                addToast('Нет данных для экспорта', 'WARNING');
+                return;
+            }
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10);
+            const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+            const filename = `transactions_${dateStr}_${timeStr}.csv`;
+
+            exportToCsv(filename, csvRows);
+            addToast('Файл успешно экспортирован', 'SUCCESS');
+        }
+        catch (err) {
+            addToast('Не удалось скачать файл', 'ERROR');
+        }
     };
 
     return (

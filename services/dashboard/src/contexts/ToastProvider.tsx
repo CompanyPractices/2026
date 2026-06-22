@@ -18,6 +18,11 @@ export function ToastProvider ({children}: ToastProviderProps) {
         }
     }, []);
 
+    const removeToast = useCallback((id: string) => {
+        clearTimer(id);
+        setToasts(prev => prev.filter(t => t.id !== id));
+    }, [clearTimer]);
+
     const addToast = useCallback((message: string, type: ToastType) => {
         const newToast: Toast = {id: crypto.randomUUID(), message, type, duration: 4000};
         setToasts(prev => [...prev, newToast]);
@@ -27,13 +32,8 @@ export function ToastProvider ({children}: ToastProviderProps) {
         }, newToast.duration);
     }, [removeToast]);
 
-    const removeToast = useCallback((id: string) => {
-        clearTimer(id);
-        setToasts(prev => prev.filter(t => t.id !== id));
-    }, []);
-
     return (
-        <ToastContext.Provider value={{addToast, removeToast}}>
+        <ToastContext.Provider value={{toasts, addToast, removeToast}}>
             {children}
         </ToastContext.Provider>
     );
