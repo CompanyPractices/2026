@@ -43,7 +43,8 @@ spring:
             timeout: 5000
   flyway:
     baseline-on-migrate: true
-    locations: com/processing/kms/infrastructure/migrations
+    locations: com/processing/kms/infrastructure/persistence/migrations
+    ignore-migration-patterns: "*:missing"
 
 kms:
   ttl: 60

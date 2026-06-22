@@ -40,15 +40,19 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         ttl = kmsProperties.getTtl();
     }
 
-    public Result<ApiKey, KeyError> issueKey(String clientType) {
+    public Result<ApiKey, KeyError> issueKey(String clientType, String clientId) {
+        ApiKey duplicateKey = apiKeyRepository.getByOwnerId(clientId);
+
+        if (duplicateKey != null && !duplicateKey.getIsExpired()) {
+            duplicateKey.setIsExpired(true);
+            apiKeyRepository.addOrUpdate(duplicateKey);
+        }
+
         ApiKeyRole role = clientToRoleMap.get(clientType);
 
-//        ApiKey duplicateKey = apiKeyRepository.getByOwnerId(clientType);
-//        if (duplicateKey != null && !duplicateKey.getIsExpired()) {
-//            return new Result.Failure<>(new KeyError.OwnerAlreadyHasKey());
-//        }
+        log.info("Issued key for {}", clientId);
 
-        return new Result.Success<>(addNewKey(clientType, role));
+        return new Result.Success<>(addNewKey(clientId, role));
     }
 
     public Result<ApiKeyRole, KeyError> validateKey(String key) {
@@ -89,6 +93,14 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         apiKeyRepository.addOrUpdate(oldApiKey);
 
         return new Result.Success<>(addNewKey(ownerId, oldApiKey.getRole()));
+    }
+
+    public void revokeKey(String clientId) {
+        ApiKey apiKey = apiKeyRepository.getByOwnerId(clientId);
+        apiKey.setIsExpired(true);
+        apiKeyRepository.addOrUpdate(apiKey);
+
+        log.info("Revoked key for {}", clientId);
     }
 
     private ApiKey addNewKey(String ownerId, ApiKeyRole role) {

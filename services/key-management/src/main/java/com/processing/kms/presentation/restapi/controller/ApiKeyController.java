@@ -19,7 +19,8 @@ public class ApiKeyController {
 
     @PostMapping("/issue")
     public ResponseEntity<IssueResponse> issueApiKey(@RequestBody IssueRequest request) {
-        Result<ApiKey, KeyError> result = apiKeyService.issueKey(request.clientType());
+        Result<ApiKey, KeyError> result = apiKeyService.issueKey(
+                request.clientType(), request.clientId());
 
         return switch (result) {
             case Result.Success<ApiKey, KeyError>(ApiKey value) ->
@@ -88,5 +89,11 @@ public class ApiKeyController {
                             error.message()));
             default -> throw new IllegalStateException("Unexpected value: " + result);
         };
+    }
+
+    @PostMapping("/revoke")
+    public ResponseEntity revokeApiKey(@RequestBody String clientId) {
+        apiKeyService.revokeKey(clientId);
+        return ResponseEntity.ok().build();
     }
 }

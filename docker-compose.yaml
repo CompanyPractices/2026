@@ -179,9 +179,12 @@ services:
       - CARD_MGMT_URL=http://card-management:8080
       - KMS_URL=http://key-management:8080
     depends_on:
-      - gateway
-      - card-management
-      - key-management
+      key-management:
+        condition: service_healthy
+      gateway:
+        condition: service_started
+      card-management:
+        condition: service_started
     networks:
       - smp-network
     healthcheck:
@@ -231,8 +234,10 @@ services:
       - SPRING_FLYWAY_BASELINE_VERSION=0
       - KMS_URL=http://key-management:8080
     depends_on:
-      - gateway
-      - key-management
+      gateway:
+        condition: service_started
+      key-management:
+        condition: service_healthy
     networks:
       - smp-network
     healthcheck:

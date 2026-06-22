@@ -28,6 +28,11 @@ public class ApiKeyRepositoryJpa implements ApiKeyRepository {
     @Override
     public ApiKey getByOwnerId(String ownerId) {
         ApiKeyEntity entity = jpaRepository.getByOwnerId(ownerId);
+
+        if (entity == null) {
+            return null;
+        }
+
         return modelMapper.map(entity, ApiKey.class);
     }
 }

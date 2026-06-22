@@ -20,6 +20,8 @@ public class V1781706046__AddApiKeys extends BaseJavaMigration {
                 expires_by timestamp with time zone not null default now(),
                 is_expired boolean not null default false
             );
+            
+            create unique index only_one_valid_key on api_keys (owner_id) where not is_expired;
             """);
         }
     }
