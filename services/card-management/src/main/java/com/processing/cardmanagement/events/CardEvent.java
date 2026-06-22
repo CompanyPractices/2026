@@ -18,5 +18,6 @@ public sealed interface CardEvent permits
         CardServiceDeletionEvent,
         CardServicePatchEvent,
         CardServiceReserveEvent,
-        CardServiceRollbackEvent {
+        CardServiceRollbackEvent,
+        CardServiceBulkUpdateEvent {
 }

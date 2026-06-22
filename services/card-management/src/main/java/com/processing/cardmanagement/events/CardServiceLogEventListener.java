@@ -16,11 +16,12 @@ public class CardServiceLogEventListener implements CardEventListener {
             case CardServicePatchEvent e -> log.info("Patched card {}", maskPan(e.pan()));
             case CardServiceDeletionEvent e -> log.info("Deleted card {}", maskPan(e.pan()));
             case CardServiceReserveEvent e ->
-                log.info("Reserved {} from card {} with RRN {}", e.amount(), maskPan(e.pan()), e.rrn());
+                    log.info("Reserved {} from card {} with RRN {}", e.amount(), maskPan(e.pan()), e.rrn());
             case CardServiceRollbackEvent e ->
-                log.warn("Rolled back {} from card {} with RRN {}", e.amount(), maskPan(e.pan()), e.rrn());
+                    log.warn("Rolled back {} from card {} with RRN {}", e.amount(), maskPan(e.pan()), e.rrn());
             case CardsBatchGeneratedEvent e -> log.info("Generated {} cards: {}",
-                e.statusCount().values().stream().mapToLong(Long::longValue).sum(), e.statusCount());
+                    e.statusCount().values().stream().mapToLong(Long::longValue).sum(), e.statusCount());
+            case CardServiceBulkUpdateEvent e -> log.info("Bulk updated {} cards to status {}", e.count(), e.status());
             default -> {
             }
         }

@@ -18,7 +18,9 @@ import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class CardServiceImpl implements CardService {
@@ -185,6 +187,47 @@ public class CardServiceImpl implements CardService {
         card = cardRepository.save(card.withRollback(rollback));
         eventNotifier.onEvent(new CardServiceRollbackEvent(pan, rrn, amount));
         return card;
+    }
+
+    @Override
+    public int bulkUpdateStatus(
+            @Nullable List<String> bins,
+            @Nullable List<String> pans,
+            @Nullable CardStatus status) {
+
+        if (bins == null && pans == null) {
+            throw new IllegalArgumentException("Either bin or pans must be provided");
+        }
+
+        if (bins != null && pans != null) {
+            throw new IllegalArgumentException("Only one of bin or pans must be provided");
+        }
+
+        List<Card> cards = new ArrayList<>();
+
+        if (bins != null) {
+            cards = bins.stream()
+                    .flatMap(bin -> cardRepository.findCards(
+                            Integer.MAX_VALUE, 0L, null, bin, null, null, null).stream())
+                    .toList();
+        }
+
+        if (pans != null) {
+            cards = pans.stream()
+                    .map(cardRepository::findByPan)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .toList();
+        }
+
+        cards.forEach(card -> cardRepository.save(card.withData(
+                status,
+                card.dailyLimit(),
+                card.monthlyLimit(),
+                card.availableBalance()
+        )));
+
+        return cards.size();
     }
 
     private Card getCardForUpdate(String pan) {
