@@ -90,8 +90,12 @@ public class TerminalSimulatorService {
             approved.incrementAndGet();
         } else if (TransactionStatus.DECLINED.name().equals(authResp.status())) {
             declined.incrementAndGet();
-            log.info("Terminal-simulator: declined transaction in HTTP response: {}",
-                    authResp.declineReason());
+            if (!authResp.declineReason().equals("INSUFFICIENT_FUNDS") && !authResp.declineReason().equals("CARD_BLOCKED")
+                    && !authResp.declineReason().equals("EXCEEDS_AMOUNT_LIMIT")
+                    && !authResp.declineReason().equals("CARD_NOT_FOUND")) {
+                log.warn("Terminal-simulator: declined transaction in HTTP response: {}",
+                        authResp.declineReason());
+            }
         } else {
             log.warn("Terminal-simulator: not accepted/declined transaction in HTTP response: {}",
                     authResp.declineReason());
@@ -175,18 +179,16 @@ public class TerminalSimulatorService {
                         authResponses.add(resp);
 
                         currentErrors.set(0);
-                    } catch (Exception e) {
-                        log.warn("Transaction failed: {}", e.getMessage());
-                        authResponses.add(new AuthorizationResponse(null, null, null, null, null,
-                                null, e.getMessage(), 0));
-
-                        if (currentErrors.incrementAndGet() >= errorThreshold) {
-                            if (!circuitOpen) {
-                                log.error("terminal-simulator: GATEWAY IS DOWN. Opening circuit breaker to save "
-                                        + "resources.");
-                                circuitOpen = true;
-                            }
+                    } catch (org.springframework.web.client.ResourceAccessException e) {
+                        handleNetworkFailure(e.getMessage(), authResponses);
+                    } catch (org.springframework.web.client.HttpStatusCodeException e) {
+                        if (e.getStatusCode().is5xxServerError()) {
+                            handleNetworkFailure("Gateway internal error(5xx): " + e.getStatusCode(), authResponses);
+                        } else {
+                            handleInternalFailure("Gateway client error(4xx): " + e.getMessage(), e, authResponses);
                         }
+                    } catch (Exception e) {
+                        handleInternalFailure("Internal terminal simulation error", e, authResponses);
                     }
                 });
 
@@ -209,5 +211,26 @@ public class TerminalSimulatorService {
         long elapsed = System.currentTimeMillis() - start;
         return new TerminalRunResponse(totalSubmitted.get(), approved.get(), declined.get(), elapsed,
                 authResponses.stream().toList());
+    }
+
+    private void handleInternalFailure(String contextMessage, Exception e, ConcurrentLinkedQueue<AuthorizationResponse> authResponses) {
+        log.error("{}, but keeping simulation", contextMessage, e);
+        authResponses.add(new AuthorizationResponse(null, null, null, null,
+                null, null, "Internal simulation error: " + e.getMessage(), 0));
+    }
+
+    private void handleNetworkFailure(String errorMessage, ConcurrentLinkedQueue<AuthorizationResponse> authResponses) {
+        log.warn("Network transaction failed: {}", errorMessage);
+
+        authResponses.add(new AuthorizationResponse(null, null, null, null,
+                null, null, errorMessage, 0));
+
+        if (currentErrors.incrementAndGet() >= errorThreshold) {
+            if (!circuitOpen) {
+                log.error("terminal-simulator: GATEWAY IS DOWN. Opening circuit breaker to save "
+                        + "resources.");
+                circuitOpen = true;
+            }
+        }
     }
 }
