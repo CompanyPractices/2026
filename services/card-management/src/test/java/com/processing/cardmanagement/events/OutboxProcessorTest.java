@@ -58,12 +58,12 @@ public class OutboxProcessorTest {
                 null,
                 0,
                 null,
-                EventStatus.PENDING.toString()
+                EventStatus.PENDING
         );
         when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of(outboxEvent));
         outboxProcessor.process();
 
-        assertEquals(EventStatus.PROCESSED.toString(), outboxEvent.getStatus());
+        assertEquals(EventStatus.PROCESSED, outboxEvent.getStatus());
         assertNotNull(outboxEvent.getProcessedAt());
         verify(listener, times(1)).onEvent(any(CardServiceCreationEvent.class));
         verify(outboxRepository, times(1)).save(outboxEvent);
@@ -82,14 +82,14 @@ public class OutboxProcessorTest {
                 null,
                 0,
                 null,
-                EventStatus.PENDING.toString()
+                EventStatus.PENDING
         );
         when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of(outboxEvent));
         doThrow(new RuntimeException("listener failed")).when(listener).onEvent(any());
         outboxProcessor.process();
 
         assertEquals(1, outboxEvent.getRetryCount());
-        assertEquals(EventStatus.PENDING.toString(), outboxEvent.getStatus());
+        assertEquals(EventStatus.PENDING, outboxEvent.getStatus());
         assertNotNull(outboxEvent.getLastError());
         verify(outboxRepository, times(1)).save(outboxEvent);
     }
@@ -107,36 +107,43 @@ public class OutboxProcessorTest {
                 null,
                 2,
                 null,
-                EventStatus.PENDING.toString()
+                EventStatus.PENDING
         );
         when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of(outboxEvent));
         doThrow(new RuntimeException("listener failed")).when(listener).onEvent(any());
         outboxProcessor.process();
 
         assertEquals(3, outboxEvent.getRetryCount());
-        assertEquals(EventStatus.FAILED.toString(), outboxEvent.getStatus());
+        assertEquals(EventStatus.FAILED, outboxEvent.getStatus());
         assertNotNull(outboxEvent.getLastError());
         verify(outboxRepository, times(1)).save(outboxEvent);
     }
 
     @Test
     void shouldSkipFailedEvents() throws Exception {
-        CardServiceCreationEvent cardEvent = new CardServiceCreationEvent(1);
-        String payload = objectMapper.writeValueAsString(cardEvent);
-
-        OutboxEventEntity outboxEvent = new OutboxEventEntity(
-                UUID.randomUUID(),
-                "CardServiceCreationEvent",
-                payload,
-                Instant.now(),
-                null,
-                3,
-                null,
-                EventStatus.FAILED.toString()
-        );
         when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of());
         outboxProcessor.process();
+        verify(listener, times(0)).onEvent(any());
+    }
 
+    @Test
+    void shouldHandleUnknownEventType() {
+        OutboxEventEntity outboxEvent = new OutboxEventEntity(
+                UUID.randomUUID(),
+                "UnknownError",
+                "Error",
+                Instant.now(),
+                null,
+                0,
+                null,
+                EventStatus.PENDING
+        );
+
+        when(outboxRepository.findPending(MAX_COUNT_RETRY)).thenReturn(List.of(outboxEvent));
+        outboxProcessor.process();
+
+        assertEquals(1, outboxEvent.getRetryCount());
+        assertNotNull(outboxEvent.getLastError());
         verify(listener, times(0)).onEvent(any());
     }
 }

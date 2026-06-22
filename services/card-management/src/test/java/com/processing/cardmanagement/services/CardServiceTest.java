@@ -1,6 +1,5 @@
 package com.processing.cardmanagement.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.cardmanagement.events.CardEventNotifier;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
 import com.processing.cardmanagement.exceptions.InsufficientFundsException;
@@ -10,7 +9,6 @@ import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationPro
 import com.processing.cardmanagement.options.CardServiceSettings;
 import com.processing.cardmanagement.options.CardServiceSettingsConfigurationProperties;
 import com.processing.cardmanagement.repositories.CardRepository;
-import com.processing.cardmanagement.repositories.OutboxRepository;
 import com.processing.cardmanagement.repositories.ReservationRepository;
 import com.processing.cardmanagement.repositories.ReservationRollbackRepository;
 import net.datafaker.Faker;
@@ -90,12 +88,7 @@ public class CardServiceTest {
     private ReservationRollbackRepository reservationRollbackRepository;
 
     @Mock
-    private OutboxRepository outboxRepository;
-
-    @Mock
-    private ObjectMapper objectMapper;
-
-    private final CardEventNotifier eventNotifier = new CardEventNotifier(outboxRepository, objectMapper);
+    private CardEventNotifier eventNotifier;
 
     @Mock
     private BinIssuerService binIssuerService;

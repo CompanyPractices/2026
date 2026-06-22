@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.repositories;
 
+import com.processing.cardmanagement.models.EventStatus;
 import com.processing.cardmanagement.models.OutboxEventEntity;
 
 import java.util.List;
@@ -15,5 +16,5 @@ public interface OutboxRepository {
 
     List<OutboxEventEntity> findFailed();
 
-    long countByStatus(String status);
+    long countByStatus(EventStatus status);
 }

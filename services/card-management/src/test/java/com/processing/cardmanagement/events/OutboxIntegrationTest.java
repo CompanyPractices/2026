@@ -91,7 +91,7 @@ public class OutboxIntegrationTest {
 
         List<OutboxEventEntity> outboxEvents = outboxRepository.findAll();
         assertEquals(1, outboxEvents.size());
-        assertEquals(EventStatus.PENDING.toString(), outboxEvents.getFirst().getStatus());
+        assertEquals(EventStatus.PENDING, outboxEvents.getFirst().getStatus());
     }
 
     @Test
@@ -110,7 +110,7 @@ public class OutboxIntegrationTest {
 
         List<OutboxEventEntity> outboxEvents = outboxRepository.findAll();
         assertEquals(1, outboxEvents.size());
-        assertEquals(EventStatus.PROCESSED.toString(), outboxEvents.getFirst().getStatus());
+        assertEquals(EventStatus.PROCESSED, outboxEvents.getFirst().getStatus());
     }
 
     @Test
@@ -134,9 +134,32 @@ public class OutboxIntegrationTest {
         assertEquals(1, outboxEvents.size());
 
         OutboxEventEntity failedEvent = outboxEvents.getFirst();
-        assertEquals(EventStatus.PENDING.toString(), failedEvent.getStatus());
+        assertEquals(EventStatus.PENDING, failedEvent.getStatus());
         assertEquals(1, failedEvent.getRetryCount());
         assertEquals(exceptionMsg, failedEvent.getLastError());
     }
 
+    @Test
+    void shouldMarkAsFailedAfterMaxRetries() {
+        String exceptionMsg = "some exception";
+        doThrow(new RuntimeException(exceptionMsg))
+                .when(mockListener).onEvent(org.mockito.Mockito.any());
+
+        given()
+                .port(port)
+                .contentType(ContentType.JSON)
+                .body(createCardRequest)
+                .when()
+                .post("/api/cards")
+                .then()
+                .statusCode(201);
+
+        outboxProcessor.process();
+        outboxProcessor.process();
+        outboxProcessor.process();
+
+        OutboxEventEntity event = outboxRepository.findAll().getFirst();
+        assertEquals(EventStatus.FAILED, event.getStatus());
+        assertEquals(3, event.getRetryCount());
+    }
 }

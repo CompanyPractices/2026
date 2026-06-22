@@ -1,6 +1,5 @@
 package com.processing.cardmanagement.components;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.cardmanagement.events.*;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
@@ -8,7 +7,6 @@ import com.processing.cardmanagement.models.Reservation;
 import com.processing.cardmanagement.models.ReservationRollback;
 import com.processing.cardmanagement.options.*;
 import com.processing.cardmanagement.repositories.CardRepository;
-import com.processing.cardmanagement.repositories.OutboxRepository;
 import com.processing.cardmanagement.repositories.ReservationRepository;
 import com.processing.cardmanagement.repositories.ReservationRollbackRepository;
 import com.processing.cardmanagement.services.*;
@@ -77,12 +75,7 @@ public class EventSystemTest {
     private final ArgumentCaptor<CardEvent> eventCaptor = ArgumentCaptor.forClass(CardEvent.class);
 
     @Mock
-    private OutboxRepository outboxRepository;
-
-    @Mock
-    private ObjectMapper objectMapper;
-
-    private final CardEventNotifier eventNotifier = new CardEventNotifier(outboxRepository, objectMapper);
+    private CardEventNotifier eventNotifier;
 
     @Mock
     private BinIssuerService binIssuerService;
@@ -191,18 +184,14 @@ public class EventSystemTest {
     @Test
     void cardsBatchGeneratedEventTest() {
         cardGeneratorService.generate(1, List.of("123456"));
-        for (var l : listeners) {
-            verify(l, times(2)).onEvent(eventCaptor.capture());
-            var captures = eventCaptor.getAllValues();
-            assertInstanceOf(CardServiceCreationEvent.class, captures.getFirst());
-            assertInstanceOf(CardsBatchGeneratedEvent.class, captures.getLast());
-        }
+        verify(eventNotifier, times(2)).onEvent(eventCaptor.capture());
+        var captures = eventCaptor.getAllValues();
+        assertInstanceOf(CardServiceCreationEvent.class, captures.getFirst());
+        assertInstanceOf(CardsBatchGeneratedEvent.class, captures.getLast());
     }
 
     private <T> void testAllListenersReceivedData(Class<T> expectedType) {
-        for (var l : listeners) {
-            verify(l).onEvent(eventCaptor.capture());
-            assertInstanceOf(expectedType, eventCaptor.getValue());
-        }
+        verify(eventNotifier).onEvent(eventCaptor.capture());
+        assertInstanceOf(expectedType, eventCaptor.getValue());
     }
 }

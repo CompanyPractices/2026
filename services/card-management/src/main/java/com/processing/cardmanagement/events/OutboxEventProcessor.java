@@ -30,7 +30,7 @@ public class OutboxEventProcessor {
         try {
             CardEvent cardEvent = deserialize(outboxEvent);
             eventListeners.forEach(l -> l.onEvent(cardEvent));
-            outboxEvent.setStatus(EventStatus.PROCESSED.toString());
+            outboxEvent.setStatus(EventStatus.PROCESSED);
             outboxEvent.setProcessedAt(Instant.now());
         } catch (Exception e) {
             log.error("processing failed for event {}: {}", outboxEvent.getId(), e.getMessage());
@@ -52,7 +52,7 @@ public class OutboxEventProcessor {
         event.setLastError(ex.getMessage());
 
         if (event.getRetryCount() >= outboxOptions.maxRetryCount()) {
-            event.setStatus(EventStatus.FAILED.toString());
+            event.setStatus(EventStatus.FAILED);
         }
     }
 }

@@ -19,7 +19,7 @@ public class CardEventNotifier {
 
     public void onEvent(CardEvent event) {
         try {
-            String eventName = event.getClass().getName();
+            String eventName = event.getClass().getSimpleName();
             String payload = mapper.writeValueAsString(event);
 
             outboxRepository.save(new OutboxEventEntity(
@@ -30,7 +30,7 @@ public class CardEventNotifier {
                     null,
                     0,
                     null,
-                    EventStatus.PENDING.toString()
+                    EventStatus.PENDING
             ));
         } catch (JsonProcessingException e) {
             throw new OutboxSerializationException(event.getClass().getSimpleName());

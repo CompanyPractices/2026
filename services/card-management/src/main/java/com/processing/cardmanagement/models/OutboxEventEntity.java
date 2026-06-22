@@ -1,9 +1,6 @@
 package com.processing.cardmanagement.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,29 +20,25 @@ public class OutboxEventEntity {
     @Id
     private UUID id;
 
-    // Явно связываем с event_type из SQL
-    @Column(name = "event_type", nullable = false)
+    @Column(nullable = false)
     private String eventType;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column()
     private String payload;
 
-    // Явно связываем с created_at из SQL
-    @Column(name = "created_at", nullable = false)
+    @Column(nullable = false)
     private Instant createdAt = Instant.now();
 
-    // Явно связываем с processed_at из SQL
-    @Column(name = "processed_at")
+    @Column()
     private Instant processedAt;
 
-    // Явно связываем с retry_count из SQL
-    @Column(name = "retry_count", nullable = false)
+    @Column(nullable = false)
     private int retryCount = 0;
 
-    // Явно связываем с last_error из SQL
-    @Column(name = "last_error", columnDefinition = "TEXT")
+    @Column()
     private String lastError;
 
     @Column(nullable = false)
-    private String status = EventStatus.PENDING.toString();
+    @Enumerated(EnumType.STRING)
+    private EventStatus status = EventStatus.PENDING;
 }

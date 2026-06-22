@@ -3,13 +3,11 @@ package com.processing.cardmanagement.repositories;
 import com.processing.cardmanagement.models.EventStatus;
 import com.processing.cardmanagement.models.OutboxEventEntity;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@Repository
 @RequiredArgsConstructor
 public class OutboxJpaAdapter implements OutboxRepository {
 
@@ -27,16 +25,16 @@ public class OutboxJpaAdapter implements OutboxRepository {
 
     @Override
     public List<OutboxEventEntity> findPending(int maxRetry) {
-        return jpaRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING.toString(), maxRetry);
+        return jpaRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING, maxRetry);
     }
 
     @Override
     public List<OutboxEventEntity> findFailed() {
-        return jpaRepository.findByStatus(EventStatus.FAILED.toString());
+        return jpaRepository.findByStatus(EventStatus.FAILED);
     }
 
     @Override
-    public long countByStatus(String status) {
+    public long countByStatus(EventStatus status) {
         return jpaRepository.countByStatus(status);
     }
 }
