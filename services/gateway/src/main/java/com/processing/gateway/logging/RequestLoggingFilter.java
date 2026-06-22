@@ -2,15 +2,14 @@ package com.processing.gateway.logging;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.processing.gateway.logging.models.RequestLog;
+import com.processing.gateway.properties.GatewayProperties;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
@@ -22,7 +21,6 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,10 +32,10 @@ import java.util.regex.Pattern;
  * otherwise a new UUID is generated and propagated to the response.</p>
  */
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class RequestLoggingFilter extends OncePerRequestFilter {
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper mapper;
+    private final GatewayProperties properties;
 
     private static final String ID_HEADER_NAME = "X-Request-Id";
 
@@ -47,15 +45,26 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     private static final String MASKED_PAN = "\"pan\":\"$1****$2\"";
     private static final String MASKED_CVV = "\"cvv\":\"***\"";
 
-    private static final List<String> BODY_LOG_EXCLUDED_ROUTES = List.of(
-            "/actuator/prometheus"
-    );
+    public RequestLoggingFilter(ObjectMapper mapper, GatewayProperties properties) {
+        this.properties = properties;
+        this.mapper = mapper.copy()
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        if (properties.getLogging().getPretty()) {
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        }
+    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
-                                    FilterChain filterChain)
+                                    @NonNull FilterChain filterChain)
             throws ServletException, IOException {
+        if (properties.getLogging().getExcludedRoutes().contains(request.getRequestURI())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         long startTime = System.currentTimeMillis();
 
         String incoming = request.getHeader(ID_HEADER_NAME);
@@ -74,10 +83,6 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(contentCachedRequest, contentCachedResponse);
         } finally {
-            var mapper = objectMapper.copy();
-            mapper.enable(SerializationFeature.INDENT_OUTPUT);
-            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
             long responseTime = System.currentTimeMillis() - startTime;
 
             var requestLogBuilder = RequestLog.builder()
@@ -87,35 +92,8 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                     .responseCode(response.getStatus())
                     .responseTime(responseTime);
 
-            if (!BODY_LOG_EXCLUDED_ROUTES.contains(request.getRequestURI())) {
-                var resBodyStr = new String(contentCachedResponse.getContentAsByteArray(), StandardCharsets.UTF_8);
-                var reqBodyStr = contentCachedRequest.getContentAsString();
-
-                try {
-                    if (!resBodyStr.isEmpty()
-                            && contentCachedResponse.getContentType().equals(MediaType.APPLICATION_JSON_VALUE)) {
-                        resBodyStr = maskData(PAN_PATTERN, MASKED_PAN, resBodyStr);
-                        resBodyStr = maskData(CVV_PATTERN, MASKED_CVV, resBodyStr);
-
-                        var resBody = mapper.readValue(resBodyStr, JsonNode.class);
-                        requestLogBuilder.responseBody(resBody);
-                    }
-                } catch (JsonProcessingException e) {
-                    log.error("Error parsing response body for logging", e);
-                }
-
-                try {
-                    if (!reqBodyStr.isEmpty()
-                            && contentCachedRequest.getContentType().equals(MediaType.APPLICATION_JSON_VALUE)) {
-                        reqBodyStr = maskData(PAN_PATTERN, MASKED_PAN, reqBodyStr);
-                        reqBodyStr = maskData(CVV_PATTERN, MASKED_CVV, reqBodyStr);
-
-                        var reqBody = mapper.readValue(reqBodyStr, JsonNode.class);
-                        requestLogBuilder.requestBody(reqBody);
-                    }
-                } catch (JsonProcessingException e) {
-                    log.error("Error parsing request body for logging", e);
-                }
+            if (properties.getLogging().getBodies()) {
+                logBodies(contentCachedRequest, contentCachedResponse, requestLogBuilder);
             }
 
             contentCachedResponse.copyBodyToResponse();
@@ -128,6 +106,35 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             } finally {
                 MDC.remove("requestId");
             }
+
+        }
+    }
+
+    private void logBodies(ContentCachingRequestWrapper request,
+                           ContentCachingResponseWrapper response,
+                           RequestLog.RequestLogBuilder logBuilder) {
+        String reqBodyStr = request.getContentAsString();
+        String resBodyStr = new String(response.getContentAsByteArray(), StandardCharsets.UTF_8);
+
+        String reqContentType = request.getContentType();
+        String resContentType = response.getContentType();
+
+        if (reqContentType != null
+                && request.getContentType().equals(MediaType.APPLICATION_JSON_VALUE)
+                && !reqBodyStr.isEmpty()) {
+            reqBodyStr = maskData(PAN_PATTERN, MASKED_PAN, reqBodyStr);
+            reqBodyStr = maskData(CVV_PATTERN, MASKED_CVV, reqBodyStr);
+
+            logBuilder.requestBody(reqBodyStr);
+        }
+
+        if (resContentType != null
+                && response.getContentType().equals(MediaType.APPLICATION_JSON_VALUE)
+                && !resBodyStr.isEmpty()) {
+            resBodyStr = maskData(PAN_PATTERN, MASKED_PAN, resBodyStr);
+            resBodyStr = maskData(CVV_PATTERN, MASKED_CVV, resBodyStr);
+
+            logBuilder.responseBody(resBodyStr);
         }
     }
 

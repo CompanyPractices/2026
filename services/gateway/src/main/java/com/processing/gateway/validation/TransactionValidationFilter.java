@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,7 @@ import java.time.Instant;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 2)
 @RequiredArgsConstructor
+@Slf4j
 public class TransactionValidationFilter extends OncePerRequestFilter {
 
     private static final String TRANSACTIONS_PATH = "/api/transactions";
@@ -66,10 +68,12 @@ public class TransactionValidationFilter extends OncePerRequestFilter {
         } catch (JsonProcessingException e) {
             gatewayMetrics.recordValidationRejected("invalid_json");
             writeValidationError(response, "Request body must be valid JSON");
+            log.error("Exception occurred while validating request", e);
             return;
         } catch (TransactionValidationException e) {
             gatewayMetrics.recordValidationRejected("invalid_request");
             writeValidationError(response, e.getMessage());
+            log.error("Exception occurred while validating request", e);
             return;
         }
 
