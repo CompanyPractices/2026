@@ -58,7 +58,7 @@ export function TransactionTable({ liveTransactions, error, loading, search }: T
             exportToCsv(filename, csvRows);
             addToast('Файл успешно экспортирован', 'SUCCESS');
         }
-        catch (err) {
+        catch {
             addToast('Не удалось скачать файл', 'ERROR');
         }
     };

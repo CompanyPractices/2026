@@ -1,6 +1,7 @@
 type FetchApiOptions = {
     timeout?: number;
     retries?: number;
+    onError?: (message: string) => void;
 }
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -51,6 +52,10 @@ async function fetchApi<T>(route: string, options: FetchApiOptions = {}): Promis
             }
             throw error;
         }
+    }
+
+    if (lastError && options.onError){
+        options.onError(lastError.message);
     }
 
     throw lastError;

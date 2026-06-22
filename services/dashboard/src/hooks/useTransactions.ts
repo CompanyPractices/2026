@@ -3,25 +3,29 @@ import fetchApi from "../api/client";
 import { Transaction } from "../types/index.ts";
 import { Filter } from "../types/index.ts";
 import { SearchResponse } from "../types/index.ts";
+import { useToastContext } from '../contexts/ToastContext.ts'
 
 function useTransactions() {
     const [transactions, setTransactions] = useState<Transaction[] | null>(null);
     const [filteredTransactions, setFilteredTransactions] = useState<Transaction[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isFiltered, setIsFiltered] = useState(false)
+    const [isFiltered, setIsFiltered] = useState(false);
+    const {addToast} = useToastContext();
 
     useEffect(() => {
-        fetchApi<Transaction[]>("/api/dashboard/recent?limit=20")
+        fetchApi<Transaction[]>("/api/dashboard/recent?limit=20", {
+            onError: (message) => addToast(message, 'ERROR')
+        })
             .then((data) => {
                 setTransactions(data);
-                setFilteredTransactions(data)
+                setFilteredTransactions(data);
                 setLoading(false);
             })
             .catch((error) => {
                 setError(error.message);
                 setLoading(false)});
-    }, []);
+    }, [addToast]);
 
     const searchTransactions = useCallback((filter: Filter) => {
         const hasFilter = Object.values(filter).some(v => v);
@@ -48,7 +52,9 @@ function useTransactions() {
         if (filter.mcc){
             requestParams.append('mcc', filter.mcc);
         }
-        fetchApi<SearchResponse>(`/api/transactions/search?${requestParams.toString()}`)
+        fetchApi<SearchResponse>(`/api/transactions/search?${requestParams.toString()}`, {
+            onError: (message) => addToast(message, 'ERROR')
+        })
             .then((data) => {
                 setFilteredTransactions(data.transactions);
             })
@@ -56,7 +62,7 @@ function useTransactions() {
                 setError(error.message);
             });
 
-    }, []);
+    }, [addToast]);
 
     return {transactions, filteredTransactions, isFiltered, error, loading, searchTransactions}
 }

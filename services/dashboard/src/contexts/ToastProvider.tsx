@@ -23,8 +23,9 @@ export function ToastProvider ({children}: ToastProviderProps) {
         setToasts(prev => prev.filter(t => t.id !== id));
     }, [clearTimer]);
 
-    const addToast = useCallback((message: string, type: ToastType) => {
-        const newToast: Toast = {id: crypto.randomUUID(), message, type, duration: 4000};
+    const addToast = useCallback((message: string, type: ToastType, duration?: number) => {
+        const durationToast = duration ?? 4000;
+        const newToast: Toast = {id: crypto.randomUUID(), message, type, duration: durationToast};
         setToasts(prev => [...prev, newToast]);
 
         timers.current[newToast.id] = setTimeout(() => {

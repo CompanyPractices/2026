@@ -5,9 +5,10 @@ import {TransactionTable} from "./components/TransactionTable.tsx";
 import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
-import { useMemo } from 'react'
+import { useMemo } from 'react';
 import {TransactionMap} from "./components/TransactionsMap.tsx";
-import TransactionHistogram from './components/TransactionHistogram.tsx'
+import TransactionHistogram from './components/TransactionHistogram.tsx';
+import {ToastContainer} from "./components/ToastContainer.tsx";
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
@@ -103,6 +104,8 @@ function App() {
                     2026
                 </h1>
             </footer>
+
+            <ToastContainer />
         </div>
     );
 }

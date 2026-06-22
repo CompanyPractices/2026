@@ -3,7 +3,7 @@ import { Toast, ToastType } from '../types/toast.ts'
 
 export interface ToastContextType {
     toasts: Toast[];
-    addToast: (message: string, type: ToastType) => void;
+    addToast: (message: string, type: ToastType, duration?: number) => void;
     removeToast: (id: string) => void;
 }
 
