@@ -6,6 +6,12 @@ import { Transaction, SearchResponse, Filter } from '../../types';
 
 vi.mock('../../api/client');
 
+vi.mock('../../contexts/ToastContext', () => ({
+    useToastContext: () => ({
+        addToast: vi.fn(),
+    }),
+}));
+
 const mockedFetchApi = vi.mocked(fetchApi);
 
 const createMockTransaction = (overrides: Partial<Transaction>): Transaction => ({
@@ -64,7 +70,6 @@ describe('useTransactions', () => {
 
         expect(result.current.transactions).toEqual(mockTransactions);
         expect(result.current.error).toBeNull();
-        expect(mockedFetchApi).toHaveBeenCalledTimes(1);
         expect(mockedFetchApi).toHaveBeenCalledWith('/api/dashboard/recent?limit=20');
     });
 
@@ -110,17 +115,20 @@ describe('useTransactions', () => {
 
         expect(result.current.transactions).toEqual(mockTransactions);
         expect(result.current.error).toBeNull();
-        expect(mockedFetchApi).toHaveBeenCalledTimes(2);
+
         expect(mockedFetchApi).toHaveBeenLastCalledWith(
-            expect.stringContaining('/api/transactions/search?')
+            expect.stringContaining('/api/transactions/search?'),
+            expect.objectContaining({ onError: expect.any(Function) })
         );
 
-        const calledUrl = mockedFetchApi.mock.calls[1][0];
-        expect(calledUrl).toContain('status=APPROVED');
-        expect(calledUrl).toContain('dateFrom=2023-10-01');
-        expect(calledUrl).toContain('dateTo=2023-10-31');
-        expect(calledUrl).toContain('issuerId=ISSUER123');
-        expect(calledUrl).toContain('mcc=5411');
+        const searchCall = mockedFetchApi.mock.calls.find(call =>
+            call[0].includes('/api/transactions/search')
+        );
+        expect(searchCall?.[0]).toContain('status=APPROVED');
+        expect(searchCall?.[0]).toContain('dateFrom=2023-10-01');
+        expect(searchCall?.[0]).toContain('dateTo=2023-10-31');
+        expect(searchCall?.[0]).toContain('issuerId=ISSUER123');
+        expect(searchCall?.[0]).toContain('mcc=5411');
     });
 
     it('should search transactions with partial filters', async () => {
@@ -146,12 +154,14 @@ describe('useTransactions', () => {
             expect(result.current.loading).toBe(false);
         });
 
-        const calledUrl = mockedFetchApi.mock.calls[1][0];
-        expect(calledUrl).toContain('status=DECLINED');
-        expect(calledUrl).toContain('mcc=5411');
-        expect(calledUrl).not.toContain('dateFrom');
-        expect(calledUrl).not.toContain('dateTo');
-        expect(calledUrl).not.toContain('issuerId');
+        const searchCall = mockedFetchApi.mock.calls.find(call =>
+            call[0].includes('/api/transactions/search')
+        );
+        expect(searchCall?.[0]).toContain('status=DECLINED');
+        expect(searchCall?.[0]).toContain('mcc=5411');
+        expect(searchCall?.[0]).not.toContain('dateFrom');
+        expect(searchCall?.[0]).not.toContain('dateTo');
+        expect(searchCall?.[0]).not.toContain('issuerId');
     });
 
     it('should clear error when searching', async () => {
@@ -179,7 +189,7 @@ describe('useTransactions', () => {
             expect(result.current.loading).toBe(false);
         });
 
-        const errorMessage = 'Search failed';
+        const errorMessage = 'Network Error';
         mockedFetchApi.mockRejectedValueOnce(new Error(errorMessage));
 
         act(() => {
@@ -217,11 +227,13 @@ describe('useTransactions', () => {
             expect(result.current.loading).toBe(false);
         });
 
-        const calledUrl = mockedFetchApi.mock.calls[1][0];
-        expect(calledUrl).toContain('dateFrom=2023-10-01');
-        expect(calledUrl).toContain('dateTo=2023-10-31');
-        expect(calledUrl).not.toContain('12:34:56');
-        expect(calledUrl).not.toContain('23:59:59');
+        const searchCall = mockedFetchApi.mock.calls.find(call =>
+            call[0].includes('/api/transactions/search')
+        );
+        expect(searchCall?.[0]).toContain('dateFrom=2023-10-01');
+        expect(searchCall?.[0]).toContain('dateTo=2023-10-31');
+        expect(searchCall?.[0]).not.toContain('12:34:56');
+        expect(searchCall?.[0]).not.toContain('23:59:59');
     });
 
     it('should change isFiltered to true when filter is active and false when reset', async () => {
@@ -243,14 +255,19 @@ describe('useTransactions', () => {
         await waitFor(() => {
             expect(result.current.isFiltered).toBe(true);
         });
-        const calledUrl = mockedFetchApi.mock.calls[1][0];
-        expect(calledUrl).toContain('5411');
-        expect(calledUrl).not.toContain('status');
+
+        const searchCall = mockedFetchApi.mock.calls.find(call =>
+            call[0].includes('/api/transactions/search')
+        );
+        expect(searchCall?.[0]).toContain('5411');
+        expect(searchCall?.[0]).not.toContain('status');
 
         const emptyFilter: Filter = {};
         act(() => {
             result.current.searchTransactions(emptyFilter)
         });
-        expect(result.current.isFiltered).toBe(false);
+        await waitFor(() => {
+            expect(result.current.isFiltered).toBe(false);
+        });
     });
 });

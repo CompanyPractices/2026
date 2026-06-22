@@ -30,6 +30,7 @@ export function ToastItem({toast, onClose} : ToastItemProps) {
 
             <button
                 onClick={() => onClose(toast.id)}
+                aria-label="Закрыть уведомление"
                 className="flex-shrink-0 ml-2 p-1 rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition-all"
             >
                 <X size={16}/>

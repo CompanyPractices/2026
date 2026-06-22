@@ -14,9 +14,7 @@ function useTransactions() {
     const {addToast} = useToastContext();
 
     useEffect(() => {
-        fetchApi<Transaction[]>("/api/dashboard/recent?limit=20", {
-            onError: (message) => addToast(message, 'ERROR')
-        })
+        fetchApi<Transaction[]>("/api/dashboard/recent?limit=20")
             .then((data) => {
                 setTransactions(data);
                 setFilteredTransactions(data);
@@ -25,7 +23,7 @@ function useTransactions() {
             .catch((error) => {
                 setError(error.message);
                 setLoading(false)});
-    }, [addToast]);
+    }, []);
 
     const searchTransactions = useCallback((filter: Filter) => {
         const hasFilter = Object.values(filter).some(v => v);

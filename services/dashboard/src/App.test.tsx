@@ -3,6 +3,17 @@ import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 import '@testing-library/jest-dom';
 import {Transaction} from "./types";
+import { ToastProvider } from './contexts/ToastProvider';
+
+const renderWithProviders = (ui: React.ReactElement) => {
+  return render(ui, {
+    wrapper: ({ children }) => (
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+    ),
+  });
+};
 
 class MockWebSocket {
   url: string;
@@ -122,7 +133,7 @@ describe('App', () => {
   it('renders dashboard title', async () => {
     mockUseLiveStats.mockReturnValue(MOCK_LIVE_STATS_SUCCESS);
 
-    render(<App />);
+    renderWithProviders(<App />);
 
     await waitFor(() => {
       expect(screen.getByText('Dashboard')).toBeInTheDocument();
@@ -132,7 +143,7 @@ describe('App', () => {
   it('renders footer with all three texts', async () => {
     mockUseLiveStats.mockReturnValue(MOCK_LIVE_STATS_ERROR);
 
-    render(<App />);
+    renderWithProviders(<App />);
 
     await waitFor(() => {
       expect(screen.getByText('Практика')).toBeInTheDocument();
@@ -144,7 +155,7 @@ describe('App', () => {
   it('has correct structure', async () => {
     mockUseLiveStats.mockReturnValue(MOCK_LIVE_STATS_SUCCESS);
 
-    render(<App />);
+    renderWithProviders(<App />);
 
     await waitFor(() => {
       expect(document.querySelector('header')).toBeInTheDocument();
@@ -156,7 +167,7 @@ describe('App', () => {
   it('shows loading then error for stats', async () => {
     mockUseLiveStats.mockReturnValue(MOCK_LIVE_STATS_ERROR);
 
-    render(<App />);
+    renderWithProviders(<App />);
 
     await waitFor(() => {
       expect(screen.getByText(/Ошибка загрузки статистики:/)).toBeInTheDocument();
@@ -182,7 +193,7 @@ describe('App', () => {
       isConnected: true,
     });
 
-    const { rerender } = render(<App />);
+    const { rerender } = renderWithProviders(<App />);
     await waitFor(() => {
       expect(screen.getByText('SEARCH_MERCHANT')).toBeInTheDocument();
       expect(screen.queryByText('WS_MERCHANT')).not.toBeInTheDocument();

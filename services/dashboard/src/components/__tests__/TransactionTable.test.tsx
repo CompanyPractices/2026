@@ -14,6 +14,12 @@ vi.mock('../../utils/format', () => ({
     formatDateTime: vi.fn(() => '27.10.2023, 10:00:00'),
 }));
 
+vi.mock('../../contexts/ToastContext', () => ({
+    useToastContext: () => ({
+        addToast: vi.fn(),
+    }),
+}));
+
 vi.mock('../../utils/statusIcon', () => ({
     getStatusIcon: vi.fn(() => ({
         icon: () => <span data-testid="status-icon">Icon</span>,
