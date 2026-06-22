@@ -16,8 +16,8 @@ public enum Headers {
     @RequiredArgsConstructor
     @Getter
     public enum Values {
-        CACHE_HIT("HIT"),
-        CACHE_MISS("MISS");
+        CACHE_HIT("hit"),
+        CACHE_MISS("miss");
 
         private final String value;
     }

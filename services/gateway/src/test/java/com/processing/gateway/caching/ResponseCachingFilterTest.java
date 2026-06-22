@@ -62,7 +62,7 @@ class ResponseCachingFilterTest {
         assertEquals(1, filterChain.callCount);
         assertEquals(0, cache.getCount);
         assertEquals(0, cache.putCount);
-        assertNull(response.getHeader("X-Cache"));
+        assertNull(response.getHeader(Headers.X_CACHE.getValue()));
     }
 
     @Test
@@ -85,7 +85,7 @@ class ResponseCachingFilterTest {
 
         // Assert
         assertEquals(200, response.getStatus());
-        assertEquals("HIT", response.getHeader("X-Cache"));
+        assertEquals(Headers.Values.CACHE_HIT.getValue(), response.getHeader(Headers.X_CACHE.getValue()));
         assertEquals(MediaType.APPLICATION_JSON_VALUE, response.getContentType());
         assertEquals(cachedJson.length(), response.getContentLength());
         assertEquals(cachedJson, response.getContentAsString());
@@ -117,7 +117,7 @@ class ResponseCachingFilterTest {
 
         // Assert
         assertEquals(200, response.getStatus());
-        assertEquals("MISS", response.getHeader("X-Cache"));
+        assertEquals(Headers.Values.CACHE_MISS.getValue(), response.getHeader(Headers.X_CACHE.getValue()));
         assertEquals(responseBody, response.getContentAsString());
         assertEquals(responseBody, cache.get(cacheKey, String.class));
         assertEquals(1, meterRegistry.counter(
@@ -146,7 +146,7 @@ class ResponseCachingFilterTest {
         // Assert
         assertEquals(404, response.getStatus());
         assertEquals(responseBody, response.getContentAsString());
-        assertNull(response.getHeader("X-Cache"));
+        assertNull(response.getHeader(Headers.X_CACHE.getValue()));
         assertEquals(0, cache.putCount);
     }
 
@@ -203,7 +203,7 @@ class ResponseCachingFilterTest {
         assertEquals(1, filterChain.callCount);
         assertEquals(0, cache.getCount);
         assertEquals(0, cache.putCount);
-        assertNull(response.getHeader("X-Cache"));
+        assertNull(response.getHeader(Headers.X_CACHE.getValue()));
     }
 
     @Test
