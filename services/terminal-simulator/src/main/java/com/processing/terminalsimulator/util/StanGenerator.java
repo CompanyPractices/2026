@@ -13,13 +13,7 @@ public class StanGenerator {
     public String getNextStan(String terminalId) {
         AtomicInteger stanCounter = terminalStans.computeIfAbsent(terminalId, k -> new AtomicInteger(0));
 
-        int stan = stanCounter.incrementAndGet();
-
-        // TODO: race
-        if (stan > MAX_STAN_COUNT) {
-            stanCounter.set(1);
-            stan = 1;
-        }
+        int stan = stanCounter.updateAndGet(current -> current >= MAX_STAN_COUNT ? 1 : current + 1);
 
         return String.format("%06d", stan);
     }
