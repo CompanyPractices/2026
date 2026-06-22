@@ -25,31 +25,6 @@ public class CardManagementClientImpl implements CardManagementClient {
     @Value("${card-management.url}")
     private String cmsUrl;
 
-    /**
-     * Получает информацию о карте из Card Management System по номеру PAN.
-     *
-     * <p>
-     * Выполняет GET-запрос к CMS на эндпоинт {@code /api/cards/{pan}}.
-     * Обрабатывает различные HTTP-статусы ответа:
-     * </p>
-     * <ul>
-     * <li><b>404 Not Found</b> - карта не найдена, выбрасывает
-     * {@link CardNotFoundException}</li>
-     * <li><b>503 Service Unavailable</b> - CMS недоступен, выбрасывает
-     * {@link ServiceUnavailableException}</li>
-     * <li><b>Другие ошибки (не 2xx)</b> - общая ошибка получения карты</li>
-     * <li><b>2xx Success</b> - возвращает объект {@link CardModel} с данными
-     * карты</li>
-     * </ul>
-     *
-     * @param pan номер карты (Primary Account Number) - 16-значный номер
-     * @return {@link CardModel} объект с полной информацией о карте:
-     *         статус, срок действия, доступный баланс и другие атрибуты
-     *
-     * @see CardModel
-     * @see CardNotFoundException
-     * @see ServiceUnavailableException
-     */
     @Override
     public CardModel getCard(String pan) {
         URI uri = UriComponentsBuilder
@@ -84,29 +59,6 @@ public class CardManagementClientImpl implements CardManagementClient {
                 .body(CardModel.class);
     }
 
-    /**
-     * Резервирует указанную сумму на карте через Card Management System.
-     *
-     * <p>
-     * Выполняет POST-запрос к CMS на эндпоинт {@code /api/cards/{pan}/reserve}
-     * с телом запроса, содержащим сумму резервирования и RRN транзакции.
-     * Резервирование необходимо для блокировки средств на карте до момента
-     * фактического списания.
-     * </p>
-     *
-     * <p>
-     * В случае ошибки резервирования (не 2xx статус) выбрасывается
-     * {@link ReserveException}.
-     * </p>
-     *
-     * @param amount сумма для резервирования в минимальных единицах валюты
-     *               (копейки, центы)
-     * @param rrn    уникальный идентификатор транзакции (Retrieval Reference
-     *               Number)
-     * @param pan    номер карты для резервирования средств
-     * @see ReserveRequest
-     * @see ReserveException
-     */
     @Override
     public void reserve(BigDecimal amount, String rrn, String pan) {
         ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
