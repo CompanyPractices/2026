@@ -3,6 +3,8 @@ package com.processing.authorization.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -15,6 +17,7 @@ import java.util.UUID;
 import com.processing.authorization.client.CardManagementClient;
 import com.processing.authorization.entities.LimitUsage;
 import com.processing.authorization.exceptions.ReserveException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

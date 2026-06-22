@@ -2,6 +2,7 @@ package com.processing.authorization.services;
 
 import com.processing.authorization.client.CardManagementClient;
 import com.processing.authorization.constants.DeclineOutcome;
+import com.processing.authorization.events.*;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.authorization.RollbackRequest;
@@ -9,7 +10,6 @@ import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.authorization.exceptions.*;
-import com.processing.common.utils.MaskPan;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +57,7 @@ import org.springframework.web.client.ResourceAccessException;
 @RequiredArgsConstructor
 public class AuthService {
     private final LimitUsageRepository limitUsageRepository;
+    private final AuthorizationEventNotifier eventNotifier;
 
     private final CardManagementClient cardManagementClient;
 
@@ -82,35 +83,53 @@ public class AuthService {
         try {
             cardResponse = cardManagementClient.getCard(request.pan());
         } catch (CardNotFoundException | InvalidGetCardRequestException e) {
-            log.info("card not found for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoCardEvent(request.pan()));
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.info("service unavailable for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (PaymentRequiredException e) {
-            log.info("card required payment for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclinedCardStatusEvent(request.pan(),
+                    "Payment required from Card Management Service"));
             return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
         } catch (GetCardException e) {
-            log.info("get card from card-management service failed for pan: {}", MaskPan.maskPan(request.pan()), e);
-            return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
+            return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.info("getting card failed for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineUnknownEvent(request.pan(), e.getMessage()));
             return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
         CardModelStatus currCardStatus = cardResponse.status();
         if (currCardStatus == null) {
+            eventNotifier.notify(new AuthServiceAuthDeclineUnknownEvent(request.pan(), "recieved null card status"));
             return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
         if (!currCardStatus.equals(CardModelStatus.ACTIVE)) {
             return switch (currCardStatus) {
-                case CardModelStatus.EXPIRED ->
-                    DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
-                case CardModelStatus.BLOCKED ->
-                    DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
-                case CardModelStatus.INACTIVE ->
-                    DeclineOutcome.CARD_INACTIVE.buildAuthorization(request, requestInputTime);
-                default -> DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
+                case CardModelStatus.EXPIRED -> {
+                    eventNotifier
+                            .notify(new AuthServiceAuthDeclinedCardStatusEvent(request.pan(),
+                                    currCardStatus.toString()));
+                    yield DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
+                }
+                case CardModelStatus.BLOCKED -> {
+                    eventNotifier
+                            .notify(new AuthServiceAuthDeclinedCardStatusEvent(request.pan(),
+                                    currCardStatus.toString()));
+                    yield DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
+                }
+                case CardModelStatus.INACTIVE -> {
+                    eventNotifier
+                            .notify(new AuthServiceAuthDeclinedCardStatusEvent(request.pan(),
+                                    currCardStatus.toString()));
+                    yield DeclineOutcome.CARD_INACTIVE.buildAuthorization(request, requestInputTime);
+                }
+                default -> {
+                    eventNotifier
+                            .notify(new AuthServiceAuthDeclineUnknownEvent(request.pan(), "recieved null card status"));
+                    yield DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
+                }
             };
         }
 
@@ -118,10 +137,13 @@ public class AuthService {
 
         LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
         if (lastValidDay.isBefore(transmissionDate)) {
+            eventNotifier
+                    .notify(new AuthServiceAuthDeclinedCardExpiryDateEvent(request.pan(), lastValidDay.toString()));
             return DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
         }
 
         if (request.amount().compareTo(cardResponse.availableBalance()) > 0) {
+            eventNotifier.notify(new AuthServiceAuthDeclinedFundsEvent(request.pan()));
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         }
 
@@ -133,19 +155,25 @@ public class AuthService {
         try {
             areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
         } catch (DuplicateKeyException | ConstraintViolationException e) {
-            log.warn("key duplication detected, checking limits again: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceDuplicateKeyEvent(request.pan(), e.getMessage()));
             try {
                 areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
             } catch (Exception ex) {
-                log.error("db failed after rechecking: {}", MaskPan.maskPan(request.pan()), ex);
+                eventNotifier
+                        .notify(new AuthServiceAuthDeclineNoServiceEvent(
+                                request.pan(),
+                                "limit_usage table",
+                                ex.getMessage()));
                 return DeclineOutcome.DB_UNAVAILABLE.buildAuthorization(request, requestInputTime);
             }
         } catch (Exception e) {
-            log.error("db failed: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(
+                    new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "limit_usage table", e.getMessage()));
             return DeclineOutcome.DB_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         }
 
         if (!areLimitsUpdated) {
+            eventNotifier.notify(new AuthServiceAuthDeclinedLimitsEvent(request.pan()));
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
@@ -153,26 +181,28 @@ public class AuthService {
         try {
             cardManagementClient.reserve(request.amount(), rrn, request.pan());
         } catch (CardNotFoundException e) {
-            log.info("card not found for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoCardEvent(request.pan()));
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.info("service unavailable for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (InvalidReserveRequestException e) {
-            log.info("invalid reverse request for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoCardEvent(request.pan()));
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (InsufficientFundsException e) {
-            log.info("Insufficient funds from card-management for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclinedFundsEvent(request.pan()));
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         } catch (ReserveException e) {
-            log.info("reserve from card-management service failed for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.info("reserve failed for card {}", cardResponse.id(), e);
-            return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
+            eventNotifier.notify(new AuthServiceAuthDeclineUnknownEvent(request.pan(), e.getMessage()));
+            return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
         String authCode = generateAuthCode();
+
+        eventNotifier.notify(new AuthServiceAuthorizeEvent(request.pan()));
         return AuthorizationResponse.approved(request, rrn, authCode, requestInputTime);
     }
 
@@ -274,25 +304,24 @@ public class AuthService {
     public RollbackResponse rollback(RollbackRequest request, Instant requestInputTime) {
         try {
             cardManagementClient.rollback(request);
-        } catch (CardNotFoundException e) {
-            log.info("card not found for pan: {}", MaskPan.maskPan(request.pan()), e);
+        } catch (CardNotFoundException | InvalidRollbackRequestException e) {
+            eventNotifier.notify(new AuthServiceRollbackDeclineNoCardEvent(request.pan()));
             return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.info("service unavailable for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceRollbackDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildRollback(request, requestInputTime);
-        } catch (InvalidRollbackRequestException e) {
-            log.info("invalid rollback request for pan: {}", MaskPan.maskPan(request.pan()), e);
-            return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
         } catch (RollbackConflictException e) {
-            log.info("rollback request already completed for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceRollbackDeclineConflictEvent(request.pan()));
             return DeclineOutcome.ALREADY_ROLLED_BACK.buildRollback(request, requestInputTime);
         } catch (RollbackFailureException e) {
-            log.info("rollback from card-management service failed for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceRollbackDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.ROLLBACK_FAILED.buildRollback(request, requestInputTime);
         } catch (Exception e) {
-            log.info("rollback failed for pan: {}", MaskPan.maskPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceRollbackDeclineUnknownEvent(request.pan(), e.getMessage()));
             return DeclineOutcome.UNKNOWN_REASON.buildRollback(request, requestInputTime);
         }
+
+        eventNotifier.notify(new AuthServiceRollbackEvent(request.pan()));
         return RollbackResponse.approved(request, requestInputTime);
 
     }
