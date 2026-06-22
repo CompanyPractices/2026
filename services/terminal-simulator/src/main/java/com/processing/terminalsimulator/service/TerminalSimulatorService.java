@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -30,7 +31,7 @@ public class TerminalSimulatorService {
     private final int tps;
     private final int cardsAmount;
     private final AtomicInteger currentErrors = new AtomicInteger(0);
-    private final int ERROR_THRESHOLD = 1;
+    private final int errorThreshold = 1;
     private volatile boolean circuitOpen = false;
 
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
@@ -44,11 +45,9 @@ public class TerminalSimulatorService {
 
     private record TransactionTask(TransactionType type, PartofDay partOfDay) {}
 
-    private CardModel getRandomCard(CardModelStatus cardStatus, List<CardModel> cards) {
-        List<CardModel> filtered = cards.stream()
-                .filter(c -> cardStatus == null || c.status() == cardStatus)
-                .toList();
-        if (filtered.isEmpty()) {
+    private CardModel getRandomCard(CardModelStatus cardStatus, Map<CardModelStatus, List<CardModel>> cards) {
+        List<CardModel> filtered = cards.get(cardStatus);
+        if (filtered == null || filtered.isEmpty()) {
             throw new IllegalStateException("No " + cardStatus + " cards available");
         }
         int randomIndex = ThreadLocalRandom.current().nextInt(filtered.size());
@@ -78,11 +77,12 @@ public class TerminalSimulatorService {
     }
 
     private AuthorizationResponse executeSingleTransaction(TransactionType transactionType, PartofDay partOfDay,
-                                                           List<CardModel> cards, AtomicInteger approved,
+                                                           AtomicInteger approved,
                                                            AtomicInteger declined,
+                                                           Map<CardModelStatus, List<CardModel>> cardsByStatus,
                                                            String terminalId) {
         CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
-        CardModel card = getRandomCard(requiredStatus, cards);
+        CardModel card = getRandomCard(requiredStatus, cardsByStatus);
         AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card, terminalId);
         AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
 
@@ -140,9 +140,12 @@ public class TerminalSimulatorService {
         long start = System.currentTimeMillis();
         circuitOpen = false;
         currentErrors.set(0);
+        Map<CardModelStatus, List<CardModel>> cardsByStatus;
+
 
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
         List<CardModel> cards = loadCards(scenario);
+        cardsByStatus = cards.stream().collect(Collectors.groupingBy(CardModel::status));
         List<TransactionTask> tasks = generateTasks(scenario, count);
 
         ConcurrentLinkedQueue<AuthorizationResponse> authResponses = new ConcurrentLinkedQueue<>();
@@ -162,13 +165,13 @@ public class TerminalSimulatorService {
 
                     if (circuitOpen) {
                         authResponses.add(new AuthorizationResponse(null, null, null, null,
-                                null, null, "Circuit Breaker in transaction-simulator: " +
-                                "Gateway is down, request skipped", 0));
+                                null, null, "Circuit Breaker in transaction-simulator: "
+                                + "Gateway is down, request skipped", 0));
                         return;
                     }
                     try {
-                        AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay, cards,
-                                approved, declined, terminalId);
+                        AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay,
+                                approved, declined, cardsByStatus, terminalId);
                         authResponses.add(resp);
 
                         currentErrors.set(0);
@@ -177,10 +180,10 @@ public class TerminalSimulatorService {
                         authResponses.add(new AuthorizationResponse(null, null, null, null, null,
                                 null, e.getMessage(), 0));
 
-                        if (currentErrors.incrementAndGet() >= ERROR_THRESHOLD) {
+                        if (currentErrors.incrementAndGet() >= errorThreshold) {
                             if (!circuitOpen) {
-                                log.error("terminal-simulator: GATEWAY IS DOWN. Opening circuit breaker to save " +
-                                        "resources.");
+                                log.error("terminal-simulator: GATEWAY IS DOWN. Opening circuit breaker to save "
+                                        + "resources.");
                                 circuitOpen = true;
                             }
                         }
