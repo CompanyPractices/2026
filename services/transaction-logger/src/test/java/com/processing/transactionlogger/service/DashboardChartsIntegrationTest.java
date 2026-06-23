@@ -45,12 +45,12 @@ public class DashboardChartsIntegrationTest {
         assertEquals(2, firstHour.total());
         assertEquals(1, firstHour.approved());
         assertEquals(1, firstHour.declined());
-        assertEquals(150000, firstHour.amount());
+        assertEquals(new BigDecimal("150000"), firstHour.amount());
 
         ChartBucket secondHour = charts.get(1);
         assertEquals(Instant.parse("2026-06-16T11:00:00Z"), secondHour.timestamp());
         assertEquals(1, secondHour.total());
-        assertEquals(200000, secondHour.amount());
+        assertEquals(new BigDecimal("200000"), secondHour.amount());
     }
 
     @Test

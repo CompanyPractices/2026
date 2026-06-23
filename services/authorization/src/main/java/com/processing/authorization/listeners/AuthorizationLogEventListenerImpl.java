@@ -5,27 +5,25 @@ import static com.processing.common.utils.MaskPan.maskPan;
 import org.springframework.stereotype.Component;
 
 import com.processing.authorization.constants.LogMessages;
-import com.processing.authorization.events.AuthServiceAuthDeclineNoCardEvent;
-import com.processing.authorization.events.AuthServiceAuthDeclinedCardExpiryDateEvent;
-import com.processing.authorization.events.AuthServiceAuthDeclinedCardStatusEvent;
-import com.processing.authorization.events.AuthServiceAuthDeclinedFundsEvent;
-import com.processing.authorization.events.AuthServiceAuthDeclinedLimitsEvent;
-import com.processing.authorization.events.AuthServiceAuthorizeEvent;
-import com.processing.authorization.events.AuthServiceDuplicateKeyEvent;
-import com.processing.authorization.events.AuthServiceRollbackDeclineConflictEvent;
-import com.processing.authorization.events.AuthServiceAuthDeclineNoServiceEvent;
-import com.processing.authorization.events.AuthServiceAuthDeclineUnknownEvent;
-import com.processing.authorization.events.AuthServiceRollbackDeclineNoCardEvent;
-import com.processing.authorization.events.AuthServiceRollbackDeclineNoServiceEvent;
-import com.processing.authorization.events.AuthServiceRollbackDeclineUnknownEvent;
-import com.processing.authorization.events.AuthServiceRollbackEvent;
-import com.processing.authorization.events.AuthorizationEvent;
-import com.processing.authorization.events.CmsClientGetCardEvent;
-import com.processing.authorization.events.CmsClientReserveEvent;
-import com.processing.authorization.events.CmsClientRollbackEvent;
+import com.processing.authorization.events.*;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Слушатель событий авторизации для логирования всех операций.
+ * <p>
+ * Обрабатывает все типы событий {@link AuthorizationEvent} и записывает
+ * их в журнал с соответствующим уровнем логирования:
+ * <ul>
+ * <li><b>INFO</b> — успешные операции (авторизация, откат, резервирование)</li>
+ * <li><b>WARN</b> — отклонённые операции и технические проблемы</li>
+ * </ul>
+ * <p>
+ * PAN-номер маскируется перед логированием для соответствия требованиям PCI
+ * DSS.
+ *
+ * @see AuthorizationEvent
+ */
 @Slf4j
 @Component
 public class AuthorizationLogEventListenerImpl implements AuthorizationEventListener {

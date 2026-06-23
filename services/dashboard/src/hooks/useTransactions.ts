@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import fetchApi from "../api/client";
 import { Transaction, Filter, SearchResponse, FilterStatus } from "../types/index.ts";
 import { useSearchParams } from 'react-router-dom';
+import { useToastContext } from '../contexts/ToastContext.ts'
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -15,6 +16,7 @@ function useTransactions() {
 
     const currentPage = parseInt(searchParams.get('page') || '0', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || DEFAULT_PAGE_SIZE.toString(), 10);
+    const {addToast} = useToastContext();
 
     const currentFilter: Filter = {
         status: (searchParams.get('status') as FilterStatus) || undefined,
@@ -44,7 +46,9 @@ function useTransactions() {
         if (currentFilter.issuerId) requestParams.append('issuerId', currentFilter.issuerId);
         if (currentFilter.mcc) requestParams.append('mcc', currentFilter.mcc);
 
-        fetchApi<SearchResponse>(`/api/transactions/search?${requestParams.toString()}`)
+        fetchApi<SearchResponse>(`/api/transactions/search?${requestParams.toString()}`, {
+            onError: (message) => addToast(message, 'ERROR')
+        })
             .then((data) => {
                 if (cancelled) return;
                 setTransactions(data.transactions);
@@ -62,7 +66,7 @@ function useTransactions() {
         return () => {
             cancelled = true;
         };
-    }, [currentPage, pageSize, currentFilter.status, currentFilter.dateFrom, currentFilter.dateTo, currentFilter.issuerId, currentFilter.mcc]);
+    }, [addToast, currentPage, pageSize, currentFilter.status, currentFilter.dateFrom, currentFilter.dateTo, currentFilter.issuerId, currentFilter.mcc]);
 
     const applyFilter = useCallback((filter: Filter) => {
         setSearchParams((prev) => {

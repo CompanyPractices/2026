@@ -1,6 +1,25 @@
 package com.processing.authorization.constants;
 
-public record LogMessages(String log) {
+/**
+ * Константы для логирования операций авторизации и отката.
+ * <p>
+ * Содержит предопределённые сообщения для единообразного логирования
+ * всех бизнес-сценариев и ошибок.
+ * <p>
+ * Разделены на группы:
+ * <ul>
+ * <li><b>Авторизация</b> — успешные и отклонённые сценарии</li>
+ * <li><b>Резервирование</b> — успешные операции</li>
+ * <li><b>Откат</b> — успешные и отклонённые сценарии</li>
+ * <li><b>Технические</b> — дублирование ключей, ошибки</li>
+ * </ul>
+ *
+ * @param message сообщение логгирования
+ *
+ * @see com.processing.authorization.services.AuthService
+ * @see com.processing.authorization.controller.AuthControllerImpl
+ */
+public record LogMessages(String message) {
     public static final String MESSAGE_AUTH_APPROVED = "AUTHORIZATION APPROVED";
 
     public static final String MESSAGE_AUTH_DECLINED_NO_CARD = "AUTHORIZATION DECLINED WITH CARD NOT FOUND";

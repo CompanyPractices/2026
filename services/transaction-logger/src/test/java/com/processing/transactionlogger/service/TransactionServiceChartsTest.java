@@ -16,6 +16,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -51,13 +52,13 @@ public class TransactionServiceChartsTest {
     @Test
     void getChartsMapsRowsToBuckets() {
         Instant bucket = Instant.parse("2026-06-16T10:00:00Z");
-        ChartBucketRow row = bucketRow(bucket, 10, 7, 3, 500000);
+        ChartBucketRow row = bucketRow(bucket, 10, 7, 3, new BigDecimal("500000"));
         when(transactionRepository.aggregateByInterval(anyString(), any(), any()))
                 .thenReturn(List.of(row));
 
         List<ChartBucket> buckets = transactionService.getCharts(filter(null, null));
 
-        assertThat(buckets).containsExactly(new ChartBucket(bucket, 10, 7, 3, 500000));
+        assertThat(buckets).containsExactly(new ChartBucket(bucket, 10, 7, 3, new BigDecimal("500000")));
     }
 
     @Test
@@ -82,7 +83,7 @@ public class TransactionServiceChartsTest {
     }
 
     private static ChartBucketRow bucketRow(Instant bucket, long total, long approved,
-                                            long declined, long amount) {
+                                            long declined, BigDecimal amount) {
         ChartBucketRow row = mock(ChartBucketRow.class);
         when(row.getBucket()).thenReturn(bucket);
         when(row.getTotal()).thenReturn(total);
