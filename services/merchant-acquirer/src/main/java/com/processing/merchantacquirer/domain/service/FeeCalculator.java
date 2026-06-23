@@ -1,4 +1,4 @@
-package com.processing.merchantacquirer.domain;
+package com.processing.merchantacquirer.domain.service;
 
 import org.springframework.stereotype.Component;
 

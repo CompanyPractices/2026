@@ -33,26 +33,26 @@ import static org.mockito.Mockito.*;
 public class EventSystemTest {
 
     private final CardServiceSettings cardServiceSettings = new CardServiceSettingsConfigurationProperties(
-        3,
-        10000
+            3,
+            10000
     );
 
     private final CardServiceDefaults cardServiceDefaults = new CardServiceDefaultsConfigurationProperties(
-        1,
-        50,
-        "643",
-        BigDecimal.valueOf(15000000),
-        BigDecimal.valueOf(300000000),
-        BigDecimal.valueOf(300000000)
+            1,
+            50,
+            "643",
+            BigDecimal.valueOf(15000000),
+            BigDecimal.valueOf(300000000),
+            BigDecimal.valueOf(300000000)
     );
 
     private final CardGeneratorOptions cardGeneratorOptions = new CardGeneratorOptions(
-        BigDecimal.ZERO,
-        BigDecimal.valueOf(1_000_000),
-        BigDecimal.ZERO,
-        BigDecimal.valueOf(1_000_000),
-        "643",
-        10000
+            BigDecimal.ZERO,
+            BigDecimal.valueOf(1_000_000),
+            BigDecimal.ZERO,
+            BigDecimal.valueOf(1_000_000),
+            "643",
+            10000
     );
 
     @Mock
@@ -68,13 +68,14 @@ public class EventSystemTest {
     private ReservationRollbackRepository reservationRollbackRepository;
 
     List<CardEventListener> listeners = Stream
-        .generate(() -> Mockito.mock(CardEventListener.class))
-        .limit(5)
-        .toList();
+            .generate(() -> Mockito.mock(CardEventListener.class))
+            .limit(5)
+            .toList();
 
     private final ArgumentCaptor<CardEvent> eventCaptor = ArgumentCaptor.forClass(CardEvent.class);
 
-    private final CardEventNotifier eventNotifier = new CardEventNotifier(listeners);
+    @Mock
+    private CardEventNotifier eventNotifier;
 
     @Mock
     private BinIssuerService binIssuerService;
@@ -84,43 +85,43 @@ public class EventSystemTest {
     private CardGeneratorService cardGeneratorService;
 
     private final static Card TEST_CARD =
-        new Card(
-            UUID.randomUUID(),
-            "1234123412341234",
-            "123456",
-            "ANY_CN",
-            YearMonth.now().plusYears(3),
-            CardStatus.ACTIVE,
-            "643",
-            BigDecimal.ONE,
-            BigDecimal.TWO,
-            BigDecimal.TEN,
-            "ANYISSUER"
-        );
+            new Card(
+                    UUID.randomUUID(),
+                    "1234123412341234",
+                    "123456",
+                    "ANY_CN",
+                    YearMonth.now().plusYears(3),
+                    CardStatus.ACTIVE,
+                    "643",
+                    BigDecimal.ONE,
+                    BigDecimal.TWO,
+                    BigDecimal.TEN,
+                    "ANYISSUER"
+            );
 
     private static final Reservation TEST_RESERVATION =
-        TEST_CARD.startReservation(BigDecimal.ONE, "123412341234");
+            TEST_CARD.startReservation(BigDecimal.ONE, "123412341234");
 
     private static final ReservationRollback TEST_ROLLBACK =
-        TEST_RESERVATION.startRollback(BigDecimal.ONE);
+            TEST_RESERVATION.startRollback(BigDecimal.ONE);
 
     @BeforeEach
     void setUp() {
         cardService = new CardServiceImpl(
-            cardRepository,
-            reservationRepository,
-            reservationRollbackRepository,
-            cardServiceSettings,
-            cardServiceDefaults,
-            panGenerator,
-            eventNotifier,
-            binIssuerService
+                cardRepository,
+                reservationRepository,
+                reservationRollbackRepository,
+                cardServiceSettings,
+                cardServiceDefaults,
+                panGenerator,
+                eventNotifier,
+                binIssuerService
         );
 
         cardGeneratorService = new CardGeneratorService(
-            cardService,
-            cardGeneratorOptions,
-            eventNotifier
+                cardService,
+                cardGeneratorOptions,
+                eventNotifier
         );
 
 
@@ -135,12 +136,12 @@ public class EventSystemTest {
     @Test
     void cardServiceCreationEventTest() {
         cardService.createCard(
-            "ANY_BIN",
-            "ANY_CN",
-            "123",
-            BigDecimal.ONE,
-            BigDecimal.ONE,
-            BigDecimal.ONE
+                "ANY_BIN",
+                "ANY_CN",
+                "123",
+                BigDecimal.ONE,
+                BigDecimal.ONE,
+                BigDecimal.ONE
         );
         testAllListenersReceivedData(CardServiceCreationEvent.class);
     }
@@ -148,11 +149,11 @@ public class EventSystemTest {
     @Test
     void cardServicePatchEventTest() {
         cardService.patchCard(
-            "1234123412341234",
-            CardStatus.ACTIVE,
-            BigDecimal.ONE,
-            BigDecimal.ONE,
-            BigDecimal.ONE
+                "1234123412341234",
+                CardStatus.ACTIVE,
+                BigDecimal.ONE,
+                BigDecimal.ONE,
+                BigDecimal.ONE
         );
         testAllListenersReceivedData(CardServicePatchEvent.class);
     }
@@ -166,9 +167,9 @@ public class EventSystemTest {
     @Test
     void cardServiceReserveEventTest() {
         cardService.reserve(
-            "1234123412341234",
-            BigDecimal.ONE,
-            "123412341234"
+                "1234123412341234",
+                BigDecimal.ONE,
+                "123412341234"
         );
         testAllListenersReceivedData(CardServiceReserveEvent.class);
     }
@@ -183,19 +184,14 @@ public class EventSystemTest {
     @Test
     void cardsBatchGeneratedEventTest() {
         cardGeneratorService.generate(1, List.of("123456"));
-        for (var l : listeners) {
-            verify(l, times(2)).onEvent(eventCaptor.capture());
-            var captures = eventCaptor.getAllValues();
-            assertInstanceOf(CardServiceCreationEvent.class, captures.getFirst());
-            assertInstanceOf(CardsBatchGeneratedEvent.class, captures.getLast());
-        }
+        verify(eventNotifier, times(2)).onEvent(eventCaptor.capture());
+        var captures = eventCaptor.getAllValues();
+        assertInstanceOf(CardServiceCreationEvent.class, captures.getFirst());
+        assertInstanceOf(CardsBatchGeneratedEvent.class, captures.getLast());
     }
 
     private <T> void testAllListenersReceivedData(Class<T> expectedType) {
-        for (var l : listeners) {
-            verify(l).onEvent(eventCaptor.capture());
-            assertInstanceOf(expectedType, eventCaptor.getValue());
-        }
+        verify(eventNotifier).onEvent(eventCaptor.capture());
+        assertInstanceOf(expectedType, eventCaptor.getValue());
     }
-
 }

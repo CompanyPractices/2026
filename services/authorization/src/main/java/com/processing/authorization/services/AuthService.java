@@ -1,6 +1,8 @@
 package com.processing.authorization.services;
 
+import com.processing.authorization.client.CardManagementClient;
 import com.processing.authorization.constants.DeclineOutcome;
+import com.processing.authorization.events.*;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.authorization.RollbackRequest;
@@ -8,8 +10,6 @@ import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.authorization.exceptions.*;
-import com.processing.common.dto.cardmanagement.ReserveRequest;
-import com.processing.common.utils.MaskPan;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,14 +17,10 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.*;
 import java.math.BigDecimal;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.format.DateTimeFormatter;
@@ -32,7 +28,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestClient;
 
 /**
  * Сервис авторизации транзакций по банковским картам.
@@ -61,16 +56,10 @@ import org.springframework.web.client.RestClient;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final RestClient restClient;
-
-    /**
-     * Базовый URL Card Management System.
-     * Загружается из конфигурации {@code card-management.url}.
-     */
-    @Value("${card-management.url}")
-    private String cmsUrl;
-
     private final LimitUsageRepository limitUsageRepository;
+    private final AuthorizationEventNotifier eventNotifier;
+
+    private final CardManagementClient cardManagementClient;
 
     /**
      * Выполняет авторизацию транзакции по банковской карте.
@@ -83,8 +72,6 @@ public class AuthService {
      *         <li>При отказе: статус "declined", причина отказа и код ответа</li>
      *         </ul>
      *
-     * @see #getCard(String)
-     * @see #reserve(BigDecimal, String, String)
      * @see #generateRRN()
      * @see #generateAuthCode()
      * @see AuthorizationRequest
@@ -94,37 +81,55 @@ public class AuthService {
     public AuthorizationResponse authorize(AuthorizationRequest request, Instant requestInputTime) {
         CardModel cardResponse;
         try {
-            cardResponse = getCard(request.pan());
+            cardResponse = cardManagementClient.getCard(request.pan());
         } catch (CardNotFoundException | InvalidGetCardRequestException e) {
-            log.info("card not found for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoCardEvent(request.pan()));
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.info("service unavailable for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (PaymentRequiredException e) {
-            log.info("card required payment for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclinedCardStatusEvent(request.pan(),
+                    "Payment required from Card Management Service"));
             return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
         } catch (GetCardException e) {
-            log.info("get card from card-management service failed for pan: {}", logPan(request.pan()), e);
-            return DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
+            return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.info("getting card failed for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineUnknownEvent(request.pan(), e.getMessage()));
             return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
         CardModelStatus currCardStatus = cardResponse.status();
         if (currCardStatus == null) {
+            eventNotifier.notify(new AuthServiceAuthDeclineUnknownEvent(request.pan(), "recieved null card status"));
             return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
         if (!currCardStatus.equals(CardModelStatus.ACTIVE)) {
             return switch (currCardStatus) {
-                case CardModelStatus.EXPIRED ->
-                    DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
-                case CardModelStatus.BLOCKED ->
-                    DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
-                case CardModelStatus.INACTIVE ->
-                    DeclineOutcome.CARD_INACTIVE.buildAuthorization(request, requestInputTime);
-                default -> DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
+                case CardModelStatus.EXPIRED -> {
+                    eventNotifier
+                            .notify(new AuthServiceAuthDeclinedCardStatusEvent(request.pan(),
+                                    currCardStatus.toString()));
+                    yield DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
+                }
+                case CardModelStatus.BLOCKED -> {
+                    eventNotifier
+                            .notify(new AuthServiceAuthDeclinedCardStatusEvent(request.pan(),
+                                    currCardStatus.toString()));
+                    yield DeclineOutcome.CARD_BLOCKED.buildAuthorization(request, requestInputTime);
+                }
+                case CardModelStatus.INACTIVE -> {
+                    eventNotifier
+                            .notify(new AuthServiceAuthDeclinedCardStatusEvent(request.pan(),
+                                    currCardStatus.toString()));
+                    yield DeclineOutcome.CARD_INACTIVE.buildAuthorization(request, requestInputTime);
+                }
+                default -> {
+                    eventNotifier
+                            .notify(new AuthServiceAuthDeclineUnknownEvent(request.pan(), "recieved null card status"));
+                    yield DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
+                }
             };
         }
 
@@ -132,10 +137,13 @@ public class AuthService {
 
         LocalDate lastValidDay = cardResponse.expiryDate().atEndOfMonth();
         if (lastValidDay.isBefore(transmissionDate)) {
+            eventNotifier
+                    .notify(new AuthServiceAuthDeclinedCardExpiryDateEvent(request.pan(), lastValidDay.toString()));
             return DeclineOutcome.CARD_EXPIRED.buildAuthorization(request, requestInputTime);
         }
 
         if (request.amount().compareTo(cardResponse.availableBalance()) > 0) {
+            eventNotifier.notify(new AuthServiceAuthDeclinedFundsEvent(request.pan()));
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         }
 
@@ -147,165 +155,55 @@ public class AuthService {
         try {
             areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
         } catch (DuplicateKeyException | ConstraintViolationException e) {
-            log.warn("key duplication detected, checking limits again: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceDuplicateKeyEvent(request.pan(), e.getMessage()));
             try {
                 areLimitsUpdated = checkAndUpdateLimits(cardResponse, request.amount(), transmissionLocalDate);
             } catch (Exception ex) {
-                log.error("db failed after rechecking: {}", logPan(request.pan()), ex);
+                eventNotifier
+                        .notify(new AuthServiceAuthDeclineNoServiceEvent(
+                                request.pan(),
+                                "limit_usage table",
+                                ex.getMessage()));
                 return DeclineOutcome.DB_UNAVAILABLE.buildAuthorization(request, requestInputTime);
             }
         } catch (Exception e) {
-            log.error("db failed: {}", logPan(request.pan()), e);
+            eventNotifier.notify(
+                    new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "limit_usage table", e.getMessage()));
             return DeclineOutcome.DB_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         }
 
         if (!areLimitsUpdated) {
+            eventNotifier.notify(new AuthServiceAuthDeclinedLimitsEvent(request.pan()));
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
         String rrn = generateRRN();
         try {
-            reserve(request.amount(), rrn, request.pan());
+            cardManagementClient.reserve(request.amount(), rrn, request.pan());
         } catch (CardNotFoundException e) {
-            log.info("card not found for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoCardEvent(request.pan()));
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.info("service unavailable for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildAuthorization(request, requestInputTime);
         } catch (InvalidReserveRequestException e) {
-            log.info("invalid reverse request for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoCardEvent(request.pan()));
             return DeclineOutcome.CARD_NOT_FOUND.buildAuthorization(request, requestInputTime);
         } catch (InsufficientFundsException e) {
-            log.info("Insufficient funds from card-management for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclinedFundsEvent(request.pan()));
             return DeclineOutcome.INSUFFICIENT_FUNDS.buildAuthorization(request, requestInputTime);
         } catch (ReserveException e) {
-            log.info("reserve from card-management service failed for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceAuthDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
         } catch (Exception e) {
-            log.info("reserve failed for card {}", cardResponse.id(), e);
-            return DeclineOutcome.RESERVATION_FAILED.buildAuthorization(request, requestInputTime);
+            eventNotifier.notify(new AuthServiceAuthDeclineUnknownEvent(request.pan(), e.getMessage()));
+            return DeclineOutcome.UNKNOWN_REASON.buildAuthorization(request, requestInputTime);
         }
 
         String authCode = generateAuthCode();
+
+        eventNotifier.notify(new AuthServiceAuthorizeEvent(request.pan()));
         return AuthorizationResponse.approved(request, rrn, authCode, requestInputTime);
-    }
-
-    /**
-     * Получает информацию о карте из Card Management System по номеру PAN.
-     *
-     * <p>
-     * Выполняет GET-запрос к CMS на эндпоинт {@code /api/cards/{pan}}.
-     * Обрабатывает различные HTTP-статусы ответа:
-     * </p>
-     * <ul>
-     * <li><b>404 Not Found</b> - карта не найдена, выбрасывает
-     * {@link CardNotFoundException}</li>
-     * <li><b>503 Service Unavailable</b> - CMS недоступен, выбрасывает
-     * {@link ServiceUnavailableException}</li>
-     * <li><b>Другие ошибки (не 2xx)</b> - общая ошибка получения карты</li>
-     * <li><b>2xx Success</b> - возвращает объект {@link CardModel} с данными
-     * карты</li>
-     * </ul>
-     *
-     * @param pan номер карты (Primary Account Number) - 16-значный номер
-     * @return {@link CardModel} объект с полной информацией о карте:
-     *         статус, срок действия, доступный баланс и другие атрибуты
-     *
-     * @see CardModel
-     * @see CardNotFoundException
-     * @see ServiceUnavailableException
-     */
-    public CardModel getCard(String pan) {
-        URI uri = UriComponentsBuilder
-                .fromUriString(cmsUrl)
-                .scheme("http")
-                .path("/api/cards/{pan}")
-                .buildAndExpand(pan)
-                .toUri();
-        log.debug("Getting card info for pan {}", logPan(pan));
-
-        return restClient.get()
-                .uri(uri)
-                .retrieve()
-                .onStatus(status -> status.value() == 500, (req, res) -> {
-                    throw new InternalCardManagerException("Internal card management error");
-                })
-                .onStatus(status -> status.value() == 503, (req, res) -> {
-                    throw new ServiceUnavailableException("Card Management service unavailable");
-                })
-                .onStatus(status -> status.value() == 400, (req, res) -> {
-                    throw new InvalidGetCardRequestException("Invalid pan");
-                })
-                .onStatus(status -> status.value() == 402, (req, res) -> {
-                    throw new PaymentRequiredException("Payment Required from card-management");
-                })
-                .onStatus(status -> status.value() == 404, (req, res) -> {
-                    throw new CardNotFoundException("Card not found");
-                })
-                .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                    throw new GetCardException("Failed to get card. Status: " + res.getStatusCode());
-                })
-                .body(CardModel.class);
-    }
-
-    /**
-     * Резервирует указанную сумму на карте через Card Management System.
-     *
-     * <p>
-     * Выполняет POST-запрос к CMS на эндпоинт {@code /api/cards/{pan}/reserve}
-     * с телом запроса, содержащим сумму резервирования и RRN транзакции.
-     * Резервирование необходимо для блокировки средств на карте до момента
-     * фактического списания.
-     * </p>
-     *
-     * <p>
-     * В случае ошибки резервирования (не 2xx статус) выбрасывается
-     * {@link ReserveException}.
-     * </p>
-     *
-     * @param amount сумма для резервирования в минимальных единицах валюты
-     *               (копейки, центы)
-     * @param rrn    уникальный идентификатор транзакции (Retrieval Reference
-     *               Number)
-     * @param pan    номер карты для резервирования средств
-     * @see ReserveRequest
-     * @see ReserveException
-     */
-    public void reserve(BigDecimal amount, String rrn, String pan) {
-        ReserveRequest reserveRequest = new ReserveRequest(amount, rrn);
-        URI uri = UriComponentsBuilder
-                .fromUriString(cmsUrl)
-                .scheme("http")
-                .path("/api/cards/{pan}/reserve")
-                .buildAndExpand(pan)
-                .toUri();
-        log.debug("Reserving amount {} for card {} with rrn {}", amount, logPan(pan), rrn);
-        restClient.post()
-                .uri(uri)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(reserveRequest)
-                .retrieve()
-                .onStatus(status -> status.value() == 500, (req, res) -> {
-                    throw new InternalCardManagerException("Internal card management error");
-                })
-                .onStatus(status -> status.value() == 503, (req, res) -> {
-                    throw new ServiceUnavailableException("Card Management service unavailable");
-                })
-                .onStatus(status -> status.value() == 400, (req, res) -> {
-                    throw new InvalidReserveRequestException("Invalid reserve request");
-                })
-                .onStatus(status -> status.value() == 402, (req, res) -> {
-                    throw new InsufficientFundsException("Insufficient Funds from card-management");
-                })
-                .onStatus(status -> status.value() == 404, (req, res) -> {
-                    throw new CardNotFoundException("Card not found");
-                })
-                .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                    throw new ReserveException("Failed to reserve. Status: " + res.getStatusCode());
-                })
-                .toBodilessEntity();
-
-        log.debug("Reserve successful for card {}", logPan(pan));
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -325,7 +223,7 @@ public class AuthService {
      * Генерирует уникальный Retrieval Reference Number (RRN) для транзакции.
      *
      * <p>
-     * Формат RRN: 10 цифр
+     * Формат RRN: 12 цифр
      * </p>
      * <ul>
      * <li>Позиция 1: последняя цифра года (0-9)</li>
@@ -345,7 +243,7 @@ public class AuthService {
      * <b>Пример RRN:</b> 3065121534 (2023 год, 65-й день, 12:15:34)
      * </p>
      *
-     * @return строка из 10 цифр, представляющая уникальный RRN транзакции
+     * @return строка из 12 цифр, представляющая уникальный RRN транзакции
      *
      * @see #lastTimestampAndSeq
      */
@@ -394,8 +292,6 @@ public class AuthService {
      * </p>
      *
      * @return строка из 6 случайных символов (буквы и цифры)
-     *
-     * @see Random#ints(int, int, int)
      */
     public String generateAuthCode() {
         byte[] buf = new byte[6];
@@ -405,69 +301,28 @@ public class AuthService {
         return new String(buf, StandardCharsets.US_ASCII);
     }
 
-    public String logPan(String pan) {
-        return MaskPan.maskPan(pan);
-    }
-
     public RollbackResponse rollback(RollbackRequest request, Instant requestInputTime) {
         try {
-            rollbackCard(request);
-        } catch (CardNotFoundException e) {
-            log.info("card not found for pan: {}", logPan(request.pan()), e);
+            cardManagementClient.rollback(request);
+        } catch (CardNotFoundException | InvalidRollbackRequestException e) {
+            eventNotifier.notify(new AuthServiceRollbackDeclineNoCardEvent(request.pan()));
             return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
         } catch (ServiceUnavailableException | ResourceAccessException | InternalCardManagerException e) {
-            log.info("service unavailable for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceRollbackDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.SERVICE_UNAVAILABLE.buildRollback(request, requestInputTime);
-        } catch (InvalidRollbackRequestException e) {
-            log.info("invalid rollback request for pan: {}", logPan(request.pan()), e);
-            return DeclineOutcome.TRANSACTION_NOT_FOUND.buildRollback(request, requestInputTime);
         } catch (RollbackConflictException e) {
-            log.info("rollback request already completed for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceRollbackDeclineConflictEvent(request.pan()));
             return DeclineOutcome.ALREADY_ROLLED_BACK.buildRollback(request, requestInputTime);
         } catch (RollbackFailureException e) {
-            log.info("rollback from card-management service failed for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceRollbackDeclineNoServiceEvent(request.pan(), "cmsUrl", e.getMessage()));
             return DeclineOutcome.ROLLBACK_FAILED.buildRollback(request, requestInputTime);
         } catch (Exception e) {
-            log.info("rollback failed for pan: {}", logPan(request.pan()), e);
+            eventNotifier.notify(new AuthServiceRollbackDeclineUnknownEvent(request.pan(), e.getMessage()));
             return DeclineOutcome.UNKNOWN_REASON.buildRollback(request, requestInputTime);
         }
+
+        eventNotifier.notify(new AuthServiceRollbackEvent(request.pan()));
         return RollbackResponse.approved(request, requestInputTime);
 
-    }
-
-    public void rollbackCard(RollbackRequest request) {
-        URI uri = UriComponentsBuilder
-                .fromUriString(cmsUrl)
-                .scheme("http")
-                .path("/api/cards/{pan}/rollback")
-                .buildAndExpand(request.pan())
-                .toUri();
-        log.debug("Rollback amount {} for card {} with rrn {}", request.amount(), logPan(request.pan()), request.rrn());
-        restClient.post()
-                .uri(uri)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(request)
-                .retrieve()
-                .onStatus(status -> status.value() == 500, (req, res) -> {
-                    throw new InternalCardManagerException("Internal card management error");
-                })
-                .onStatus(status -> status.value() == 503, (req, res) -> {
-                    throw new ServiceUnavailableException("Card Management service unavailable");
-                })
-                .onStatus(status -> status.value() == 400, (req, res) -> {
-                    throw new InvalidRollbackRequestException("Invalid rollback request");
-                })
-                .onStatus(status -> status.value() == 404, (req, res) -> {
-                    throw new CardNotFoundException("Card not found: " + logPan(request.pan()));
-                })
-                .onStatus(status -> status.value() == 409, (req, res) -> {
-                    throw new RollbackConflictException("Rollback conflict");
-                })
-                .onStatus(status -> !status.is2xxSuccessful(), (req, res) -> {
-                    throw new RollbackFailureException("Failed to rollback. Status: " + res.getStatusCode());
-                })
-                .toBodilessEntity();
-
-        log.debug("Rollback successful for card {}", logPan(request.pan()));
     }
 }

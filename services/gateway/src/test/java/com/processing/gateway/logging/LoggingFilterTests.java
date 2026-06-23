@@ -1,6 +1,7 @@
 package com.processing.gateway.logging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.gateway.properties.GatewayProperties;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -9,6 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,7 +25,14 @@ public class LoggingFilterTests {
 
     @BeforeEach
     void setUp() {
-        filter = new RequestLoggingFilter(new ObjectMapper());
+        var props = new GatewayProperties();
+        props.setLogging(new GatewayProperties.LoggingProperties(
+                false,
+                false,
+                Set.of()
+        ));
+
+        filter = new RequestLoggingFilter(new ObjectMapper(), props);
         request = mock(HttpServletRequest.class);
         response = mock(HttpServletResponse.class);
         chain = mock(FilterChain.class);

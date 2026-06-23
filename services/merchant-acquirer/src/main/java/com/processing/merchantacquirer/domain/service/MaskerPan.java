@@ -1,4 +1,4 @@
-package com.processing.merchantacquirer.domain;
+package com.processing.merchantacquirer.domain.service;
 
 public final class MaskerPan {
     private MaskerPan() {}

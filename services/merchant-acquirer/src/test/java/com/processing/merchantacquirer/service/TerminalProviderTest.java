@@ -1,8 +1,8 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.domain.entity.Terminal;
+import com.processing.merchantacquirer.domain.repository.TerminalRepositoryPort;
 import com.processing.merchantacquirer.exception.ResourceNotFoundException;
-import com.processing.merchantacquirer.repository.TerminalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -14,14 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 public class TerminalProviderTest {
-    private TerminalRepository terminalRepository;
+    private TerminalRepositoryPort terminalRepository;
     private TerminalProvider terminalProvider;
 
     private static final String MERCHANT_ID = "MERCH0000000007";
 
     @BeforeEach
     void setUp() {
-        terminalRepository = Mockito.mock(TerminalRepository.class);
+        terminalRepository = Mockito.mock(TerminalRepositoryPort.class);
         terminalProvider = new TerminalProvider(terminalRepository);
     }
 

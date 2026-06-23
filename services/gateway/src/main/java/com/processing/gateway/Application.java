@@ -15,7 +15,6 @@ import org.springframework.cache.annotation.EnableCaching;
 @EnableConfigurationProperties({
         ServiceProperties.class,
         OpenApiProperties.class,
-        GatewayProperties.class,
         ShutdownProperties.class
 })
 @EnableCaching

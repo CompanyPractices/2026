@@ -2,8 +2,10 @@ package com.processing.cardmanagement.configuration;
 
 import com.processing.cardmanagement.events.CardEventListener;
 import com.processing.cardmanagement.events.CardEventNotifier;
+import com.processing.cardmanagement.mappers.CardOutboxEventDataPersistenceMapper;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
+import com.processing.cardmanagement.options.OutboxOptions;
 import com.processing.cardmanagement.repositories.*;
 import com.processing.cardmanagement.services.*;
 import org.springframework.context.annotation.Bean;
@@ -20,8 +22,11 @@ public class AppConfig {
     }
 
     @Bean
-    public CardEventNotifier cardEventNotifier(List<CardEventListener> listeners) {
-        return new CardEventNotifier(listeners);
+    public CardEventNotifier cardEventNotifier(
+        OutboxEventProcessor outboxEventProcessor,
+        List<CardEventListener> eventListeners
+    ) {
+        return new CardEventNotifier(outboxEventProcessor, eventListeners);
     }
 
     @Bean
@@ -32,6 +37,23 @@ public class AppConfig {
     @Bean
     public BinIssuerService binIssuerService(BinIssuerRepository repository) {
         return new BinIssuerServiceImpl(repository);
+    }
+
+    @Bean
+    public OutboxRepository outboxRepository(
+        OutboxEventJpaRepository jpaRepository,
+        CardOutboxEventDataPersistenceMapper persistenceMapper
+    ) {
+        return new OutboxJpaAdapter(jpaRepository, persistenceMapper);
+    }
+
+    @Bean
+    public OutboxEventProcessorImpl outboxEventProcessor(
+        OutboxRepository outboxRepository,
+        List<CardEventListener> listeners,
+        OutboxOptions outboxOptions
+    ) {
+        return new OutboxEventProcessorImpl(outboxRepository, listeners, outboxOptions);
     }
 
     @Bean

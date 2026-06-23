@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -113,6 +114,7 @@ public class TransactionService {
      * @param filter параметры фильтрации и пагинации
      * @return постраничный результат с общим счётчиком
      */
+    @Transactional(readOnly = true)
     public TransactionSearchResponse search(TransactionFilter filter) {
         Pageable pageable = new OffsetBasedPageRequest(filter.getOffset(), filter.getLimit());
         Page<Transaction> page = transactionRepository.findAll(TransactionSpecification.filter(filter), pageable);
@@ -139,7 +141,7 @@ public class TransactionService {
                 stats.getDeclined(),
                 total > 0 ? (double) approved / total : 0,
                 totalAmount,
-                total > 0 ? totalAmount.divideToIntegralValue(BigDecimal.valueOf(total)) : BigDecimal.ZERO,
+                total > 0 ? totalAmount.divide(BigDecimal.valueOf(total), 0, RoundingMode.HALF_UP) : BigDecimal.ZERO,
                 stats.getAvgProcessingTimeMs(),
                 stats.getRecentCount()
         );

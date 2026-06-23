@@ -241,7 +241,7 @@ id,mti,stan,rrn,pan,processingCode,amount,currencyCode,terminalId,terminalType,m
   "totalAmount": 187500000,
   "averageAmount": 150000,
   "avgProcessingTimeMs": 38.5,
-  "transactionsPerMinute": 12.3
+  "transactionsPerMinute": 12
 }
 ```
 
