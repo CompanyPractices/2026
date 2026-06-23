@@ -201,12 +201,20 @@ public final class CardManagementTestUtils {
         return faker.name().fullName().toUpperCase(Locale.ROOT);
     }
 
+    public static String generateCurrencyCode() {
+        return generateCurrencyCode(faker);
+    }
+
     public static String generateCurrencyCode(Faker faker) {
         return faker.number().digits(3);
     }
 
     public static String generateIssuerId(Faker faker) {
         return faker.number().digits(3);
+    }
+
+    public static String generateRrn() {
+        return generateRrn(faker);
     }
 
     public static String generateRrn(Faker faker) {

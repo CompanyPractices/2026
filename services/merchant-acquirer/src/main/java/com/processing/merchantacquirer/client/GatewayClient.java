@@ -21,8 +21,8 @@ public class GatewayClient {
 
   public GatewayClient(RestClient.Builder builder, @Value("${gateway.url}") String gatewayUrl) {
       var settings = ClientHttpRequestFactorySettings.defaults()
-              .withConnectTimeout(Duration.ofSeconds(2))
-              .withReadTimeout(Duration.ofSeconds(5));
+              .withConnectTimeout(Duration.ofSeconds(5))
+              .withReadTimeout(Duration.ofSeconds(30));
       this.restClient = builder
               .baseUrl(gatewayUrl)
               .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))

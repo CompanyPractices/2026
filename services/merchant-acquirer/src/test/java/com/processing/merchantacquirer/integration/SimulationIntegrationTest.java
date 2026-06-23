@@ -5,7 +5,7 @@ import com.processing.merchantacquirer.controller.dto.HealthResponse;
 import com.processing.merchantacquirer.controller.dto.SimulatorResponse;
 import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
-import com.processing.merchantacquirer.repository.AcquirerFeeRepository;
+import com.processing.merchantacquirer.domain.repository.AcquirerFeeRepositoryPort;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
 import org.junit.jupiter.api.AfterAll;
@@ -81,7 +81,7 @@ public class SimulationIntegrationTest {
     private TestRestTemplate rest;
 
     @Autowired
-    private AcquirerFeeRepository feeRepository;
+    private AcquirerFeeRepositoryPort feeRepository;
 
     @Test
     void healthReport() {

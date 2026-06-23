@@ -26,8 +26,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
+import static com.processing.cardmanagement.utils.CardManagementTestUtils.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
@@ -457,6 +459,56 @@ public class CardServiceControllerIntegrationTest {
     }
 
     @Test
+    void cardServiceShouldNotReserveMoneyIfBalanceIsNotEnough() {
+        var card = createRandomCard(createRandomValidCreationRequest());
+        var amount = card.availableBalance();
+        var reserveRequest = new ReserveRequest(
+            amount.add(BigDecimal.ONE),
+            faker.number().digits(12)
+        );
+
+        given()
+            .port(port)
+            .pathParam("PAN", card.pan())
+            .contentType(ContentType.JSON)
+            .body(reserveRequest)
+            .when()
+            .post("/api/cards/{PAN}/reserve")
+            .then()
+            .statusCode(402);
+    }
+
+    @Test
+    void cardServiceShouldNotReserveMoneyIfRrnAlreadyExists() {
+        var card = createRandomCard(createRandomValidCreationRequest());
+        var amount = BigDecimal.ONE;
+        var reserveRequest = new ReserveRequest(
+            amount,
+            faker.number().digits(12)
+        );
+
+        given()
+            .port(port)
+            .pathParam("PAN", card.pan())
+            .contentType(ContentType.JSON)
+            .body(reserveRequest)
+            .when()
+            .post("/api/cards/{PAN}/reserve")
+            .then()
+            .statusCode(200);
+
+        given()
+            .port(port)
+            .pathParam("PAN", card.pan())
+            .contentType(ContentType.JSON)
+            .body(reserveRequest)
+            .when()
+            .post("/api/cards/{PAN}/reserve")
+            .then()
+            .statusCode(409);
+    }
+
+    @Test
     void cardServiceCantReserveNegativeMoney() {
         var pan = createRandomCard(createRandomValidCreationRequest()).pan();
         var amount = -1;
@@ -490,6 +542,45 @@ public class CardServiceControllerIntegrationTest {
             .post("/api/cards/{PAN}/reserve")
             .then()
             .statusCode(400);
+    }
+
+    @Test
+    void concurrentCardServiceReserveMoney() {
+        var threads = 5;
+        var amount = BigDecimal.valueOf(100);
+        var initialBalance = amount.multiply(BigDecimal.valueOf(threads));
+        var createCardRequest = new CreateCardRequest(
+            binIssuerService.getAll().getFirst().bin(),
+            generateCardholderName(),
+            generateCurrencyCode(),
+            initialBalance,
+            initialBalance,
+            initialBalance
+        );
+        var pan = createRandomCard(createCardRequest).pan();
+        var futures = Stream.generate(
+                () -> (Runnable) () -> {
+                    var reserveRequest = new ReserveRequest(
+                        amount,
+                        generateRrn()
+                    );
+                    given()
+                        .port(port)
+                        .pathParam("PAN", pan)
+                        .contentType(ContentType.JSON)
+                        .body(reserveRequest)
+                        .when()
+                        .post("/api/cards/{PAN}/reserve")
+                        .then()
+                        .statusCode(200);
+                }
+
+            )
+            .limit(threads)
+            .map(CompletableFuture::runAsync)
+            .toArray(CompletableFuture[]::new);
+
+        CompletableFuture.allOf(futures).join();
     }
 
     @Test
@@ -642,7 +733,7 @@ public class CardServiceControllerIntegrationTest {
             faker.number().digits(3),
             BigDecimal.valueOf(dailyLimit),
             BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 300_000_000)),
-            BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000))
+            BigDecimal.valueOf(faker.number().numberBetween(100_000, 1_000_000))
         );
     }
 

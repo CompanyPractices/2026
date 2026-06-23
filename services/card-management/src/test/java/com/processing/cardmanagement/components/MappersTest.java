@@ -1,5 +1,9 @@
 package com.processing.cardmanagement.components;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.cardmanagement.events.*;
+import com.processing.cardmanagement.exceptions.OutboxDeserializationException;
 import com.processing.cardmanagement.mappers.*;
 import com.processing.cardmanagement.models.*;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -8,12 +12,17 @@ import net.datafaker.Faker;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.UUID;
 
 import static com.processing.cardmanagement.utils.CardManagementTestUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MappersTest {
 
@@ -51,6 +60,14 @@ public class MappersTest {
         Mappers.getMapper(ReservationPersistenceMapper.class);
     private final ReservationRollbackPersistenceMapper reservationRollbackPersistenceMapper =
         Mappers.getMapper(ReservationRollbackPersistenceMapper.class);
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    {
+        objectMapper.addMixIn(CardOutboxEvent.class, CardOutboxEventMixIn.class);
+    }
+
+    private final CardOutboxEventDataPersistenceMapper outboxEventDataPersistenceMapper =
+        new CardOutboxEventDataPersistenceMapper(objectMapper);
 
     @Test
     void expiryDateMapperToStringTest() {
@@ -332,6 +349,139 @@ public class MappersTest {
         var rollback = reservationRollbackPersistenceMapper.toDomain(entity);
 
         assertEquals(entity, reservationRollbackPersistenceMapper.toEntity(rollback));
+    }
+
+    @Test
+    void outboxEventDataPersistenceMapperToEntityTest() {
+        var domain = new CardOutboxEventData(
+            UUID.randomUUID(),
+            new CardServiceCreationEvent(1),
+            Instant.now(),
+            Instant.now(),
+            0,
+            "ERROR",
+            OutboxEventDataStatus.PROCESSED
+        );
+        var expectedEntity = new CardOutboxEventDataEntity(
+            domain.id(),
+            "CardServiceCreationEvent",
+            "{\"type\":\"CARD_SERVICE_CREATION\",\"amount\":1}",
+            domain.createdAt(),
+            domain.processedAt(),
+            domain.retryCount(),
+            domain.lastError(),
+            domain.status()
+        );
+        assertEquals(expectedEntity, outboxEventDataPersistenceMapper.toEntity(domain));
+    }
+
+    @Test
+    void outboxEventDataPersistenceMapperToDomainTest() {
+        var entity = new CardOutboxEventDataEntity(
+            UUID.randomUUID(),
+            "CardServiceCreationEvent",
+            "{\"type\":\"CARD_SERVICE_CREATION\",\"amount\":1}",
+            Instant.now(),
+            Instant.now(),
+            0,
+            "ERROR",
+            OutboxEventDataStatus.PROCESSED
+        );
+        var expectedDomain = new CardOutboxEventData(
+            entity.getId(),
+            new CardServiceCreationEvent(1),
+            entity.getCreatedAt(),
+            entity.getProcessedAt(),
+            entity.getRetryCount(),
+            entity.getLastError(),
+            entity.getStatus()
+        );
+        assertEquals(expectedDomain, outboxEventDataPersistenceMapper.toDomain(entity));
+    }
+
+    @Test
+    void outboxEventDataPersistenceMapperDomainSelfTest() {
+        var domain = new CardOutboxEventData(
+            UUID.randomUUID(),
+            new CardServiceCreationEvent(1),
+            Instant.now(),
+            Instant.now(),
+            0,
+            "ERROR",
+            OutboxEventDataStatus.PROCESSED
+        );
+        var entity = outboxEventDataPersistenceMapper.toEntity(domain);
+        assertEquals(domain, outboxEventDataPersistenceMapper.toDomain(entity));
+    }
+
+    @Test
+    void outboxEventDataPersistenceMapperEntitySelfTest() {
+        var entity = new CardOutboxEventDataEntity(
+            UUID.randomUUID(),
+            "CardServiceCreationEvent",
+            "{\"type\":\"CARD_SERVICE_CREATION\",\"amount\":1}",
+            Instant.now(),
+            Instant.now(),
+            0,
+            "ERROR",
+            OutboxEventDataStatus.PROCESSED
+        );
+        var domain = outboxEventDataPersistenceMapper.toDomain(entity);
+        assertEquals(entity, outboxEventDataPersistenceMapper.toEntity(domain));
+    }
+
+    @Test
+    void outboxEventDataPersistenceMapperEventDeserializationExceptionTest() {
+        var entity = new CardOutboxEventDataEntity(
+            UUID.randomUUID(),
+            "INVALID_NAME",
+            "INVALID_BODY",
+            Instant.now(),
+            Instant.now(),
+            0,
+            "ERROR",
+            OutboxEventDataStatus.PROCESSED
+        );
+        assertThrows(
+            OutboxDeserializationException.class,
+            () -> outboxEventDataPersistenceMapper.toDomain(entity)
+        );
+    }
+
+    @Test
+    void outboxEventDataPersistenceMapperEventCastTest() {
+        var objMap = Map.of(
+            "{\"type\":\"CARD_SERVICE_CREATION\",\"amount\":1}",
+            new CardServiceCreationEvent(1),
+            "{\"type\":\"CARD_SERVICE_BULK_UPDATE\",\"count\":1,\"status\":\"ACTIVE\"}",
+            new CardServiceBulkUpdateEvent(1, CardStatus.ACTIVE),
+            "{\"type\":\"CARDS_BATCH_GENERATED\",\"statusCount\":{\"ACTIVE\":1}}",
+            new CardsBatchGeneratedEvent(Map.of(CardStatus.ACTIVE, 1L)),
+            "{\"type\":\"CARD_SERVICE_DELETION\",\"pan\":\"1234123412341234\"}",
+            new CardServiceDeletionEvent("1234123412341234"),
+            "{\"type\":\"CARD_SERVICE_PATCH\",\"pan\":\"1234123412341234\"}",
+            new CardServicePatchEvent("1234123412341234"),
+            "{\"type\":\"CARD_SERVICE_RESERVE\",\"pan\":\"1234123412341234\",\"rrn\":\"123412341234\",\"amount\":1}",
+            new CardServiceReserveEvent(
+                "1234123412341234",
+                "123412341234",
+                BigDecimal.ONE
+            ),
+            "{\"type\":\"CARD_SERVICE_ROLLBACK\",\"pan\":\"1234123412341234\",\"rrn\":\"123412341234\",\"amount\":1}",
+            new CardServiceRollbackEvent(
+                "1234123412341234",
+                "123412341234",
+                BigDecimal.ONE
+            )
+        );
+        objMap.forEach((key, value) -> {
+            try {
+                assertEquals(key, objectMapper.writeValueAsString(value));
+                assertEquals(value, objectMapper.readValue(key, CardOutboxEvent.class));
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
 
     private YearMonth createRandomYearMonthDate() {

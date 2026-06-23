@@ -3,7 +3,7 @@ package com.processing.merchantacquirer.service;
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
 import com.processing.merchantacquirer.controller.dto.*;
 import com.processing.merchantacquirer.domain.entity.Merchant;
-import com.processing.merchantacquirer.domain.entity.Scenario;
+import com.processing.merchantacquirer.domain.model.Scenario;
 import com.processing.merchantacquirer.service.dto.RequestFeeData;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
 import java.time.Duration;

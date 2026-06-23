@@ -1,3 +1,3 @@
 package com.processing.cardmanagement.events;
 
-public record CardServicePatchEvent(String pan) implements CardEvent {}
+public record CardServicePatchEvent(String pan) implements CardOutboxEvent {}
