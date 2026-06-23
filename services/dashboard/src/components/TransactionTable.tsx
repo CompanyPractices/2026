@@ -1,33 +1,18 @@
-import {hidePan, convertPenniesToRubles, formatTime, formatDate, formatDateTime} from '../utils/format';
+import { hidePan, convertPenniesToRubles, formatDateTime } from '../utils/format';
 import { getStatusIcon } from '../utils/statusIcon';
-import {Filter, PaginationMeta, Transaction} from '../types';
-import { useState, useMemo } from 'react';
+import { Filter, PaginationMeta, Transaction } from '../types';
+import { useState, useMemo, useEffect } from 'react';
 import { TransactionModal } from './TransactionModal';
 import { ArrowDownToLine, ChevronLeft, ChevronRight } from 'lucide-react';
-import {exportToCsv} from '../utils/exportToCsv';
-import {Filters} from './Filters';
-import {ISSUERS_NAMES, MCC_NAMES} from '../mockData';
+import { Filters } from './Filters';
+import { ISSUERS_NAMES, MCC_NAMES } from '../mockData';
+import { useExportCsv } from "../hooks/useExportCsv.ts";
 import { useToastContext } from '../contexts/ToastContext.ts'
-
-const mapTransactionToCsvRow = (tx: Transaction) => ({
-    'STAN': tx.stan,
-    'RRN': tx.rrn || '—',
-    'PAN': hidePan(tx.pan),
-    'Amount': tx.amount,
-    'Status': tx.status,
-    'Auth code': tx.authCode || '—',
-    'Terminal': `${tx.terminalId}${tx.terminalType ? ` (${tx.terminalType})` : ''}`,
-    'Merchant ID': tx.merchantId,
-    'MCC': tx.mcc,
-    'Acquirer ID': tx.acquirerId,
-    'Issuer ID': tx.issuerId || '—',
-    'Time': formatTime(tx.createdAt),
-    'Date': formatDate(tx.createdAt)
-});
 
 type TransactionTableProps = {
     transactions: Transaction[],
     isFiltered: boolean,
+    currentFilter: Filter,
     error: string | null,
     loading: boolean,
     search: (filter: Filter) => void,
@@ -39,6 +24,7 @@ type TransactionTableProps = {
 export function TransactionTable({
      transactions,
      isFiltered,
+     currentFilter,
      error,
      loading,
      search,
@@ -47,6 +33,8 @@ export function TransactionTable({
      onPageSizeChange
 }: TransactionTableProps){
     const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+    const { exportError, exportSuccess, handleExportCsv } = useExportCsv(currentFilter);
+    const { addToast } = useToastContext();
 
     const sortedTransactions = useMemo(() => {
         return [...transactions].sort((a, b) => {
@@ -54,27 +42,13 @@ export function TransactionTable({
         });
     }, [transactions]);
 
-    const { addToast } = useToastContext();
-
-    const handleExportCsv = () => {
-        try {
-            const csvRows = sortedTransactions.map(mapTransactionToCsvRow);
-            if (csvRows.length === 0){
-                addToast('Нет данных для экспорта', 'WARNING');
-                return;
-            }
-            const now = new Date();
-            const dateStr = now.toISOString().slice(0, 10);
-            const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
-            const filename = `transactions_${dateStr}_${timeStr}.csv`;
-
-            exportToCsv(filename, csvRows);
+    useEffect(() => {
+        if (exportError) {
+            addToast('Не удалось скачать файл', 'ERROR');
+        } else if (exportSuccess) {
             addToast('Файл успешно экспортирован', 'SUCCESS');
         }
-        catch {
-            addToast('Не удалось скачать файл', 'ERROR');
-        }
-    };
+    }, [exportError, exportSuccess, addToast]);
 
     const showNavigation = !loading && !error && pagination.totalElements > 0;
 
