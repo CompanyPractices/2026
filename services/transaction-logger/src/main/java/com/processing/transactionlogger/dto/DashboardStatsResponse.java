@@ -22,5 +22,5 @@ public record DashboardStatsResponse(
     BigDecimal totalAmount,
     BigDecimal averageAmount,
     double avgProcessingTimeMs,
-    double transactionsPerMinute
+    long transactionsPerMinute
 ) {}

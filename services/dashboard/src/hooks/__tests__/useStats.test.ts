@@ -8,12 +8,17 @@ vi.mock('../../api/client', () => ({
     default: vi.fn(),
 }));
 
+vi.mock('../../contexts/ToastContext', () => ({
+    useToastContext: () => ({
+        addToast: vi.fn(),
+    }),
+}));
+
 const mockedFetchApi = vi.mocked(fetchApi);
 
 describe('useStats', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockedFetchApi.mockResolvedValue({} as DashboardStats);
     });
 
     it('should return loading=true and null data on initial render', async () => {
@@ -56,8 +61,10 @@ describe('useStats', () => {
 
         expect(result.current.transactionStats).toEqual(mockData);
         expect(result.current.error).toBeNull();
-        expect(mockedFetchApi).toHaveBeenCalledTimes(1);
-        expect(mockedFetchApi).toHaveBeenCalledWith('/api/dashboard/stats');
+        expect(mockedFetchApi).toHaveBeenCalledWith(
+            '/api/dashboard/stats',
+            expect.objectContaining({ onError: expect.any(Function) })
+        );
     });
 
     it('should handle network error and set error state', async () => {

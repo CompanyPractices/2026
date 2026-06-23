@@ -1,5 +1,6 @@
 package com.processing.merchantacquirer.domain;
 
+import com.processing.merchantacquirer.domain.service.StanGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;

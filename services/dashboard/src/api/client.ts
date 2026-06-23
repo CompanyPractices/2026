@@ -1,6 +1,7 @@
 type FetchApiOptions = {
     timeout?: number;
     retries?: number;
+    onError?: (message: string) => void;
 }
 
 type InternalFetchOptions = FetchApiOptions & {
@@ -41,7 +42,10 @@ async function fetchWithRetry(route: string, options: InternalFetchOptions = {})
             const error = err instanceof Error ? err : new Error(String(err));
             lastError = error;
 
-            if (error.message.startsWith('Client Error')) {
+            if (error.message.startsWith('Client Error')){
+                if (options.onError){
+                    options.onError(lastError.message);
+                }
                 throw error;
             }
             if (error.name === 'AbortError' || error.message.includes('Failed to fetch')) {
@@ -50,11 +54,15 @@ async function fetchWithRetry(route: string, options: InternalFetchOptions = {})
                     continue;
                 }
             }
+            if (options.onError) {
+                options.onError(error.message);
+            }
+
             throw error;
         }
     }
 
-    throw lastError!;
+    throw lastError;
 }
 
 export async function fetchApi<T>(route: string, options: FetchApiOptions = {}): Promise<T> {

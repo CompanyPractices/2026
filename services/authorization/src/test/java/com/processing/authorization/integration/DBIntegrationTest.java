@@ -3,6 +3,8 @@ package com.processing.authorization.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -15,6 +17,7 @@ import java.util.UUID;
 import com.processing.authorization.client.CardManagementClient;
 import com.processing.authorization.entities.LimitUsage;
 import com.processing.authorization.exceptions.ReserveException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +26,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
-import com.processing.authorization.services.AuthService;
+import com.processing.authorization.services.AuthServiceImpl;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -35,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest
 public class DBIntegrationTest {
     @Autowired
-    private AuthService authService;
+    private AuthServiceImpl authService;
     @Autowired
     private LimitUsageRepository limitUsageRepository;
 

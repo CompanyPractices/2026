@@ -1,5 +1,6 @@
 package com.processing.merchantacquirer.domain;
 
+import com.processing.merchantacquirer.domain.service.MaskerPan;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

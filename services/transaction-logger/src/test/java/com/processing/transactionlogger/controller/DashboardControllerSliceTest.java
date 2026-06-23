@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(DashboardController.class)
-public class DashboardControllerIntegrationTest {
+public class DashboardControllerSliceTest {
     @Autowired
     private MockMvc mockMvc;
 
@@ -39,7 +39,7 @@ public class DashboardControllerIntegrationTest {
                         new BigDecimal("500000"),
                         new BigDecimal("5000"),
                         42.5,
-                        5.0)
+                        5)
         );
 
         mockMvc.perform(get("/api/dashboard/stats"))
@@ -51,7 +51,7 @@ public class DashboardControllerIntegrationTest {
                 .andExpect(jsonPath("$.totalAmount").value(500000))
                 .andExpect(jsonPath("$.averageAmount").value(5000))
                 .andExpect(jsonPath("$.avgProcessingTimeMs").value(42.5))
-                .andExpect(jsonPath("$.transactionsPerMinute").value(5.0));
+                .andExpect(jsonPath("$.transactionsPerMinute").value(5));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class DashboardControllerIntegrationTest {
     @Test
     void getChartsReturns200WithBuckets() throws Exception {
         when(transactionService.getCharts(any())).thenReturn(List.of(
-                new ChartBucket(Instant.parse("2026-06-16T10:00:00Z"), 10, 7, 3, 500000)));
+                new ChartBucket(Instant.parse("2026-06-16T10:00:00Z"), 10, 7, 3, new BigDecimal("500000"))));
 
         mockMvc.perform(get("/api/dashboard/charts").param("granularity", "hour"))
                 .andExpect(status().isOk())

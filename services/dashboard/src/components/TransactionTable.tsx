@@ -1,12 +1,14 @@
-import {hidePan, convertPenniesToRubles, formatDateTime} from '../utils/format';
+import {hidePan, convertPenniesToRubles, formatTime, formatDate, formatDateTime} from '../utils/format';
 import { getStatusIcon } from '../utils/statusIcon';
 import {Filter, PaginationMeta, Transaction} from '../types';
 import { useState, useMemo } from 'react';
 import { TransactionModal } from './TransactionModal';
 import { ArrowDownToLine, ChevronLeft, ChevronRight } from 'lucide-react';
+import {exportToCsv} from '../utils/exportToCsv';
 import {Filters} from './Filters';
 import {ISSUERS_NAMES, MCC_NAMES} from '../mockData';
 import {useExportCsv} from "../hooks/useExportCsv.ts";
+import { useToastContext } from '../contexts/ToastContext.ts'
 
 type TransactionTableProps = {
     transactions: Transaction[],
@@ -40,6 +42,7 @@ export function TransactionTable({
         });
     }, [transactions]);
 
+    const { addToast } = useToastContext();
     const showNavigation = !loading && !error && pagination.totalElements > 0;
 
     const pageNumbers = useMemo(() => {
@@ -103,11 +106,6 @@ export function TransactionTable({
                 )}
             </div>
 
-            {exportError && (
-                <div className="text-center py-2 text-red-500">
-                    {exportError}
-                </div>
-            )}
 
             {error &&
                 <div className="text-center py-8 text-red-500">

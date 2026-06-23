@@ -65,7 +65,7 @@ public class DashboardControllerTest {
     @Test
     void getChartsReturnsResultFromService() {
         List<ChartBucket> expected = List.of(
-                new ChartBucket(Instant.parse("2026-06-16T10:00:00Z"), 10, 7, 3, 500000));
+                new ChartBucket(Instant.parse("2026-06-16T10:00:00Z"), 10, 7, 3, new BigDecimal("500000")));
         when(transactionService.getCharts(any())).thenReturn(expected);
 
         List<ChartBucket> result = dashboardController.getCharts(new ChartsFilter());
@@ -85,7 +85,7 @@ public class DashboardControllerTest {
 
     private static DashboardStatsResponse stats(long total, long approved, long declined) {
         double rate = total > 0 ? (double) approved / total : 0;
-        return new DashboardStatsResponse(total, approved, declined, rate, BigDecimal.ZERO, BigDecimal.ZERO, 0.0, 0.0);
+        return new DashboardStatsResponse(total, approved, declined, rate, BigDecimal.ZERO, BigDecimal.ZERO, 0.0, 0);
     }
 
     private static TransactionResponse transactionResponse() {

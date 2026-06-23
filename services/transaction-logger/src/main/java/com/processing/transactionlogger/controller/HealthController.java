@@ -4,6 +4,7 @@ import com.processing.transactionlogger.dto.HealthResponse;
 import com.processing.transactionlogger.repository.TransactionRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,13 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Tag(name = "Health", description = "Состояние сервиса")
 @RestController
+@RequiredArgsConstructor
 public class HealthController {
 
     private final TransactionRepository transactionRepository;
-
-    public HealthController(TransactionRepository transactionRepository) {
-        this.transactionRepository = transactionRepository;
-    }
 
     /**
      * Возвращает статус сервиса и общее количество хранящихся транзакций
