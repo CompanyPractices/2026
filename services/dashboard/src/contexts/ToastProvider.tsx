@@ -31,7 +31,7 @@ export function ToastProvider ({children}: ToastProviderProps) {
             }
             return `${Math.random().toString(36).substring(2, 9) + Date.now().toString(36)}`;
         };
-        const newToast: Toast = {id: toastId, message, type, duration: durationToast};
+        const newToast: Toast = {id: toastId(), message, type, duration: durationToast};
         setToasts(prev => [...prev, newToast]);
 
         timers.current[newToast.id] = setTimeout(() => {
