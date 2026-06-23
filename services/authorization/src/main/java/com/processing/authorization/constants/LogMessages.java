@@ -16,8 +16,8 @@ package com.processing.authorization.constants;
  *
  * @param message сообщение логгирования
  *
- * @see com.processing.authorization.services.AuthServiceInterface
- * @see com.processing.authorization.controller.AuthController
+ * @see com.processing.authorization.services.AuthService
+ * @see com.processing.authorization.controller.AuthControllerImpl
  */
 public record LogMessages(String message) {
     public static final String MESSAGE_AUTH_APPROVED = "AUTHORIZATION APPROVED";
