@@ -27,7 +27,7 @@ import com.processing.common.dto.authorization.RollbackResponse;
  * @see AuthorizationRequest
  * @see AuthorizationResponse
  */
-public interface AuthControllerIntereface {
+public interface AuthControllerInterface {
     /**
      * Обрабатывает запрос на авторизацию банковской карты.
      *

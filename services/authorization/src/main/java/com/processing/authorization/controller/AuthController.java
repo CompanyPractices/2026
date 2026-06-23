@@ -32,7 +32,7 @@ import static com.processing.authorization.constants.DeclineOutcome.*;
 @RequestMapping("/api/internal")
 @RequiredArgsConstructor
 @Tag(name = "Authorization", description = "Endpoint for authorizing cards")
-public class AuthController implements AuthControllerIntereface {
+public class AuthController implements AuthControllerInterface {
     private final AuthService authService;
 
     @PostMapping("/authorize")
