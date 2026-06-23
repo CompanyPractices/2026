@@ -1,13 +1,13 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
-import com.processing.merchantacquirer.domain.FeeCalculator;
-import com.processing.merchantacquirer.domain.StanGenerator;
+import com.processing.merchantacquirer.domain.repository.TerminalRepositoryPort;
+import com.processing.merchantacquirer.domain.service.FeeCalculator;
+import com.processing.merchantacquirer.domain.service.StanGenerator;
 import com.processing.merchantacquirer.domain.entity.Merchant;
-import com.processing.merchantacquirer.domain.entity.Scenario;
+import com.processing.merchantacquirer.domain.model.Scenario;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactory;
-import com.processing.merchantacquirer.repository.TerminalRepository;
 import com.processing.merchantacquirer.service.dto.RequestFeeData;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class TransactionBuilderTest {
-    private final TerminalRepository terminalRepository = mock(TerminalRepository.class);
+    private final TerminalRepositoryPort terminalRepository = mock(TerminalRepositoryPort.class);
     private final TransactionBuilder transactionBuilder = new TransactionBuilder(
             new AuthorizationRequestFactory(new StanGenerator()),
             new TerminalProvider(terminalRepository),

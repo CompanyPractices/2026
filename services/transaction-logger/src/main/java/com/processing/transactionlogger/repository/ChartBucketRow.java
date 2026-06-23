@@ -1,5 +1,6 @@
 package com.processing.transactionlogger.repository;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
@@ -11,5 +12,5 @@ public interface ChartBucketRow {
     Long getTotal();
     Long getApproved();
     Long getDeclined();
-    Long getAmount();
+    BigDecimal getAmount();
 }

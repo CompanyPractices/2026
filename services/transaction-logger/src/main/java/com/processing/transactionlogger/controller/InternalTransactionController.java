@@ -48,7 +48,7 @@ public class InternalTransactionController {
     @ApiResponse(
             responseCode = "201",
             description = "Транзакция сохранена",
-            content = @Content(schema  = @Schema(implementation = TransactionStoredResponse.class))
+            content = @Content(schema = @Schema(implementation = TransactionStoredResponse.class))
     )
     @ApiResponse(
             responseCode = "200",

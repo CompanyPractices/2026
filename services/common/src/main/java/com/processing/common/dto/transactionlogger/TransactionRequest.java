@@ -1,8 +1,10 @@
 package com.processing.common.dto.transactionlogger;
 
+import com.processing.common.dto.annotations.Pan;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -20,7 +22,7 @@ import java.util.UUID;
  * @param rrn ссылочный номер транзакции, сгенерированный сервисом авторизации
  * @param pan номер тестовой или замаскированной карты
  * @param processingCode код обработки транзакции
- * @param amount сумма транзакции
+ * @param amount сумма транзакции в минимальных единицах валюты
  * @param currencyCode числовой код валюты по ISO 4217
  * @param terminalId идентификатор терминала
  * @param terminalType тип терминала
@@ -49,7 +51,7 @@ public record TransactionRequest(
 
         @Schema(description = "Системный трассировочный номер операции")
         @NotBlank
-        @Size(max = 6)
+        @Pattern(regexp = "\\d{6}", message = "stan must be exactly 6 digits")
         String stan,
 
         @Schema(description = "Ссылочный номер транзакции (RRN), сгенерированный сервисом авторизации")
@@ -58,22 +60,22 @@ public record TransactionRequest(
 
         @Schema(description = "Номер тестовой или замаскированной карты (PAN)")
         @NotBlank
-        @Size(max = 16)
+        @Pan
         String pan,
 
         @Schema(description = "Код обработки транзакции")
         @NotBlank
-        @Size(max = 6)
+        @Pattern(regexp = "\\d{6}", message = "processingCode must be exactly 6 digits")
         String processingCode,
 
-        @Schema(description = "Сумма транзакции")
+        @Schema(description = "Сумма транзакции в минимальных единицах валюты")
         @NotNull
         @Positive
         BigDecimal amount,
 
         @Schema(description = "Числовой код валюты по ISO 4217")
         @NotBlank
-        @Size(max = 3)
+        @Pattern(regexp = "\\d{3}", message = "currencyCode must be exactly 3 digits")
         String currencyCode,
 
         @Schema(description = "Идентификатор терминала")
@@ -92,7 +94,7 @@ public record TransactionRequest(
 
         @Schema(description = "Код категории мерчанта")
         @NotBlank
-        @Size(max = 4)
+        @Pattern(regexp = "\\d{4}", message = "mcc must be exactly 4 digits")
         String mcc,
 
         @Schema(description = "Идентификатор эквайера")
@@ -105,6 +107,7 @@ public record TransactionRequest(
         String issuerId,
 
         @Schema(description = "Комиссия эквайринга")
+        @PositiveOrZero
         BigDecimal acquiringFee,
 
         @Schema(description = "Статус результата авторизации")

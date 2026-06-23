@@ -5,9 +5,9 @@
 > Authorization Service проверяет каждую транзакцию: статус карты, лимиты, баланс — и возвращает решение APPROVED или DECLINED.
 ---
 ## Технологии
-- Язык: {Java 21}
-- Фреймворк: {Spring Boot 3}
-- База данных: {PostgreSQL}
+- Язык: Java 21
+- Фреймворк: Spring Boot 3
+- База данных: PostgreSQL
 - Контейнеризация: Docker
 ---
 ## Endpoints
@@ -15,6 +15,7 @@
 |-------|------|----------|
 | GET | /health | Health-check сервиса |
 | POST | /api/internal/authorize | Authorization: проверка |
+| POST | /api/internal/rollback | Rollback: откат транзакции |
 ### Подробно
 #### GET /health
 Ответ 200:
@@ -67,18 +68,47 @@
 | 404 | Карта не найдена |
 | 422 | Недостаточно средств |
 | 503 | Downstream-сервис недоступен |
+
+#### POST /api/internal/rollback
+Тело запроса:
+```
+{
+  "rrn": "012345678901",
+  "pan": "4000001234560001",
+  "amount": 1000
+}
+```
+Ответ 200:
+```
+{
+  "rrn": "012345678901",
+  "responseCode": "00",
+  "status": "APPROVED",
+  "declineReason": "",
+  "processingTimeMs": 67
+}
+
+```
+Ошибки:
+| Код | Условие |
+|-----|---------|
+| 400 | Ошибка валидации |
+| 404 | Транзакция не найдена |
+| 409 | Конфликт: транзакция уже откачена |
+| 500 | Внутренние проблемы сервиса |
+| 503 | Downstream-сервис недоступен |
 ---
 ## Конфигурация
 Все параметры через переменные окружения (файл .env в корне проекта):
 | Переменная | Значение по умолчанию | Описание |
 |------------|----------------------|----------|
-| PORT | {8083} | Порт сервиса |
-| DB_HOST | localhost | Хост PostgreSQL |
+| DB_HOST | postgres | Хост PostgreSQL |
 | DB_PORT | 5432 | Порт PostgreSQL |
 | DB_NAME | smp_db | Имя базы данных |
 | DB_USER | smp_user | Пользователь БД |
 | DB_PASSWORD | smp_password | Пароль БД |
-| CARD_MGMT_URL | http://localhost:8081 | URL смежного сервиса |
+| AUTH_PORT | 8083 | Порт сервиса |
+| CARD_MGMT_PORT | 8081 | Порт смежного сервиса |
 ---
 ## Как запустить
 ### Локально (без Docker)
@@ -107,29 +137,35 @@ mvn test
 
 | Сервис | Направление | Протокол | Зачем |
 |--------|:----------:|----------|-------|
-| Switch | ← входящий | HTTP REST | присылает запросы на вход |
-| CardManagment | → исходящий | HTTP REST | запрашиваем данные карты и резервирум средства |
+| Switch | ← входящий | HTTP REST | присылает запросы на авторизацию или откат транзакции |
+| CardManagment | → исходящий | HTTP REST | запрашиваем данные карты, резервируем и возвращаем средства |
 
 ---
 ## Структура проекта
 ```text
 authorization/src/
 ├── main/
-│   └── java.com.processing.authorization/
-│       ├── configs/
-│       ├── constants/      # HTTP-handlers / controllers
-│       ├── controller/     # HTTP-handlers / controllers
-│       ├── dto/            # Модели данных / DTO
-│       ├── entities/
-│       ├── exceptions/
-│       ├── repositories/
-│       └── services/
-├── test/                   # Тесты
 │   ├── resoursces/
 │   └── java.com.processing.authorization/
-│       ├── controller/
-│       ├── integration/
-│       └── service/
+│       ├── client/            # Клиент для обращения к CMS
+│       ├── configs/           # Конфигурация spring
+│       ├── constants/         # Константы для логгов и decline ответов
+│       ├── controller/        # HTTP-handlers / controllers
+│       ├── dto/               # Модели данных / DTO
+│       ├── entities/          # Сущности
+│       ├── events/            # События
+│       ├── exceptions/        # Custom исключения
+│       ├── listeners/         # Слушатели, для обработки событий
+│       ├── repositories/      # Репозиторий
+│       ├── services/          # Сервисы для обработки запросов
+│       └── Application.java
+
+├── test/                      # Тесты
+│   ├── resoursces/
+│   └── java.com.processing.authorization/
+│       ├── controller/        # Тесты контроллера
+│       ├── integration/       # Интеграционные тесты с БД
+│       └── service/           # Тесты сервиса
 ├── Dockerfile
 ├── README.md
 ├── pom.xml

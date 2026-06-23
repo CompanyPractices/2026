@@ -12,7 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.processing.merchantacquirer.controller")
 public class GlobalExceptionHandler {
   private static final String SERVICE_NAME = "Merchant acquirer simulator";
   private static final String NO_RETRY = "0";
@@ -87,7 +87,7 @@ public class GlobalExceptionHandler {
             .body(
                     new ErrorResponse(
                             "Internal service error",
-                            "Unexpected error in merchant acquirer simulator service",
+                            "Unexpected error in merchant acquirer simulator service" + ex,
                             Instant.now(),
                             SERVICE_NAME,
                             NO_RETRY));
