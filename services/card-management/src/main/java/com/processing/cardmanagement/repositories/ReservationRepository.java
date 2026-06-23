@@ -8,5 +8,7 @@ public interface ReservationRepository {
 
     Reservation save(Reservation reservation);
 
-    Optional<Reservation> findByRrn(String rrn);
+    boolean isUnique(String rrn, String pan);
+
+    Optional<Reservation> findByRrnAndPan(String rrn, String pan);
 }

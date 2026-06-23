@@ -131,19 +131,19 @@ public class GlobalExceptionHandler {
         return errorResponseFromException(ex);
     }
 
-    @ExceptionHandler(RrnAlreadyExistsException.class)
+    @ExceptionHandler(ReservationAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleRrnAlreadyExistsException(
-        RrnAlreadyExistsException ex
+        ReservationAlreadyExistsException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
     }
 
-    @ExceptionHandler(RrnNotFoundException.class)
+    @ExceptionHandler(ReservationNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleRrnNotFoundException(
-        RrnNotFoundException ex
+        ReservationNotFoundException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);

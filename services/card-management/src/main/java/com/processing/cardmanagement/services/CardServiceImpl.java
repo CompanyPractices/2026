@@ -2,8 +2,8 @@ package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.events.*;
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
-import com.processing.cardmanagement.exceptions.RrnAlreadyExistsException;
-import com.processing.cardmanagement.exceptions.RrnNotFoundException;
+import com.processing.cardmanagement.exceptions.ReservationAlreadyExistsException;
+import com.processing.cardmanagement.exceptions.ReservationNotFoundException;
 import com.processing.cardmanagement.exceptions.TooLargeLimitException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
@@ -36,28 +36,28 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public Card createCard(
-            String bin,
-            String cardholderName,
-            String currencyCode,
-            BigDecimal dailyLimit,
-            BigDecimal monthlyLimit,
-            BigDecimal initialBalance
+        String bin,
+        String cardholderName,
+        String currencyCode,
+        BigDecimal dailyLimit,
+        BigDecimal monthlyLimit,
+        BigDecimal initialBalance
     ) {
         var draft = new CardDraft(
-                bin,
-                cardholderName,
-                CardStatus.ACTIVE,
-                currencyCode,
-                dailyLimit,
-                monthlyLimit,
-                initialBalance
+            bin,
+            cardholderName,
+            CardStatus.ACTIVE,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            initialBalance
         );
 
         var savedCard = cardRepository.save(Card.fromDraft(
-                panGenerator.generatePan(draft.bin()),
-                binIssuerService.getIssuerId(draft.bin()),
-                settings.cardValidityPeriod(),
-                draft
+            panGenerator.generatePan(draft.bin()),
+            binIssuerService.getIssuerId(draft.bin()),
+            settings.cardValidityPeriod(),
+            draft
         ));
 
         eventNotifier.onEvent(new CardServiceCreationEvent(1));
@@ -67,14 +67,14 @@ public class CardServiceImpl implements CardService {
     @Override
     public List<Card> createCards(List<CardDraft> data) {
         var entities = data
-                .stream()
-                .map(draft -> Card.fromDraft(
-                        panGenerator.generatePan(draft.bin()),
-                        binIssuerService.getIssuerId(draft.bin()),
-                        settings.cardValidityPeriod(),
-                        draft
-                ))
-                .toList();
+            .stream()
+            .map(draft -> Card.fromDraft(
+                panGenerator.generatePan(draft.bin()),
+                binIssuerService.getIssuerId(draft.bin()),
+                settings.cardValidityPeriod(),
+                draft
+            ))
+            .toList();
 
         var saved = cardRepository.saveAll(entities);
         eventNotifier.onEvent(new CardServiceCreationEvent(saved.size()));
@@ -84,50 +84,50 @@ public class CardServiceImpl implements CardService {
     @Override
     public Card getCard(String pan) {
         return cardRepository
-                .findByPan(pan)
-                .orElseThrow(() -> new CardNotFoundException(pan));
+            .findByPan(pan)
+            .orElseThrow(() -> new CardNotFoundException(pan));
     }
 
     @Override
     public List<Card> getCards(
-            @Nullable Integer limit,
-            @Nullable Long offset,
-            @Nullable CardStatus status,
-            @Nullable String bin,
-            @Nullable String issuerId,
-            @Nullable Instant startDate,
-            @Nullable Instant endDate
+        @Nullable Integer limit,
+        @Nullable Long offset,
+        @Nullable CardStatus status,
+        @Nullable String bin,
+        @Nullable String issuerId,
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         if (limit != null && limit > settings.maxPageLimit()) {
             throw new TooLargeLimitException(limit, settings.maxPageLimit());
         }
         return cardRepository.findCards(
-                limit != null ? limit : defaults.pageLimit(),
-                offset != null ? offset : defaults.pageOffset(),
-                status,
-                bin,
-                issuerId,
-                startDate,
-                endDate
+            limit != null ? limit : defaults.pageLimit(),
+            offset != null ? offset : defaults.pageOffset(),
+            status,
+            bin,
+            issuerId,
+            startDate,
+            endDate
         );
     }
 
     @Override
     public Card patchCard(
-            String pan,
-            @Nullable CardStatus status,
-            @Nullable BigDecimal dailyLimit,
-            @Nullable BigDecimal monthlyLimit,
-            @Nullable BigDecimal availableBalance
+        String pan,
+        @Nullable CardStatus status,
+        @Nullable BigDecimal dailyLimit,
+        @Nullable BigDecimal monthlyLimit,
+        @Nullable BigDecimal availableBalance
     ) {
         var card = getCardForUpdate(pan);
         card = cardRepository.save(
-                card.withData(
-                        status != null ? status : card.status(),
-                        dailyLimit != null ? dailyLimit : card.dailyLimit(),
-                        monthlyLimit != null ? monthlyLimit : card.monthlyLimit(),
-                        availableBalance != null ? availableBalance : card.availableBalance()
-                )
+            card.withData(
+                status != null ? status : card.status(),
+                dailyLimit != null ? dailyLimit : card.dailyLimit(),
+                monthlyLimit != null ? monthlyLimit : card.monthlyLimit(),
+                availableBalance != null ? availableBalance : card.availableBalance()
+            )
         );
         eventNotifier.onEvent(new CardServicePatchEvent(pan));
         return card;
@@ -146,18 +146,18 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public long countCardsFiltered(
-            @Nullable CardStatus status,
-            @Nullable String bin,
-            @Nullable String issuerId,
-            @Nullable Instant startDate,
-            @Nullable Instant endDate
+        @Nullable CardStatus status,
+        @Nullable String bin,
+        @Nullable String issuerId,
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     ) {
         return cardRepository.countCardsFiltered(
-                status,
-                bin,
-                issuerId,
-                startDate,
-                endDate
+            status,
+            bin,
+            issuerId,
+            startDate,
+            endDate
         );
     }
 
@@ -165,8 +165,8 @@ public class CardServiceImpl implements CardService {
     public Card reserve(String pan, BigDecimal amount, String rrn) {
         var card = getCardForUpdate(pan);
         var reservation = card.startReservation(amount, rrn);
-        if (reservationRepository.findByRrn(rrn).isPresent()) {
-            throw new RrnAlreadyExistsException(rrn);
+        if (!reservationRepository.isUnique(rrn, pan)) {
+            throw new ReservationAlreadyExistsException(rrn, pan);
         }
         reservation = reservationRepository.save(reservation);
         card = cardRepository.save(card.withReservation(reservation));
@@ -178,10 +178,10 @@ public class CardServiceImpl implements CardService {
     public Card rollback(String pan, BigDecimal amount, String rrn) {
         var card = getCardForUpdate(pan);
         var reservation = reservationRepository
-                .findByRrn(rrn)
-                .orElseThrow(() -> new RrnNotFoundException(rrn));
+            .findByRrnAndPan(rrn, pan)
+            .orElseThrow(() -> new ReservationNotFoundException(rrn, pan));
         var rollback = reservationRollbackRepository.save(
-                reservation.startRollback(amount)
+            reservation.startRollback(amount)
         );
         reservationRepository.save(reservation.rolledBack(rollback));
         card = cardRepository.save(card.withRollback(rollback));
@@ -191,9 +191,9 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public int bulkUpdateStatus(
-            @Nullable List<String> bins,
-            @Nullable List<String> pans,
-            @Nullable CardStatus status) {
+        @Nullable List<String> bins,
+        @Nullable List<String> pans,
+        @Nullable CardStatus status) {
 
         if (bins == null && pans == null) {
             throw new IllegalArgumentException("Either bin or pans must be provided");
@@ -207,24 +207,24 @@ public class CardServiceImpl implements CardService {
 
         if (bins != null) {
             cards = bins.stream()
-                    .flatMap(bin -> cardRepository.findCards(
-                            Integer.MAX_VALUE, 0L, null, bin, null, null, null).stream())
-                    .toList();
+                .flatMap(bin -> cardRepository.findCards(
+                    Integer.MAX_VALUE, 0L, null, bin, null, null, null).stream())
+                .toList();
         }
 
         if (pans != null) {
             cards = pans.stream()
-                    .map(cardRepository::findByPan)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .toList();
+                .map(cardRepository::findByPan)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
         }
 
         cards.forEach(card -> cardRepository.save(card.withData(
-                status,
-                card.dailyLimit(),
-                card.monthlyLimit(),
-                card.availableBalance()
+            status,
+            card.dailyLimit(),
+            card.monthlyLimit(),
+            card.availableBalance()
         )));
 
         return cards.size();
@@ -232,7 +232,7 @@ public class CardServiceImpl implements CardService {
 
     private Card getCardForUpdate(String pan) {
         return cardRepository
-                .findByPanForUpdate(pan)
-                .orElseThrow(() -> new CardNotFoundException(pan));
+            .findByPanForUpdate(pan)
+            .orElseThrow(() -> new CardNotFoundException(pan));
     }
 }

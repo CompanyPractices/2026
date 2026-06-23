@@ -10,5 +10,7 @@ import java.util.UUID;
 @Repository
 public interface ReservationJpaRepository extends JpaRepository<ReservationEntity, UUID> {
 
-    Optional<ReservationEntity> findByRrn(String rrn);
+    Optional<ReservationEntity> findByRrnAndPan(String rrn, String pan);
+
+    boolean existsByRrnAndPan(String rrn, String pan);
 }
