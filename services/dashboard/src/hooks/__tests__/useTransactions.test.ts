@@ -5,6 +5,14 @@ import fetchApi from '../../api/client';
 import { Transaction, SearchResponse } from '../../types';
 
 vi.mock('../../api/client');
+
+const mockAddToast = vi.fn();
+vi.mock('../../contexts/ToastContext', () => ({
+    useToastContext: () => ({
+        addToast: mockAddToast,
+    }),
+}));
+
 const mockedFetchApi = vi.mocked(fetchApi);
 
 const mockSearchParams = new URLSearchParams();
