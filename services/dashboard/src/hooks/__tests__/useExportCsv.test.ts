@@ -8,6 +8,12 @@ vi.mock('../../api/client', () => ({
     fetchApiBlob: vi.fn(),
 }));
 
+const createMockBlob = (csvContent: string = 'id,pan,amount\n1,4111111111111111,1000'): Blob => {
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    blob.text = vi.fn().mockResolvedValue(csvContent);
+    return blob;
+};
+
 describe('useExportCsv', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -25,7 +31,7 @@ describe('useExportCsv', () => {
     });
 
     it('should call fetchApiBlob with correct URL when filter is empty', async () => {
-        const mockBlob = new Blob(['csv data'], { type: 'text/csv' });
+        const mockBlob = createMockBlob();
         vi.mocked(fetchApiBlob).mockResolvedValue(mockBlob);
 
         const { result } = renderHook(() => useExportCsv({}));
@@ -39,7 +45,7 @@ describe('useExportCsv', () => {
     });
 
     it('should build correct query string from filter', async () => {
-        const mockBlob = new Blob(['csv data'], { type: 'text/csv' });
+        const mockBlob = createMockBlob();
         vi.mocked(fetchApiBlob).mockResolvedValue(mockBlob);
 
         const filter: Filter = {
@@ -66,7 +72,7 @@ describe('useExportCsv', () => {
     });
 
     it('should set exporting to true during export', async () => {
-        const mockBlob = new Blob(['csv data'], { type: 'text/csv' });
+        const mockBlob = createMockBlob();
         let resolvePromise: (value: Blob) => void;
         const promise = new Promise<Blob>((resolve) => {
             resolvePromise = resolve;
@@ -90,8 +96,8 @@ describe('useExportCsv', () => {
         expect(result.current.exporting).toBe(false);
     });
 
-    it('should create download link with correct filename', async () => {
-        const mockBlob = new Blob(['csv data'], { type: 'text/csv' });
+    it('should create download link and call URL methods', async () => {
+        const mockBlob = createMockBlob();
         vi.mocked(fetchApiBlob).mockResolvedValue(mockBlob);
 
         const { result } = renderHook(() => useExportCsv({}));
@@ -100,7 +106,7 @@ describe('useExportCsv', () => {
             await result.current.handleExportCsv();
         });
 
-        expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
+        expect(global.URL.createObjectURL).toHaveBeenCalledTimes(1);
         expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
     });
 
@@ -134,7 +140,7 @@ describe('useExportCsv', () => {
     it('should clear exportError on new export attempt', async () => {
         vi.mocked(fetchApiBlob)
             .mockRejectedValueOnce(new Error('First error'))
-            .mockResolvedValueOnce(new Blob(['csv'], { type: 'text/csv' }));
+            .mockResolvedValueOnce(createMockBlob());
 
         const { result } = renderHook(() => useExportCsv({}));
 
@@ -152,7 +158,7 @@ describe('useExportCsv', () => {
     });
 
     it('should revoke object URL after download', async () => {
-        const mockBlob = new Blob(['csv data'], { type: 'text/csv' });
+        const mockBlob = createMockBlob();
         vi.mocked(fetchApiBlob).mockResolvedValue(mockBlob);
 
         const { result } = renderHook(() => useExportCsv({}));
