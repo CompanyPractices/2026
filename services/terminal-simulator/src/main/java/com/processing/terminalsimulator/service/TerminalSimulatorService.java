@@ -35,7 +35,8 @@ public class TerminalSimulatorService {
     private final TerminalCircuitBreaker circuitBreaker;
 
     private final AtomicBoolean isContinuousRunning = new AtomicBoolean(false);
-    private final AtomicReference<Thread> continuousLoopThread = new AtomicReference<>(null);  // видимость из разных потоков (методы start-continuous и stop)
+    private final AtomicReference<Thread> continuousLoopThread = new AtomicReference<>(null);  // видимость
+    // из разных потоков (методы start-continuous и stop)
 
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
                                      TerminalCircuitBreaker circuitBreaker,
