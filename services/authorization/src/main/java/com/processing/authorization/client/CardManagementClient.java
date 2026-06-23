@@ -16,7 +16,6 @@ import java.math.BigDecimal;
  *  <li>Резервирование средств</li>
  *  <li>Откат транзакций</li>
  * </ul>
- * </p>
  * <p>
  * Все методы могут выбрасывать {@link ServiceUnavailableException} при недоступности Card Management
  * или {@link InternalCardManagerException} при внутренних ошибках сервиса Card Management.

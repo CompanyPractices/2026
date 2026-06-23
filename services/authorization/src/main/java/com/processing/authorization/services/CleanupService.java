@@ -13,7 +13,7 @@ import java.time.ZoneOffset;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CleanupService {
+public class CleanupService implements CleanupServiceInterface {
 
     private final LimitUsageRepository limitUsageRepository;
 
