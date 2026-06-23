@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "spring.cloud.gateway.routes[0].id=authorization",
-                "spring.cloud.gateway.routes[0].uri=http://localhost:1",
+                "spring.cloud.gateway.routes[0].uri=http://localhost:9999",
                 "spring.cloud.gateway.routes[0].metadata.serviceName=authorization",
                 "spring.cloud.gateway.routes[0].predicates[0]=Path=/api/internal/authorize",
                 "spring.cloud.gateway.routes[0].predicates[1]=Method=POST"
