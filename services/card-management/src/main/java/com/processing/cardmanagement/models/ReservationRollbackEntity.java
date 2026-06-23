@@ -25,7 +25,11 @@ public class ReservationRollbackEntity {
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "reservation_id", referencedColumnName = "id")
+    @JoinColumn(
+        name = "reservation_id",
+        referencedColumnName = "id",
+        unique = true
+    )
     private ReservationEntity reservation;
 
     @Column(length = 16, nullable = false)
@@ -34,7 +38,7 @@ public class ReservationRollbackEntity {
     @Column(nullable = false, precision = 19)
     private BigDecimal rollbackAmount;
 
-    @Column(length = 12, unique = true, nullable = false)
+    @Column(length = 12, nullable = false)
     private String rrn;
 
     private Instant createdAt;

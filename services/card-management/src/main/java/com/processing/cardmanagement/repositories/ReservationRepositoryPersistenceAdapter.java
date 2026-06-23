@@ -27,7 +27,7 @@ public class ReservationRepositoryPersistenceAdapter implements ReservationRepos
     }
 
     @Override
-    public Optional<Reservation> findByRrnAndPan(String rrn, String pan) {
-        return jpaRepository.findByRrnAndPan(rrn, pan).map(mapper::toDomain);
+    public Optional<Reservation> findByRrnAndPanForUpdate(String rrn, String pan) {
+        return jpaRepository.findWithPessimisticLockByRrnAndPan(rrn, pan).map(mapper::toDomain);
     }
 }

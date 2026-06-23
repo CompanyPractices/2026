@@ -185,6 +185,15 @@ public class GlobalExceptionHandler {
         return errorResponseFromException(ex);
     }
 
+    @ExceptionHandler(OutOfRetriesException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleOutOfRetriesException(
+        OutOfRetriesException ex
+    ) {
+        log.error(ex.getMessage(), ex.getReason());
+        return errorResponseFromException(ex);
+    }
+
     private ErrorResponse errorResponseFromException(Exception ex) {
         return new ErrorResponse(
             ex.getClass().getSimpleName(),

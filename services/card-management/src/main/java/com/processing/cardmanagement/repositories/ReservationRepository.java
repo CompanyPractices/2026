@@ -10,5 +10,5 @@ public interface ReservationRepository {
 
     boolean isUnique(String rrn, String pan);
 
-    Optional<Reservation> findByRrnAndPan(String rrn, String pan);
+    Optional<Reservation> findByRrnAndPanForUpdate(String rrn, String pan);
 }

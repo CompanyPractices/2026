@@ -655,7 +655,7 @@ public class CardServiceControllerIntegrationTest {
 
     @Test
     void cardServiceShouldNotRollbackIfRollbackAlreadySatisfied() {
-        var rrn = faker.number().digits(12);
+        var rrn = generateRrn();
         var card = createCardAndReserveAllMoney(rrn);
         var amount = BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000));
         var rollbackRequest = new RollbackRequest(

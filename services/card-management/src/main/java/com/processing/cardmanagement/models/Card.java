@@ -69,6 +69,29 @@ public record Card(
     }
 
     /**
+     * Создает копию карты с новым ID и указанным PAN
+     *
+     * @param pan PAN-номер карты
+     */
+    public Card copyWithPan(
+        String pan
+    ) {
+        return new Card(
+            UUID.randomUUID(),
+            pan,
+            bin,
+            cardholderName,
+            expiryDate,
+            status,
+            currencyCode,
+            dailyLimit,
+            monthlyLimit,
+            availableBalance,
+            issuerId
+        );
+    }
+
+    /**
      * Проверяет статус карты и после этого возвращает запрос на списание средств
      *
      * @param amount размер списания
@@ -205,16 +228,16 @@ public record Card(
     /**
      * Создает заполненную карту из черновика
      *
-     * @param pan      номер карты
-     * @param issuerId номер банка эмитента
-     * @param cardYtl  срок действия карты (в годах)
-     * @param draft    частично заполненная карта
+     * @param pan                номер карты
+     * @param issuerId           номер банка эмитента
+     * @param cardValidityPeriod срок действия карты (в годах)
+     * @param draft              частично заполненная карта
      * @return созданная карта
      */
     public static Card fromDraft(
         String pan,
         String issuerId,
-        int cardYtl,
+        int cardValidityPeriod,
         CardDraft draft
     ) {
         return new Card(
@@ -222,7 +245,7 @@ public record Card(
             pan,
             draft.bin(),
             draft.cardholderName(),
-            YearMonth.now().plusYears(cardYtl),
+            YearMonth.now().plusYears(cardValidityPeriod),
             draft.status(),
             draft.currencyCode(),
             draft.dailyLimit(),
