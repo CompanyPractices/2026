@@ -16,12 +16,22 @@ describe('useStats', () => {
         mockedFetchApi.mockResolvedValue({} as DashboardStats);
     });
 
-    it('should return loading=true and null data on initial render', () => {
+    it('should return loading=true and null data on initial render', async () => {
+        let resolveFetch: (value: DashboardStats) => void;
+        const fetchPromise = new Promise<DashboardStats>((resolve) => {
+            resolveFetch = resolve;
+        });
+        mockedFetchApi.mockReturnValue(fetchPromise);
+
         const { result } = renderHook(() => useStats());
 
         expect(result.current.loading).toBe(true);
         expect(result.current.transactionStats).toBeNull();
         expect(result.current.error).toBeNull();
+
+        await waitFor(() => {
+            resolveFetch!({} as DashboardStats);
+        });
     });
 
     it('should successfully load statistics and update state', async () => {
