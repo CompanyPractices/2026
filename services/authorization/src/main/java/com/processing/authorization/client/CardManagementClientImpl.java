@@ -1,5 +1,9 @@
 package com.processing.authorization.client;
 
+import com.processing.authorization.events.AuthorizationEventNotifier;
+import com.processing.authorization.events.CmsClientGetCardEvent;
+import com.processing.authorization.events.CmsClientReserveEvent;
+import com.processing.authorization.events.CmsClientRollbackEvent;
 import com.processing.authorization.exceptions.*;
 import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -19,6 +23,7 @@ import java.net.URI;
 @Component
 public class CardManagementClientImpl implements CardManagementClient {
     private final RestClient restClient;
+    private final AuthorizationEventNotifier eventNotifier;
 
     @Value("${card-management.url}")
     private String cmsUrl;
@@ -31,7 +36,7 @@ public class CardManagementClientImpl implements CardManagementClient {
                 .path("/api/cards/{pan}")
                 .buildAndExpand(pan)
                 .toUri();
-
+        eventNotifier.notify(new CmsClientGetCardEvent(pan));
         return restClient.get()
                 .uri(uri)
                 .retrieve()
@@ -65,6 +70,7 @@ public class CardManagementClientImpl implements CardManagementClient {
                 .path("/api/cards/{pan}/reserve")
                 .buildAndExpand(pan)
                 .toUri();
+        eventNotifier.notify(new CmsClientReserveEvent(pan));
         restClient.post()
                 .uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -99,6 +105,7 @@ public class CardManagementClientImpl implements CardManagementClient {
                 .path("/api/cards/{pan}/rollback")
                 .buildAndExpand(request.pan())
                 .toUri();
+        eventNotifier.notify(new CmsClientRollbackEvent(request.pan()));
         restClient.post()
                 .uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)

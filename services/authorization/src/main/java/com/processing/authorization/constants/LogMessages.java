@@ -14,12 +14,12 @@ package com.processing.authorization.constants;
  * <li><b>Технические</b> — дублирование ключей, ошибки</li>
  * </ul>
  *
- * @param log сообщение логгирования
+ * @param message сообщение логгирования
  *
  * @see com.processing.authorization.services.AuthServiceInterface
  * @see com.processing.authorization.controller.AuthController
  */
-public record LogMessages(String log) {
+public record LogMessages(String message) {
     public static final String MESSAGE_AUTH_APPROVED = "AUTHORIZATION APPROVED";
 
     public static final String MESSAGE_AUTH_DECLINED_NO_CARD = "AUTHORIZATION DECLINED WITH CARD NOT FOUND";
