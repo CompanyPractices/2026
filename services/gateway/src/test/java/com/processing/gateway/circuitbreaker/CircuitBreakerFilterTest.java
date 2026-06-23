@@ -1,14 +1,16 @@
 package com.processing.gateway.circuitbreaker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.gateway.downstream.DownstreamServiceResolver;
 import com.processing.gateway.metrics.GatewayMetrics;
 import com.processing.gateway.properties.GatewayRouteProperties;
-import com.processing.gateway.downstream.DownstreamServiceResolver;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.client.ResourceAccessException;
+import reactor.core.publisher.Mono;
 
 import java.net.ConnectException;
 import java.time.Clock;
@@ -37,21 +39,22 @@ class CircuitBreakerFilterTest {
     );
 
     @Test
-    void returnsServiceUnavailableWithoutCallingDownstreamWhenCircuitIsOpen() throws Exception {
+    void returnsServiceUnavailableWithoutCallingDownstreamWhenCircuitIsOpen() {
         circuitBreaker.recordFailure("switch");
         circuitBreaker.recordFailure("switch");
 
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/transactions");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.post("/api/transactions"));
         AtomicBoolean downstreamCalled = new AtomicBoolean(false);
 
-        filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> downstreamCalled.set(true));
+        filter.filter(exchange, webExchange -> {
+            downstreamCalled.set(true);
+            return Mono.empty();
+        }).block();
 
         assertThat(downstreamCalled).isFalse();
-        assertThat(response.getStatus()).isEqualTo(503);
-        assertThat(response.getHeader("Retry-After")).isEqualTo("10");
-        assertThat(response.getContentAsString()).contains(
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("10");
+        assertThat(exchange.getResponse().getBodyAsString().block()).contains(
                 "\"error\":\"SERVICE_UNAVAILABLE\"",
                 "\"serviceName\":\"switch\""
         );
@@ -64,52 +67,56 @@ class CircuitBreakerFilterTest {
 
     @Test
     void recordsFailureForDownstreamConnectionException() {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/transactions");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockServerWebExchange firstExchange = MockServerWebExchange.from(MockServerHttpRequest.post("/api/transactions"));
 
-        assertThatThrownBy(() -> filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> {
-                    throw new ResourceAccessException("Connection refused",
-                            new ConnectException("Connection refused"));
-                }))
+        assertThatThrownBy(() -> filter.filter(firstExchange, webExchange -> downstreamConnectionFailure()).block())
                 .isInstanceOf(ResourceAccessException.class);
 
         assertThat(circuitBreaker.allowRequest("switch")).isTrue();
 
-        assertThatThrownBy(() -> filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> {
-                    throw new ResourceAccessException("Connection refused",
-                            new ConnectException("Connection refused"));
-                }))
+        MockServerWebExchange secondExchange = MockServerWebExchange.from(MockServerHttpRequest.post("/api/transactions"));
+
+        assertThatThrownBy(() -> filter.filter(secondExchange, webExchange -> downstreamConnectionFailure()).block())
                 .isInstanceOf(ResourceAccessException.class);
 
         assertThat(circuitBreaker.allowRequest("switch")).isFalse();
     }
 
     @Test
-    void recordsFailureForDownstreamServerErrorResponse() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/cards/4000001234560001");
-        MockHttpServletResponse response = new MockHttpServletResponse();
-
-        filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> ((MockHttpServletResponse) servletResponse).setStatus(500));
+    void recordsFailureForDownstreamServerErrorResponse() {
+        MockServerWebExchange firstExchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/cards/4000001234560001"));
+        filter.filter(firstExchange, webExchange -> {
+            webExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            return Mono.empty();
+        }).block();
         assertThat(circuitBreaker.allowRequest("cardManagement")).isTrue();
 
-        filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> ((MockHttpServletResponse) servletResponse).setStatus(500));
+        MockServerWebExchange secondExchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/cards/4000001234560001"));
+        filter.filter(secondExchange, webExchange -> {
+            webExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            return Mono.empty();
+        }).block();
         assertThat(circuitBreaker.allowRequest("cardManagement")).isFalse();
     }
 
     @Test
-    void skipsUnknownPaths() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/health");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    void skipsUnknownPaths() {
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/health"));
         AtomicBoolean downstreamCalled = new AtomicBoolean(false);
 
-        filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> downstreamCalled.set(true));
+        filter.filter(exchange, webExchange -> {
+            downstreamCalled.set(true);
+            return Mono.empty();
+        }).block();
 
         assertThat(downstreamCalled).isTrue();
+    }
+
+    private Mono<Void> downstreamConnectionFailure() {
+        return Mono.error(new ResourceAccessException("Connection refused",
+                new ConnectException("Connection refused")));
     }
 
     private GatewayRouteProperties routeProperties() {

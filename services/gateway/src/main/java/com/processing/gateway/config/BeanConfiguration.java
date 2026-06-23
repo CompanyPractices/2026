@@ -1,6 +1,5 @@
 package com.processing.gateway.config;
 
-import com.processing.gateway.health.HealthProperties;
 import lombok.RequiredArgsConstructor;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.Cache;
@@ -9,8 +8,6 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.net.http.HttpClient;
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,20 +16,6 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @RequiredArgsConstructor
 public class BeanConfiguration {
-    private final HealthProperties healthProperties;
-
-    /**
-     * Creates the JDK HTTP client used for downstream health checks.
-     *
-     * @return HTTP client with configured connect timeout
-     */
-    @Bean
-    public HttpClient httpClient() {
-        return HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(healthProperties.getConnectionTimeout()))
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build();
-    }
 
     /**
      * Creates the cache manager used by response caching.
