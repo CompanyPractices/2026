@@ -26,7 +26,7 @@ public class ResponseCachingGatewayFilterFactory
 
     private final Cache cache;
     private final GatewayMetrics gatewayMetrics;
-    
+
     public ResponseCachingGatewayFilterFactory(
             Cache cache,
             GatewayMetrics gatewayMetrics) {
@@ -34,7 +34,7 @@ public class ResponseCachingGatewayFilterFactory
         this.cache = cache;
         this.gatewayMetrics = gatewayMetrics;
     }
-    
+
     @Override
     public GatewayFilter apply(NameConfig config) {
         return new OrderedGatewayFilter((exchange, chain) -> {
@@ -54,9 +54,7 @@ public class ResponseCachingGatewayFilterFactory
 
             if (cachedBody != null) {
                 gatewayMetrics.recordCardsCacheHit();
-                writeCache(exchange, cachedBody);
-
-                return chain.filter(exchange);
+                return writeCache(exchange, cachedBody);
             }
 
             gatewayMetrics.recordCardsCacheMiss();

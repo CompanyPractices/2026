@@ -3,6 +3,7 @@ package com.processing.gateway.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.processing.common.dto.ErrorResponse;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -38,7 +39,9 @@ public class OpenApiGatewayFilterFactory
             ModifyResponseBodyGatewayFilterFactory modifyResponseBodyGatewayFilterFactory) {
         super(NameConfig.class);
         this.openApiProperties = openApiProperties;
-        this.mapper = mapper.copy().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        this.mapper = mapper.copy()
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .registerModule(new JavaTimeModule());
         this.modifyResponseBodyGatewayFilterFactory = modifyResponseBodyGatewayFilterFactory;
     }
 
@@ -65,7 +68,7 @@ public class OpenApiGatewayFilterFactory
                                             null
                                     ));
                                 } catch (JsonProcessingException ex) {
-                                    log.error("Error creating error response", e);
+                                    log.error("Error creating error response", ex);
                                     body = "{\"message\": \"Error creating error response\"}";
                                 }
                             }
