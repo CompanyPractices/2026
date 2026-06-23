@@ -4,23 +4,12 @@ import App from './App';
 import '@testing-library/jest-dom';
 import { Transaction } from "./types";
 import type { PaginationMeta } from "./types";
-import { ToastProvider } from './contexts/ToastProvider';
 
 type HeaderProps = {
   stats: { totalTransactions: number } | null;
   loading: boolean;
   error: string | null;
   isConnected: boolean;
-};
-
-const renderWithProviders = (ui: React.ReactElement) => {
-  return render(ui, {
-    wrapper: ({ children }) => (
-        <ToastProvider>
-          {children}
-        </ToastProvider>
-    ),
-  });
 };
 
 type ChartProps = { transactions: Transaction[] };
@@ -32,6 +21,10 @@ type TableProps = {
 };
 
 type MapProps = { transactions: Transaction[] };
+
+vi.mock('./components/ToastContainer.tsx', () => ({
+  ToastContainer: () => null,
+}));
 
 vi.mock('./components/Header.tsx', () => ({
   Header: ({ stats, loading, error, isConnected }: HeaderProps) => (
@@ -172,14 +165,14 @@ describe('App', () => {
   });
 
   it('renders footer with all three texts', () => {
-    renderWithProviders(<App />);
+    render(<App />);
     expect(screen.getByText('Практика')).toBeInTheDocument();
     expect(screen.getByText('СМП - Система медленных платежей')).toBeInTheDocument();
     expect(screen.getByText('2026')).toBeInTheDocument();
   });
 
   it('has correct structure (header, main, footer)', () => {
-    renderWithProviders(<App />);
+    render(<App />);
     expect(document.querySelector('header')).toBeInTheDocument();
     expect(document.querySelector('main')).toBeInTheDocument();
     expect(document.querySelector('footer')).toBeInTheDocument();
@@ -192,7 +185,7 @@ describe('App', () => {
       error: 'Network error',
     });
 
-    renderWithProviders(<App />);
+    render(<App />);
     expect(screen.getByText('Stats error: Network error')).toBeInTheDocument();
   });
 
@@ -299,7 +292,7 @@ describe('App', () => {
         isConnected: true,
       });
 
-      renderWithProviders(<App />);
+      render(<App />);
 
       const tableItems = screen
           .getByTestId('table')

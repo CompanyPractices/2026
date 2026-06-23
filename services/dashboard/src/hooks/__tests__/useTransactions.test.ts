@@ -6,9 +6,10 @@ import { Transaction, SearchResponse } from '../../types';
 
 vi.mock('../../api/client');
 
+const mockAddToast = vi.fn();
 vi.mock('../../contexts/ToastContext', () => ({
     useToastContext: () => ({
-        addToast: vi.fn(),
+        addToast: mockAddToast,
     }),
 }));
 
