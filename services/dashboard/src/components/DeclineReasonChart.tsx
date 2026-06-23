@@ -31,7 +31,7 @@ export default function DeclineReasonChart({transactions, error, loading}: Decli
     if (error) {
         return (
             <div className="text-center py-8 text-red-500 font-mono">
-                Ошибка загрузки транзакций: {error}
+                Ошибка загрузки данных об отказах: {error}
             </div>
         )
     }
@@ -39,7 +39,7 @@ export default function DeclineReasonChart({transactions, error, loading}: Decli
     if (loading) {
         return (
             <div className="text-center py-8 text-gray-500 dark:text-sage-50 font-mono">
-                Загрузка транзакций...
+                Загрузка данных об отказах...
             </div>
         )
     }
