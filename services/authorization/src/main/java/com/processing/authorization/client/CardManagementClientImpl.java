@@ -6,7 +6,6 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.ReserveRequest;
 import com.processing.common.utils.MaskPan;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -17,7 +16,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 
 @RequiredArgsConstructor
-@Slf4j
 @Component
 public class CardManagementClientImpl implements CardManagementClient {
     private final RestClient restClient;
@@ -33,7 +31,6 @@ public class CardManagementClientImpl implements CardManagementClient {
                 .path("/api/cards/{pan}")
                 .buildAndExpand(pan)
                 .toUri();
-        log.debug("Getting card info for pan {}", MaskPan.maskPan(pan));
 
         return restClient.get()
                 .uri(uri)
@@ -68,7 +65,6 @@ public class CardManagementClientImpl implements CardManagementClient {
                 .path("/api/cards/{pan}/reserve")
                 .buildAndExpand(pan)
                 .toUri();
-        log.debug("Reserving amount {} for card {} with rrn {}", amount, MaskPan.maskPan(pan), rrn);
         restClient.post()
                 .uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -93,8 +89,6 @@ public class CardManagementClientImpl implements CardManagementClient {
                     throw new ReserveException("Failed to reserve. Status: " + res.getStatusCode());
                 })
                 .toBodilessEntity();
-
-        log.debug("Reserve successful for card {}", MaskPan.maskPan(pan));
     }
 
     @Override
@@ -105,7 +99,6 @@ public class CardManagementClientImpl implements CardManagementClient {
                 .path("/api/cards/{pan}/rollback")
                 .buildAndExpand(request.pan())
                 .toUri();
-        log.debug("Rollback amount {} for card {} with rrn {}", request.amount(), MaskPan.maskPan(request.pan()), request.rrn());
         restClient.post()
                 .uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -130,7 +123,5 @@ public class CardManagementClientImpl implements CardManagementClient {
                     throw new RollbackFailureException("Failed to rollback. Status: " + res.getStatusCode());
                 })
                 .toBodilessEntity();
-
-        log.debug("Rollback successful for card {}", MaskPan.maskPan(request.pan()));
     }
 }

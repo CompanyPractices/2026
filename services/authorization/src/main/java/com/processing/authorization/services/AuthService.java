@@ -12,7 +12,6 @@ import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.authorization.exceptions.*;
 import com.processing.authorization.repositories.LimitUsageRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,7 +51,6 @@ import org.springframework.web.client.ResourceAccessException;
  * @see AuthorizationResponse
  * @see CardModel
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
