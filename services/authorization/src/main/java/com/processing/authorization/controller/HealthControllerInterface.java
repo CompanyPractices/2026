@@ -45,5 +45,5 @@ public interface HealthControllerInterface {
      * @see HealthService#healthCheckAllServices()
      * @see HealthResponse
      */
-    public ResponseEntity<HealthResponse> health();
+    ResponseEntity<HealthResponse> health();
 }

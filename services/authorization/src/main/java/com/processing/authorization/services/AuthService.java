@@ -30,7 +30,7 @@ import org.springframework.web.client.ResourceAccessException;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService implements AuthServiceInterface{
+public class AuthService implements AuthServiceInterface {
     private final LimitUsageRepository limitUsageRepository;
     private final AuthorizationEventNotifier eventNotifier;
 
