@@ -610,19 +610,18 @@ public class CardServiceControllerIntegrationTest {
     }
 
     @Test
-    void cardServiceShouldNotRollbackIfReservationDoesNotExist() {
-        var rrn = faker.number().digits(12);
-        var card = createRandomCard(createRandomValidCreationRequest());
+    void cardServiceShouldNotRollbackIfReservationRrnDoesNotMatch() {
+        var card = createCardAndReserveAllMoney(generateRrn());
         var amount = BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000));
         var rollbackRequest = new RollbackRequest(
-            rrn,
+            generateRrn(),
             card.pan(),
             amount
         );
 
         given()
             .port(port)
-            .pathParam("PAN", faker.number().digits(16))
+            .pathParam("PAN", card.pan())
             .contentType(ContentType.JSON)
             .body(rollbackRequest)
             .when()
@@ -632,8 +631,8 @@ public class CardServiceControllerIntegrationTest {
     }
 
     @Test
-    void cardServiceShouldNotRollbackIfWrongPanPassed() {
-        var rrn = faker.number().digits(12);
+    void cardServiceShouldNotRollbackIfReservationPanDoesNotMatch() {
+        var rrn = generateRrn();
         createCardAndReserveAllMoney(rrn);
         var wrongCard = createRandomCard(createRandomValidCreationRequest());
         var amount = BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000));
@@ -645,28 +644,18 @@ public class CardServiceControllerIntegrationTest {
 
         given()
             .port(port)
-            .pathParam("PAN", faker.number().digits(16))
-            .contentType(ContentType.JSON)
-            .body(rollbackRequest)
-            .when()
-            .post("/api/cards/{PAN}/rollback")
-            .then()
-            .statusCode(404);
-
-        given()
-            .port(port)
             .pathParam("PAN", wrongCard.pan())
             .contentType(ContentType.JSON)
             .body(rollbackRequest)
             .when()
             .post("/api/cards/{PAN}/rollback")
             .then()
-            .statusCode(400);
+            .statusCode(404);
     }
 
     @Test
     void cardServiceShouldNotRollbackIfRollbackAlreadySatisfied() {
-        var rrn = faker.number().digits(12);
+        var rrn = generateRrn();
         var card = createCardAndReserveAllMoney(rrn);
         var amount = BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000));
         var rollbackRequest = new RollbackRequest(

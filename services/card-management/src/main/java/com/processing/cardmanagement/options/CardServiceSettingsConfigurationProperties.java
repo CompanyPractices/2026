@@ -1,5 +1,6 @@
 package com.processing.cardmanagement.options;
 
+import com.processing.common.dto.annotations.NotNegative;
 import jakarta.validation.constraints.Positive;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -12,5 +13,8 @@ public record CardServiceSettingsConfigurationProperties(
     int cardValidityPeriod,
 
     @Positive
-    int maxPageLimit
+    int maxPageLimit,
+
+    @NotNegative
+    int maxCardCreationRetries
 ) implements CardServiceSettings {}

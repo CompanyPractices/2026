@@ -14,4 +14,9 @@ public interface CardServiceSettings {
      * @return максимальный размер страницы для пагинации
      */
     int maxPageLimit();
+
+    /**
+     * @return максимальное количество повторов для создания карты (при коллизии)
+     */
+    int maxCardCreationRetries();
 }
