@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 
@@ -31,18 +32,18 @@ public class TerminalSimulatorService {
     private final TransactionFactory transactionFactory;
     private final int tps;
     private final int cardsAmount;
-    private final AtomicInteger currentErrors = new AtomicInteger(0);
-    private final int errorThreshold = 1;
-    private volatile boolean circuitOpen = false;
+    private final TerminalCircuitBreaker circuitBreaker;
 
     private final AtomicBoolean isContinuousRunning = new AtomicBoolean(false);
-    private volatile Thread continuousLoopThread;  // видимость из разных потоков (методы start-continuous и stop)
+    private final AtomicReference<Thread> continuousLoopThread = new AtomicReference<>(null);  // видимость из разных потоков (методы start-continuous и stop)
 
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
+                                     TerminalCircuitBreaker circuitBreaker,
                                      @Value("${simulator.tps:100}") int tps,
                                      @Value("${simulator.cardsAmount:5000}") int cardsAmount) {
         this.gatewayClient = gatewayClient;
         this.transactionFactory = transactionFactory;
+        this.circuitBreaker = circuitBreaker;
         this.tps = tps;
         this.cardsAmount = cardsAmount;
     }
@@ -150,10 +151,8 @@ public class TerminalSimulatorService {
 
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
         long start = System.currentTimeMillis();
-        circuitOpen = false;
-        currentErrors.set(0);
+        circuitBreaker.reset();
         Map<CardModelStatus, List<CardModel>> cardsByStatus;
-
 
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
         List<CardModel> cards = loadCards(scenario);
@@ -175,7 +174,7 @@ public class TerminalSimulatorService {
                         () -> {  // создаю задачу (объект Runnable), без входящих аргументов, с таким кодом:
                     totalSubmitted.incrementAndGet();
 
-                    if (circuitOpen) {
+                    if (!circuitBreaker.isCallAllowed()) {
                         authResponses.add(new AuthorizationResponse(null, null, null, null,
                                 null, null, "Circuit Breaker in transaction-simulator: "
                                 + "Gateway is down, request skipped", 0));
@@ -186,7 +185,7 @@ public class TerminalSimulatorService {
                                 approved, declined, cardsByStatus, terminalId);
                         authResponses.add(resp);
 
-                        currentErrors.set(0);
+                        circuitBreaker.recordSuccess();
                     } catch (org.springframework.web.client.ResourceAccessException e) {
                         handleNetworkFailure(e.getMessage(), authResponses);
                     } catch (org.springframework.web.client.HttpStatusCodeException e) {
@@ -240,16 +239,23 @@ public class TerminalSimulatorService {
         }
 
         // хочу создать виртуальный поток, один-единственный фоновый поток-диспетчер
-        this.continuousLoopThread = Thread.ofVirtual().start(() -> {
+        Thread thread = Thread.ofVirtual().unstarted(() -> {
             try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 // когда я в методе stopContinuous() вызываю continuousLoopThread.interrupt(), я не убиваю поток,
                 // а ставлю ему внутренний флаг interrupted=true
                 while (isContinuousRunning.get() && !Thread.currentThread().isInterrupted()) {
                     TransactionTask task = generateSingleTask(transactionType);
                     executor.submit(() -> {
+                        if (!circuitBreaker.isCallAllowed()) {
+                            return;
+                        }
                         try {
                             executeSingleTransaction(task.type, task.partOfDay, new AtomicInteger(),
                                     new AtomicInteger(), cardsByStatus, terminalId);
+                            circuitBreaker.recordSuccess();
+                        } catch (org.springframework.web.client.ResourceAccessException
+                                 | org.springframework.web.client.HttpStatusCodeException e) {
+                            circuitBreaker.recordNetworkFailure(e.getMessage());
                         } catch (Exception e) {
                             log.error("Continuous transaction execution failed", e);
                         }
@@ -261,18 +267,18 @@ public class TerminalSimulatorService {
                 log.info("Continuous simulation loop was interrupted: {}", e.getMessage());
             } finally {
                 isContinuousRunning.set(false);
-                continuousLoopThread = null;
             }
         });
+
+        continuousLoopThread.set(thread);
+        thread.start();
 
     }
 
     public void stopContinuous() {
         if (isContinuousRunning.compareAndSet(true, false)) {
-            log.info("Stopping continuous simulation...");
-
-            // прерываю поток-диспетчер, чтобы он вышел из Thread.sleep()
-            Thread threadToInterrupt = this.continuousLoopThread;
+            Thread threadToInterrupt = continuousLoopThread.getAndSet(null);  // прерываю поток-диспетчер,
+            // чтобы он вышел из Thread.sleep()
             if (threadToInterrupt != null) {
                 threadToInterrupt.interrupt();
                 try {
@@ -281,10 +287,8 @@ public class TerminalSimulatorService {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
+                log.info("Continuous simulation stopped.");
             }
-            log.info("Continuous simulation stopped completely.");
-        } else {
-            log.warn("Stop requested, but continuous simulation was not running.");
         }
     }
 
@@ -297,16 +301,9 @@ public class TerminalSimulatorService {
 
     private void handleNetworkFailure(String errorMessage, ConcurrentLinkedQueue<AuthorizationResponse> authResponses) {
         log.warn("Network transaction failed: {}", errorMessage);
+        circuitBreaker.recordNetworkFailure(errorMessage);
 
         authResponses.add(new AuthorizationResponse(null, null, null, null,
                 null, null, errorMessage, 0));
-
-        if (currentErrors.incrementAndGet() >= errorThreshold) {
-            if (!circuitOpen) {
-                log.error("terminal-simulator: GATEWAY IS DOWN. Opening circuit breaker to save "
-                        + "resources.");
-                circuitOpen = true;
-            }
-        }
     }
 }
