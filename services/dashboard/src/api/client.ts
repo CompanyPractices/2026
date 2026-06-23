@@ -38,8 +38,10 @@ async function fetchApi<T>(route: string, options: FetchApiOptions = {}): Promis
             lastError = error;
 
             if (error.message.startsWith('Client Error')){
+                if (options.onError){
+                    options.onError(lastError.message);
+                }
                 throw error;
-
             }
             if (error.name === 'AbortError' || error.message.includes('Failed to fetch')) {
                 if (att < retries){
@@ -47,15 +49,12 @@ async function fetchApi<T>(route: string, options: FetchApiOptions = {}): Promis
                     continue;
                 }
             }
-            if (!lastError){
-                throw new Error('Unknown error in fetchApi')
+            if (options.onError) {
+                options.onError(error.message);
             }
+
             throw error;
         }
-    }
-
-    if (lastError && options.onError){
-        options.onError(lastError.message);
     }
 
     throw lastError;

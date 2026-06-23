@@ -46,12 +46,12 @@ export function useWebSocket({
             ws.onopen = () => {
                 if (!isMountedRef.current) return;
                 console.log('WebSocket подключен к transaction-logger');
-                setIsConnected(true);
-                retryCountRef.current = 0;
 
                 if (retryCountRef.current > 0){
                     addToast('Соединение восстановлено', 'SUCCESS');
                 }
+                setIsConnected(true);
+                retryCountRef.current = 0;
 
                 if (reconnectTimeoutRef.current) {
                     clearTimeout(reconnectTimeoutRef.current);
@@ -85,12 +85,15 @@ export function useWebSocket({
                     retryCountRef.current++;
                     console.log(`Попытка переподключения ${retryCountRef.current}/${maxRetries}...`);
 
-                    addToast('Соединение потеряно. Попытка переподключения...', 'WARNING', 8000);
+                    if (retryCountRef.current === 1){
+                        addToast('Соединение потеряно. Попытка переподключения...', 'WARNING', 8000);
+                    }
 
                     const delay = calculateBackoffDelay(retryCountRef.current, retryDelayMs, maxRetryDelayMs);
                     reconnectTimeoutRef.current = setTimeout(connect, delay);
                 } else if (retryCountRef.current >= maxRetries) {
                     console.warn('Превышен лимит попыток переподключения');
+                    addToast('Не удалось восстановить соединение с сервером', 'ERROR');
                 }
             };
         };
