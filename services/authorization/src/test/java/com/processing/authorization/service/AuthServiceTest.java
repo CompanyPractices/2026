@@ -9,7 +9,7 @@ import com.processing.common.dto.authorization.RollbackRequest;
 import com.processing.common.dto.authorization.RollbackResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.authorization.repositories.LimitUsageRepository;
-import com.processing.authorization.services.AuthService;
+import com.processing.authorization.services.AuthServiceImpl;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.utils.MaskPan;
 
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.*;
 class AuthServiceTest {
 
     @InjectMocks
-    private AuthService authService;
+    private AuthServiceImpl authService;
 
     private AuthorizationRequest correctRequest;
 

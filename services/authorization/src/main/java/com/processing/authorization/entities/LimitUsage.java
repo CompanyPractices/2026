@@ -5,11 +5,31 @@ import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.processing.authorization.repositories.LimitUsageRepository;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
+/**
+ * Сущность для хранения накопленных сумм операций по карте за день и месяц.
+ * <p>
+ * Используется для контроля лимитов при авторизации транзакций.
+ * Каждая запись относится к одной карте (PAN) на конкретную дату.
+ * <p>
+ * <b>Ключевые ограничения:</b>
+ * <ul>
+ * <li>Уникальность: одна запись на {@code (pan, usage_date)}</li>
+ * <li>PAN — 16 цифр (соответствует стандарту ISO/IEC 7812)</li>
+ * <li>Суммы хранятся с точностью до 2 знаков после запятой</li>
+ * </ul>
+ * <p>
+ * Обновление полей {@code daily_amount} и {@code monthly_amount}
+ * выполняется атомарно через {@link LimitUsageRepository#upsertLimitUsage}
+ *
+ * @see com.processing.authorization.repositories.LimitUsageRepository
+ */
 @Entity
 @Table(name = "limit_usage",
         uniqueConstraints = { @UniqueConstraint(columnNames = {"pan", "usage_date"}) },
