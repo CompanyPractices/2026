@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.web.client.ResourceAccessException;
 
@@ -72,7 +71,7 @@ public class AuthService {
      *         <li>При отказе: статус "declined", причина отказа и код ответа</li>
      *         </ul>
      *
-     * @see #generateRRN()
+     * @see #generateRRN(AuthorizationRequest)
      * @see #generateAuthCode()
      * @see AuthorizationRequest
      * @see AuthorizationResponse
@@ -177,7 +176,7 @@ public class AuthService {
             return DeclineOutcome.EXCEEDS_AMOUNT_LIMIT.buildAuthorization(request, requestInputTime);
         }
 
-        String rrn = generateRRN();
+        String rrn = generateRRN(request);
         try {
             cardManagementClient.reserve(request.amount(), rrn, request.pan());
         } catch (CardNotFoundException e) {
@@ -216,54 +215,17 @@ public class AuthService {
         return true;
     }
 
-    private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyDDDHHmmss");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyDDD");
 
-    /**
-     * Генерирует уникальный Retrieval Reference Number (RRN) для транзакции.
-     *
-     * <p>
-     * Формат RRN: 12 цифр
-     * </p>
-     * <ul>
-     * <li>Позиция 1: последняя цифра года (0-9)</li>
-     * <li>Позиции 2-4: день года (001-366)</li>
-     * <li>Позиции 5-6: час (00-23)</li>
-     * <li>Позиции 7-8: минуты (00-59)</li>
-     * <li>Позиции 9-10: секунды (00-59) + порядковый номер (00-99)</li>
-     * </ul>
-     *
-     * <p>
-     * Для обеспечения уникальности при генерации нескольких RRN в одну секунду
-     * используется атомарный счетчик (CAS-операция). Если за секунду генерируется
-     * более 100 RRN, счетчик сбрасывается и начинается заново.
-     * </p>
-     *
-     * <p>
-     * <b>Пример RRN:</b> 3065121534 (2023 год, 65-й день, 12:15:34)
-     * </p>
-     *
-     * @return строка из 12 цифр, представляющая уникальный RRN транзакции
-     *
-     * @see #lastTimestampAndSeq
-     */
-    public String generateRRN() {
-        String currentSecond = FORMATTER.format(LocalDateTime.now()).substring(1);
-        String nextValue;
-        while (true) {
-            String currentState = lastTimestampAndSeq.get();
-            int nextSeq = 0;
-            if (currentState != null && currentState.startsWith(currentSecond)) {
-                int lastSeq = Integer.parseInt(currentState.substring(10));
-                nextSeq = (lastSeq + 1) % 100;
-            }
+    public String generateRRN(AuthorizationRequest request) {
+        long nextRrn = limitUsageRepository.getNextRrn();
+        limitUsageRepository.saveRrn(nextRrn);
+        String currentDay = FORMATTER.format(LocalDateTime.now()).substring(1);
 
-            nextValue = currentSecond + String.format("%02d", nextSeq);
-            if (lastTimestampAndSeq.compareAndSet(currentState, nextValue)) {
-                break;
-            }
-        }
-        return nextValue;
+        String rrn = currentDay + String.format("%08d", nextRrn);
+        log.info("Generated RRN for STAN {}: {}",
+                request.stan(), rrn);
+        return rrn;
     }
 
     private static final Random RANDOM = new SecureRandom();

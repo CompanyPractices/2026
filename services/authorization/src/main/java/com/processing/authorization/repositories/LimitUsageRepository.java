@@ -56,4 +56,9 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
                         @Param("dailyLimit") BigDecimal dailyLimit,
                         @Param("monthlyLimit") BigDecimal monthlyLimit);
 
+        @Query(value = "SELECT nextval('rrn_seq')", nativeQuery = true)
+        long getNextRrn();
+
+        @Query(value = "SELECT setval('rrn_seq', :new_rrn)", nativeQuery = true)
+        void saveRrn(@Param("new_rrn") long newRrn);
 }

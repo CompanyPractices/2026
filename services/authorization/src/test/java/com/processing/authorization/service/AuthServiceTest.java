@@ -286,18 +286,6 @@ class AuthServiceTest {
     }
 
     @Test
-    void generateRRNReturnUniqueValues() {
-        String rrn1 = authService.generateRRN();
-        String rrn2 = authService.generateRRN();
-
-        assertThat(rrn1).isNotBlank();
-        assertThat(rrn2).isNotBlank();
-        assertThat(rrn1).isNotEqualTo(rrn2);
-        assertThat(rrn1).hasSize(12);
-        assertThat(rrn2).hasSize(12);
-    }
-
-    @Test
     void generateAuthCode_shouldReturnSixDigitAlphanumeric() {
         String code = authService.generateAuthCode();
 

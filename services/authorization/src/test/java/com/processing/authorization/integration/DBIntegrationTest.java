@@ -291,4 +291,30 @@ public class DBIntegrationTest {
         usage.setUpdatedAt(Instant.now());
         return usage;
     }
+
+    @Test
+    void generateRRNReturnUniqueValues() {
+        AuthorizationRequest duplicateRequest = new AuthorizationRequest(
+                correctRequest.mti(),
+                "123457",
+                correctRequest.pan(),
+                correctRequest.processingCode(),
+                correctRequest.amount(),
+                correctRequest.currencyCode(),
+                correctRequest.transmissionDateTime(),
+                correctRequest.terminalId(),
+                correctRequest.terminalType(),
+                correctRequest.merchantId(),
+                correctRequest.mcc(),
+                correctRequest.acquirerId(),
+                correctRequest.issuerId());
+        String rrn1 = authService.generateRRN(correctRequest);
+        String rrn2 = authService.generateRRN(duplicateRequest);
+
+        assertThat(rrn1).isNotBlank();
+        assertThat(rrn2).isNotBlank();
+        assertThat(rrn1).isNotEqualTo(rrn2);
+        assertThat(rrn1).hasSize(12);
+        assertThat(rrn2).hasSize(12);
+    }
 }

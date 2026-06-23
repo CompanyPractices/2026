@@ -43,3 +43,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  flyway:
+    clean-disabled: true
+    clean-on-validation-error: false
+    baseline-on-migrate: true
+    out-of-order: true
+    ignore-migration-patterns:
+      - "*:missing"
