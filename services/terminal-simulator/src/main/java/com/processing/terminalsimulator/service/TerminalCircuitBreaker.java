@@ -28,6 +28,8 @@ public class TerminalCircuitBreaker {
     public boolean isCallAllowed() {
         if (state.get() == State.OPEN) {
             if (System.currentTimeMillis() - lastStateChangeTime > cooldownMs) {
+
+                consecutiveSuccesses.set(0);
                 if (state.compareAndSet(State.OPEN, State.HALF_OPEN)) {
                     log.info("Circuit Breaker: Entering HALF_OPEN. Testing gateway...");
                     consecutiveSuccesses.set(0);
@@ -52,27 +54,27 @@ public class TerminalCircuitBreaker {
 
     public void recordNetworkFailure(String reason) {
         log.warn("Network failure registered: {}", reason);
-        State currentState = state.get();
+        while (true) {
+            State currentState = state.get();
 
-        if (currentState == State.CLOSED) {
-            if (consecutiveErrors.incrementAndGet() >= errorThreshold) {
-                changeState(State.CLOSED, "Circuit Breaker: OPEN. Disabling network");
+            if (currentState == State.OPEN) {
+                return;
             }
-        } else if (currentState == State.HALF_OPEN) {
-            changeState(State.HALF_OPEN, "Circuit Breaker: HALF_OPEN failed. Back to OPEN");
-        }
-    }
-
-    public void reset() {
-        state.set(State.CLOSED);
-        consecutiveErrors.set(0);
-        consecutiveSuccesses.set(0);
-    }
-
-    private void changeState(State from, String logMessage) {
-        if (state.compareAndSet(from, State.OPEN)) {
-            log.error(logMessage);
-            lastStateChangeTime = System.currentTimeMillis();
+            if (currentState == State.HALF_OPEN) {
+                if (state.compareAndSet(State.HALF_OPEN, State.OPEN)) {
+                    log.error("Circuit Breaker: HALF_OPEN failed. Back to OPEN");
+                    lastStateChangeTime = System.currentTimeMillis();
+                }
+                return;
+            } else if (currentState == State.CLOSED) {
+                if (consecutiveErrors.incrementAndGet() >= errorThreshold) {
+                    if (state.compareAndSet(State.CLOSED, State.OPEN)) {
+                        log.error("Circuit Breaker: OPEN. Disabling network");
+                        lastStateChangeTime = System.currentTimeMillis();
+                    }
+                }
+                return;
+            }
         }
     }
 }

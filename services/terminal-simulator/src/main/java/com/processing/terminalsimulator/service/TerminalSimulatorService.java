@@ -152,7 +152,6 @@ public class TerminalSimulatorService {
 
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
         long start = System.currentTimeMillis();
-        circuitBreaker.reset();
         Map<CardModelStatus, List<CardModel>> cardsByStatus;
 
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
@@ -171,8 +170,7 @@ public class TerminalSimulatorService {
             // главный поток заходит и раздает задачи экзекутору
             for (TransactionTask task : tasks) {
                 // неблокирующий метод, закидывает задачу в пул
-                executor.submit(
-                        () -> {  // создаю задачу (объект Runnable), без входящих аргументов, с таким кодом:
+                executor.submit(() -> {  // создаю задачу (объект Runnable), без входящих аргументов, с таким кодом:
                     totalSubmitted.incrementAndGet();
 
                     if (!circuitBreaker.isCallAllowed()) {
@@ -186,9 +184,11 @@ public class TerminalSimulatorService {
                                 approved, declined, cardsByStatus, terminalId);
                         authResponses.add(resp);
 
-                        circuitBreaker.recordSuccess();
+                        circuitBreaker.recordSuccess(); // errors=0, Если state было half_open: consecutiveSuccesses++,
+                        // state=closed (если successTestThreshold уже набралось)
                     } catch (org.springframework.web.client.ResourceAccessException e) {
-                        handleNetworkFailure(e.getMessage(), authResponses);
+                        handleNetworkFailure(e.getMessage(), authResponses);  // лог, добавление заглушки, и либо из half_open в
+                        // open, либо увеличиваем счетчик ошибок и переводим из closed в open (при достижении errorThreshold)
                     } catch (org.springframework.web.client.HttpStatusCodeException e) {
                         if (e.getStatusCode().is5xxServerError()) {
                             handleNetworkFailure("Gateway internal error(5xx): " + e.getStatusCode(), authResponses);
