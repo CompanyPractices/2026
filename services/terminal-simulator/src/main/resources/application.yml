@@ -11,9 +11,9 @@ spring:
       enabled: true
 
 simulator:
-  tps: 100
+  tps: 70
   cardsAmount: 10000
-  errorThreshold: 5
+  errorThreshold: 2
 
 # PostgreSQL (раскомментируй, если нужна БД)
 # spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:processing}
