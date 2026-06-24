@@ -229,7 +229,7 @@ public class CardServiceImpl implements CardService {
     public int bulkUpdateStatus(
         @Nullable List<String> bins,
         @Nullable List<String> pans,
-        @Nullable CardStatus status
+        CardStatus status
     ) {
 
         if (bins == null && pans == null) {
