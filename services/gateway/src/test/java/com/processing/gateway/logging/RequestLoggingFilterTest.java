@@ -5,6 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.gateway.properties.SmpGatewayProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.UUID;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -42,9 +44,11 @@ class RequestLoggingFilterTest {
     void setUp() {
         SmpGatewayProperties properties = mock(SmpGatewayProperties.class, RETURNS_DEEP_STUBS);
         when(properties.getLogging().getPretty()).thenReturn(false);
+        when(properties.getLogging().getBodies()).thenReturn(false);
+        when(properties.getLogging().getExcludedRoutes()).thenReturn(Set.of());
 
         ObjectMapper objectMapper = new ObjectMapper();
-        filter = new RequestLoggingFilter(objectMapper, properties);
+        filter = new RequestLoggingFilter(objectMapper, properties, new LogDataMasker());
 
         logger = (Logger) LoggerFactory.getLogger(RequestLoggingFilter.class);
         listAppender = new ListAppender<>();
@@ -83,7 +87,7 @@ class RequestLoggingFilterTest {
         assertEquals(existingId, exchange.getResponse().getHeaders().getFirst("X-Request-Id"));
 
         assertFalse(listAppender.list.isEmpty(), "Log message should be generated");
-        ILoggingEvent logEvent = listAppender.list.get(0);
+        ILoggingEvent logEvent = listAppender.list.getFirst();
 
         assertEquals(existingId, logEvent.getMDCPropertyMap().get("requestId"));
 
@@ -144,7 +148,7 @@ class RequestLoggingFilterTest {
         // Assert
         StepVerifier.create(result).verifyComplete();
 
-        ILoggingEvent logEvent = listAppender.list.get(0);
+        ILoggingEvent logEvent = listAppender.list.getFirst();
         String logMessage = logEvent.getFormattedMessage();
 
         assertTrue(logMessage.contains("\"responseCode\":0"), "Should log 0 if status code is null");
