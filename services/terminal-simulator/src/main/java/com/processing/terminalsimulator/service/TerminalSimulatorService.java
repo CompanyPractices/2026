@@ -30,7 +30,6 @@ public class TerminalSimulatorService {
     private final GatewayClient gatewayClient;
     private final TransactionFactory transactionFactory;
     private final ScenarioTaskGenerator taskGenerator;
-    private final int tps;
     private final int cardsAmount;
     private final TerminalCircuitBreaker circuitBreaker;
 
@@ -41,13 +40,11 @@ public class TerminalSimulatorService {
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
                                      ScenarioTaskGenerator taskGenerator,
                                      TerminalCircuitBreaker circuitBreaker,
-                                     @Value("${simulator.tps:100}") int tps,
                                      @Value("${simulator.cardsAmount:5000}") int cardsAmount) {
         this.gatewayClient = gatewayClient;
         this.transactionFactory = transactionFactory;
         this.taskGenerator = taskGenerator;
         this.circuitBreaker = circuitBreaker;
-        this.tps = tps;
         this.cardsAmount = cardsAmount;
     }
 
@@ -77,7 +74,7 @@ public class TerminalSimulatorService {
         return authResp;
     }
 
-    public TerminalRunResponse run(int count, TerminalScenario scenario) {
+    public TerminalRunResponse run(int count, TerminalScenario scenario, int tps) {
         long start = System.currentTimeMillis();
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
         CardRegistry cardRegistry = new CardRegistry(gatewayClient, scenario, cardsAmount);
@@ -108,8 +105,7 @@ public class TerminalSimulatorService {
                                 terminalId);
                         authResponses.add(resp);
 
-                        circuitBreaker.recordSuccess(); // errors=0, Если state было half_open: consecutiveSuccesses++,
-                        // state=closed (если successTestThreshold уже набралось)
+                        circuitBreaker.recordSuccess();
                     } catch (org.springframework.web.client.ResourceAccessException e) {
                         handleNetworkFailure(e.getMessage(), authResponses);  // лог, добавление заглушки, и либо из half_open в
                         // open, либо увеличиваем счетчик ошибок и переводим из closed в open (при достижении errorThreshold)

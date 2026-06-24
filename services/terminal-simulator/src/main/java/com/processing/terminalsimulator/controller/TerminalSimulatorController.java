@@ -22,7 +22,7 @@ public class TerminalSimulatorController {
 
     @PostMapping("/run")
     public ResponseEntity<TerminalRunResponse> run(@Valid @RequestBody TerminalRunRequest request) {
-        TerminalRunResponse response = simulatorService.run(request.count(), request.scenario());
+        TerminalRunResponse response = simulatorService.run(request.count(), request.scenario(), request.tps());
         return ResponseEntity.ok(response);
     }
 
