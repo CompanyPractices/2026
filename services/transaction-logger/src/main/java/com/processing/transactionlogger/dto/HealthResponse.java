@@ -11,4 +11,5 @@ public record HealthResponse(
         String status,
         String service,
         Long transactionsStored
-) {}
+) {
+}

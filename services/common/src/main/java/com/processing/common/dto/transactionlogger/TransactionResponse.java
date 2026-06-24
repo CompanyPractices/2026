@@ -31,7 +31,7 @@ import java.util.UUID;
  * @param transmissionDateTime дата и время передачи транзакции
  * @param createdAt дата и время создания транзакции
  */
-@Schema(description = "Сохраненная транзакция, возвращаемая при идемпотентном повторном запросе")
+@Schema(description = "Полное представление сохраненной транзакции")
 public record TransactionResponse(
         @Schema(description = "Идентификатор транзакции")
         UUID id,

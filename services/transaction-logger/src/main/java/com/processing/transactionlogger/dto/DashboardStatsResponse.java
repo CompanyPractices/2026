@@ -15,12 +15,13 @@ import java.math.BigDecimal;
  * @param transactionsPerMinute количество транзакций за последнюю минуту
  */
 public record DashboardStatsResponse(
-    long totalTransactions,
-    long approvedCount,
-    long declinedCount,
-    double approvalRate,
-    BigDecimal totalAmount,
-    BigDecimal averageAmount,
-    double avgProcessingTimeMs,
-    long transactionsPerMinute
-) {}
+        long totalTransactions,
+        long approvedCount,
+        long declinedCount,
+        double approvalRate,
+        BigDecimal totalAmount,
+        BigDecimal averageAmount,
+        double avgProcessingTimeMs,
+        long transactionsPerMinute
+) {
+}
