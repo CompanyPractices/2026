@@ -13,7 +13,7 @@ import java.util.Set;
 @ConfigurationProperties(prefix = "gateway")
 @Component
 @Data
-public class GatewayProperties {
+public class SmpGatewayProperties {
     private String version;
     private LoggingProperties logging;
 

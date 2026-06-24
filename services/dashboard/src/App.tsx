@@ -10,6 +10,7 @@ import {TransactionMap} from "./components/TransactionsMap.tsx";
 import TransactionHistogram from './components/TransactionHistogram.tsx';
 import {ToastContainer} from "./components/ToastContainer.tsx";
 import DeclineReasonChart from './components/DeclineReasonChart.tsx'
+import useChartTransactions from "./hooks/useChartTransactions.ts";
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
@@ -25,19 +26,11 @@ function App() {
         pagination,
     } = useTransactions();
     const { stats, loading: liveLoading, error: liveError } = useLiveStats(liveTransactions);
-
-    const chartTransactions = useMemo(() => {
-        const allTransactions = [
-            ...liveTransactions,
-            ...(transactions || []),
-        ];
-        const seen = new Set();
-        return allTransactions.filter(tx => {
-            if (seen.has(tx.id)) return false;
-            seen.add(tx.id);
-            return true;
-        });
-    }, [liveTransactions, transactions]);
+    const {
+        transactions: chartTransactions,
+        loading: chartLoading,
+        error: chartError,
+    } = useChartTransactions(liveTransactions, {refreshIntervalMs: 180_000,});
 
     const pageTransactions = useMemo(() => {
         const base = transactions || [];
@@ -67,7 +60,7 @@ function App() {
                         Распределение сумм транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionHistogram transactions={chartTransactions} loading={loading} error={error} />
+                        <TransactionHistogram transactions={chartTransactions} loading={chartLoading} error={chartError} />
                     </div>
                 </div>
 
@@ -76,7 +69,7 @@ function App() {
                         Статистика одобрения транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionPieChart transactions={chartTransactions} loading={loading} error={error} />
+                        <TransactionPieChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
                     </div>
                 </div>
 
@@ -85,7 +78,7 @@ function App() {
                         Причины отклонения транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <DeclineReasonChart transactions={chartTransactions} loading={loading} error={error} />
+                        <DeclineReasonChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
                     </div>
                 </div>
 
@@ -94,7 +87,7 @@ function App() {
                         Транзакции за последний час
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionLineChart transactions={chartTransactions} loading={loading} error={error} />
+                        <TransactionLineChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
                     </div>
                 </div>
 

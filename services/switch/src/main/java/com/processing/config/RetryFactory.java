@@ -77,6 +77,8 @@ public final class RetryFactory {
 
     /**
      * Строит функцию интервала между попытками из списка {@code backoffMs}.
+     * Resilience4j передаёт {@code numberOfFailedAttempts} (1 после первой ошибки),
+     * поэтому для списка {@code [1000, 2000, 4000]} паузы: 1s → 2s → 4s.
      *
      * @param retry настройки retry
      * @return функция задержки; при пустом списке — минимальный интервал 1 мс
@@ -86,8 +88,8 @@ public final class RetryFactory {
         if (backoffMs == null || backoffMs.isEmpty()) {
             return IntervalFunction.of(MIN_INTERVAL_MS);
         }
-        return attempt -> Math.max(
+        return failedAttempts -> Math.max(
                 MIN_INTERVAL_MS,
-                backoffMs.get(Math.min(attempt, backoffMs.size() - 1)));
+                backoffMs.get(Math.min(Math.max(failedAttempts, 1) - 1, backoffMs.size() - 1)));
     }
 }

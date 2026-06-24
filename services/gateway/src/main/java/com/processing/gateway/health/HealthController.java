@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 /**
  * REST controller exposing gateway health information.
@@ -23,10 +24,10 @@ public class HealthController {
      * @return HTTP 200 when all dependencies are available, otherwise HTTP 503
      */
     @GetMapping("/health")
-    public ResponseEntity<HealthResponse> health() {
-        HealthResponse health = healthService.getDownstreamServicesHealth();
-
-        return health.status() == HealthStatus.OK
-                ? ResponseEntity.ok(health) : ResponseEntity.status(503).body(health);
+    public Mono<ResponseEntity<HealthResponse>> health() {
+        return healthService.getDownstreamServicesHealth()
+                .map(health -> health.status() == HealthStatus.OK
+                        ? ResponseEntity.ok(health)
+                        : ResponseEntity.status(503).body(health));
     }
 }

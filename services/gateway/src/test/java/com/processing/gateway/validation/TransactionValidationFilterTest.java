@@ -3,11 +3,16 @@ package com.processing.gateway.validation;
 import com.processing.gateway.metrics.GatewayMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.util.StreamUtils;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.mock.web.server.MockServerWebExchange;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,8 +30,8 @@ class TransactionValidationFilterTest {
     );
 
     @Test
-    void rejectsInvalidTransactionRequestWithValidationError() throws Exception {
-        MockHttpServletRequest request = transactionRequest("""
+    void rejectsInvalidTransactionRequestWithValidationError() {
+        MockServerWebExchange exchange = transactionExchange("""
                 {
                   "mti": "0100",
                   "stan": "000001",
@@ -42,15 +47,14 @@ class TransactionValidationFilterTest {
                   "acquirerId": "ACQ001"
                 }
                 """);
-        MockHttpServletResponse response = new MockHttpServletResponse();
         AtomicBoolean downstreamCalled = new AtomicBoolean(false);
 
-        filter.doFilter(request, response, (servletRequest, servletResponse) -> downstreamCalled.set(true));
+        filter.filter(exchange, calledChain(downstreamCalled)).block();
 
         assertThat(downstreamCalled).isFalse();
-        assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getContentType()).isEqualTo(MediaType.APPLICATION_JSON_VALUE);
-        assertThat(response.getContentAsString()).contains(
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(exchange.getResponse().getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+        assertThat(exchange.getResponse().getBodyAsString().block()).contains(
                 "\"error\":\"VALIDATION_ERROR\"",
                 "Field 'pan' must be exactly 16 digits",
                 "\"serviceName\":\"gateway\""
@@ -63,7 +67,7 @@ class TransactionValidationFilterTest {
     }
 
     @Test
-    void passesValidTransactionRequestWithoutLosingBody() throws Exception {
+    void passesValidTransactionRequestWithoutLosingBody() {
         String body = """
                 {
                   "mti": "0100",
@@ -80,38 +84,51 @@ class TransactionValidationFilterTest {
                   "acquirerId": "ACQ001"
                 }
                 """;
-        MockHttpServletRequest request = transactionRequest(body);
-        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockServerWebExchange exchange = transactionExchange(body);
         AtomicReference<String> bodySeenByDownstream = new AtomicReference<>();
 
-        filter.doFilter(request, response, (servletRequest, servletResponse) ->
-                bodySeenByDownstream.set(StreamUtils.copyToString(
-                        servletRequest.getInputStream(),
-                        StandardCharsets.UTF_8
-                ))
-        );
+        filter.filter(exchange, downstreamBodyChain(bodySeenByDownstream)).block();
 
-        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(bodySeenByDownstream.get()).isEqualTo(body);
     }
 
     @Test
-    void skipsNonTransactionRequests() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/transactions/search");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    void skipsNonTransactionRequests() {
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/transactions/search"));
         AtomicBoolean downstreamCalled = new AtomicBoolean(false);
 
-        filter.doFilter(request, response, (servletRequest, servletResponse) -> downstreamCalled.set(true));
+        filter.filter(exchange, calledChain(downstreamCalled)).block();
 
         assertThat(downstreamCalled).isTrue();
-        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
-    private MockHttpServletRequest transactionRequest(String body) {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/transactions");
-        request.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        request.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        request.setContent(body.getBytes(StandardCharsets.UTF_8));
-        return request;
+    private MockServerWebExchange transactionExchange(String body) {
+        return MockServerWebExchange.from(MockServerHttpRequest
+                .method(HttpMethod.POST, "/api/transactions")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .body(body));
+    }
+
+    private GatewayFilterChain calledChain(AtomicBoolean called) {
+        return exchange -> {
+            called.set(true);
+            exchange.getResponse().setStatusCode(HttpStatus.OK);
+            return Mono.empty();
+        };
+    }
+
+    private GatewayFilterChain downstreamBodyChain(AtomicReference<String> bodySeenByDownstream) {
+        return exchange -> DataBufferUtils.join(exchange.getRequest().getBody())
+                .doOnNext(buffer -> {
+                    byte[] bytes = new byte[buffer.readableByteCount()];
+                    buffer.read(bytes);
+                    DataBufferUtils.release(buffer);
+                    bodySeenByDownstream.set(new String(bytes, StandardCharsets.UTF_8));
+                    exchange.getResponse().setStatusCode(HttpStatus.OK);
+                })
+                .then();
     }
 }
