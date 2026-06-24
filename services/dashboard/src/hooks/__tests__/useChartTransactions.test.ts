@@ -45,7 +45,7 @@ describe('useChartTransactions', () => {
         vi.useRealTimers();
     });
 
-    it('загружает транзакции за сегодня при монтировании', async () => {
+    it("loads today's transactions on mount", async () => {
         const tx = makeTx('tx-1');
         mockFetchApi.mockResolvedValueOnce({ total: 1, transactions: [tx] } as SearchResponse);
 
@@ -66,7 +66,7 @@ describe('useChartTransactions', () => {
         expect(url).toContain('offset=0');
     });
 
-    it('выполняет пагинацию, если данных больше 500', async () => {
+    it('paginates when data exceeds 500 items', async () => {
         const batch1 = Array.from({ length: 500 }, (_, i) => makeTx(`tx-${i}`));
         const batch2 = Array.from({ length: 100 }, (_, i) => makeTx(`tx-${500 + i}`));
 
@@ -85,7 +85,7 @@ describe('useChartTransactions', () => {
         expect(secondUrl).toContain('offset=500');
     });
 
-    it('не делает лишних запросов, если бэк вернул меньше лимита', async () => {
+    it('does not make extra requests when backend returns less than limit', async () => {
         const txs = Array.from({ length: 50 }, (_, i) => makeTx(`tx-${i}`));
         mockFetchApi.mockResolvedValueOnce({ total: 50, transactions: txs } as SearchResponse);
 
@@ -97,7 +97,7 @@ describe('useChartTransactions', () => {
         expect(result.current.transactions).toHaveLength(50);
     });
 
-    it('объединяет REST и live с дедупликацией по id', async () => {
+    it('merges REST and live transactions with deduplication by id', async () => {
         const sharedTx = makeTx('shared-1');
         const restTx = makeTx('rest-1');
         const liveTx = makeTx('live-1');
@@ -119,7 +119,7 @@ describe('useChartTransactions', () => {
         );
     });
 
-    it('live-транзакции идут первыми, потом REST', async () => {
+    it('places live transactions first, then REST', async () => {
         const restTx = makeTx('rest-1');
         const liveTx = makeTx('live-1');
 
@@ -137,7 +137,7 @@ describe('useChartTransactions', () => {
     });
 
 
-    it('обновляет данные через polling (refreshIntervalMs)', async () => {
+    it('refreshes data via polling (refreshIntervalMs)', async () => {
         const tx1 = makeTx('tx-1');
         const tx2 = makeTx('tx-2');
 
@@ -156,7 +156,7 @@ describe('useChartTransactions', () => {
         await waitFor(() => expect(mockFetchApi).toHaveBeenCalledTimes(2));
     });
 
-    it('не делает polling, если refreshIntervalMs = 0', async () => {
+    it('does not poll when refreshIntervalMs is 0', async () => {
         mockFetchApi.mockResolvedValueOnce({
             total: 1,
             transactions: [makeTx('tx-1')],
@@ -173,7 +173,7 @@ describe('useChartTransactions', () => {
         expect(mockFetchApi).toHaveBeenCalledTimes(1);
     });
 
-    it('ручной refresh перезагружает данные', async () => {
+    it('manual refresh reloads data', async () => {
         mockFetchApi
             .mockResolvedValueOnce({ total: 1, transactions: [makeTx('tx-1')] } as SearchResponse)
             .mockResolvedValueOnce({ total: 1, transactions: [makeTx('tx-2')] } as SearchResponse);
@@ -189,7 +189,7 @@ describe('useChartTransactions', () => {
         await waitFor(() => expect(mockFetchApi).toHaveBeenCalledTimes(2));
     });
 
-    it('не падает при unmount во время загрузки', async () => {
+    it('does not crash on unmount during loading', async () => {
         mockFetchApi.mockImplementation(() => new Promise(() => {}));
 
         const { unmount } = renderHook(() => useChartTransactions([]));
