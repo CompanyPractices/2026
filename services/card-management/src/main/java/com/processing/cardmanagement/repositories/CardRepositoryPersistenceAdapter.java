@@ -1,10 +1,13 @@
 package com.processing.cardmanagement.repositories;
 
+import com.processing.cardmanagement.exceptions.MassiveCardCreationCollisionException;
+import com.processing.cardmanagement.exceptions.PanCollisionException;
 import com.processing.cardmanagement.mappers.CardPersistenceMapper;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -58,6 +61,24 @@ public class CardRepositoryPersistenceAdapter implements CardRepository {
     }
 
     @Override
+    public List<Card> findCardsByPansForUpdate(List<String> pans) {
+        return jpaRepository
+            .findWithPessimisticLockByPanIn(pans)
+            .stream()
+            .map(persistenceMapper::toDomain)
+            .toList();
+    }
+
+    @Override
+    public List<Card> findCardsByBinsForUpdate(List<String> bins) {
+        return jpaRepository
+            .findWithPessimisticLockByBinIn(bins)
+            .stream()
+            .map(persistenceMapper::toDomain)
+            .toList();
+    }
+
+    @Override
     public long countCardsFiltered(
         @Nullable CardStatus status,
         @Nullable String bin,
@@ -79,21 +100,36 @@ public class CardRepositoryPersistenceAdapter implements CardRepository {
     }
 
     @Override
-    public Card save(Card card) {
+    public Card create(Card card) {
+        try {
+            return persistenceMapper.toDomain(
+                jpaRepository.saveAndFlush(persistenceMapper.toEntity(card))
+            );
+        } catch (DataIntegrityViolationException ex) {
+            throw new PanCollisionException(card.pan());
+        }
+    }
+
+    @Override
+    public Card update(Card card) {
         return persistenceMapper.toDomain(
             jpaRepository.save(persistenceMapper.toEntity(card))
         );
     }
 
     @Override
-    public List<Card> saveAll(List<Card> card) {
-        return jpaRepository.saveAll(card
+    public List<Card> createAll(List<Card> card) {
+        try {
+            return jpaRepository.saveAllAndFlush(card
+                    .stream()
+                    .map(persistenceMapper::toEntity)
+                    .toList()
+                )
                 .stream()
-                .map(persistenceMapper::toEntity)
-                .toList()
-            )
-            .stream()
-            .map(persistenceMapper::toDomain)
-            .toList();
+                .map(persistenceMapper::toDomain)
+                .toList();
+        } catch (DataIntegrityViolationException ex) {
+            throw new MassiveCardCreationCollisionException();
+        }
     }
 }

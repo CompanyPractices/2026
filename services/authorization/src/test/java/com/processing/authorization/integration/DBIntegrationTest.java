@@ -26,7 +26,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
-import com.processing.authorization.services.AuthService;
+import com.processing.authorization.services.AuthServiceImpl;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest
 public class DBIntegrationTest {
     @Autowired
-    private AuthService authService;
+    private AuthServiceImpl authService;
     @Autowired
     private LimitUsageRepository limitUsageRepository;
 
@@ -308,8 +308,8 @@ public class DBIntegrationTest {
                 correctRequest.mcc(),
                 correctRequest.acquirerId(),
                 correctRequest.issuerId());
-        String rrn1 = authService.generateRRN(correctRequest);
-        String rrn2 = authService.generateRRN(duplicateRequest);
+        String rrn1 = authService.generateRRN();
+        String rrn2 = authService.generateRRN();
 
         assertThat(rrn1).isNotBlank();
         assertThat(rrn2).isNotBlank();

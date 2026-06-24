@@ -29,7 +29,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
             response.setHeader(HEADER, requestId);
             filterChain.doFilter(request, response);
         } finally {
-            MDC.clear();
+            MDC.remove(MDC_KEY);
         }
     }
 }

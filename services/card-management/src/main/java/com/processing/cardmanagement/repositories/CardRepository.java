@@ -1,5 +1,7 @@
 package com.processing.cardmanagement.repositories;
 
+import com.processing.cardmanagement.exceptions.MassiveCardCreationCollisionException;
+import com.processing.cardmanagement.exceptions.PanCollisionException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
 import jakarta.annotation.Nullable;
@@ -37,6 +39,20 @@ public interface CardRepository {
     );
 
     /**
+     * Возвращает список карт по списку PAN для изменения
+     *
+     * @return список карт
+     */
+    List<Card> findCardsByPansForUpdate(List<String> pans);
+
+    /**
+     * Возвращает список карт по списку BIN для изменения
+     *
+     * @return список карт
+     */
+    List<Card> findCardsByBinsForUpdate(List<String> bins);
+
+    /**
      * Возвращает количество карт с применением фильтров
      *
      * @return количество карт
@@ -54,7 +70,30 @@ public interface CardRepository {
      */
     long countAllCards();
 
-    Card save(Card card);
+    /**
+     * Создает карту
+     *
+     * @param card сохраняемая карта
+     * @return сохраненная карта
+     * @throws PanCollisionException при попытке создать существующую карту
+     */
+    Card create(Card card);
 
-    List<Card> saveAll(List<Card> cards);
+    /**
+     * Обновляет карту
+     *
+     * @param card сохраняемая карта
+     * @return сохраненная карта
+     * @throws PanCollisionException при попытке создать существующую карту
+     */
+    Card update(Card card);
+
+    /**
+     * Создает разом множество карт
+     *
+     * @param cards сохраняемые карты
+     * @return сохраненные карты
+     * @throws MassiveCardCreationCollisionException при попытке создать существующую карту
+     */
+    List<Card> createAll(List<Card> cards);
 }

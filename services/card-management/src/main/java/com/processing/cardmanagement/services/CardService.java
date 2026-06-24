@@ -1,9 +1,9 @@
 package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.exceptions.CardNotFoundException;
+import com.processing.cardmanagement.exceptions.ReservationAlreadyExistsException;
+import com.processing.cardmanagement.exceptions.ReservationNotFoundException;
 import com.processing.cardmanagement.exceptions.RollbackAlreadySatisfiedException;
-import com.processing.cardmanagement.exceptions.RrnAlreadyExistsException;
-import com.processing.cardmanagement.exceptions.RrnNotFoundException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.models.CardStatus;
@@ -17,12 +17,12 @@ import java.util.List;
 public interface CardService {
 
     Card createCard(
-            String bin,
-            String cardholderName,
-            String currencyCode,
-            BigDecimal dailyLimit,
-            BigDecimal monthlyLimit,
-            BigDecimal initialBalance
+        String bin,
+        String cardholderName,
+        String currencyCode,
+        BigDecimal dailyLimit,
+        BigDecimal monthlyLimit,
+        BigDecimal initialBalance
     );
 
     List<Card> createCards(List<CardDraft> data);
@@ -42,13 +42,13 @@ public interface CardService {
      * @return список карт
      */
     List<Card> getCards(
-            @Nullable Integer limit,
-            @Nullable Long offset,
-            @Nullable CardStatus status,
-            @Nullable String bin,
-            @Nullable String issuerId,
-            @Nullable Instant startDate,
-            @Nullable Instant endDate
+        @Nullable Integer limit,
+        @Nullable Long offset,
+        @Nullable CardStatus status,
+        @Nullable String bin,
+        @Nullable String issuerId,
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     );
 
     /**
@@ -63,11 +63,11 @@ public interface CardService {
      * @throws CardNotFoundException если карта не найдена
      */
     Card patchCard(
-            String pan,
-            @Nullable CardStatus status,
-            @Nullable BigDecimal dailyLimit,
-            @Nullable BigDecimal monthlyLimit,
-            @Nullable BigDecimal availableBalance
+        String pan,
+        @Nullable CardStatus status,
+        @Nullable BigDecimal dailyLimit,
+        @Nullable BigDecimal monthlyLimit,
+        @Nullable BigDecimal availableBalance
     );
 
     /**
@@ -96,11 +96,11 @@ public interface CardService {
      * @return количество карт
      */
     long countCardsFiltered(
-            @Nullable CardStatus status,
-            @Nullable String bin,
-            @Nullable String issuerId,
-            @Nullable Instant startDate,
-            @Nullable Instant endDate
+        @Nullable CardStatus status,
+        @Nullable String bin,
+        @Nullable String issuerId,
+        @Nullable Instant startDate,
+        @Nullable Instant endDate
     );
 
     /**
@@ -110,8 +110,8 @@ public interface CardService {
      * @param amount размер резервирования
      * @param rrn    номер rrn
      * @return измененная карта
-     * @throws CardNotFoundException     если карта не найдена
-     * @throws RrnAlreadyExistsException если RRN уже есть в БД
+     * @throws CardNotFoundException             если карта не найдена
+     * @throws ReservationAlreadyExistsException если RRN уже есть в БД
      */
     Card reserve(String pan, BigDecimal amount, String rrn);
 
@@ -124,13 +124,13 @@ public interface CardService {
      * @return измененная карта
      * @throws CardNotFoundException             если карта не найдена
      * @throws RollbackAlreadySatisfiedException если возврат уже был запрошен
-     * @throws RrnNotFoundException              если не найдено зачисление с данным RRN
+     * @throws ReservationNotFoundException      если не найдено зачисление с данным RRN
      */
     Card rollback(String pan, BigDecimal amount, String rrn);
 
     int bulkUpdateStatus(
-            @Nullable List<String> bin,
-            @Nullable List<String> pans,
-            CardStatus status
+        @Nullable List<String> bin,
+        @Nullable List<String> pans,
+        CardStatus status
     );
 }

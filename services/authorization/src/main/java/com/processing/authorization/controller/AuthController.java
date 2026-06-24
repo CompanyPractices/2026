@@ -1,38 +1,21 @@
 package com.processing.authorization.controller;
 
-import com.processing.common.dto.authorization.AuthorizationRequest;
-import com.processing.common.dto.authorization.AuthorizationResponse;
-import com.processing.authorization.services.AuthService;
-import com.processing.common.dto.authorization.RollbackRequest;
-import com.processing.common.dto.authorization.RollbackResponse;
-import jakarta.validation.Valid;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.time.Instant;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
 
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import static com.processing.authorization.constants.DeclineOutcome.*;
+import com.processing.authorization.services.AuthServiceImpl;
+import com.processing.common.dto.authorization.AuthorizationRequest;
+import com.processing.common.dto.authorization.AuthorizationResponse;
+import com.processing.common.dto.authorization.RollbackRequest;
+import com.processing.common.dto.authorization.RollbackResponse;
 
 /**
  * REST-контроллер для обработки запросов на авторизацию банковских карт.
  * <p>
  * Предоставляет эндпоинт для выполнения авторизации транзакций по картам.
  * Контроллер принимает запросы на авторизацию, делегирует бизнес-логику
- * сервису {@link AuthService} и формирует HTTP-ответ с соответствующим
+ * сервису {@link AuthServiceImpl} и формирует HTTP-ответ с соответствующим
  * статус-кодом в зависимости от результата авторизации.
  * </p>
  * <p>
@@ -40,18 +23,11 @@ import static com.processing.authorization.constants.DeclineOutcome.*;
  * </p>
  *
  * @author core-auth-team
- * @see AuthService
+ * @see AuthServiceImpl
  * @see AuthorizationRequest
  * @see AuthorizationResponse
  */
-@Slf4j
-@RestController
-@RequestMapping("/api/internal")
-@RequiredArgsConstructor
-@Tag(name = "Authorization", description = "Endpoint for authorizing cards")
-public class AuthController {
-    private final AuthService authService;
-
+public interface AuthController {
     /**
      * Обрабатывает запрос на авторизацию банковской карты.
      *
@@ -61,7 +37,7 @@ public class AuthController {
      * <ol>
      * <li>Фиксирует время начала обработки запроса</li>
      * <li>Делегирует авторизацию сервису
-     * {@link AuthService#authorize(AuthorizationRequest, Instant)}</li>
+     * {@link AuthServiceImpl#authorize(AuthorizationRequest, Instant)}</li>
      * <li>Вычисляет время обработки запроса в миллисекундах</li>
      * <li>Устанавливает время обработки в ответе</li>
      * <li>Определяет HTTP-статус на основе результата авторизации</li>
@@ -69,7 +45,6 @@ public class AuthController {
      * </ol>
      *
      * <p>
-     * Запрос проходит валидацию согласно аннотации {@link Valid}.
      * В случае нарушения ограничений, заданных в {@link AuthorizationRequest},
      * будет возвращен ответ с ошибкой валидации.
      * </p>
@@ -80,7 +55,6 @@ public class AuthController {
      *                <li><b>amount</b> - сумма транзакции</li>
      *                <li>другие параметры транзакции</li>
      *                </ul>
-     *                Запрос должен проходить валидацию ({@link Valid})
      * @return {@link ResponseEntity} с объектом {@link AuthorizationResponse},
      *         содержащим:
      *         <ul>
@@ -97,109 +71,60 @@ public class AuthController {
      *         </ul>
      *         HTTP-статус зависит от результата.
      *
-     * @see AuthService#authorize(AuthorizationRequest, Instant)
+     * @see AuthServiceImpl#authorize(AuthorizationRequest, Instant)
      * @see AuthorizationRequest
      * @see AuthorizationResponse
      */
-    @PostMapping("/authorize")
-    @Operation(summary = "Authorization", description = "Approves or declines card by pan")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Authorization success",
-                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Incorrect request or unknown error",
-                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Card blocked, inactive or expired",
-                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Card not found",
-                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-            @ApiResponse(
-                    responseCode = "422",
-                    description = "Insufficient funds ",
-                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class))),
-            @ApiResponse(
-                    responseCode = "503",
-                    description = "Card manager unavailable",
-                    content = @Content(schema = @Schema(implementation = AuthorizationResponse.class)))
-    })
-    public ResponseEntity<AuthorizationResponse> authorize(@Valid @RequestBody AuthorizationRequest request) {
-        Instant requestInputTime = Instant.now();
-        AuthorizationResponse response = authService.authorize(request, requestInputTime);
+    ResponseEntity<AuthorizationResponse> authorize(AuthorizationRequest request);
 
-        boolean isApproved = response.status().equals(AuthorizationResponse.STATUS_APPROVED);
-        HttpStatus httpStatus;
-        if (isApproved) {
-            httpStatus = HttpStatus.OK;
-        } else {
-            String declineReason = response.declineReason();
-            httpStatus = switch (declineReason) {
-                case REASON_CARD_NOT_FOUND -> HttpStatus.NOT_FOUND;
-                case REASON_SERVICE_UNAVAILABLE,
-                     REASON_RESERVATION_FAILED -> HttpStatus.SERVICE_UNAVAILABLE;
-                case REASON_INSUFFICIENT_FUNDS -> HttpStatus.UNPROCESSABLE_ENTITY;
-                case REASON_CARD_EXPIRED,
-                     REASON_CARD_BLOCKED,
-                     REASON_CARD_INACTIVE -> HttpStatus.FORBIDDEN;
-                default -> HttpStatus.BAD_REQUEST;
-            };
-        }
-        return ResponseEntity.status(httpStatus).body(response);
-    }
-
-    @PostMapping("/rollback")
-    @Operation(summary = "Authorization", description = "Rollbacks transaction")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Rollback success",
-                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Incorrect request or unknown error",
-                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Transaction not found",
-                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Conflict: transaction already rolled back",
-                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error: card management error",
-                    content = @Content(schema = @Schema(implementation = RollbackResponse.class))),
-            @ApiResponse(
-                    responseCode = "503",
-                    description = "Card management unavailable",
-                    content = @Content(schema = @Schema(implementation = RollbackResponse.class)))
-    })
-    public ResponseEntity<RollbackResponse> rollback(@Valid @RequestBody RollbackRequest request) {
-        Instant requestInputTime = Instant.now();
-        RollbackResponse response = authService.rollback(request, requestInputTime);
-
-        boolean isApproved = response.status().equals(RollbackResponse.STATUS_APPROVED);
-        HttpStatus httpStatus;
-        if (isApproved) {
-            httpStatus = HttpStatus.OK;
-        } else {
-            String declineReason = response.declineReason();
-            httpStatus = switch (declineReason) {
-                case REASON_TRANSACTION_NOT_FOUND,
-                     REASON_CARD_NOT_FOUND -> HttpStatus.NOT_FOUND;
-                case REASON_ALREADY_ROLLED_BACK -> HttpStatus.CONFLICT;
-                case REASON_SERVICE_UNAVAILABLE,
-                     REASON_ROLLBACK_FAILED -> HttpStatus.SERVICE_UNAVAILABLE;
-                default -> HttpStatus.BAD_REQUEST;
-            };
-        }
-        return ResponseEntity.status(httpStatus).body(response);
-    }
+    /**
+     * Обрабатывает запрос на откат ранее выполненной транзакции.
+     * <p>
+     * Метод выполняет следующие действия:
+     * </p>
+     * <ol>
+     * <li>Фиксирует время начала обработки запроса</li>
+     * <li>Делегирует откат сервису
+     * {@link AuthServiceImpl#rollback(RollbackRequest, Instant)}</li>
+     * <li>Определяет HTTP-статус на основе результата отката</li>
+     * <li>Возвращает {@link ResponseEntity} с соответствующим статусом и телом
+     * ответа</li>
+     * </ol>
+     * <p>
+     * В случае нарушения ограничений, заданных в {@link RollbackRequest},
+     * будет возвращён ответ с ошибкой валидации (HTTP 400).
+     * </p>
+     *
+     * @param request запрос на откат транзакции, содержащий:
+     *                <ul>
+     *                <li><b>pan</b> — номер карты (16 цифр)</li>
+     *                <li><b>amount</b> — сумма отката</li>
+     *                <li><b>rrn</b> — RRN исходной транзакции (обязательно)</li>
+     *                </ul>
+     * @return {@link ResponseEntity} с объектом {@link RollbackResponse},
+     *         содержащим:
+     *         <ul>
+     *         <li><b>status</b> — статус отката ("approved" или "declined")</li>
+     *         <li><b>declineReason</b> — причина отклонения (если статус
+     *         "declined")</li>
+     *         <li><b>responseCode</b> — код ответа (двузначный ISO-код)</li>
+     *         <li><b>rrn</b> — новый RRN отката (при успешном откате)</li>
+     *         <li><b>processingTimeMs</b> — время обработки запроса в
+     *         миллисекундах</li>
+     *         </ul>
+     *         HTTP-статус определяется на основе результата:
+     *         <ul>
+     *         <li><b>200 OK</b> — откат выполнен успешно</li>
+     *         <li><b>404 Not Found</b> — транзакция или карта не найдены</li>
+     *         <li><b>409 Conflict</b> — транзакция уже была откатана</li>
+     *         <li><b>503 Service Unavailable</b> — сервис управления картами
+     *         недоступен</li>
+     *         <li><b>400 Bad Request</b> — некорректный запрос или неизвестная
+     *         ошибка</li>
+     *         </ul>
+     * @see AuthServiceImpl#rollback(RollbackRequest, Instant)
+     * @see RollbackRequest
+     * @see RollbackResponse
+     */
+    ResponseEntity<RollbackResponse> rollback(RollbackRequest request);
 }

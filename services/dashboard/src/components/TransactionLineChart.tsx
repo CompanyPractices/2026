@@ -1,4 +1,5 @@
-import { LineChart, CartesianGrid, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
+import { LineChart, CartesianGrid, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, TooltipProps } from 'recharts'
+import { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import { Transaction } from '../types/index.ts'
 import { subHours } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -27,7 +28,15 @@ export default function TransactionLineChart({transactions, loading, error} : Li
             const time = formatInTimeZone(tr.createdAt, 'UTC', 'HH:mm');
             txCount[time] = (txCount[time] || 0) + 1;
         });
-        return Object.entries(txCount).map(([name, count]) => ({name, count})).sort((a, b) => a.name.localeCompare(b.name))
+
+        const total = Object.values(txCount).reduce((a, b) => a + b, 0);
+        return Object.entries(txCount)
+            .map(([name, count]) => ({
+                name: name,
+                value: count,
+                percent: ((count / total) * 100).toFixed(1)
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name))
     }
 
     const txData = prepareData(transactions)
@@ -56,6 +65,24 @@ export default function TransactionLineChart({transactions, loading, error} : Li
         )
     }
 
+    const LineTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div className="p-3 rounded-lg shadow-lg border dark:bg-zinc-800 dark:border-zinc-700 dark:text-sage-50 bg-white border-zinc-200 text-zinc-900">
+                    <p className="font-bold mb-1">{data.name}</p>
+                    <p className="text-sm opacity-80">
+                        Количество: <span className="font-mono">{data.value}</span>
+                    </p>
+                    <p className="text-sm opacity-80">
+                        Доля: <span className="font-mono">{data.percent}%</span>
+                    </p>
+                </div>
+            );
+        }
+        return null;
+    };
+
     return (
         <div className="w-full h-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -73,17 +100,19 @@ export default function TransactionLineChart({transactions, loading, error} : Li
                     />
                     <YAxis
                         width={30}
-                        dataKey="count"
+                        dataKey="value"
                         stroke={textColor}
                         tick={{ fill: textColor, fontSize: 12 }}
                         tickLine={false}
                         allowDecimals={false}
                         label={{value: 'TX/min', position:"top", offset:15}}
                     />
-                    <Tooltip/>
+
+                    <Tooltip content={<LineTooltip />} />
+
                     <Line
                         type="monotone"
-                        dataKey="count"
+                        dataKey="value"
                         stroke={lineColor}
                         animationDuration={2000}
                     />

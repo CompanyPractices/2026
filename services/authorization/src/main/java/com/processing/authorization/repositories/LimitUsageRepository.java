@@ -12,16 +12,52 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Репозиторий для таблицы limit_usage
+ * Репозиторий для работы с таблицей limit_usage, хранящей накопленные суммы
+ * операций по картам за день и месяц.
+ * <p>
+ * Используется для контроля лимитов при авторизации транзакций.
  *
  * @see JpaRepository
  */
 @Repository
 public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
+        /**
+         * Удаляет записи об использовании лимитов за указанный период.
+         * <p>
+         * Используется в задаче очистки устаревших данных для предотвращения
+         * неограниченного роста таблицы.
+         *
+         * @param startDate начальная дата периода включительно
+         * @param endDate   конечная дата периода включительно
+         * @return количество удалённых записей
+         */
         int deleteByUsageDateBetween(
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
 
+        /**
+         * Атомарно обновляет или вставляет запись об использовании лимитов для карты.
+         * <p>
+         * Операция выполняется на уровне БД с использованием
+         * {@code INSERT ... ON CONFLICT}:
+         * <ul>
+         * <li>Если записи на дату нет — вставляется новая с накопленными суммами</li>
+         * <li>Если запись уже существует — сумма увеличивается</li>
+         * </ul>
+         * <p>
+         * <b>Важно:</b> Обновление выполняется только при соблюдении обоих лимитов
+         * (дневного и месячного) как для вставки, так и для обновления.
+         * <p>
+         * Месячная сумма для новой записи вычисляется как сумма последнего значения
+         * за текущий месяц + текущая сумма операции.
+         *
+         * @param pan          PAN карты (идентификатор клиента)
+         * @param date         дата операции (используется как ключ для дневного лимита)
+         * @param amount       сумма операции для добавления к накопленным значениям
+         * @param dailyLimit   максимально допустимая сумма операций за день
+         * @param monthlyLimit максимально допустимая сумма операций за месяц
+         * @return количество затронутых строк (0 — лимит превышен, 1 — успешно)
+         */
         @Modifying
         @Query(value =
                 "INSERT INTO limit_usage (id, pan, usage_date, daily_amount, monthly_amount) "
@@ -56,6 +92,7 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
                         @Param("dailyLimit") BigDecimal dailyLimit,
                         @Param("monthlyLimit") BigDecimal monthlyLimit);
 
+        //TODO: javadoc
         @Query(value = "SELECT nextval('rrn_seq')", nativeQuery = true)
         long getNextRrn();
 

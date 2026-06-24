@@ -15,6 +15,7 @@ public interface CardRestMapper {
 
     @Mapping(target = "withReservation", ignore = true)
     @Mapping(target = "withRollback", ignore = true)
+    @Mapping(target = "copyWithPan", ignore = true)
     Card toDomain(CardModel model);
 
     default BigDecimal roundBalance(BigDecimal availableBalance) {

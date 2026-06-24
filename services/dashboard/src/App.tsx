@@ -5,15 +5,18 @@ import {TransactionTable} from "./components/TransactionTable.tsx";
 import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
-import { useMemo } from 'react'
+import { useMemo } from 'react';
 import {TransactionMap} from "./components/TransactionsMap.tsx";
-import TransactionHistogram from './components/TransactionHistogram.tsx'
+import TransactionHistogram from './components/TransactionHistogram.tsx';
+import {ToastContainer} from "./components/ToastContainer.tsx";
+import DeclineReasonChart from './components/DeclineReasonChart.tsx'
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
     const {
         transactions,
         isFiltered,
+        currentFilter,
         loading,
         error,
         applyFilter,
@@ -77,14 +80,21 @@ function App() {
                     </div>
                 </div>
 
-                <div className="col-span-1 md:col-span-2 flex justify-center p-4">
-                    <div className="w-full max-w-[800px] bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
-                        <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                            Транзакции за последний час
-                        </h2>
-                        <div className="flex-grow min-h-[300px]">
-                            <TransactionLineChart transactions={chartTransactions} loading={loading} error={error} />
-                        </div>
+                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                        Причины отклонения транзакций
+                    </h2>
+                    <div className="flex-grow min-h-[300px]">
+                        <DeclineReasonChart transactions={chartTransactions} loading={loading} error={error} />
+                    </div>
+                </div>
+
+                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                        Транзакции за последний час
+                    </h2>
+                    <div className="flex-grow min-h-[300px]">
+                        <TransactionLineChart transactions={chartTransactions} loading={loading} error={error} />
                     </div>
                 </div>
 
@@ -92,6 +102,7 @@ function App() {
                     <TransactionTable
                         transactions={pageTransactions}
                         isFiltered={isFiltered}
+                        currentFilter={currentFilter}
                         error={error}
                         loading={loading}
                         search={applyFilter}
@@ -122,6 +133,8 @@ function App() {
                     2026
                 </h1>
             </footer>
+
+            <ToastContainer />
         </div>
     );
 }

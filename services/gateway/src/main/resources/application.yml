@@ -75,7 +75,7 @@ spring:
             metadata:
               serviceName: logger
             predicates:
-              - Path=/api/transactions/search
+              - Path=/api/transactions/**
           - id: dashboard
             uri: ${LOGGER_URL:http://localhost:8088}
             metadata:

@@ -13,7 +13,7 @@ import java.util.UUID;
 @Data
 @Table(
     name = "reservations",
-    indexes = @Index(name = "uk_reservations_rrn", columnList = "rrn", unique = true)
+    indexes = @Index(name = "uk_reservations_rrn_pan", columnList = "rrn, pan", unique = true)
 )
 @NoArgsConstructor
 @AllArgsConstructor

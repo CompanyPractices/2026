@@ -1463,7 +1463,7 @@ components:
           description: Среднее время обработки транзакции, мс
           example: 38.5
         transactionsPerMinute:
-          type: number
-          format: double
+          type: integer
+          format: int64
           description: Количество транзакций за последнюю минуту (TPS × 60)
-          example: 12.3
+          example: 12

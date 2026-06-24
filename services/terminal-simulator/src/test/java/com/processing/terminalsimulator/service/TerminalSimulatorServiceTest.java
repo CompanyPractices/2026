@@ -41,6 +41,8 @@ class TerminalSimulatorServiceTest {
     private GatewayClient gatewayClient;
     @Mock
     private TransactionFactory transactionFactory;
+    @Mock
+    private TerminalCircuitBreaker terminalCircuitBreaker;
 
     private TerminalSimulatorService service;
 
@@ -48,7 +50,8 @@ class TerminalSimulatorServiceTest {
     void setUp() {
         int cardsAmount = 5000;
         int tps = 100;
-        service = new TerminalSimulatorService(gatewayClient, transactionFactory, tps, cardsAmount);
+        service = new TerminalSimulatorService(gatewayClient, transactionFactory, terminalCircuitBreaker, tps,
+                cardsAmount);
         CardModel activeCard = new CardModel(UUID.randomUUID(), "4000001234560001", "400000", "IVAN IVANOV",
                 YearMonth.of(2030, 1), CardModelStatus.ACTIVE, "643", new BigDecimal(500_002L),
                 new BigDecimal(100_000L), new BigDecimal(20_000_000L), "ISS001",
@@ -58,6 +61,7 @@ class TerminalSimulatorServiceTest {
                 new BigDecimal(200_000L), new BigDecimal(40_000L), "ISS001",
                 (LocalDateTime.now()).toInstant(ZoneOffset.UTC));
 
+        when(terminalCircuitBreaker.isCallAllowed()).thenReturn(true);
         when(gatewayClient.getCardsFromCardManager(eq(CardModelStatus.ACTIVE),
                 anyInt())).thenReturn(List.of(activeCard));
         when(gatewayClient.getCardsFromCardManager(eq(CardModelStatus.BLOCKED),
