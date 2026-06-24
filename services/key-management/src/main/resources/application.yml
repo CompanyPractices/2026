@@ -41,6 +41,7 @@ spring:
     baseline-on-migrate: true
     locations: com/processing/kms/infrastructure/persistence/migrations
     ignore-migration-patterns: "*:missing"
+    table: api_key_schema_history
 
 kms:
   ttl-min: 1440

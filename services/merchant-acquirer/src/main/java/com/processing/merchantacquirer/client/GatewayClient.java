@@ -19,12 +19,15 @@ import java.time.Duration;
 public class GatewayClient {
   private final RestClient restClient;
 
-  public GatewayClient(RestClient.Builder builder, @Value("${gateway.url}") String gatewayUrl) {
+  public GatewayClient(RestClient.Builder builder,
+                       @Value("${gateway.url}") String gatewayUrl,
+                       @Value("${API_KEY:KEY_NOT_FOUND}") String apiKey) {
       var settings = ClientHttpRequestFactorySettings.defaults()
               .withConnectTimeout(Duration.ofSeconds(5))
               .withReadTimeout(Duration.ofSeconds(30));
       this.restClient = builder
               .baseUrl(gatewayUrl)
+              .defaultHeader("X-Api-Key", apiKey)
               .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
               .build();
   }

@@ -20,8 +20,11 @@ public class GatewayClient {
 
     public GatewayClient(RestClient rest,
                          @Value("${gateway.url}") String gatewayUrl,
-                         @Value("${gateway.card-management-url}") String cardManagementUrl) {
-        this.rest = rest;
+                         @Value("${gateway.card-management-url}") String cardManagementUrl,
+                         @Value("${API_KEY:KEY_NOT_FOUND}") String apiKey) {
+        this.rest = rest.mutate()
+                .defaultHeader("X-Api-Key", apiKey)
+                .build();
         this.gatewayUrl = gatewayUrl;
         this.cardManagementUrl = cardManagementUrl;
     }

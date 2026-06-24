@@ -41,7 +41,7 @@ class GatewayClientTest {
         cardMgmtUrl = baseUrl;
         RestClient restClient = RestClient.create();
 
-        gatewayClient = new GatewayClient(restClient, gatewayUrl, cardMgmtUrl);
+        gatewayClient = new GatewayClient(restClient, gatewayUrl, cardMgmtUrl, "");
     }
 
     @AfterEach
