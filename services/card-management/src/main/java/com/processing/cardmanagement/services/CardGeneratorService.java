@@ -59,30 +59,30 @@ public class CardGeneratorService {
             String cardholderName = faker.name().fullName().toUpperCase();
 
             BigDecimal balance = BigDecimal.valueOf(
-                    ThreadLocalRandom.current().nextLong(
-                            generatorOptions.minBalance().longValue(),
-                            generatorOptions.maxBalance().longValue()
-                    )
+                ThreadLocalRandom.current().nextLong(
+                    generatorOptions.minBalance().longValue(),
+                    generatorOptions.maxBalance().longValue()
+                )
             );
             BigDecimal dailyLimit = BigDecimal.valueOf(
-                    ThreadLocalRandom.current().nextLong(
-                            generatorOptions.minDailyLimit().longValue(),
-                            generatorOptions.maxDailyLimit().longValue()
-                    )
+                ThreadLocalRandom.current().nextLong(
+                    generatorOptions.minDailyLimit().longValue(),
+                    generatorOptions.maxDailyLimit().longValue()
+                )
             );
             BigDecimal monthlyLimit = BigDecimal.valueOf(
-                    dailyLimit.longValue() * DAYS_IN_MONTH
+                dailyLimit.longValue() * DAYS_IN_MONTH
             );
 
 
             CardDraft card = new CardDraft(
-                    bin,
-                    cardholderName,
-                    cardStatuses.get(i),
-                    generatorOptions.currencyCode(),
-                    dailyLimit,
-                    monthlyLimit,
-                    balance
+                bin,
+                cardholderName,
+                cardStatuses.get(i),
+                generatorOptions.currencyCode(),
+                dailyLimit,
+                monthlyLimit,
+                balance
             );
 
             statusCounts.merge(card.status(), 1L, Long::sum);
@@ -90,7 +90,7 @@ public class CardGeneratorService {
         }
 
         List<Card> result = cardService.createCards(cards);
-        eventNotifier.onEvent(new CardsBatchGeneratedEvent(statusCounts));
+        eventNotifier.notifyListeners(new CardsBatchGeneratedEvent(statusCounts));
 
         log.info("Successfully generated {} cards", count);
         return result;

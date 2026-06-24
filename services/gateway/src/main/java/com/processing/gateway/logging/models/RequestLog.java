@@ -1,6 +1,6 @@
 package com.processing.gateway.logging.models;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,10 +11,18 @@ import lombok.Data;
 @Builder
 public class RequestLog {
     private String requestId;
+
     private String method;
+
     private String path;
-    private JsonNode requestBody;
+
+    @JsonRawValue
+    private String requestBody;
+
     private Integer responseCode;
+
     private Long responseTime;
-    private JsonNode responseBody;
+
+    @JsonRawValue
+    private String responseBody;
 }

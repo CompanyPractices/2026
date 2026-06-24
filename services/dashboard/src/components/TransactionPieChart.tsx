@@ -1,4 +1,5 @@
-import { Pie, PieChart, Tooltip, Cell, Legend, ResponsiveContainer } from 'recharts';
+import { Pie, PieChart, Tooltip, Cell, Legend, ResponsiveContainer, TooltipProps } from 'recharts';
+import { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import { Transaction } from '../types/index.ts'
 import {ThemeContext} from "../contexts/ThemeContext.ts";
 import { useContext } from 'react';
@@ -41,13 +42,31 @@ export default function TransactionPieChart({transactions, loading, error}: PieC
         )
     }
 
+    const PieTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div className="p-3 rounded-lg shadow-lg border dark:bg-zinc-800 dark:border-zinc-700 dark:text-sage-50 bg-white border-zinc-200 text-zinc-900">
+                    <p className="font-bold mb-1">{data.name}</p>
+                    <p className="text-sm opacity-80">
+                        Количество: <span className="font-mono">{data.value}</span>
+                    </p>
+                    <p className="text-sm opacity-80">
+                        Доля: <span className="font-mono">{data.percent}%</span>
+                    </p>
+                </div>
+            );
+        }
+        return null;
+    };
+
     return (
         <ResponsiveContainer width="100%" height="100%" >
         <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
             <Pie
                 data={[
-                    { name: 'APPROVED', value: approved },
-                    { name: 'DECLINED', value: declined },
+                    { name: 'APPROVED', value: approved, percent: ((approved / (approved + declined)) * 100).toFixed(1) },
+                    { name: 'DECLINED', value: declined, percent: ((declined / (approved + declined)) * 100).toFixed(1) },
                 ]}
                 dataKey="value"
                 isAnimationActive={true}
@@ -64,6 +83,9 @@ export default function TransactionPieChart({transactions, loading, error}: PieC
                 <Cell fill={cellColorApproved}/>
                 <Cell fill={cellColorDeclined} />
             </Pie>
+
+            <Tooltip content={<PieTooltip />} />
+
             <Legend
                 layout="horizontal"
                 align="center"

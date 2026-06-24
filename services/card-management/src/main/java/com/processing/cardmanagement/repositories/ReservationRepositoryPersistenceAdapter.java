@@ -22,7 +22,12 @@ public class ReservationRepositoryPersistenceAdapter implements ReservationRepos
     }
 
     @Override
-    public Optional<Reservation> findByRrn(String rrn) {
-        return jpaRepository.findByRrn(rrn).map(mapper::toDomain);
+    public boolean isUnique(String rrn, String pan) {
+        return !jpaRepository.existsByRrnAndPan(rrn, pan);
+    }
+
+    @Override
+    public Optional<Reservation> findByRrnAndPanForUpdate(String rrn, String pan) {
+        return jpaRepository.findWithPessimisticLockByRrnAndPan(rrn, pan).map(mapper::toDomain);
     }
 }

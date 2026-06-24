@@ -131,19 +131,19 @@ public class GlobalExceptionHandler {
         return errorResponseFromException(ex);
     }
 
-    @ExceptionHandler(RrnAlreadyExistsException.class)
+    @ExceptionHandler(ReservationAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleRrnAlreadyExistsException(
-        RrnAlreadyExistsException ex
+        ReservationAlreadyExistsException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
     }
 
-    @ExceptionHandler(RrnNotFoundException.class)
+    @ExceptionHandler(ReservationNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleRrnNotFoundException(
-        RrnNotFoundException ex
+        ReservationNotFoundException ex
     ) {
         log.warn(ex.getMessage());
         return errorResponseFromException(ex);
@@ -182,6 +182,15 @@ public class GlobalExceptionHandler {
         CardGenerationLimitException ex
     ) {
         log.warn(ex.getMessage());
+        return errorResponseFromException(ex);
+    }
+
+    @ExceptionHandler(OutOfRetriesException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleOutOfRetriesException(
+        OutOfRetriesException ex
+    ) {
+        log.error(ex.getMessage(), ex.getReason());
         return errorResponseFromException(ex);
     }
 

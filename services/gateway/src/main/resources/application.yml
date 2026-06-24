@@ -7,10 +7,10 @@ server:
 logging:
   level:
     com.processing.gateway: INFO
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.gateway.server.mvc: TRACE
-    org.springframework.http.client: TRACE
-    org.springframework.web.client: DEBUG
+    org.springframework.cloud.gateway: ERROR
+    org.springframework.cloud.gateway.server.mvc: ERROR
+    org.springframework.http.client: ERROR
+    org.springframework.web.client: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} %X{requestId} - %msg%n"
 
@@ -75,7 +75,7 @@ spring:
             metadata:
               serviceName: logger
             predicates:
-              - Path=/api/transactions/search
+              - Path=/api/transactions/**
           - id: dashboard
             uri: ${LOGGER_URL:http://localhost:8088}
             metadata:
@@ -166,6 +166,11 @@ gateway:
     url: /health
   shutdown:
     drain-period: ${GATEWAY_SHUTDOWN_DRAIN_PERIOD:30s}
+  logging:
+    bodies: false
+    pretty: false
+    excluded-routes:
+      - /actuator/prometheus
 
 #---
 # Swagger

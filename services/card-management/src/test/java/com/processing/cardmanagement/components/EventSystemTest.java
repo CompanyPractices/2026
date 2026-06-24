@@ -1,15 +1,13 @@
 package com.processing.cardmanagement.components;
 
 import com.processing.cardmanagement.events.*;
-import com.processing.cardmanagement.models.Card;
-import com.processing.cardmanagement.models.CardStatus;
-import com.processing.cardmanagement.models.Reservation;
-import com.processing.cardmanagement.models.ReservationRollback;
+import com.processing.cardmanagement.models.*;
 import com.processing.cardmanagement.options.*;
 import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.cardmanagement.repositories.ReservationRepository;
 import com.processing.cardmanagement.repositories.ReservationRollbackRepository;
 import com.processing.cardmanagement.services.*;
+import com.processing.cardmanagement.services.retries.RetryServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,8 +31,9 @@ import static org.mockito.Mockito.*;
 public class EventSystemTest {
 
     private final CardServiceSettings cardServiceSettings = new CardServiceSettingsConfigurationProperties(
-            3,
-            10000
+        3,
+        10000,
+        3
     );
 
     private final CardServiceDefaults cardServiceDefaults = new CardServiceDefaultsConfigurationProperties(
@@ -55,6 +54,14 @@ public class EventSystemTest {
             10000
     );
 
+    private final List<CardEventListener> listeners = Stream
+        .generate(() -> Mockito.mock(CardEventListener.class))
+        .limit(5)
+        .toList();
+
+    @Mock
+    private OutboxEventProcessor outboxEventProcessor;
+
     @Mock
     private PanGenerator panGenerator;
 
@@ -66,16 +73,9 @@ public class EventSystemTest {
 
     @Mock
     private ReservationRollbackRepository reservationRollbackRepository;
-
-    List<CardEventListener> listeners = Stream
-            .generate(() -> Mockito.mock(CardEventListener.class))
-            .limit(5)
-            .toList();
-
     private final ArgumentCaptor<CardEvent> eventCaptor = ArgumentCaptor.forClass(CardEvent.class);
-
-    @Mock
-    private CardEventNotifier eventNotifier;
+    private final ArgumentCaptor<CardOutboxEventData> outboxEventDataCaptor =
+        ArgumentCaptor.forClass(CardOutboxEventData.class);
 
     @Mock
     private BinIssuerService binIssuerService;
@@ -107,15 +107,22 @@ public class EventSystemTest {
 
     @BeforeEach
     void setUp() {
+        CardEventNotifier eventNotifier = new CardEventNotifierImpl(
+            outboxEventProcessor,
+            List.of()
+        );
+
         cardService = new CardServiceImpl(
-                cardRepository,
-                reservationRepository,
-                reservationRollbackRepository,
-                cardServiceSettings,
-                cardServiceDefaults,
-                panGenerator,
-                eventNotifier,
-                binIssuerService
+            cardRepository,
+            reservationRepository,
+            reservationRollbackRepository,
+            cardServiceSettings,
+            cardServiceDefaults,
+            panGenerator,
+            eventNotifier,
+            binIssuerService,
+            new RetryServiceImpl(),
+            new TransactionRunnerImpl()
         );
 
         cardGeneratorService = new CardGeneratorService(
@@ -124,13 +131,16 @@ public class EventSystemTest {
                 eventNotifier
         );
 
-
-        lenient().when(cardRepository.findByPan(any(String.class))).thenReturn(Optional.of(TEST_CARD));
-        lenient().when(cardRepository.findByPanForUpdate(any(String.class))).thenReturn(Optional.of(TEST_CARD));
-        lenient().when(cardRepository.save(any(Card.class))).thenReturn(TEST_CARD);
-        lenient().when(cardRepository.saveAll(any())).thenReturn(List.of(TEST_CARD));
+        lenient().when(cardRepository.findByPan(anyString())).thenReturn(Optional.of(TEST_CARD));
+        lenient().when(cardRepository.findByPanForUpdate(anyString())).thenReturn(Optional.of(TEST_CARD));
+        lenient().when(cardRepository.create(any(Card.class))).thenReturn(TEST_CARD);
+        lenient().when(cardRepository.update(any(Card.class))).thenReturn(TEST_CARD);
+        lenient().when(cardRepository.createAll(any())).thenReturn(List.of(TEST_CARD));
         lenient().when(reservationRepository.save(any(Reservation.class))).thenReturn(TEST_RESERVATION);
+        lenient().when(reservationRepository.findByRrnAndPanForUpdate(anyString(), anyString())).thenReturn(Optional.of(TEST_RESERVATION));
+        lenient().when(reservationRepository.isUnique(anyString(), anyString())).thenReturn(true);
         lenient().when(reservationRollbackRepository.save(any(ReservationRollback.class))).thenReturn(TEST_ROLLBACK);
+        lenient().when(outboxEventProcessor.save(any(CardOutboxEventData.class))).thenReturn(null);
     }
 
     @Test
@@ -176,7 +186,8 @@ public class EventSystemTest {
 
     @Test
     void cardServiceRollbackEventTest() {
-        when(reservationRepository.findByRrn(any(String.class))).thenReturn(Optional.of(TEST_RESERVATION));
+        when(reservationRepository.findByRrnAndPanForUpdate(anyString(), anyString()))
+            .thenReturn(Optional.of(TEST_RESERVATION));
         cardService.rollback("1234123412341234", BigDecimal.ONE, "123412341234");
         testAllListenersReceivedData(CardServiceRollbackEvent.class);
     }
@@ -184,14 +195,14 @@ public class EventSystemTest {
     @Test
     void cardsBatchGeneratedEventTest() {
         cardGeneratorService.generate(1, List.of("123456"));
-        verify(eventNotifier, times(2)).onEvent(eventCaptor.capture());
-        var captures = eventCaptor.getAllValues();
-        assertInstanceOf(CardServiceCreationEvent.class, captures.getFirst());
-        assertInstanceOf(CardsBatchGeneratedEvent.class, captures.getLast());
+        verify(outboxEventProcessor, times(2)).save(outboxEventDataCaptor.capture());
+        var captures = outboxEventDataCaptor.getAllValues();
+        assertInstanceOf(CardServiceCreationEvent.class, captures.getFirst().event());
+        assertInstanceOf(CardsBatchGeneratedEvent.class, captures.getLast().event());
     }
 
     private <T> void testAllListenersReceivedData(Class<T> expectedType) {
-        verify(eventNotifier).onEvent(eventCaptor.capture());
-        assertInstanceOf(expectedType, eventCaptor.getValue());
+        verify(outboxEventProcessor).save(outboxEventDataCaptor.capture());
+        assertInstanceOf(expectedType, outboxEventDataCaptor.getValue().event());
     }
 }

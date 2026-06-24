@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { Filter, FilterStatus } from "../types";
 import { Listbox } from '@headlessui/react';
+import { useSearchParams } from 'react-router-dom';
 
 type FilterProps = {
     issuers: Record<string, string>;
@@ -8,8 +9,23 @@ type FilterProps = {
     onSearch: (filter: Filter) => void;
 };
 
+function parseFilterFromUrl(searchParams: URLSearchParams): Filter {
+    return {
+        status: (searchParams.get('status') as FilterStatus) || undefined,
+        dateFrom: searchParams.get('dateFrom') || undefined,
+        dateTo: searchParams.get('dateTo') || undefined,
+        issuerId: searchParams.get('issuerId') || undefined,
+        mcc: searchParams.get('mcc') || undefined,
+    };
+}
+
 export function Filters({ issuers, mccNames, onSearch }: FilterProps) {
-    const [filter, setFilter] = useState<Filter>({});
+    const [searchParams] = useSearchParams();
+    const [filter, setFilter] = useState<Filter>(() => parseFilterFromUrl(searchParams));
+
+    useEffect(() => {
+        setFilter(parseFilterFromUrl(searchParams));
+    }, [searchParams]);
 
     function filterSubmit(e: FormEvent) {
         e.preventDefault();

@@ -3,8 +3,8 @@ package com.processing.merchantacquirer.service;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeRequest;
 import com.processing.merchantacquirer.controller.dto.AcquirerFeeResponse;
 import com.processing.merchantacquirer.domain.entity.AcquirerFee;
+import com.processing.merchantacquirer.domain.repository.AcquirerFeeRepositoryPort;
 import com.processing.merchantacquirer.exception.ResourceNotFoundException;
-import com.processing.merchantacquirer.repository.AcquirerFeeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -19,11 +19,11 @@ import static org.mockito.Mockito.when;
 
 public class AcquirerProviderTest {
     private AcquirerProvider acquirerProvider;
-    private AcquirerFeeRepository repository;
+    private AcquirerFeeRepositoryPort repository;
 
     @BeforeEach
     void setUp() {
-        repository = Mockito.mock(AcquirerFeeRepository.class);
+        repository = Mockito.mock(AcquirerFeeRepositoryPort.class);
         acquirerProvider = new AcquirerProvider(repository);
     }
 

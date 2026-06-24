@@ -5,7 +5,6 @@ import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardDraft;
 import com.processing.cardmanagement.models.CardStatus;
 import com.processing.cardmanagement.options.CardGeneratorOptions;
-import io.micrometer.core.instrument.MeterRegistry;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,9 +32,6 @@ public class CardGeneratorServiceTest {
 
     @Mock
     private CardEventNotifier eventNotifier;
-
-    @Mock
-    private MeterRegistry meterRegistry;
 
     private final CardGeneratorOptions generatorOptions = new CardGeneratorOptions(
             BigDecimal.valueOf(1_000_000),
