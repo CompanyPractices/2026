@@ -36,8 +36,8 @@ public class AppConfig {
 
     @Bean
     public CardEventNotifierImpl cardEventNotifier(
-        OutboxEventProcessor outboxEventProcessor,
-        List<CardEventListener> eventListeners
+            OutboxEventProcessor outboxEventProcessor,
+            List<CardEventListener> eventListeners
     ) {
         return new CardEventNotifierImpl(outboxEventProcessor, eventListeners);
     }
@@ -54,17 +54,17 @@ public class AppConfig {
 
     @Bean
     public OutboxRepository outboxRepository(
-        OutboxEventJpaRepository jpaRepository,
-        CardOutboxEventDataPersistenceMapper persistenceMapper
+            OutboxEventJpaRepository jpaRepository,
+            CardOutboxEventDataPersistenceMapper persistenceMapper
     ) {
         return new OutboxJpaAdapter(jpaRepository, persistenceMapper);
     }
 
     @Bean
     public OutboxEventProcessorImpl outboxEventProcessor(
-        OutboxRepository outboxRepository,
-        List<CardEventListener> listeners,
-        OutboxOptions outboxOptions
+            OutboxRepository outboxRepository,
+            List<CardEventListener> listeners,
+            OutboxOptions outboxOptions
     ) {
         return new OutboxEventProcessorImpl(outboxRepository, listeners, outboxOptions);
     }
@@ -76,28 +76,28 @@ public class AppConfig {
 
     @Bean
     public CardService cardService(
-        CardRepository cardRepository,
-        ReservationRepository reservationRepository,
-        ReservationRollbackRepository reservationRollbackRepository,
-        CardServiceSettings serviceConfigurationProperties,
-        CardServiceDefaults defaultsConfigurationProperties,
-        PanGenerator panGenerator,
-        CardEventNotifierImpl cardEventNotifier,
-        BinIssuerService binIssuerService,
-        RetryService retryService,
-        TransactionRunner transactionRunner
+            CardRepository cardRepository,
+            ReservationRepository reservationRepository,
+            ReservationRollbackRepository reservationRollbackRepository,
+            CardServiceSettings serviceConfigurationProperties,
+            CardServiceDefaults defaultsConfigurationProperties,
+            PanGenerator panGenerator,
+            CardEventNotifierImpl cardEventNotifier,
+            BinIssuerService binIssuerService,
+            RetryService retryService,
+            TransactionRunner transactionRunner
     ) {
         return new CardServiceImpl(
-            cardRepository,
-            reservationRepository,
-            reservationRollbackRepository,
-            serviceConfigurationProperties,
-            defaultsConfigurationProperties,
-            panGenerator,
-            cardEventNotifier,
-            binIssuerService,
-            retryService,
-            transactionRunner
+                cardRepository,
+                reservationRepository,
+                reservationRollbackRepository,
+                serviceConfigurationProperties,
+                defaultsConfigurationProperties,
+                panGenerator,
+                cardEventNotifier,
+                binIssuerService,
+                retryService,
+                transactionRunner
         );
     }
 }
