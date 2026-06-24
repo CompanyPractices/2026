@@ -111,7 +111,7 @@ Write-Host ""
 # -------------------------------------------------------------------
 Info "4. Running terminal simulator (50 TX, mixed scenario)..."
 
-$simBody = @{ count = 50; scenario = "mixed" } | ConvertTo-Json -Compress
+$simBody = @{ count = 50; scenario = "mixed"; tps = 50 } | ConvertTo-Json -Compress
 try {
     $simResponse = Invoke-RestMethod -Uri "$Gateway/api/simulator/terminal/run" -Method Post -Body $simBody -ContentType "application/json" -TimeoutSec 60
     if ($simResponse.totalSubmitted -eq 50) {
