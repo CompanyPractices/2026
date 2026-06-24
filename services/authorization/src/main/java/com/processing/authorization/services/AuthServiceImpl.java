@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.web.client.ResourceAccessException;
 
@@ -34,7 +35,6 @@ public class AuthServiceImpl implements AuthService {
     private final AuthorizationEventNotifier eventNotifier;
 
     private final CardManagementClient cardManagementClient;
-
 
     @Transactional(rollbackFor = { Exception.class })
     public AuthorizationResponse authorize(AuthorizationRequest request, Instant requestInputTime) {
@@ -177,12 +177,27 @@ public class AuthServiceImpl implements AuthService {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyDDD");
 
+    private final AtomicLong baseRrn = new AtomicLong(0);
+    private final AtomicLong counter = new AtomicLong(1000);
+    private static final int RRN_BLOCK_SIZE = 1000;
+
     public String generateRRN() {
-        long nextRrn = limitUsageRepository.getNextRrn();
-        limitUsageRepository.saveRrn(nextRrn);
+        long currentCounter = counter.getAndIncrement();
+        if (currentCounter >= RRN_BLOCK_SIZE) {
+            synchronized (counter) {
+                if (counter.get() >= RRN_BLOCK_SIZE) {
+                    baseRrn.set(limitUsageRepository.fetchRrnBlock());
+                    counter.set(1);
+                    currentCounter = 0;
+                } else {
+                    currentCounter = counter.getAndIncrement();
+                }
+            }
+        }
+        long rrn = baseRrn.get() * RRN_BLOCK_SIZE + currentCounter;
         String currentDay = FORMATTER.format(LocalDateTime.now()).substring(1);
 
-        return currentDay + String.format("%08d", nextRrn);
+        return currentDay + String.format("%08d", rrn);
     }
 
     private static final Random RANDOM = new SecureRandom();

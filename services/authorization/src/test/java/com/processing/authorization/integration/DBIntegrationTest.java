@@ -3,15 +3,18 @@ package com.processing.authorization.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.processing.authorization.client.CardManagementClient;
@@ -317,4 +320,50 @@ public class DBIntegrationTest {
         assertThat(rrn1).hasSize(12);
         assertThat(rrn2).hasSize(12);
     }
+
+    @Test
+    void generateRRNShouldGenerate1001UniqueValues() {
+        AuthorizationRequest request = new AuthorizationRequest(
+                correctRequest.mti(),
+                "123457",
+                correctRequest.pan(),
+                correctRequest.processingCode(),
+                correctRequest.amount(),
+                correctRequest.currencyCode(),
+                correctRequest.transmissionDateTime(),
+                correctRequest.terminalId(),
+                correctRequest.terminalType(),
+                correctRequest.merchantId(),
+                correctRequest.mcc(),
+                correctRequest.acquirerId(),
+                correctRequest.issuerId());
+        int count = 1001;
+        Set<String> rrns = new HashSet<>();
+        for (int i = 0; i < count; i++) {
+            String rrn = authService.generateRRN();
+            assertThat(rrn).isNotBlank();
+            assertThat(rrn).hasSize(12);
+            assertThat(rrns).doesNotContain(rrn);
+            rrns.add(rrn);
+        }
+
+        assertThat(rrns).hasSize(count);
+    }
+
+    @Test
+    void generateRRNShouldUseNextBlockAfter1000Values() {
+        int count = 1001;
+        List<String> rrns = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            rrns.add(authService.generateRRN());
+        }
+
+        assertThat(new HashSet<>(rrns)).hasSize(count);
+        String firstOfFirstBlock = rrns.get(0);
+        String firstOfSecondBlock = rrns.get(1000);
+        long firstNum = Long.parseLong(firstOfFirstBlock.substring(4));
+        long secondBlockNum = Long.parseLong(firstOfSecondBlock.substring(4));
+        assertThat(secondBlockNum / 1000).isEqualTo(firstNum / 1000 + 1);
+    }
+
 }

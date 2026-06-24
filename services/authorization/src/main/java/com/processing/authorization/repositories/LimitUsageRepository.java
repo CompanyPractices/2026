@@ -109,4 +109,11 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
          */
         @Query(value = "SELECT setval('rrn_seq', :newRrn)", nativeQuery = true)
         void saveRrn(@Param("newRrn") long newRrn);
+
+        /**
+         * Атомарно получает и резервирует значение rrn.
+         *
+         */
+        @Query(value = "SELECT setval('rrn_seq', nextval('rrn_seq'))", nativeQuery = true)
+        long fetchRrnBlock();
 }
