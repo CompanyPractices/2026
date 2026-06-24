@@ -1,6 +1,8 @@
 FROM maven:3.9.16-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
+COPY ./scripts/key-entrypoint.sh ./key-entrypoint.sh
+
 COPY ./services/pom.xml ./pom.xml
 
 COPY ./services/common/pom.xml ./common/pom.xml
@@ -16,10 +18,14 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 COPY --from=build /app/merchant-acquirer/target/merchant-acquirer-*.jar app.jar
+COPY --from=build /app/key-entrypoint.sh key-entrypoint.sh
+
+RUN chmod +x key-entrypoint.sh
+RUN apk add --no-cache jq curl bash
 
 EXPOSE 8080
 
 HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=40s \
     CMD wget -qO- http://localhost:8080/health || exit 1
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["./key-entrypoint.sh", "merchant-simulator"]

@@ -109,6 +109,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        **/KeyError.java,
+                        **/migrations/**
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

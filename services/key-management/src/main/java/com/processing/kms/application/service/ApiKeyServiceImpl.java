@@ -37,7 +37,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         kmsProperties.getClients().forEach((client) ->
                 clientToRoleMap.putIfAbsent(client.getType(), client.getRole()));
 
-        ttl = kmsProperties.getTtl();
+        ttl = kmsProperties.getTtlMin();
     }
 
     public Result<ApiKey, KeyError> issueKey(String clientType, String clientId) {

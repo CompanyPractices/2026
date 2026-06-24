@@ -5,15 +5,15 @@ public sealed interface KeyError {
         public String message() { return "Key expired"; }
     }
 
-    record NotFound() implements KeyError  {
+    record NotFound() implements KeyError {
         public String message() { return "Key not found"; }
     }
 
-    record OwnerIdMismatch() implements KeyError  {
+    record OwnerIdMismatch() implements KeyError {
         public String message() { return "Owner ID mismatch"; }
     }
 
-    record OwnerAlreadyHasKey() implements KeyError  {
+    record OwnerAlreadyHasKey() implements KeyError {
         public String message() { return "Owner already has key"; }
     }
 }

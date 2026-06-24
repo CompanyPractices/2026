@@ -5,12 +5,8 @@ server:
 # Logging
 logging:
   level:
-    com.processing.gateway: INFO
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.gateway.server.mvc: TRACE
-    org.springframework.http.client: TRACE
-    org.springframework.web.client: DEBUG
-    sql: DEBUG
+    com.processing.kms: WARN
+    sql: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} %X{requestId} - %msg%n"
 
@@ -47,7 +43,7 @@ spring:
     ignore-migration-patterns: "*:missing"
 
 kms:
-  ttl: 60
+  ttl-min: 1440
   generation:
     algorithm: AES
     length: 256

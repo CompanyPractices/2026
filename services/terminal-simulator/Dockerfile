@@ -1,7 +1,7 @@
 FROM maven:3.9.16-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
-COPY ./scripts/fetch-key.sh ./fetch-key.sh
+COPY ./scripts/key-entrypoint.sh ./key-entrypoint.sh
 
 COPY ./services/pom.xml ./pom.xml
 
@@ -18,15 +18,14 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 COPY --from=build /app/terminal-simulator/target/terminal-simulator-*.jar app.jar
-COPY --from=build /app/fetch-key.sh fetch-key.sh
+COPY --from=build /app/key-entrypoint.sh key-entrypoint.sh
 
-RUN chmod +x fetch-key.sh
+RUN chmod +x key-entrypoint.sh
 RUN apk add --no-cache jq curl bash
-
 
 EXPOSE 8080
 
 HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=40s \
     CMD wget -qO- http://localhost:8080/health || exit 1
 
-ENTRYPOINT ["./fetch-key.sh", "terminal-simulator"]
+ENTRYPOINT ["./key-entrypoint.sh", "terminal-simulator"]

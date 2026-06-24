@@ -58,6 +58,7 @@ jobs:
           switch,
           authorization,
           card-management,
+          key-management,
           terminal-simulator,
           merchant-acquirer,
           transaction-logger
