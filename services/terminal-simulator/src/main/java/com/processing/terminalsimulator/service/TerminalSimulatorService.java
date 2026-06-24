@@ -22,7 +22,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -51,44 +50,13 @@ public class TerminalSimulatorService {
 
     private record TransactionTask(TransactionType type, PartofDay partOfDay) {}
 
-    private CardModel getRandomCard(CardModelStatus cardStatus, Map<CardModelStatus, List<CardModel>> cards) {
-        List<CardModel> filtered = cards.get(cardStatus);
-        if (filtered == null || filtered.isEmpty()) {
-            throw new IllegalStateException("No " + cardStatus + " cards available");
-        }
-        int randomIndex = ThreadLocalRandom.current().nextInt(filtered.size());
-        return filtered.get(randomIndex);
-    }
-
-    private List<CardModel> loadCards(TerminalScenario scenario) {
-        boolean needBlocked = scenario == TerminalScenario.mixed || scenario == TerminalScenario.declines_test;
-        int blockedPercent = 20; // 20%
-        int activePercent = (needBlocked) ? 80 : 100;
-
-        List<CardModel> activeCards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE,
-                (cardsAmount * activePercent / 100));
-        if (activeCards == null || activeCards.isEmpty()) {
-            throw new IllegalStateException("No ACTIVE cards available");
-        }
-        List<CardModel> newCards = new ArrayList<>(activeCards);
-        if (needBlocked) {
-            List<CardModel> blockedCards = gatewayClient.getCardsFromCardManager(CardModelStatus.BLOCKED,
-                    (cardsAmount * blockedPercent / 100));
-            if (blockedCards == null || blockedCards.isEmpty()) {
-                throw new IllegalStateException("No BLOCKED cards available");
-            }
-            newCards.addAll(blockedCards);
-        }
-        return newCards;
-    }
-
     private AuthorizationResponse executeSingleTransaction(TransactionType transactionType, PartofDay partOfDay,
                                                            AtomicInteger approved,
                                                            AtomicInteger declined,
-                                                           Map<CardModelStatus, List<CardModel>> cardsByStatus,
+                                                           SimulationCardRegistry cardRegistry,
                                                            String terminalId) {
         CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
-        CardModel card = getRandomCard(requiredStatus, cardsByStatus);
+        CardModel card = cardRegistry.getRandomCard(requiredStatus);
         AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card, terminalId);
         AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
 
@@ -152,11 +120,8 @@ public class TerminalSimulatorService {
 
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
         long start = System.currentTimeMillis();
-        Map<CardModelStatus, List<CardModel>> cardsByStatus;
-
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
-        List<CardModel> cards = loadCards(scenario);
-        cardsByStatus = cards.stream().collect(Collectors.groupingBy(CardModel::status));
+        SimulationCardRegistry cardRegistry = new SimulationCardRegistry(gatewayClient, scenario, cardsAmount);
         List<TransactionTask> tasks = generateTasks(scenario, count);
 
         ConcurrentLinkedQueue<AuthorizationResponse> authResponses = new ConcurrentLinkedQueue<>();
@@ -181,7 +146,7 @@ public class TerminalSimulatorService {
                     }
                     try {
                         AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay,
-                                approved, declined, cardsByStatus, terminalId);
+                                approved, declined, cardRegistry, terminalId);
                         authResponses.add(resp);
 
                         circuitBreaker.recordSuccess(); // errors=0, Если state было half_open: consecutiveSuccesses++,
@@ -227,17 +192,11 @@ public class TerminalSimulatorService {
         }
         log.info("Starting continuous simulation. TPS: {}, Scenario: {}", tps, transactionType);
 
-        Map<CardModelStatus, List<CardModel>> cardsByStatus;
         long delayMs = 1000 / tps;
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
-        CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
-        List<CardModel> cards = gatewayClient.getCardsFromCardManager(requiredStatus, cardsAmount);
-        cardsByStatus = cards.stream().collect(Collectors.groupingBy(CardModel::status));
-
-        if (cardsByStatus.isEmpty()) {
-            isContinuousRunning.set(false);
-            throw new IllegalStateException("No cards available for status: " + requiredStatus);
-        }
+        TerminalScenario scenario = (transactionType == TransactionType.BLOCKED) ? TerminalScenario.declines_test
+                : TerminalScenario.normal;
+        SimulationCardRegistry cardRegistry = new SimulationCardRegistry(gatewayClient, scenario, cardsAmount);
 
         // хочу создать виртуальный поток, один-единственный фоновый поток-диспетчер
         Thread thread = Thread.ofVirtual().unstarted(() -> {
@@ -252,7 +211,7 @@ public class TerminalSimulatorService {
                         }
                         try {
                             executeSingleTransaction(task.type, task.partOfDay, new AtomicInteger(),
-                                    new AtomicInteger(), cardsByStatus, terminalId);
+                                    new AtomicInteger(), cardRegistry, terminalId);
                             circuitBreaker.recordSuccess();
                         } catch (org.springframework.web.client.ResourceAccessException
                                  | org.springframework.web.client.HttpStatusCodeException e) {
