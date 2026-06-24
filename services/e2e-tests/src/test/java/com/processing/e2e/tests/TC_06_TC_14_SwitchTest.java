@@ -150,73 +150,6 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
                 + ". Run `docker compose up -d` and wait for all services to become healthy.");
     }
 
-    private void debugReservationStatus(String stan, String pan) throws SQLException {
-        System.out.println("=== RESERVATION DEBUG ===");
-
-        // 1. Проверяем, есть ли транзакция с этим STAN
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT rrn, status FROM transactions WHERE stan = ?")) {
-            stmt.setString(1, stan);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                System.out.println("Found existing transaction for STAN " + stan + ":");
-                System.out.println("  RRN: " + rs.getString("rrn"));
-                System.out.println("  Status: " + rs.getString("status"));
-            } else {
-                System.out.println("No transaction found for STAN " + stan);
-            }
-        }
-
-        // 2. Проверяем все резервирования для этой карты
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT rrn, created_at FROM reservations WHERE pan = ? ORDER BY created_at DESC")) {
-            stmt.setString(1, pan);
-            ResultSet rs = stmt.executeQuery();
-            int count = 0;
-            System.out.println("Reservations for card " + pan + ":");
-            while (rs.next() && count < 5) { // Показываем только последние 5
-                System.out.println("  RRN: " + rs.getString("rrn") +
-                        ", Created: " + rs.getTimestamp("created_at"));
-                count++;
-            }
-            if (count == 0) {
-                System.out.println("  No reservations found");
-            } else {
-                // Проверяем общее количество
-                try (PreparedStatement countStmt = connection.prepareStatement(
-                        "SELECT COUNT(*) FROM reservations WHERE pan = ?")) {
-                    countStmt.setString(1, pan);
-                    ResultSet countRs = countStmt.executeQuery();
-                    if (countRs.next()) {
-                        System.out.println("  Total reservations for this card: " + countRs.getLong(1));
-                    }
-                }
-            }
-        }
-
-        // 3. Проверяем, есть ли резервирования с любым RRN из тестовых STAN
-        for (String testStan : TEST_TRANSACTION_STANS) {
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT rrn FROM transactions WHERE stan = ?")) {
-                stmt.setString(1, testStan);
-                ResultSet rs = stmt.executeQuery();
-                if (rs.next()) {
-                    String rrn = rs.getString("rrn");
-                    if (rrn != null) {
-                        try (PreparedStatement resStmt = connection.prepareStatement(
-                                "SELECT COUNT(*) FROM reservations WHERE rrn = ?")) {
-                            resStmt.setString(1, rrn);
-                            ResultSet resRs = resStmt.executeQuery();
-                            if (resRs.next() && resRs.getLong(1) > 0) {
-                                System.out.println("WARNING: Reservation exists for STAN " + testStan + " with RRN " + rrn);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        System.out.println("==========================");
-    }
 
     /**
      * TC-06: транзакция через Gateway → APPROVED, списание баланса, запись в Logger/БД.
@@ -227,25 +160,12 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
     public void tc06_fullApprovedTransactionCycle() throws Exception {
         ensureTestCards();
         tc06Pan = findActivePanWithBalance(BINS[0], TC06_AMOUNT);
-        System.out.println("=== BEFORE CLEANUP ===");
-        debugReservationStatus(TC06_STAN, tc06Pan);
-
         cleanupTransaction(TC06_STAN);
 
-        System.out.println("=== AFTER CLEANUP ===");
-        debugReservationStatus(TC06_STAN, tc06Pan);
-
-
-        System.out.println("=== SENDING TRANSACTION ===");
-        System.out.println("STAN: " + TC06_STAN);
-        System.out.println("PAN: " + tc06Pan);
-        System.out.println("Amount: " + TC06_AMOUNT);
 
         long balanceBeforeHttp = getCardBalanceFromApi(tc06Pan);
         long balanceBeforeDb = getCardBalanceFromDb(tc06Pan);
         assertEquals(balanceBeforeDb, balanceBeforeHttp, "HTTP and DB balance before transaction must match");
-        System.out.println("Balance before (HTTP): " + balanceBeforeHttp);
-        System.out.println("Balance before (DB): " + balanceBeforeDb);
 
 
         Response txResponse = given()
@@ -603,25 +523,6 @@ public class TC_06_TC_14_SwitchTest extends E2EBaseTest {
      * @throws SQLException при ошибке SQL
      */
     private void cleanupTransaction(String stan) throws SQLException {
-        String rrn = null;
-        try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT rrn FROM transactions WHERE stan = ?")) {
-            stmt.setString(1, stan);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                rrn = rs.getString("rrn");
-            }
-        }
-
-        if (rrn != null) {
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM reservations WHERE rrn = ?")) {
-                stmt.setString(1, rrn);
-                stmt.executeUpdate();
-                System.out.println("Deleted reservation for RRN: " + rrn);
-            }
-        }
-
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM transactions WHERE stan = ?")) {
             stmt.setString(1, stan);

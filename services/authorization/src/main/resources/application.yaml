@@ -50,3 +50,5 @@ spring:
     out-of-order: true
     ignore-migration-patterns:
       - "*:missing"
+    table: authorization_schema_history
+    baseline-version: 0
