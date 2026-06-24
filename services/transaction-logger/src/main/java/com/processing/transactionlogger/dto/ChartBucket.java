@@ -2,6 +2,7 @@ package com.processing.transactionlogger.dto;
 
 import com.processing.transactionlogger.repository.ChartBucketRow;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
@@ -17,7 +18,7 @@ public record ChartBucket(
             long total,
             long approved,
             long declined,
-            long amount
+            BigDecimal amount
     ) {
     public static ChartBucket from(ChartBucketRow row) {
         return new ChartBucket(row.getBucket(),

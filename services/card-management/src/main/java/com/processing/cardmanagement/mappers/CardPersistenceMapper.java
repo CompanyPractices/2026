@@ -13,6 +13,7 @@ public interface CardPersistenceMapper {
 
     @Mapping(target = "withReservation", ignore = true)
     @Mapping(target = "withRollback", ignore = true)
+    @Mapping(target = "copyWithPan", ignore = true)
     Card toDomain(CardEntity entity);
 
     @Mapping(target = "id", ignore = true)

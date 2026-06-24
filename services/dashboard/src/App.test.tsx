@@ -22,6 +22,10 @@ type TableProps = {
 
 type MapProps = { transactions: Transaction[] };
 
+vi.mock('./components/ToastContainer.tsx', () => ({
+  ToastContainer: () => null,
+}));
+
 vi.mock('./components/Header.tsx', () => ({
   Header: ({ stats, loading, error, isConnected }: HeaderProps) => (
       <header data-testid="header" data-connected={String(isConnected)}>

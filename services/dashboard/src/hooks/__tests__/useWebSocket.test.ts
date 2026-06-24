@@ -26,6 +26,12 @@ class MockWebSocket {
     send = vi.fn();
 }
 
+vi.mock('../../contexts/ToastContext', () => ({
+    useToastContext: () => ({
+        addToast: vi.fn(),
+    }),
+}));
+
 describe('useWebSocket', () => {
     beforeEach(() => {
         MockWebSocket.instances = [];

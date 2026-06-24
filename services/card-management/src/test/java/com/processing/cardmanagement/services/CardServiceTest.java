@@ -1,8 +1,7 @@
 package com.processing.cardmanagement.services;
 
 import com.processing.cardmanagement.events.CardEventNotifier;
-import com.processing.cardmanagement.exceptions.CardNotFoundException;
-import com.processing.cardmanagement.exceptions.InsufficientFundsException;
+import com.processing.cardmanagement.exceptions.*;
 import com.processing.cardmanagement.models.*;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceDefaultsConfigurationProperties;
@@ -11,6 +10,8 @@ import com.processing.cardmanagement.options.CardServiceSettingsConfigurationPro
 import com.processing.cardmanagement.repositories.CardRepository;
 import com.processing.cardmanagement.repositories.ReservationRepository;
 import com.processing.cardmanagement.repositories.ReservationRollbackRepository;
+import com.processing.cardmanagement.services.retries.RetryServiceImpl;
+import com.processing.cardmanagement.utils.CardManagementTestUtils;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,10 +28,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import static com.processing.cardmanagement.utils.CardManagementTestUtils.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -45,7 +47,8 @@ public class CardServiceTest {
 
     private final CardServiceSettings settings = new CardServiceSettingsConfigurationProperties(
         3,
-        10000
+        10000,
+        3
     );
 
     private final CardServiceDefaults defaults = new CardServiceDefaultsConfigurationProperties(
@@ -87,7 +90,8 @@ public class CardServiceTest {
     @Mock
     private ReservationRollbackRepository reservationRollbackRepository;
 
-    private final CardEventNotifier eventNotifier = new CardEventNotifier(List.of());
+    @Mock
+    private CardEventNotifier eventNotifier;
 
     @Mock
     private BinIssuerService binIssuerService;
@@ -104,12 +108,14 @@ public class CardServiceTest {
             defaults,
             panGenerator,
             eventNotifier,
-            binIssuerService
+            binIssuerService,
+            new RetryServiceImpl(),
+            new TransactionRunnerImpl()
         );
     }
 
     @Test
-    void testCreateCard() {
+    void testCreateCardSuccess() {
         var bin = faker.number().digits(6);
         var cardholderName = faker.name().fullName().toUpperCase(Locale.ROOT);
         var currencyCode = faker.number().digits(3);
@@ -118,7 +124,7 @@ public class CardServiceTest {
         var initialBalance = BigDecimal.valueOf(faker.number().numberBetween(0, 10000000));
         var expDate = YearMonth.now().plusYears(settings.cardValidityPeriod());
 
-        when(cardRepository.save(any(Card.class)))
+        when(cardRepository.create(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         when(binIssuerService.getIssuerId(bin)).thenReturn(testIssuerId);
@@ -148,6 +154,79 @@ public class CardServiceTest {
         );
 
         assertEquals(expected, response);
+    }
+
+    @Test
+    void createCardRetryThrowTest() {
+        when(cardRepository.create(any(Card.class))).thenThrow(PanCollisionException.class);
+        assertThrows(
+            OutOfRetriesException.class,
+            () -> cardService.createCard(
+                "400000",
+                "ANY_USER",
+                "643",
+                BigDecimal.TEN,
+                BigDecimal.TEN,
+                BigDecimal.ZERO
+            )
+        );
+        verify(cardRepository, times(settings.maxCardCreationRetries() + 1)).create(any(Card.class));
+    }
+
+    @Test
+    void createCardRetrySuccessTest() {
+        var counter = new AtomicInteger(0);
+        when(cardRepository.create(any(Card.class))).thenAnswer(invocation -> {
+            counter.incrementAndGet();
+            if (counter.get() <= settings.maxCardCreationRetries()) {
+                throw new PanCollisionException("ANY_PAN");
+            }
+            return null;
+        });
+        assertDoesNotThrow(
+            () -> cardService.createCard(
+                "400000",
+                "ANY_USER",
+                "643",
+                BigDecimal.TEN,
+                BigDecimal.TEN,
+                BigDecimal.ZERO
+            )
+        );
+        verify(cardRepository, times(settings.maxCardCreationRetries() + 1)).create(any(Card.class));
+    }
+
+    @Test
+    void createCardsRetrySuccessTest() {
+        var cardsAmount = 10;
+        when(cardRepository.createAll(any()))
+            .thenThrow(MassiveCardCreationCollisionException.class);
+        when(cardRepository.create(any()))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+        var drafts = Stream
+            .generate(CardManagementTestUtils::generateCardDraft)
+            .limit(cardsAmount)
+            .toList();
+        cardService.createCards(drafts);
+        verify(cardRepository, times(1)).createAll(any());
+        verify(cardRepository, times(cardsAmount)).create(any());
+    }
+
+    @Test
+    void createCardsRetryThrowTest() {
+        var cardsAmount = 10;
+        when(cardRepository.createAll(any()))
+            .thenThrow(MassiveCardCreationCollisionException.class);
+        when(cardRepository.create(any())).thenThrow(PanCollisionException.class);
+        var drafts = Stream
+            .generate(CardManagementTestUtils::generateCardDraft)
+            .limit(cardsAmount)
+            .toList();
+        assertThrows(OutOfRetriesException.class, () -> {
+            cardService.createCards(drafts);
+        });
+        verify(cardRepository, times(1)).createAll(any());
+        verify(cardRepository, times(settings.maxCardCreationRetries() + 1)).create(any());
     }
 
     @Test
@@ -207,7 +286,7 @@ public class CardServiceTest {
 
         when(cardRepository.findByPanForUpdate(pan))
             .thenReturn(Optional.of(testCard));
-        when(cardRepository.save(any()))
+        when(cardRepository.update(any()))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         var expected = new Card(
@@ -274,8 +353,8 @@ public class CardServiceTest {
     void testDeleteCard() {
         var testCard = generateActiveCard();
         var pan = testCard.pan();
-        when(cardRepository.findByPan(pan)).thenReturn(Optional.of(testCard));
-        when(cardRepository.save(any(Card.class)))
+        when(cardRepository.findByPanForUpdate(pan)).thenReturn(Optional.of(testCard));
+        when(cardRepository.update(any(Card.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         var expected = new Card(
@@ -294,7 +373,7 @@ public class CardServiceTest {
         );
 
         cardService.deleteCard(pan);
-        verify(cardRepository, times(1)).save(cardCaptor.capture());
+        verify(cardRepository, times(1)).update(cardCaptor.capture());
         var deletedCard = cardCaptor.getValue();
         assertEquals(expected, deletedCard);
     }
@@ -343,10 +422,11 @@ public class CardServiceTest {
         var rrn = faker.number().digits(12);
         when(cardRepository.findByPanForUpdate(pan))
             .thenReturn(Optional.of(testCard));
-        when(reservationRepository.findByRrn(rrn)).thenReturn(Optional.empty());
+        when(reservationRepository.isUnique(rrn, pan))
+            .thenReturn(true);
         when(reservationRepository.save(reservationCaptor.capture()))
             .thenAnswer(invocation -> invocation.getArgument(0));
-        when(cardRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(cardRepository.update(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         var expectedCard = new Card(
             testCard.id(),
@@ -402,12 +482,13 @@ public class CardServiceTest {
         var reservation = new Reservation(pan, reserveAmount, rrn);
         when(cardRepository.findByPanForUpdate(pan))
             .thenReturn(Optional.of(testCard));
-        when(reservationRepository.findByRrn(rrn)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.findByRrnAndPanForUpdate(rrn, pan))
+            .thenReturn(Optional.of(reservation));
         when(reservationRepository.save(reservationCaptor.capture()))
             .thenAnswer(invocation -> invocation.getArgument(0));
         when(reservationRollbackRepository.save(reservationRollbackCaptor.capture()))
             .thenAnswer(invocation -> invocation.getArgument(0));
-        when(cardRepository.save(any()))
+        when(cardRepository.update(any()))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
         var actualCard = cardService.rollback(pan, reserveAmount, rrn);
@@ -465,12 +546,57 @@ public class CardServiceTest {
             rrn
         );
         when(cardRepository.findByPanForUpdate(pan)).thenReturn(Optional.of(testCard));
-        when(reservationRepository.findByRrn(rrn)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.findByRrnAndPanForUpdate(rrn, pan)).thenReturn(Optional.of(reservation));
         when(reservationRollbackRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         assertThrows(IllegalArgumentException.class, () -> cardService.rollback(
             pan,
             reserveAmount,
             rrn
         ));
+    }
+
+    @Test
+    void testBulkUpdateByBin() {
+        var bin = generateBin();
+        var card1 = generateActiveCardByPan(generatePan());
+        var card2 = generateActiveCardByPan(generatePan());
+
+        when(cardRepository.findCardsByBinsForUpdate(List.of(bin)))
+            .thenReturn(List.of(card1, card2));
+        when(cardRepository.update(any(Card.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        int updated = cardService.bulkUpdateStatus(List.of(bin), null, CardStatus.BLOCKED);
+
+        assertEquals(2, updated);
+        verify(cardRepository, times(2)).update(any(Card.class));
+    }
+
+    @Test
+    void testBulkUpdateByPans() {
+        var card1 = generateActiveCardByPan(generatePan());
+        var card2 = generateActiveCardByPan(generatePan());
+
+        when(cardRepository.findCardsByPansForUpdate(List.of(card1.pan(), card2.pan())))
+            .thenReturn(List.of(card1, card2));
+        when(cardRepository.update(any(Card.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        int updated = cardService.bulkUpdateStatus(null, List.of(card1.pan(), card2.pan()), CardStatus.BLOCKED);
+
+        assertEquals(2, updated);
+        verify(cardRepository, times(2)).update(any(Card.class));
+    }
+
+    @Test
+    void bulkUpdateBothNullThrows() {
+        assertThrows(IllegalArgumentException.class, () ->
+            cardService.bulkUpdateStatus(null, null, CardStatus.BLOCKED));
+    }
+
+    @Test
+    void bulkUpdateBothThrows() {
+        assertThrows(IllegalArgumentException.class, () ->
+            cardService.bulkUpdateStatus(List.of(generateBin()), List.of(generatePan()), CardStatus.BLOCKED));
     }
 }

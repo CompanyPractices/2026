@@ -1,12 +1,10 @@
 package com.processing.merchantacquirer.repository;
 
 import com.processing.merchantacquirer.domain.entity.Terminal;
+import com.processing.merchantacquirer.domain.repository.TerminalRepositoryPort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
-public interface TerminalRepository extends JpaRepository<Terminal, String> {
-    List<Terminal> findByMerchantId(String merchantId);
+public interface TerminalRepository extends JpaRepository<Terminal, String>, TerminalRepositoryPort {
 }

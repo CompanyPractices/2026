@@ -1,6 +1,6 @@
 package com.processing.merchantacquirer.service;
 
-import com.processing.merchantacquirer.domain.FeeCalculator;
+import com.processing.merchantacquirer.domain.service.FeeCalculator;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

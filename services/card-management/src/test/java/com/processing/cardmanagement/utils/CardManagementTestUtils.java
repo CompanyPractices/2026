@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -23,6 +24,35 @@ public final class CardManagementTestUtils {
 
     public static Card generateActiveCardByPan(String pan) {
         return generateCard(faker, pan, CardStatus.ACTIVE);
+    }
+
+    public static CardStatus randomCardStatus() {
+        return randomCardStatus(faker);
+    }
+
+    public static CardStatus randomCardStatus(Faker faker) {
+        var statuses = Arrays
+            .stream(CardStatus.values())
+            .filter(status -> status != CardStatus.DELETED)
+            .toArray(CardStatus[]::new);
+        return faker.options().option(statuses);
+    }
+
+    public static CardDraft generateCardDraft() {
+        return generateCardDraft(faker);
+    }
+
+    public static CardDraft generateCardDraft(Faker faker) {
+        var dailyLimit = faker.number().numberBetween(1, 15_000_000);
+        return new CardDraft(
+            generateBin(faker),
+            generateCardholderName(faker),
+            randomCardStatus(faker),
+            generateCurrencyCode(faker),
+            BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 15_000_000)),
+            BigDecimal.valueOf(faker.number().numberBetween(1, 300_000_000)),
+            BigDecimal.valueOf(faker.number().numberBetween(0, 1_000_000))
+        );
     }
 
     public static Card generateCard(String pan, CardStatus status) {
@@ -201,12 +231,20 @@ public final class CardManagementTestUtils {
         return faker.name().fullName().toUpperCase(Locale.ROOT);
     }
 
+    public static String generateCurrencyCode() {
+        return generateCurrencyCode(faker);
+    }
+
     public static String generateCurrencyCode(Faker faker) {
         return faker.number().digits(3);
     }
 
     public static String generateIssuerId(Faker faker) {
         return faker.number().digits(3);
+    }
+
+    public static String generateRrn() {
+        return generateRrn(faker);
     }
 
     public static String generateRrn(Faker faker) {

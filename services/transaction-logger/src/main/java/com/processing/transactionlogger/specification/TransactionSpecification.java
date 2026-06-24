@@ -54,8 +54,8 @@ public class TransactionSpecification {
             if (date == null) {
                 return null;
             }
-            Instant from = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-            return criteriaBuilder.lessThan(root.get(Transaction_.TRANSMISSION_DATE_TIME), from);
+            Instant to = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+            return criteriaBuilder.lessThan(root.get(Transaction_.TRANSMISSION_DATE_TIME), to);
         };
     }
 
