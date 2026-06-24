@@ -50,8 +50,9 @@ class TerminalSimulatorServiceTest {
     void setUp() {
         int cardsAmount = 5000;
         int tps = 100;
-        service = new TerminalSimulatorService(gatewayClient, transactionFactory, terminalCircuitBreaker, tps,
-                cardsAmount);
+        ScenarioTaskGenerator taskGenerator = new ScenarioTaskGenerator();
+        service = new TerminalSimulatorService(gatewayClient, transactionFactory, taskGenerator, terminalCircuitBreaker,
+                tps, cardsAmount);
         CardModel activeCard = new CardModel(UUID.randomUUID(), "4000001234560001", "400000", "IVAN IVANOV",
                 YearMonth.of(2030, 1), CardModelStatus.ACTIVE, "643", new BigDecimal(500_002L),
                 new BigDecimal(100_000L), new BigDecimal(20_000_000L), "ISS001",

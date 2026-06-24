@@ -7,10 +7,10 @@ import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.dto.terminalsimulator.TerminalRunResponse;
 import com.processing.common.dto.terminalsimulator.TerminalScenario;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
+import com.processing.common.dto.terminalsimulator.TransactionType;
 import com.processing.terminalsimulator.factory.TransactionFactory;
 import com.processing.terminalsimulator.client.GatewayClient;
-import com.processing.terminalsimulator.model.PartofDay;
-import com.processing.common.dto.terminalsimulator.TransactionType;
+import com.processing.terminalsimulator.service.ScenarioTaskGenerator.TransactionTask;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TerminalSimulatorService {
     private final GatewayClient gatewayClient;
     private final TransactionFactory transactionFactory;
+    private final ScenarioTaskGenerator taskGenerator;
     private final int tps;
     private final int cardsAmount;
     private final TerminalCircuitBreaker circuitBreaker;
@@ -38,26 +39,25 @@ public class TerminalSimulatorService {
     // из разных потоков (методы start-continuous и stop)
 
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
+                                     ScenarioTaskGenerator taskGenerator,
                                      TerminalCircuitBreaker circuitBreaker,
                                      @Value("${simulator.tps:100}") int tps,
                                      @Value("${simulator.cardsAmount:5000}") int cardsAmount) {
         this.gatewayClient = gatewayClient;
         this.transactionFactory = transactionFactory;
+        this.taskGenerator = taskGenerator;
         this.circuitBreaker = circuitBreaker;
         this.tps = tps;
         this.cardsAmount = cardsAmount;
     }
 
-    private record TransactionTask(TransactionType type, PartofDay partOfDay) {}
-
-    private AuthorizationResponse executeSingleTransaction(TransactionType transactionType, PartofDay partOfDay,
-                                                           AtomicInteger approved,
+    private AuthorizationResponse executeSingleTransaction(TransactionTask task, AtomicInteger approved,
                                                            AtomicInteger declined,
-                                                           SimulationCardRegistry cardRegistry,
+                                                           CardRegistry cardRegistry,
                                                            String terminalId) {
-        CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
+        CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(task.type());
         CardModel card = cardRegistry.getRandomCard(requiredStatus);
-        AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card, terminalId);
+        AuthorizationRequest tx = transactionFactory.create(task.type(), task.partOfDay(), card, terminalId);
         AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
 
         if (TransactionStatus.APPROVED.name().equals(authResp.status())) {
@@ -77,52 +77,11 @@ public class TerminalSimulatorService {
         return authResp;
     }
 
-    private void addTask(List<TransactionTask> tasks, TransactionType type, int start, int end, PartofDay partOfDay) {
-        for (int i = start; i < end; i++) {
-            tasks.add(new TransactionTask(type, partOfDay));
-        }
-    }
-
-    private List<TransactionTask> generateTasks(TerminalScenario scenario, int count) {
-        List<TransactionTask> tasks = new ArrayList<>();
-
-        switch (scenario) {
-            case mixed -> {
-                addTask(tasks, TransactionType.NORMAL, 0, (int) (count * 0.7), PartofDay.DAY);
-                addTask(tasks, TransactionType.HIGH_VALUE, (int) (count * 0.7), (int) (count * 0.7 + count * 0.15),
-                        PartofDay.DAY);
-                addTask(tasks, TransactionType.ALMOST_DAILY_LIMIT, (int) (count * 0.7 + count * 0.15),
-                        (int) (count * 0.7 + count * 0.15 + count * 0.1), PartofDay.DAY);
-                addTask(tasks, TransactionType.BLOCKED, (int) (count * 0.7 + count * 0.15 + count * 0.1), count,
-                        PartofDay.DAY);
-            }
-            case declines_test -> {
-                addTask(tasks, TransactionType.INVALID_PAN, 0, (int) (count * 0.2), PartofDay.DAY);
-                addTask(tasks, TransactionType.BLOCKED, (int) (count * 0.2), (int) (count * 0.4), PartofDay.DAY);
-                addTask(tasks, TransactionType.NO_MONEY, (int) (count * 0.4), (int) (count * 0.6), PartofDay.DAY);
-                addTask(tasks, TransactionType.MORE_THAN_DAILY_LIMIT, (int) (count * 0.6), (int) (count * 0.8),
-                        PartofDay.DAY);
-                addTask(tasks, TransactionType.NORMAL, (int) (count * 0.8), count, PartofDay.DAY);
-            }
-            case night_time -> {
-                addTask(tasks, TransactionType.NORMAL, 0, count / 2, PartofDay.NIGHT);
-                addTask(tasks, TransactionType.HIGH_VALUE, count / 2, count, PartofDay.NIGHT);
-            }
-            case normal -> addTask(tasks,  TransactionType.NORMAL, 0, count, PartofDay.DAY);
-            case high_value -> addTask(tasks, TransactionType.HIGH_VALUE, 0, count, PartofDay.DAY);
-        }
-        return tasks;
-    }
-
-    private TransactionTask generateSingleTask(TransactionType transactionType) {
-        return new TransactionTask(transactionType, PartofDay.DAY);
-    }
-
     public TerminalRunResponse run(int count, TerminalScenario scenario) {
         long start = System.currentTimeMillis();
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
-        SimulationCardRegistry cardRegistry = new SimulationCardRegistry(gatewayClient, scenario, cardsAmount);
-        List<TransactionTask> tasks = generateTasks(scenario, count);
+        CardRegistry cardRegistry = new CardRegistry(gatewayClient, scenario, cardsAmount);
+        List<TransactionTask> tasks = taskGenerator.generateTasks(scenario, count);
 
         ConcurrentLinkedQueue<AuthorizationResponse> authResponses = new ConcurrentLinkedQueue<>();
         AtomicInteger approved = new AtomicInteger(0);
@@ -145,8 +104,8 @@ public class TerminalSimulatorService {
                         return;
                     }
                     try {
-                        AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay,
-                                approved, declined, cardRegistry, terminalId);
+                        AuthorizationResponse resp = executeSingleTransaction(task, approved, declined, cardRegistry,
+                                terminalId);
                         authResponses.add(resp);
 
                         circuitBreaker.recordSuccess(); // errors=0, Если state было half_open: consecutiveSuccesses++,
@@ -196,7 +155,7 @@ public class TerminalSimulatorService {
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
         TerminalScenario scenario = (transactionType == TransactionType.BLOCKED) ? TerminalScenario.declines_test
                 : TerminalScenario.normal;
-        SimulationCardRegistry cardRegistry = new SimulationCardRegistry(gatewayClient, scenario, cardsAmount);
+        CardRegistry cardRegistry = new CardRegistry(gatewayClient, scenario, cardsAmount);
 
         // хочу создать виртуальный поток, один-единственный фоновый поток-диспетчер
         Thread thread = Thread.ofVirtual().unstarted(() -> {
@@ -204,14 +163,14 @@ public class TerminalSimulatorService {
                 // когда я в методе stopContinuous() вызываю continuousLoopThread.interrupt(), я не убиваю поток,
                 // а ставлю ему внутренний флаг interrupted=true
                 while (isContinuousRunning.get() && !Thread.currentThread().isInterrupted()) {
-                    TransactionTask task = generateSingleTask(transactionType);
+                    TransactionTask task = taskGenerator.generateSingleTask(transactionType);
                     executor.submit(() -> {
                         if (!circuitBreaker.isCallAllowed()) {
                             return;
                         }
                         try {
-                            executeSingleTransaction(task.type, task.partOfDay, new AtomicInteger(),
-                                    new AtomicInteger(), cardRegistry, terminalId);
+                            executeSingleTransaction(task, new AtomicInteger(), new AtomicInteger(), cardRegistry,
+                                    terminalId);
                             circuitBreaker.recordSuccess();
                         } catch (org.springframework.web.client.ResourceAccessException
                                  | org.springframework.web.client.HttpStatusCodeException e) {

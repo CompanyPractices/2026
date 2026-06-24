@@ -8,11 +8,11 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-public class SimulationCardRegistry {
+public class CardRegistry {
 
     private final Map<CardModelStatus, List<CardModel>> cardsByStatus;
 
-    public SimulationCardRegistry(GatewayClient gatewayClient, TerminalScenario scenario, int totalCardsAmount) {
+    public CardRegistry(GatewayClient gatewayClient, TerminalScenario scenario, int totalCardsAmount) {
         List<CardModel> allCards = loadCards(gatewayClient, scenario, totalCardsAmount);
         this.cardsByStatus = allCards.stream().collect(Collectors.groupingBy(CardModel::status));
     }
