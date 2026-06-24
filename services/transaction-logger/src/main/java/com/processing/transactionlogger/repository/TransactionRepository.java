@@ -11,22 +11,22 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * JPA-репозиторий транзакций с поддержкой Specification-фильтрации
+ * JPA-репозиторий транзакций с поддержкой Specification-фильтрации.
  */
 public interface TransactionRepository extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
     /**
      * Возвращает агрегированную статистику одним запросом.
      */
     @Query(value = """
-            SELECT
-                COUNT(*) AS total,
-                COUNT(*) FILTER (WHERE status = 'APPROVED') AS approved,
-                COUNT(*) FILTER (WHERE status = 'DECLINED') AS declined,
-                COALESCE(SUM(amount), 0) AS total_amount,
-                COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 minute') AS recent_count,
-                COALESCE(AVG(processing_time_ms), 0) AS avg_processing_time_ms
-            FROM transactions
-""", nativeQuery = true)
+        SELECT
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE status = 'APPROVED') AS approved,
+            COUNT(*) FILTER (WHERE status = 'DECLINED') AS declined,
+            COALESCE(SUM(amount), 0) AS total_amount,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 minute') AS recent_count,
+            COALESCE(AVG(processing_time_ms), 0) AS avg_processing_time_ms
+        FROM transactions
+        """, nativeQuery = true)
     TransactionStats findStats();
 
     /**
@@ -42,16 +42,17 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
      * @return строки агрегации корзин, упорядоченные по времени
      */
     @Query(value = """
-        SELECT date_trunc(:interval, created_at, 'UTC') AS bucket,
+        SELECT
+            date_trunc(:interval, created_at, 'UTC') AS bucket,
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE status = 'APPROVED') AS approved,
             COUNT(*) FILTER (WHERE status = 'DECLINED') AS declined,
             COALESCE(SUM(amount), 0) AS amount
         FROM transactions
-        WHERE created_at >= :from and created_at < :to
+        WHERE created_at >= :from AND created_at < :to
         GROUP BY bucket
         ORDER BY bucket
-""", nativeQuery = true)
+        """, nativeQuery = true)
     List<ChartBucketRow> aggregateByInterval(@Param("interval") String interval,
                                              @Param("from") Instant from,
                                              @Param("to") Instant to);

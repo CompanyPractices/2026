@@ -4,7 +4,6 @@ import com.processing.common.dto.transactionlogger.TransactionResponse;
 
 import java.util.List;
 
-
 /**
  * Ответ на запрос {@code GET /api/transactions/search}.
  *
@@ -14,4 +13,5 @@ import java.util.List;
 public record TransactionSearchResponse(
         long total,
         List<TransactionResponse> transactions
-) {}
+) {
+}
