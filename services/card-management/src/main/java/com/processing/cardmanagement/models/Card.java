@@ -260,7 +260,7 @@ public record Card(
      */
     public void checkStatusOrThrow() {
         if (status != CardStatus.ACTIVE) {
-            throw new IllegalStateException("Card status is \"" + status.name() + "\"");
+            throw new IllegalStateException("Can't perform operation: card status is \"" + status.name() + "\"");
         }
     }
 }
