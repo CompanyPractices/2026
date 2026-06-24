@@ -17,7 +17,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class InternalTransactionControllerTest {
+public class InternalTransactionControllerTest {
 
     @Test
     void storeReturnsExistingTransactionWhenIdAlreadyExists() {
@@ -107,7 +107,7 @@ class InternalTransactionControllerTest {
         private boolean storeCalled;
 
         StubTransactionService(TransactionStoreResult result) {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
             this.result = result;
         }
 

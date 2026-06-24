@@ -1,6 +1,5 @@
 package com.processing.gateway;
 
-import com.processing.gateway.openapi.OpenApiProperties;
 import com.processing.gateway.properties.*;
 import com.processing.gateway.shutdown.ShutdownProperties;
 import org.springframework.boot.SpringApplication;
@@ -14,8 +13,6 @@ import org.springframework.cache.annotation.EnableCaching;
 @SpringBootApplication
 @EnableConfigurationProperties({
         ServiceProperties.class,
-        OpenApiProperties.class,
-        GatewayProperties.class,
         ShutdownProperties.class
 })
 @EnableCaching

@@ -1,14 +1,19 @@
 package com.processing.cardmanagement.configuration;
 
 import com.processing.cardmanagement.events.CardEventListener;
-import com.processing.cardmanagement.events.CardEventNotifier;
-import com.processing.cardmanagement.mappers.CardPersistenceMapper;
+import com.processing.cardmanagement.events.CardEventNotifierImpl;
+import com.processing.cardmanagement.mappers.CardOutboxEventDataPersistenceMapper;
 import com.processing.cardmanagement.options.CardServiceDefaults;
 import com.processing.cardmanagement.options.CardServiceSettings;
+import com.processing.cardmanagement.options.OutboxOptions;
 import com.processing.cardmanagement.repositories.*;
 import com.processing.cardmanagement.services.*;
+import com.processing.cardmanagement.services.retries.RetryService;
+import com.processing.cardmanagement.services.retries.RetryServiceImpl;
+import jakarta.persistence.EntityManagerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.orm.jpa.JpaTransactionManager;
 
 import java.util.List;
 
@@ -16,21 +21,25 @@ import java.util.List;
 public class AppConfig {
 
     @Bean
+    public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+        JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(entityManagerFactory);
+        transactionManager.setNestedTransactionAllowed(true);
+
+        return transactionManager;
+    }
+
+    @Bean
     public PanGenerator panGenerator() {
         return new LuhnValidator();
     }
 
     @Bean
-    public CardRepository cardRepository(
-            CardPersistenceMapper persistenceMapper,
-            CardJpaRepository jpaCardRepository
+    public CardEventNotifierImpl cardEventNotifier(
+        OutboxEventProcessor outboxEventProcessor,
+        List<CardEventListener> eventListeners
     ) {
-        return new JavaPersistenceAdapter(persistenceMapper, jpaCardRepository);
-    }
-
-    @Bean
-    public CardEventNotifier cardEventNotifier(List<CardEventListener> listeners) {
-        return new CardEventNotifier(listeners);
+        return new CardEventNotifierImpl(outboxEventProcessor, eventListeners);
     }
 
     @Bean
@@ -44,26 +53,51 @@ public class AppConfig {
     }
 
     @Bean
-    public BinIssuerInitializer binIssuerInitializer(BinIssuerRepository repository) {
-        return new BinIssuerInitializer(repository);
+    public OutboxRepository outboxRepository(
+        OutboxEventJpaRepository jpaRepository,
+        CardOutboxEventDataPersistenceMapper persistenceMapper
+    ) {
+        return new OutboxJpaAdapter(jpaRepository, persistenceMapper);
+    }
+
+    @Bean
+    public OutboxEventProcessorImpl outboxEventProcessor(
+        OutboxRepository outboxRepository,
+        List<CardEventListener> listeners,
+        OutboxOptions outboxOptions
+    ) {
+        return new OutboxEventProcessorImpl(outboxRepository, listeners, outboxOptions);
+    }
+
+    @Bean
+    public RetryService retryService() {
+        return new RetryServiceImpl();
     }
 
     @Bean
     public CardService cardService(
-            CardRepository cardRepository,
-            CardServiceSettings serviceConfigurationProperties,
-            CardServiceDefaults defaultsConfigurationProperties,
-            PanGenerator panGenerator,
-            CardEventNotifier cardEventNotifier,
-            BinIssuerService binIssuerService
+        CardRepository cardRepository,
+        ReservationRepository reservationRepository,
+        ReservationRollbackRepository reservationRollbackRepository,
+        CardServiceSettings serviceConfigurationProperties,
+        CardServiceDefaults defaultsConfigurationProperties,
+        PanGenerator panGenerator,
+        CardEventNotifierImpl cardEventNotifier,
+        BinIssuerService binIssuerService,
+        RetryService retryService,
+        TransactionRunner transactionRunner
     ) {
         return new CardServiceImpl(
-                cardRepository,
-                serviceConfigurationProperties,
-                defaultsConfigurationProperties,
-                panGenerator,
-                cardEventNotifier,
-                binIssuerService
+            cardRepository,
+            reservationRepository,
+            reservationRollbackRepository,
+            serviceConfigurationProperties,
+            defaultsConfigurationProperties,
+            panGenerator,
+            cardEventNotifier,
+            binIssuerService,
+            retryService,
+            transactionRunner
         );
     }
 }

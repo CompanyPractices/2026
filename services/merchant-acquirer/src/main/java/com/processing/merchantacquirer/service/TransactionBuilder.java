@@ -1,17 +1,17 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.dto.CardDataResponse;
-import com.processing.merchantacquirer.domain.FeeCalculator;
-import com.processing.merchantacquirer.domain.MaskerPan;
+import com.processing.merchantacquirer.domain.service.FeeCalculator;
 import com.processing.merchantacquirer.domain.entity.AcquirerFee;
 import com.processing.merchantacquirer.domain.entity.Merchant;
-import com.processing.merchantacquirer.domain.entity.Scenario;
+import com.processing.merchantacquirer.domain.model.Scenario;
 import com.processing.merchantacquirer.domain.entity.Terminal;
 import com.processing.merchantacquirer.domain.factory.AuthorizationRequestFactory;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -42,10 +42,10 @@ public class TransactionBuilder {
             List<Future<RequestFeeData>> futures = new ArrayList<>(count);
 
             for (int i = 0; i < count; i++) {
-                int finalI = i;
                 Future<RequestFeeData> future = executor.submit(
                         () -> {
-                            CardDataResponse card = cardDataResponses.get(finalI % cardDataResponses.size());
+                            CardDataResponse card = cardDataResponses.get(
+                                    ThreadLocalRandom.current().nextInt(cardDataResponses.size()));
                             Merchant merchant = merchants.get(ThreadLocalRandom.current().nextInt(merchants.size()));
                             Terminal terminal = terminalProvider.getByMerchant(merchant.getId());
                             BigDecimal amount = new BigDecimal(
@@ -57,18 +57,17 @@ public class TransactionBuilder {
                                             scenario.getCountUpper().doubleValue()
                                     )).setScale(0, RoundingMode.HALF_EVEN);
 
-                            AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
-                                    card.pan(), card.currencyCode(), amount, terminal, merchant);
+                            LocalDate date = LocalDate.now();
+                            Instant beforeTime = date.atTime(
+                                    LocalTime.parse(scenario.getTimeLower())).toInstant(ZoneOffset.ofHours(3));
+                            Instant afterTime = date.atTime(
+                                    LocalTime.parse(scenario.getTimeUpper())).toInstant(ZoneOffset.ofHours(3));
+                            var duration = Duration.between(beforeTime, afterTime).toMillis();
+                            Instant transactionTime = beforeTime.plusMillis(ThreadLocalRandom.current().nextLong(0, duration));
 
-                            log.info("AuthorizationRequest: STAN: {}, PAN: {}, amount: {}, "
-                                            + "TerminalID: {}, MerchantID: {}, AcquirerID: {}, MCC: {} ",
-                                    authorizationRequest.stan(),
-                                    MaskerPan.mask(authorizationRequest.pan()),
-                                    authorizationRequest.amount(),
-                                    authorizationRequest.terminalId(),
-                                    authorizationRequest.merchantId(),
-                                    authorizationRequest.acquirerId(),
-                                    authorizationRequest.mcc());
+                            AuthorizationRequest authorizationRequest = authorizationRequestFactory.build(
+                                    card.pan(), card.currencyCode(), amount, terminal, merchant, transactionTime);
+
                             BigDecimal fee = feeCalculator.calculate(
                                     merchant.getAcquiringFee(),
                                     authorizationRequest.amount());

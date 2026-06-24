@@ -5,7 +5,7 @@ import com.processing.common.dto.cardmanagement.CardModel;
 import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.dto.terminalsimulator.TerminalType;
 import com.processing.terminalsimulator.model.PartofDay;
-import com.processing.terminalsimulator.model.TransactionType;
+import com.processing.common.dto.terminalsimulator.TransactionType;
 import com.processing.terminalsimulator.strategy.TransactionStrategy;
 import com.processing.terminalsimulator.util.DateTimeGenerator;
 import com.processing.terminalsimulator.util.StanGenerator;
@@ -36,15 +36,16 @@ public class TransactionFactory {
 
     public AuthorizationRequest create(TransactionType transactionType, PartofDay partOfDay, CardModel card,
                                        String terminalId) {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
         TransactionStrategy transactionStrategy = strategies.get(transactionType);
         BigDecimal amount = transactionStrategy.calculateAmount(card);
         String mcc = transactionStrategy.getMcc();
         String pan = transactionStrategy.isInvalidPan() ? getInvalidPan(card) : card.pan();
         String stan = stanGenerator.getNextStan(terminalId);
         TerminalType[] types = TerminalType.values();
-        String terminalType = types[ThreadLocalRandom.current().nextInt(types.length)].name();
-        String merchantId = String.format("MERCH%10d", ThreadLocalRandom.current().nextLong(1, 10_000_000_000L));
-        String acquirerId = String.format("ACQ%03d", ThreadLocalRandom.current().nextLong(1, 1000));
+        String terminalType = types[random.nextInt(types.length)].name();
+        String merchantId = String.format("MERCH%10d", random.nextLong(1, 10_000_000_000L));
+        String acquirerId = String.format("ACQ%03d", random.nextLong(1, 1000));
 
         return AuthorizationRequest.builder()
                 .mti("0100")

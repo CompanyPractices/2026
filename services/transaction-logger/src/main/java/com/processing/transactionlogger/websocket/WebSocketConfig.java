@@ -8,6 +8,8 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
+import java.util.Arrays;
+
 /**
  * Регистрирует WebSocket-эндпоинт {@code /ws/transactions}.
  * Список адресов, которым разрешено подключаться, задаётся свойством {@code websocket.allowed-origins}.
@@ -22,6 +24,10 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry) {
-        registry.addHandler(handler, "/ws/transactions").setAllowedOrigins(allowedOrigins);
+        String[] origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toArray(String[]::new);
+        registry.addHandler(handler, "/ws/transactions").setAllowedOrigins(origins);
     }
 }

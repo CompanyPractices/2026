@@ -4,27 +4,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-import java.net.URI;
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.UUID;
 
-import javax.sql.DataSource;
+import com.processing.authorization.client.CardManagementClient;
+import com.processing.authorization.entities.LimitUsage;
+import com.processing.authorization.exceptions.ReserveException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.web.client.RestClient;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.processing.authorization.repositories.LimitUsageRepository;
-import com.processing.authorization.services.AuthService;
+import com.processing.authorization.services.AuthServiceImpl;
 import com.processing.common.dto.authorization.AuthorizationRequest;
 import com.processing.common.dto.authorization.AuthorizationResponse;
 import com.processing.common.dto.cardmanagement.CardModel;
@@ -36,39 +38,26 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest
 public class DBIntegrationTest {
     @Autowired
-    private AuthService authService;
+    private AuthServiceImpl authService;
     @Autowired
     private LimitUsageRepository limitUsageRepository;
-    @Autowired
-    private DataSource dataSource;
-    @MockitoBean
-    private RestClient restClient;
 
-    @Mock
-    private RestClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
-    @Mock
-    private RestClient.RequestHeadersSpec<?> requestHeadersSpec;
-    @Mock
-    private RestClient.ResponseSpec responseSpec;
-    @Mock
-    private RestClient.RequestBodyUriSpec requestBodyUriSpec;
-    @Mock
-    private RestClient.RequestBodySpec requestBodySpec;
+    @MockitoBean
+    private CardManagementClient cardManagementClient;
 
     private Instant now;
     private AuthorizationRequest correctRequest;
 
+    private static final String TEST_PAN = "1234567890123456";
+
     @BeforeEach
     void setUp() {
-        Mockito.reset(requestHeadersUriSpec, requestHeadersSpec, responseSpec,
-                requestBodyUriSpec, requestBodySpec);
-
         limitUsageRepository.deleteAll();
         now = Instant.now();
         correctRequest = new AuthorizationRequest(
                 "0100",
                 "123456",
-                "1234567890123456",
+                TEST_PAN,
                 "000000",
                 BigDecimal.valueOf(5000),
                 "810",
@@ -79,52 +68,25 @@ public class DBIntegrationTest {
                 "5411",
                 "A001",
                 "I001");
-
-        log.debug("Test database URL: {}", getDatabaseUrl());
-    }
-
-    private void mockGetCard(CardModel cardToReturn) {
-        doReturn(requestHeadersUriSpec).when(restClient).get();
-        doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(any(URI.class));
-        doReturn(responseSpec).when(requestHeadersSpec).retrieve();
-        doReturn(responseSpec).when(responseSpec).onStatus(any(), any());
-        doReturn(cardToReturn).when(responseSpec).body(CardModel.class);
-    }
-
-    private void mockReserveSuccess() {
-        doReturn(requestBodyUriSpec).when(restClient).post();
-        doReturn(requestBodySpec).when(requestBodyUriSpec).uri(any(URI.class));
-        doReturn(requestBodySpec).when(requestBodySpec).contentType(any());
-        doReturn(requestBodySpec).when(requestBodySpec).body(any(Object.class));
-        doReturn(responseSpec).when(requestBodySpec).retrieve();
-        doReturn(responseSpec).when(responseSpec).onStatus(any(), any());
-        doReturn(null).when(responseSpec).toBodilessEntity();
-    }
-
-    private String getDatabaseUrl() {
-        try {
-            return dataSource.getConnection().getMetaData().getURL();
-        } catch (SQLException e) {
-            log.warn("Could not determine database URL", e);
-            return "none";
-        }
+        reset(cardManagementClient);
     }
 
     @Test
     void authorizeShouldReturnDeclinedWhenCardIsBlocked() {
-        CardModel mockCard = createBlockedCardModel();
-        mockGetCard(mockCard);
+        when(cardManagementClient.getCard(anyString())).thenReturn(createBlockedCard());
+
         AuthorizationResponse response = authService.authorize(correctRequest, now);
+
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertThat(response.authCode()).isNull();
         assertThat(response.rrn()).isNull();
         assertEquals("CARD_BLOCKED", response.declineReason());
+        verify(cardManagementClient, never()).reserve(any(), any(), any());
     }
 
     @Test
     void authorizeShouldReturnDeclinedWhenCardIsExpired() {
-        CardModel mockCard = createExpiredCardModel();
-        mockGetCard(mockCard);
+        when(cardManagementClient.getCard(anyString())).thenReturn(createExpiredCardModel());
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("CARD_EXPIRED", response.declineReason());
@@ -132,8 +94,7 @@ public class DBIntegrationTest {
 
     @Test
     void authorizeShouldReturnDeclinedWhenCardIsInactive() {
-        CardModel mockCard = createInactiveCardModel();
-        mockGetCard(mockCard);
+        when(cardManagementClient.getCard(anyString())).thenReturn(createInactiveCardModel());
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("CARD_INACTIVE", response.declineReason());
@@ -141,8 +102,7 @@ public class DBIntegrationTest {
 
     @Test
     void authorizeShouldReturnDeclinedWhenInsufficientFunds() {
-        CardModel mockCard = createCardWithLowBalance();
-        mockGetCard(mockCard);
+        when(cardManagementClient.getCard(anyString())).thenReturn(createCardWithLowBalance());
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("INSUFFICIENT_FUNDS", response.declineReason());
@@ -150,8 +110,7 @@ public class DBIntegrationTest {
 
     @Test
     void authorizeShouldReturnDeclinedWhenExceededMonthlyLimit() {
-        CardModel mockCard = createActiveCardModelWithLowMonthlyLimit();
-        mockGetCard(mockCard);
+        when(cardManagementClient.getCard(anyString())).thenReturn(createActiveCardModelWithLowMonthlyLimit());
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("EXCEEDS_AMOUNT_LIMIT", response.declineReason());
@@ -159,8 +118,10 @@ public class DBIntegrationTest {
 
     @Test
     void authorizeShouldReturnDeclinedWhenReservationFails() {
-        CardModel mockCard = createActiveCardModel();
-        mockGetCard(mockCard);
+        when(cardManagementClient.getCard(anyString())).thenReturn(createActiveCard());
+        doThrow(new ReserveException("Reserve failed")).when(cardManagementClient)
+                .reserve(any(BigDecimal.class), anyString(), anyString());
+
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("RESERVATION_FAILED", response.declineReason());
@@ -168,8 +129,7 @@ public class DBIntegrationTest {
 
     @Test
     void authorizeShouldReturnDeclinedWhenCardExpiredByDate() {
-        CardModel mockCard = createCardExpiredByDate();
-        mockGetCard(mockCard);
+        when(cardManagementClient.getCard(anyString())).thenReturn(createCardExpiredByDate());
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_DECLINED, response.status());
         assertEquals("CARD_EXPIRED", response.declineReason());
@@ -177,134 +137,158 @@ public class DBIntegrationTest {
 
     @Test
     void authorizeShouldBeApproved() {
-        CardModel mockCard = createActiveCardModel();
-        mockGetCard(mockCard);
-        mockReserveSuccess();
+        when(cardManagementClient.getCard(anyString())).thenReturn(createActiveCard());
+        doNothing().when(cardManagementClient).reserve(any(BigDecimal.class), anyString(), anyString());
+
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_APPROVED, response.status());
         assertThat(response.authCode()).isNotNull();
         assertThat(response.rrn()).isNotNull();
+
+        verify(cardManagementClient).getCard(TEST_PAN);
+        verify(cardManagementClient).reserve(eq(BigDecimal.valueOf(5000)), anyString(), eq(TEST_PAN));
     }
 
     @Test
     void authorizeShouldBeApprovedAndPersistToDatabase() {
-        CardModel mockCard = createActiveCardModel();
-        mockGetCard(mockCard);
-        mockReserveSuccess();
+        when(cardManagementClient.getCard(anyString())).thenReturn(createActiveCard());
+        doNothing().when(cardManagementClient).reserve(any(BigDecimal.class), anyString(), anyString());
         AuthorizationResponse response = authService.authorize(correctRequest, now);
         assertEquals(AuthorizationResponse.STATUS_APPROVED, response.status());
         assertThat(limitUsageRepository.findAll()).hasSize(1);
     }
 
-    private CardModel createActiveCardModel() {
-        return new CardModel(
-                UUID.randomUUID(),
-                "1234567890123456",
-                "123456",
-                "John Golt",
-                YearMonth.of(2026, 12),
-                CardModelStatus.ACTIVE,
-                "810",
-                BigDecimal.valueOf(100000),
-                BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000),
-                "I001",
-                Instant.now());
+    @Test
+    @Transactional
+    void deleteByUsageDateBetweenShouldDeleteOnlyPreviousMonthRecords() {
+        String pan = "4000001234567890";
+        BigDecimal currLimit = BigDecimal.valueOf(1000);
+
+        LocalDate now = LocalDate.now();
+        LocalDate firstDayPreviousMonth = now.minusMonths(1).withDayOfMonth(1);
+        LocalDate lastDayPreviousMonth = now.minusMonths(1).withDayOfMonth(now.minusMonths(1).lengthOfMonth());
+        LocalDate firstDayCurrentMonth = now.withDayOfMonth(1);
+        LocalDate secondDayCurrentMonth = now.withDayOfMonth(2);
+
+        LimitUsage record1 = createLimitUsage(pan, firstDayPreviousMonth, currLimit);
+        LimitUsage record2 = createLimitUsage(pan, lastDayPreviousMonth.minusDays(1), currLimit);
+        LimitUsage record3 = createLimitUsage(pan, lastDayPreviousMonth, currLimit);
+        LimitUsage record4 = createLimitUsage(pan, firstDayCurrentMonth, currLimit);
+        LimitUsage record5 = createLimitUsage(pan, secondDayCurrentMonth, currLimit);
+        limitUsageRepository.saveAll(List.of(record1, record2, record3, record4, record5));
+
+        List<LimitUsage> allRecords = limitUsageRepository.findAll();
+        assertThat(allRecords).hasSize(5);
+
+        int deletedCount = limitUsageRepository.deleteByUsageDateBetween(
+                firstDayPreviousMonth,
+                lastDayPreviousMonth
+        );
+
+        assertThat(deletedCount).isEqualTo(3);
+
+        List<LimitUsage> remainingRecords = limitUsageRepository.findAll();
+        assertThat(remainingRecords).hasSize(2);
+        assertThat(remainingRecords)
+                .extracting("usageDate")
+                .containsExactlyInAnyOrder(firstDayCurrentMonth, secondDayCurrentMonth);
     }
 
-    private CardModel createBlockedCardModel() {
+    private CardModel createCard(CardModelStatus status, YearMonth expiryDate,
+                                 BigDecimal availableBalance, BigDecimal dailyLimit, BigDecimal monthlyLimit) {
         return new CardModel(
                 UUID.randomUUID(),
-                "1234567890123456",
+                TEST_PAN,
                 "123456",
                 "John Golt",
-                YearMonth.of(2026, 12),
-                CardModelStatus.BLOCKED,
+                expiryDate,
+                status,
                 "810",
+                dailyLimit,
+                monthlyLimit,
+                availableBalance,
+                "I001",
+                Instant.now()
+        );
+    }
+
+    private CardModel createActiveCard() {
+        return createCard(
+                CardModelStatus.ACTIVE,
+                YearMonth.of(2026, 12),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000),
-                "I001",
-                Instant.now());
+                BigDecimal.valueOf(10000)
+        );
+    }
+
+    private CardModel createBlockedCard() {
+        return createCard(
+                CardModelStatus.BLOCKED,
+                YearMonth.of(2026, 12),
+                BigDecimal.valueOf(100000),
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000)
+        );
     }
 
     private CardModel createExpiredCardModel() {
-        return new CardModel(
-                UUID.randomUUID(),
-                "1234567890123456",
-                "123456",
-                "John Golt",
-                YearMonth.of(2026, 1),
+        return createCard(
                 CardModelStatus.EXPIRED,
-                "810",
+                YearMonth.of(2026, 1),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000),
-                "I001",
-                Instant.now());
+                BigDecimal.valueOf(10000)
+        );
     }
 
     private CardModel createInactiveCardModel() {
-        return new CardModel(
-                UUID.randomUUID(),
-                "1234567890123456",
-                "123456",
-                "John Golt",
-                YearMonth.of(2029, 1),
+        return createCard(
                 CardModelStatus.INACTIVE,
-                "810",
+                YearMonth.of(2029, 1),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000),
-                "I001",
-                Instant.now());
+                BigDecimal.valueOf(10000)
+        );
     }
 
     private CardModel createCardWithLowBalance() {
-        return new CardModel(
-                UUID.randomUUID(),
-                "1234567890123456",
-                "123456",
-                "John Golt",
-                YearMonth.of(2026, 12),
+        return createCard(
                 CardModelStatus.ACTIVE,
-                "810",
-                BigDecimal.valueOf(100000),
-                BigDecimal.valueOf(500000),
+                YearMonth.of(2026, 12),
                 BigDecimal.valueOf(1000),
-                "I001",
-                Instant.now());
+                BigDecimal.valueOf(500000),
+                BigDecimal.valueOf(10000)
+        );
     }
 
     private CardModel createActiveCardModelWithLowMonthlyLimit() {
-        return new CardModel(
-                UUID.randomUUID(),
-                "1234567890123456",
-                "123456",
-                "John Golt",
-                YearMonth.of(2026, 12),
+        return createCard(
                 CardModelStatus.ACTIVE,
-                "810",
+                YearMonth.of(2026, 12),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500),
-                BigDecimal.valueOf(10000),
-                "I001",
-                Instant.now());
+                BigDecimal.valueOf(10000)
+        );
     }
 
     private CardModel createCardExpiredByDate() {
-        return new CardModel(
-                UUID.randomUUID(),
-                "1234567890123456",
-                "123456",
-                "John Golt",
-                YearMonth.of(2006, 12),
+        return createCard(
                 CardModelStatus.ACTIVE,
-                "810",
+                YearMonth.of(2006, 12),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000),
-                "I001",
-                Instant.now());
+                BigDecimal.valueOf(10000)
+        );
+    }
+
+    private LimitUsage createLimitUsage(String pan, LocalDate usageDate, BigDecimal amount) {
+        LimitUsage usage = new LimitUsage();
+        usage.setPan(pan);
+        usage.setUsageDate(usageDate);
+        usage.setDailyAmount(amount);
+        usage.setMonthlyAmount(amount);
+        usage.setUpdatedAt(Instant.now());
+        return usage;
     }
 }

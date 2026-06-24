@@ -1,7 +1,7 @@
 package com.processing.gateway.downstream;
 
-import jakarta.servlet.ServletException;
 import org.springframework.web.client.ResourceAccessException;
+import reactor.netty.http.client.PrematureCloseException;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -22,7 +22,8 @@ public final class DownstreamExceptionUtils {
                     || current instanceof ConnectException
                     || current instanceof SocketTimeoutException
                     || current instanceof HttpTimeoutException
-                    || current instanceof HttpConnectTimeoutException) {
+                    || current instanceof HttpConnectTimeoutException
+                    || current instanceof PrematureCloseException) {
                 return true;
             }
 
@@ -32,10 +33,7 @@ public final class DownstreamExceptionUtils {
         return false;
     }
 
-    public static void rethrow(Exception exception) throws ServletException, IOException {
-        if (exception instanceof ServletException servletException) {
-            throw servletException;
-        }
+    public static void rethrow(Exception exception) throws IOException {
         if (exception instanceof IOException ioException) {
             throw ioException;
         }
@@ -43,6 +41,6 @@ public final class DownstreamExceptionUtils {
             throw runtimeException;
         }
 
-        throw new ServletException(exception);
+        throw new IOException(exception);
     }
 }

@@ -1,7 +1,6 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.client.GatewayClient;
-import com.processing.merchantacquirer.domain.MaskerPan;
 import com.processing.merchantacquirer.exception.ExternalServiceException;
 import com.processing.merchantacquirer.metrics.TransactionMetrics;
 import com.processing.merchantacquirer.service.dto.SimulatorStats;
@@ -10,7 +9,9 @@ import com.processing.common.dto.authorization.AuthorizationResponse;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 import io.github.bucket4j.Bucket;
@@ -36,7 +37,7 @@ public class TransactionSender {
     this.bucket = Bucket.builder()
             .addLimit(limit -> limit
                     .capacity(tps)
-                    .refillIntervally(tps, Duration.ofSeconds(1))
+                    .refillGreedy(tps, Duration.ofSeconds(1))
             )
             .build();
     log.info("Initialized with Concurrency: {} and Target TPS: {}", concurrency, tps);
@@ -48,44 +49,40 @@ public class TransactionSender {
       List<Future<AuthorizationResponse>> futures = new ArrayList<>(requests.size());
 
       for (AuthorizationRequest request : requests) {
-        semaphore.acquire();
-        try {
-          futures.add(executor.submit(
-                  () -> {
-                    try {
-                      bucket.asBlocking().consume(1);
-
-                      AuthorizationResponse response = gatewayClient.processAuthorize(request);
-                      transactionMetrics.record(request.mcc(), response.status());
-                      log.info("AuthorizationResponse: {}", response);
-                      return response;
-                    } catch (ExternalServiceException e) {
-                      transactionMetrics.record(request.mcc(), "ERROR");
-
-                      log.warn("Gateway returned failed AuthorizationRequest: [STAN: {}, PAN: {}, amount: {}, "
-                                      + "TerminalID: {}, MerchantID: {}, AcquirerID: {}, MCC: {}]: {}",
-                              request.stan(),
-                              MaskerPan.mask(request.pan()),
-                              request.amount(),
-                              request.terminalId(),
-                              request.merchantId(),
-                              request.acquirerId(),
-                              request.mcc(), e.getMessage());
-
-                      return AuthorizationResponse.systemError(request.stan());
-                    } finally {
-                      semaphore.release();
-                    }
+        futures.add(executor.submit(
+                () -> {
+                  try {
+                    bucket.asBlocking().consume(1);
+                  } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupet while whited rate limit", e);
                   }
-          ));
-        } catch (RuntimeException e) {
-          semaphore.release();
-          throw e;
-        }
+
+                  try {
+                    semaphore.acquire();
+                  } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupet while acquiring sender permin", e);
+                  }
+
+                  try {
+                    AuthorizationResponse response = gatewayClient.processAuthorize(request);
+                    transactionMetrics.record(request.mcc(), response.status());
+
+                    return response;
+                  } catch (ExternalServiceException e) {
+                    transactionMetrics.record(request.mcc(), "ERROR");
+
+                    return AuthorizationResponse.systemError(request.stan());
+                  } finally {
+                    semaphore.release();
+                  }
+                }
+        ));
       }
 
       List<AuthorizationResponse> responses = new ArrayList<>(requests.size());
-
+      Map<String, Integer> declinedByReason = new HashMap<>();
       int approved = 0;
       int declined = 0;
 
@@ -107,11 +104,15 @@ public class TransactionSender {
           approved++;
         } else if ("DECLINED".equals(response.status())) {
           declined++;
+          String reason = !response.responseCode().equals("00") ? response.declineReason() : "UNKNOWN";
+          declinedByReason.merge(reason, 1, Integer::sum);
         }
       }
+
+      if (declined > 0) {
+        log.warn("Declined {} of {}. Stats: {}", declined, responses.size(), declinedByReason);
+      }
       return new SimulatorStats(responses, approved, declined);
-    } catch (InterruptedException e) {
-        throw new RuntimeException(e);
     }
   }
 }

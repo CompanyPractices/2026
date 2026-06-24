@@ -1,5 +1,6 @@
 import { Transaction } from '../types/index.ts'
-import { BarChart, XAxis, YAxis, Tooltip, CartesianGrid, Bar, ResponsiveContainer } from 'recharts'
+import { BarChart, XAxis, YAxis, Tooltip, CartesianGrid, Bar, ResponsiveContainer, TooltipProps } from 'recharts'
+import { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import {ThemeContext} from "../contexts/ThemeContext.ts";
 import { useContext } from 'react';
 
@@ -48,8 +49,32 @@ export default function TransactionHistogram({transactions, loading, error}: Tra
         const amountRange = Math.trunc(tx.amount / range);
         histogramData[amountRange] = (histogramData[amountRange] || 0) + 1;
     })
-    const txData = Object.entries(histogramData).map(([amount, count]) => ({amount: Number(amount), count}))
+
+    const total = Object.values(histogramData).reduce((a, b) => a + b, 0);
+    const txData = Object.entries(histogramData)
+        .map(([amount, count]) => ({
+            amount: Number(amount),
+            value: count,
+            percent: ((count / total) * 100).toFixed(1)
+        }))
         .sort((a, b) => a.amount - b.amount);
+
+    const HistogramTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div className="p-3 rounded-lg shadow-lg border dark:bg-zinc-800 dark:border-zinc-700 dark:text-sage-50 bg-white border-zinc-200 text-zinc-900">
+                    <p className="text-sm opacity-80">
+                        Количество: <span className="font-mono">{data.value}</span>
+                    </p>
+                    <p className="text-sm opacity-80">
+                        Доля: <span className="font-mono">{data.percent}%</span>
+                    </p>
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="w-full h-full">
@@ -72,7 +97,7 @@ export default function TransactionHistogram({transactions, loading, error}: Tra
                         label={{value: 'Диапазон суммы (в тысяч руб.)', position:"insideBottom", offset:-10 }}
                     />
                     <YAxis
-                        dataKey="count"
+                        dataKey="value"
                         allowDecimals={false}
                         stroke={textColor}
                         tick={{ fill: textColor, fontSize: 12 }}
@@ -80,7 +105,7 @@ export default function TransactionHistogram({transactions, loading, error}: Tra
                         label={{value: 'Частота', position:"top", offset:15}}
                     />
                     <Bar
-                        dataKey="count"
+                        dataKey="value"
                         fill={barColor}
                         activeBar={{
                             fill: activeBarColor,
@@ -89,7 +114,9 @@ export default function TransactionHistogram({transactions, loading, error}: Tra
                         }}
                         radius={[10, 10, 0, 0]}
                     />
-                    <Tooltip cursor={{ fill: 'rgb(238 238 238 / 0.3)' }}/>
+
+                    <Tooltip cursor={{ fill: 'rgb(238 238 238 / 0.3)' }} content={<HistogramTooltip />} />
+
                 </BarChart>
             </ResponsiveContainer>
         </div>

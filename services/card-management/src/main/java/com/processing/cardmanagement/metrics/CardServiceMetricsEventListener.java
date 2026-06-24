@@ -15,24 +15,31 @@ public class CardServiceMetricsEventListener implements CardEventListener {
     public void onEvent(CardEvent event) {
         switch (event) {
             case CardServiceCreationEvent e -> meterRegistry
-                .counter("cards.operations", "type", "created")
-                .increment(e.amount());
+                    .counter("cards.operations", "type", "created")
+                    .increment(e.amount());
 
             case CardServicePatchEvent ignored -> meterRegistry
-                .counter("cards.operations", "type", "patched")
-                .increment();
+                    .counter("cards.operations", "type", "patched")
+                    .increment();
 
             case CardServiceDeletionEvent ignored -> meterRegistry
-                .counter("cards.operations", "type", "deleted")
-                .increment();
+                    .counter("cards.operations", "type", "deleted")
+                    .increment();
 
             case CardServiceReserveEvent ignored -> meterRegistry
-                .counter("cards.operations", "type", "reserved")
-                .increment();
+                    .counter("cards.operations", "type", "reserved")
+                    .increment();
 
-            case CardGeneratedEvent e -> meterRegistry
-                .counter("cards.generated", "status", e.status().name())
-                .increment();
+            case CardServiceRollbackEvent ignored -> meterRegistry
+                    .counter("cards.operations", "type", "rolled_back")
+                    .increment();
+
+            case CardsBatchGeneratedEvent e -> e.statusCount().forEach((status, count) ->
+                    meterRegistry.counter("cards.generated", "status", status.name())
+                            .increment(count));
+            case CardServiceBulkUpdateEvent e -> meterRegistry
+                    .counter("cards.operation", "type", "bulk_update")
+                    .increment(e.count());
         }
     }
 }

@@ -1,17 +1,12 @@
 package com.processing.cardmanagement.events;
 
-import lombok.RequiredArgsConstructor;
+/**
+ * Рассылает сообщения слушателям
+ *
+ * @see CardEvent
+ * @see CardEventListener
+ */
+public interface CardEventNotifier {
 
-import java.util.List;
-
-@RequiredArgsConstructor
-public class CardEventNotifier {
-
-    private final List<CardEventListener> listeners;
-
-    public void onEvent(CardEvent event) {
-        for (var l : listeners) {
-            l.onEvent(event);
-        }
-    }
+    void notifyListeners(CardEvent event);
 }

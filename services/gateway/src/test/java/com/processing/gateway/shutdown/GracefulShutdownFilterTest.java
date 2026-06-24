@@ -3,15 +3,19 @@ package com.processing.gateway.shutdown;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.gateway.circuitbreaker.CircuitBreakerFilter;
 import com.processing.gateway.downstream.DownstreamErrorFilter;
+import com.processing.gateway.metrics.GatewayMetrics;
 import com.processing.gateway.ratelimit.TransactionRateLimitFilter;
 import com.processing.gateway.validation.TransactionValidationFilter;
-import jakarta.servlet.FilterChain;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.annotation.Order;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.mock.web.server.MockServerWebExchange;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,49 +23,61 @@ class GracefulShutdownFilterTest {
 
     private final GracefulShutdownState shutdownState = new GracefulShutdownState();
     private final ShutdownProperties shutdownProperties = shutdownProperties();
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     private final GracefulShutdownFilter filter = new GracefulShutdownFilter(
             shutdownState,
             shutdownProperties,
-            new ObjectMapper()
+            new ObjectMapper(),
+            new GatewayMetrics(meterRegistry)
     );
 
     @Test
-    void allowsRequestsBeforeShutdownStarts() throws Exception {
-        CountingFilterChain filterChain = new CountingFilterChain();
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    void allowsRequestsBeforeShutdownStarts() {
+        AtomicInteger callCount = new AtomicInteger();
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api/cards"));
 
-        filter.doFilter(new MockHttpServletRequest("GET", "/api/cards"), response, filterChain);
+        filter.filter(exchange, webExchange -> {
+            callCount.incrementAndGet();
+            webExchange.getResponse().setStatusCode(HttpStatus.OK);
+            return Mono.empty();
+        }).block();
 
-        assertThat(filterChain.callCount).isEqualTo(1);
-        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(callCount).hasValue(1);
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
-    void rejectsNewRequestsAfterShutdownStarts() throws Exception {
+    void rejectsNewRequestsAfterShutdownStarts() {
         shutdownState.startShutdown();
-        CountingFilterChain filterChain = new CountingFilterChain();
-        MockHttpServletResponse response = new MockHttpServletResponse();
+        AtomicInteger callCount = new AtomicInteger();
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.post("/api/transactions"));
 
-        filter.doFilter(new MockHttpServletRequest("POST", "/api/transactions"), response, filterChain);
+        filter.filter(exchange, webExchange -> {
+            callCount.incrementAndGet();
+            return Mono.empty();
+        }).block();
 
-        assertThat(filterChain.callCount).isZero();
-        assertThat(response.getStatus()).isEqualTo(503);
-        assertThat(response.getHeader("Retry-After")).isEqualTo("30");
-        assertThat(response.getContentType()).isEqualTo("application/json");
-        assertThat(response.getContentAsString()).contains(
+        assertThat(callCount).hasValue(0);
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("30");
+        assertThat(Objects.requireNonNull(exchange.getResponse().getHeaders().getContentType()).toString()).isEqualTo("application/json");
+        assertThat(exchange.getResponse().getBodyAsString().block()).contains(
                 "\"error\":\"SERVICE_UNAVAILABLE\"",
                 "\"serviceName\":\"gateway\""
         );
+        assertThat(meterRegistry.counter(
+                "gateway.requests.rejected",
+                "reason", "shutting_down",
+                "service", "gateway"
+        ).count()).isEqualTo(1);
     }
 
     @Test
     void hasHighestPriorityAmongGatewayFilters() {
-        int gracefulShutdownOrder = orderOf(GracefulShutdownFilter.class);
-
-        assertThat(gracefulShutdownOrder).isLessThan(orderOf(TransactionRateLimitFilter.class));
-        assertThat(gracefulShutdownOrder).isLessThan(orderOf(TransactionValidationFilter.class));
-        assertThat(gracefulShutdownOrder).isLessThan(orderOf(CircuitBreakerFilter.class));
-        assertThat(gracefulShutdownOrder).isLessThan(orderOf(DownstreamErrorFilter.class));
+        assertThat(filter.getOrder()).isLessThan(orderOf(TransactionRateLimitFilter.class));
+        assertThat(filter.getOrder()).isLessThan(orderOf(TransactionValidationFilter.class));
+        assertThat(filter.getOrder()).isLessThan(orderOf(CircuitBreakerFilter.class));
+        assertThat(filter.getOrder()).isLessThan(orderOf(DownstreamErrorFilter.class));
     }
 
     private ShutdownProperties shutdownProperties() {
@@ -71,16 +87,18 @@ class GracefulShutdownFilterTest {
     }
 
     private int orderOf(Class<?> filterClass) {
-        return filterClass.getAnnotation(Order.class).value();
-    }
-
-    private static final class CountingFilterChain implements FilterChain {
-        private int callCount;
-
-        @Override
-        public void doFilter(jakarta.servlet.ServletRequest request,
-                             jakarta.servlet.ServletResponse response) {
-            callCount++;
+        if (filterClass == TransactionRateLimitFilter.class) {
+            return org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 1;
         }
+        if (filterClass == TransactionValidationFilter.class) {
+            return org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 2;
+        }
+        if (filterClass == CircuitBreakerFilter.class) {
+            return org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 3;
+        }
+        if (filterClass == DownstreamErrorFilter.class) {
+            return org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 4;
+        }
+        throw new IllegalArgumentException("Unsupported filter class: " + filterClass);
     }
 }

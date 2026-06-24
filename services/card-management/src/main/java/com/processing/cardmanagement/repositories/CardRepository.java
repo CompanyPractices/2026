@@ -1,18 +1,26 @@
 package com.processing.cardmanagement.repositories;
 
+import com.processing.cardmanagement.exceptions.MassiveCardCreationCollisionException;
+import com.processing.cardmanagement.exceptions.PanCollisionException;
 import com.processing.cardmanagement.models.Card;
 import com.processing.cardmanagement.models.CardStatus;
 import jakarta.annotation.Nullable;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.function.UnaryOperator;
 
 public interface CardRepository {
 
     Optional<Card> findByPan(String pan);
+
+    /**
+     * Находит карту по номеру PAN и блокирует ее параллельное изменение
+     *
+     * @param pan номер карты
+     * @return найденная карта
+     */
+    Optional<Card> findByPanForUpdate(String pan);
 
     /**
      * Возвращает список карт с фильтрацией и пагинацией
@@ -29,6 +37,20 @@ public interface CardRepository {
         @Nullable Instant startDate,
         @Nullable Instant endDate
     );
+
+    /**
+     * Возвращает список карт по списку PAN для изменения
+     *
+     * @return список карт
+     */
+    List<Card> findCardsByPansForUpdate(List<String> pans);
+
+    /**
+     * Возвращает список карт по списку BIN для изменения
+     *
+     * @return список карт
+     */
+    List<Card> findCardsByBinsForUpdate(List<String> bins);
 
     /**
      * Возвращает количество карт с применением фильтров
@@ -48,18 +70,30 @@ public interface CardRepository {
      */
     long countAllCards();
 
-    Card save(Card card);
-
-    List<Card> saveAll(List<Card> cards);
+    /**
+     * Создает карту
+     *
+     * @param card сохраняемая карта
+     * @return сохраненная карта
+     * @throws PanCollisionException при попытке создать существующую карту
+     */
+    Card create(Card card);
 
     /**
-     * Обновляет значение в БД, используя пессимистичную блокировку
-     * Работает в рамках одной транзакции
+     * Обновляет карту
      *
-     * @param pan           номер карты
-     * @param businessLogic логика изменения карты
-     * @return измененная карта
-     * @throws NoSuchElementException если не была найдена карта
+     * @param card сохраняемая карта
+     * @return сохраненная карта
+     * @throws PanCollisionException при попытке создать существующую карту
      */
-    Card updateWithPessimisticLock(String pan, UnaryOperator<Card> businessLogic);
+    Card update(Card card);
+
+    /**
+     * Создает разом множество карт
+     *
+     * @param cards сохраняемые карты
+     * @return сохраненные карты
+     * @throws MassiveCardCreationCollisionException при попытке создать существующую карту
+     */
+    List<Card> createAll(List<Card> cards);
 }

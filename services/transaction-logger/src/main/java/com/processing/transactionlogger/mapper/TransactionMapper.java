@@ -80,7 +80,7 @@ public class TransactionMapper {
      *
      * @param transaction запись из БД
      * @param request     входящий запрос от Switch
-     * @return {@code true} если все поля идентичны
+     * @return {@code true} если все сравниваемые бизнес-поля идентичны
      */
     public boolean matches(Transaction transaction, TransactionRequest request) {
         return Objects.equals(transaction.getId(), request.id())

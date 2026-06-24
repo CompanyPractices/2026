@@ -1,13 +1,16 @@
 package com.processing.gateway.downstream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processing.gateway.metrics.GatewayMetrics;
 import com.processing.gateway.properties.GatewayRouteProperties;
-import jakarta.servlet.ServletException;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.client.ResourceAccessException;
+import reactor.core.publisher.Mono;
 
 import java.net.ConnectException;
 import java.util.List;
@@ -19,95 +22,88 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class DownstreamErrorFilterTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
     private final DownstreamErrorFilter filter = new DownstreamErrorFilter(
             objectMapper,
-            new DownstreamServiceResolver(routeProperties())
+            new DownstreamServiceResolver(routeProperties()),
+            new GatewayMetrics(meterRegistry)
     );
 
     @Test
-    void returnsServiceUnavailableForSwitchConnectionFailure() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/transactions");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    void returnsServiceUnavailableForSwitchConnectionFailure() {
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.post("/api/transactions"));
 
-        filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> {
-            throw new ResourceAccessException("Connection refused",
-                    new ConnectException("Connection refused"));
-        });
+        filter.filter(exchange, webExchange -> downstreamConnectionFailure()).block();
 
-        assertThat(response.getStatus()).isEqualTo(503);
-        assertThat(response.getContentAsString()).contains(
+        Assertions.assertNotNull(exchange.getResponse().getStatusCode());
+        assertThat(exchange.getResponse().getStatusCode().value()).isEqualTo(503);
+        assertThat(exchange.getResponse().getBodyAsString().block()).contains(
                 "\"error\":\"SERVICE_UNAVAILABLE\"",
                 "\"serviceName\":\"switch\"",
                 "Switch service is temporarily unavailable"
         );
+        assertThat(meterRegistry.counter(
+                "gateway.downstream.unavailable",
+                "service", "switch"
+        ).count()).isEqualTo(1);
     }
 
     @Test
     void returnsServiceUnavailableForAuthorizationConnectionFailure() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/internal/authorize");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/internal/authorize"));
 
-        filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> {
-            throw new ResourceAccessException("Connection refused",
-                    new ConnectException("Connection refused"));
-        });
+        filter.filter(exchange, webExchange -> downstreamConnectionFailure()).block();
 
         Map<String, String> body = objectMapper.readValue(
-                response.getContentAsString(),
+                exchange.getResponse().getBodyAsString().block(),
                 new TypeReference<>() {
                 });
 
-        assertThat(response.getStatus()).isEqualTo(503);
+        Assertions.assertNotNull(exchange.getResponse().getStatusCode());
+        assertThat(exchange.getResponse().getStatusCode().value()).isEqualTo(503);
         assertThat(body).containsEntry("error", "SERVICE_UNAVAILABLE")
                 .containsEntry("message", "Authorization service is temporarily unavailable")
                 .containsEntry("serviceName", "authorization");
     }
 
     @Test
-    void returnsServiceUnavailableForCardsConnectionFailure() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/cards/4000001234560001");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    void returnsServiceUnavailableForCardsConnectionFailure() {
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/cards/4000001234560001"));
 
-        filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> {
-            throw new ResourceAccessException("Connection refused",
-                    new ConnectException("Connection refused"));
-        });
+        filter.filter(exchange, webExchange -> downstreamConnectionFailure()).block();
 
-        assertThat(response.getStatus()).isEqualTo(503);
-        assertThat(response.getContentAsString()).contains(
+        Assertions.assertNotNull(exchange.getResponse().getStatusCode());
+        assertThat(exchange.getResponse().getStatusCode().value()).isEqualTo(503);
+        assertThat(exchange.getResponse().getBodyAsString().block()).contains(
                 "\"serviceName\":\"cardManagement\""
         );
     }
 
     @Test
     void rethrowsNonDownstreamExceptions() {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/transactions");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.post("/api/transactions"));
 
-        assertThatThrownBy(() -> filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> {
-            throw new ServletException("Unexpected failure");
-        }))
-                .isInstanceOf(ServletException.class)
+        assertThatThrownBy(() -> filter.filter(exchange,
+                webExchange -> Mono.error(new IllegalStateException("Unexpected failure"))).block())
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Unexpected failure");
     }
 
     @Test
     void rethrowsDownstreamExceptionForUnknownPath() {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/health");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/health"));
 
-        assertThatThrownBy(() -> filter.doFilter(request, response,
-                (servletRequest, servletResponse) -> {
-            throw new ResourceAccessException("Connection refused",
-                    new ConnectException("Connection refused"));
-        }))
+        assertThatThrownBy(() -> filter.filter(exchange, webExchange -> downstreamConnectionFailure()).block())
                 .isInstanceOf(ResourceAccessException.class)
                 .hasMessage("Connection refused");
+    }
+
+    private Mono<Void> downstreamConnectionFailure() {
+        return Mono.error(new ResourceAccessException("Connection refused",
+                new ConnectException("Connection refused")));
     }
 
     private GatewayRouteProperties routeProperties() {

@@ -2,7 +2,7 @@ package com.processing.authorization.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.authorization.*;
-import com.processing.authorization.services.AuthService;
+import com.processing.authorization.services.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +16,12 @@ import static com.processing.authorization.constants.DeclineOutcome.*;
 import java.time.Instant;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AuthController.class)
+@WebMvcTest(AuthControllerImpl.class)
 @AutoConfigureMockMvc
 class AuthControllerTest {
 
@@ -30,7 +29,7 @@ class AuthControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private AuthService authService;
+    private AuthServiceImpl authService;
 
     @Autowired
     private ObjectMapper objectMapper;

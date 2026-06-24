@@ -1,8 +1,8 @@
 package com.processing.merchantacquirer.service;
 
 import com.processing.merchantacquirer.domain.entity.Terminal;
+import com.processing.merchantacquirer.domain.repository.TerminalRepositoryPort;
 import com.processing.merchantacquirer.exception.ResourceNotFoundException;
-import com.processing.merchantacquirer.repository.TerminalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,21 +16,16 @@ import java.util.concurrent.ThreadLocalRandom;
 @Component
 @RequiredArgsConstructor
 public class TerminalProvider {
-    private final TerminalRepository terminalRepository;
+    private final TerminalRepositoryPort terminalRepository;
 
     private final Map<String, List<Terminal>> terminalsByMerchants = new ConcurrentHashMap<>();
 
     public Terminal getByMerchant(String merchantId) {
-        if (!terminalsByMerchants.containsKey(merchantId)) {
-            terminalsByMerchants.put(merchantId, terminalRepository.findByMerchantId(merchantId));
-            log.info("Loaded terminals for merchantdID: {}", merchantId);
-        }
-
         List<Terminal> terminals = terminalsByMerchants.computeIfAbsent(merchantId, terminalRepository::findByMerchantId);
+
         if (terminals.isEmpty()) {
             throw new ResourceNotFoundException("Merchant not have terminals, merchant id: " + merchantId);
         }
-
         return terminals.get(ThreadLocalRandom.current().nextInt(0, terminals.size()));
     }
 }

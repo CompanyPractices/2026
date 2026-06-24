@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Binds Spring Cloud Gateway MVC route definitions used by custom filters.
+ * Binds Spring Cloud Gateway route definitions used by custom filters.
  *
  * <p>The resolver reads route predicates and {@code serviceName} metadata from
  * this structure so filters do not duplicate route-to-service mappings.</p>
  */
 @Component
-@ConfigurationProperties(prefix = "spring.cloud.gateway.mvc")
+@ConfigurationProperties(prefix = "spring.cloud.gateway")
 @Data
 public class GatewayRouteProperties {
 

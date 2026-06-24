@@ -6,11 +6,6 @@ package com.processing.cardmanagement.options;
 public interface CardServiceSettings {
 
     /**
-     * @return номер банка эмитента
-     */
-    String issuerId();
-
-    /**
      * @return срок действия карты
      */
     int cardValidityPeriod();
@@ -19,4 +14,9 @@ public interface CardServiceSettings {
      * @return максимальный размер страницы для пагинации
      */
     int maxPageLimit();
+
+    /**
+     * @return максимальное количество повторов для создания карты (при коллизии)
+     */
+    int maxCardCreationRetries();
 }

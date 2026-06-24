@@ -52,3 +52,10 @@ export type SearchResponse = {
     total: number
     transactions: Transaction[]
 }
+
+export type PaginationMeta = {
+    currentPage: number;
+    pageSize: number;
+    totalElements: number;
+    totalPages: number;
+};

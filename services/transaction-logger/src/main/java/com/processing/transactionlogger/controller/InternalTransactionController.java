@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Внутренний контроллер для приёма транзакций от Switch.
- * Доступен только для внутренних вызовов от Switch.
+ * Предназначен для внутренних вызовов от Switch.
  */
 @RestController
 @RequestMapping("/api/internal")
@@ -68,6 +68,11 @@ public class InternalTransactionController {
     @ApiResponse(
             responseCode = "503",
             description = "База данных transaction-logger недоступна",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+    )
+    @ApiResponse(
+            responseCode = "500",
+            description = "Внутренняя ошибка сервиса",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
     )
     public ResponseEntity<?> store(@Valid @RequestBody TransactionRequest request) {

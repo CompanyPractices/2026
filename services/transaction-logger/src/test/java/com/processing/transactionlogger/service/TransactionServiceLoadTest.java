@@ -69,7 +69,6 @@ public class TransactionServiceLoadTest {
         assertEquals(THREADS * requestsPerThread, transactionRepository.count());
     }
 
-
     @Test
     void searchWhileStoringConcurrently() throws Exception {
         int total = THREADS + SEARCH_THREADS;

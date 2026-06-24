@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Конфигурация Swagger UI / OpenAPI.
- * Документация доступна по адресу {@code /swagger-ui/index.html}
+ * Документация доступна по адресу {@code /docs}
  */
 @Configuration
 @OpenAPIDefinition(

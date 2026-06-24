@@ -5,32 +5,49 @@ import {TransactionTable} from "./components/TransactionTable.tsx";
 import {useLiveStats} from "./hooks/useLiveStats.ts";
 import {useWebSocket} from "./hooks/useWebSocket.ts";
 import useTransactions from './hooks/useTransactions.ts'
-import { useMemo } from 'react'
-import TransactionHistogram from './components/TransactionHistogram.tsx'
+import { useMemo } from 'react';
+import {TransactionMap} from "./components/TransactionsMap.tsx";
+import TransactionHistogram from './components/TransactionHistogram.tsx';
+import {ToastContainer} from "./components/ToastContainer.tsx";
+import DeclineReasonChart from './components/DeclineReasonChart.tsx'
+import useChartTransactions from "./hooks/useChartTransactions.ts";
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
-    const { transactions: initialTransactions, filteredTransactions, isFiltered, loading, error, searchTransactions } = useTransactions();
+    const {
+        transactions,
+        isFiltered,
+        currentFilter,
+        loading,
+        error,
+        applyFilter,
+        goToPage,
+        changePageSize,
+        pagination,
+    } = useTransactions();
     const { stats, loading: liveLoading, error: liveError } = useLiveStats(liveTransactions);
+    const {
+        transactions: chartTransactions,
+        loading: chartLoading,
+        error: chartError,
+    } = useChartTransactions(liveTransactions, {refreshIntervalMs: 180_000,});
 
-    const uniqueTransactions = useMemo(() => {
-        const allTransactions = [
-            ...liveTransactions,
-            ...(initialTransactions || []),
-        ];
-        return allTransactions.filter((tx, index, self) =>
-            index === self.findIndex(t => t.id === tx.id));
-    }, [liveTransactions, initialTransactions]);
+    const pageTransactions = useMemo(() => {
+        const base = transactions || [];
 
-    const displayedTransactions = useMemo(() => {
-        if (isFiltered){
-            const filtered = filteredTransactions || [];
-            return filtered
-                .filter((tx, index, self) => index === self.findIndex(t => t.id === tx.id))
-                .slice(0, 20);
+        if (pagination.currentPage === 0 && !isFiltered) {
+            const all = [...liveTransactions, ...base];
+            const seen = new Set();
+            const unique = all.filter(tx => {
+                if (seen.has(tx.id)) return false;
+                seen.add(tx.id);
+                return true;
+            });
+            return unique.slice(0, pagination.pageSize);
         }
-        return uniqueTransactions.slice(0, 20)
-    }, [isFiltered, filteredTransactions, uniqueTransactions]);
+
+        return base;
+    }, [transactions, liveTransactions, pagination.currentPage, isFiltered, pagination.pageSize]);
 
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
@@ -43,7 +60,7 @@ function App() {
                         Распределение сумм транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionHistogram transactions={uniqueTransactions} loading={loading} error={error} />
+                        <TransactionHistogram transactions={chartTransactions} loading={chartLoading} error={chartError} />
                     </div>
                 </div>
 
@@ -52,23 +69,49 @@ function App() {
                         Статистика одобрения транзакций
                     </h2>
                     <div className="flex-grow min-h-[300px]">
-                        <TransactionPieChart transactions={uniqueTransactions} loading={loading} error={error} />
+                        <TransactionPieChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
                     </div>
                 </div>
 
-                <div className="col-span-1 md:col-span-2 flex justify-center p-4">
-                    <div className="w-full max-w-[800px] bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
-                        <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                            Транзакции за последний час
-                        </h2>
-                        <div className="flex-grow min-h-[300px]">
-                            <TransactionLineChart transactions={uniqueTransactions} loading={loading} error={error} />
-                        </div>
+                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                        Причины отклонения транзакций
+                    </h2>
+                    <div className="flex-grow min-h-[300px]">
+                        <DeclineReasonChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                    </div>
+                </div>
+
+                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                        Транзакции за последний час
+                    </h2>
+                    <div className="flex-grow min-h-[300px]">
+                        <TransactionLineChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
                     </div>
                 </div>
 
                 <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
-                    <TransactionTable liveTransactions={displayedTransactions} error={error} loading={loading} search={searchTransactions} />
+                    <TransactionTable
+                        transactions={pageTransactions}
+                        isFiltered={isFiltered}
+                        currentFilter={currentFilter}
+                        error={error}
+                        loading={loading}
+                        search={applyFilter}
+                        pagination={pagination}
+                        onPageChange={goToPage}
+                        onPageSizeChange={changePageSize}
+                    />
+                </div>
+
+                <div className="col-span-1 md:col-span-2 pt-6 bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                        Карта транзакций на текущей странице
+                    </h2>
+                    <div className="flex-grow min-h-[550px]">
+                        <TransactionMap transactions={pageTransactions} />
+                    </div>
                 </div>
             </main>
 
@@ -83,6 +126,8 @@ function App() {
                     2026
                 </h1>
             </footer>
+
+            <ToastContainer />
         </div>
     );
 }

@@ -35,7 +35,7 @@ export function TransactionModal({ transaction, onClose }: TransactionModalProps
     ];
 
     return (
-        <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-50" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/50  flex justify-center items-center z-[2000]" onClick={onClose}>
             <div className="bg-white dark:bg-sage-500 rounded-xl p-4 md:p-6 shadow-2xl max-w-md w-full mx-4 relative"
                  onClick={(e) => e.stopPropagation()} >
                 <h3 className="font-bold  text-xl text-gray-600 dark:text-sage-100 m-5 text-center font-mono "> Детали транзакции </h3>

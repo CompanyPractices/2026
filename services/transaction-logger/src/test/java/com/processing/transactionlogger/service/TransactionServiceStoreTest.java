@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processing.common.dto.transactionlogger.TransactionRequest;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
 import com.processing.transactionlogger.exception.TransactionConflictException;
+import com.processing.transactionlogger.export.TransactionCsvWriter;
 import com.processing.transactionlogger.mapper.TransactionMapper;
 import com.processing.transactionlogger.model.Transaction;
 import com.processing.transactionlogger.repository.TransactionRepository;
@@ -25,7 +26,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class TransactionServiceStoreTest {
+public class TransactionServiceStoreTest {
 
     @Test
     void storeReturnsExistingTransactionWhenIdAlreadyExists() {
@@ -142,7 +143,8 @@ class TransactionServiceStoreTest {
                 repository.proxy(),
                 new TransactionMapper(),
                 webSocketManager,
-                new ObjectMapper().findAndRegisterModules()
+                new ObjectMapper().findAndRegisterModules(),
+                new TransactionCsvWriter()
         );
     }
 

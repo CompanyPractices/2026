@@ -2,16 +2,19 @@ package com.processing.transactionlogger.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.common.dto.transactionlogger.TransactionRequest;
 import com.processing.common.dto.transactionlogger.TransactionResponse;
+import com.processing.transactionlogger.dto.ChartBucket;
+import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.transactionlogger.dto.TransactionSearchResponse;
 import com.processing.transactionlogger.exception.TransactionConflictException;
+import com.processing.transactionlogger.export.TransactionCsvWriter;
 import com.processing.transactionlogger.mapper.TransactionMapper;
 import com.processing.transactionlogger.model.Transaction;
 import com.processing.transactionlogger.model.Transaction_;
 import com.processing.transactionlogger.repository.TransactionRepository;
 import com.processing.transactionlogger.repository.TransactionStats;
+import com.processing.transactionlogger.specification.ChartsFilter;
 import com.processing.transactionlogger.specification.OffsetBasedPageRequest;
 import com.processing.transactionlogger.specification.TransactionFilter;
 import com.processing.transactionlogger.specification.TransactionSpecification;
@@ -27,7 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -39,14 +45,23 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
+    /** Верхняя граница числа строк в CSV-экспорте. */
+    private static final int MAX_EXPORT_ROWS = 50_000;
+    private static final String DEFAULT_GRANULARITY = "hour";
+
+    /** Верхняя граница диапазона по умолчанию, когда {@code to} в charts не задан. */
+    private static final Instant FAR_FUTURE = Instant.parse("9999-12-31T23:59:59Z");
+
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
     private final WebSocketManager webSocketManager;
     private final ObjectMapper objectMapper;
+    private final TransactionCsvWriter csvWriter;
 
     /**
-     * Сохраняет транзакцию в БД и рассылает её через WebSocket.
-     * Идемпотентен: повторный запрос с тем же {@code id} вернёт существующую запись.
+     * Сохраняет новую транзакцию в БД и рассылает её через WebSocket.
+     * Идемпотентен: повторный запрос с тем же {@code id} вернёт существующую запись
+     * без повторной WebSocket-рассылки.
      *
      * @param request данные транзакции от Switch
      * @return {@link TransactionStoreResult} с флагом {@code created=true} если запись новая,
@@ -101,6 +116,7 @@ public class TransactionService {
      * @param filter параметры фильтрации и пагинации
      * @return постраничный результат с общим счётчиком
      */
+    @Transactional(readOnly = true)
     public TransactionSearchResponse search(TransactionFilter filter) {
         Pageable pageable = new OffsetBasedPageRequest(filter.getOffset(), filter.getLimit());
         Page<Transaction> page = transactionRepository.findAll(TransactionSpecification.filter(filter), pageable);
@@ -111,7 +127,7 @@ public class TransactionService {
     }
 
     /**
-     * Возвращает агрегированную статистику по всем транзакциям в БД
+     * Возвращает агрегированную статистику по всем транзакциям в БД.
      *
      * @return статистика: счётчики, суммы, процент одобрения, транзакций в минуту
      */
@@ -127,14 +143,33 @@ public class TransactionService {
                 stats.getDeclined(),
                 total > 0 ? (double) approved / total : 0,
                 totalAmount,
-                total > 0 ? totalAmount.divideToIntegralValue(BigDecimal.valueOf(total)) : BigDecimal.ZERO,
+                total > 0 ? totalAmount.divide(BigDecimal.valueOf(total), 0, RoundingMode.HALF_UP) : BigDecimal.ZERO,
                 stats.getAvgProcessingTimeMs(),
                 stats.getRecentCount()
         );
     }
 
     /**
-     * Возвращает последние транзакции, отсортированные по {@code createdAt DESC}
+     * Агрегирует транзакции по временным корзинам (час или день) для графиков Dashboard.
+     * Группировка и фильтрация выполняются по {@code createdAt} в полуинтервале
+     * {@code [from, to)}. Если границы диапазона не заданы, агрегируются все транзакции.
+     *
+     * @param filter гранулярность и опциональные границы диапазона ({@code from}/{@code to})
+     * @return корзины со счётчиками и суммами, упорядоченные по времени
+     */
+    @Transactional(readOnly = true)
+    public List<ChartBucket> getCharts(ChartsFilter filter) {
+        String granularity = Objects.requireNonNullElse(filter.getGranularity(), DEFAULT_GRANULARITY);
+        Instant from = Objects.requireNonNullElse(filter.getFrom(), Instant.EPOCH);
+        Instant to = Objects.requireNonNullElse(filter.getTo(), FAR_FUTURE);
+
+        return transactionRepository.aggregateByInterval(granularity, from, to).stream()
+                .map(ChartBucket::from)
+                .toList();
+    }
+
+    /**
+     * Возвращает последние транзакции, отсортированные по {@code createdAt DESC}.
      *
      * @param limit максимальное число записей (1–500)
      * @return список транзакций
@@ -144,5 +179,20 @@ public class TransactionService {
         return transactionRepository.findAll(pageable).getContent().stream()
                 .map(transactionMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public String exportCsv(TransactionFilter filter) {
+        Pageable pageable = PageRequest.of(0, MAX_EXPORT_ROWS,
+                Sort.by(Sort.Direction.DESC, Transaction_.CREATED_AT));
+        Page<Transaction> page = transactionRepository.findAll(TransactionSpecification.filter(filter), pageable);
+        if (page.getTotalElements() > MAX_EXPORT_ROWS) {
+            log.warn("CSV export truncated: {} rows match the filter, exporting first {}",
+                    page.getTotalElements(), MAX_EXPORT_ROWS);
+        }
+        List<TransactionResponse> transactions = page.getContent().stream()
+                .map(transactionMapper::toResponse)
+                .toList();
+        return csvWriter.toCsv(transactions);
     }
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Transaction } from '../types';
+import { useToastContext } from '../contexts/ToastContext.ts';
 
 type UseWebSocketOptions = {
     url?: string;
@@ -13,8 +14,13 @@ function calculateBackoffDelay(retryCount: number, retryDelayMs: number, maxRetr
     return Math.min(delay, maxRetryDelayMs);
 }
 
+const getDefaultWsUrl = () => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/ws/transactions`;
+};
+
 export function useWebSocket({
-      url = 'ws://localhost:8088/ws/transactions',
+      url = getDefaultWsUrl(),
       maxRetries = 5,
       retryDelayMs = 2000,
       maxRetryDelayMs = 30000
@@ -27,6 +33,8 @@ export function useWebSocket({
     const retryCountRef = useRef(0);
     const isMountedRef = useRef(true);
 
+    const { addToast } = useToastContext();
+
     useEffect(() => {
         isMountedRef.current = true;
         retryCountRef.current = 0;
@@ -38,6 +46,10 @@ export function useWebSocket({
             ws.onopen = () => {
                 if (!isMountedRef.current) return;
                 console.log('WebSocket подключен к transaction-logger');
+
+                if (retryCountRef.current > 0){
+                    addToast('Соединение восстановлено', 'SUCCESS');
+                }
                 setIsConnected(true);
                 retryCountRef.current = 0;
 
@@ -53,7 +65,7 @@ export function useWebSocket({
                     const newTransaction: Transaction = JSON.parse(event.data);
                     console.log('Новая транзакция:', newTransaction);
 
-                    setLiveTransactions((prev) => [newTransaction, ...prev].slice(0, 20));
+                    setLiveTransactions((prev) => [newTransaction, ...prev]);
                 } catch (error) {
                     console.error('Ошибка парсинга WebSocket-сообщения:', error);
                 }
@@ -72,10 +84,16 @@ export function useWebSocket({
                 if (event.code !== 1000 && retryCountRef.current < maxRetries) {
                     retryCountRef.current++;
                     console.log(`Попытка переподключения ${retryCountRef.current}/${maxRetries}...`);
+
+                    if (retryCountRef.current === 1){
+                        addToast('Соединение потеряно. Попытка переподключения...', 'WARNING', 8000);
+                    }
+
                     const delay = calculateBackoffDelay(retryCountRef.current, retryDelayMs, maxRetryDelayMs);
                     reconnectTimeoutRef.current = setTimeout(connect, delay);
                 } else if (retryCountRef.current >= maxRetries) {
                     console.warn('Превышен лимит попыток переподключения');
+                    addToast('Не удалось восстановить соединение с сервером', 'ERROR');
                 }
             };
         };
@@ -97,7 +115,7 @@ export function useWebSocket({
                 wsRef.current.close(1000, 'Component unmounted');
             }
         };
-    }, [url, maxRetries, retryDelayMs, maxRetryDelayMs]);
+    }, [url, maxRetries, retryDelayMs, maxRetryDelayMs, addToast]);
 
     return { liveTransactions, isConnected };
 }
