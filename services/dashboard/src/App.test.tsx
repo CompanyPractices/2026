@@ -66,6 +66,16 @@ vi.mock('./components/TransactionLineChart.tsx', () => ({
   ),
 }));
 
+vi.mock('./components/DeclineReasonChart.tsx', () => ({
+  default: ({ transactions }: ChartProps) => (
+      <div data-testid="decline">
+        {(transactions || []).map((t) => (
+            <span key={t.id} data-testid={`decline-${t.id}`}>{t.merchantId}</span>
+        ))}
+      </div>
+  ),
+}));
+
 vi.mock('./components/TransactionTable.tsx', () => ({
   TransactionTable: ({ transactions, isFiltered, pagination }: TableProps) => (
       <div data-testid="table" data-filtered={String(isFiltered)}>
@@ -91,10 +101,12 @@ vi.mock('./components/TransactionsMap.tsx', () => ({
 const mockUseLiveStats = vi.hoisted(() => vi.fn());
 const mockUseWebSocket = vi.hoisted(() => vi.fn());
 const mockUseTransactions = vi.hoisted(() => vi.fn());
+const mockUseChartTransactions = vi.hoisted(() => vi.fn());
 
 vi.mock('./hooks/useTransactions.ts', () => ({ default: mockUseTransactions }));
 vi.mock('./hooks/useLiveStats.ts', () => ({ useLiveStats: mockUseLiveStats }));
 vi.mock('./hooks/useWebSocket.ts', () => ({ useWebSocket: mockUseWebSocket }));
+vi.mock('./hooks/useChartTransactions.ts', () => ({ default: mockUseChartTransactions }));
 
 const createMockTransaction = (overrides: Partial<Transaction>): Transaction => ({
   id: 'tx-default',
@@ -144,6 +156,7 @@ describe('App', () => {
     mockUseTransactions.mockReturnValue({
       transactions: [],
       isFiltered: false,
+      currentFilter: {},
       loading: false,
       error: null,
       applyFilter: vi.fn(),
@@ -161,6 +174,15 @@ describe('App', () => {
       stats: null,
       loading: false,
       error: null,
+    });
+
+    mockUseChartTransactions.mockReturnValue({
+      transactions: [],
+      loading: false,
+      error: null,
+      period: 'day',
+      setPeriod: vi.fn(),
+      refresh: vi.fn(),
     });
   });
 
@@ -189,11 +211,23 @@ describe('App', () => {
     expect(screen.getByText('Stats error: Network error')).toBeInTheDocument();
   });
 
-  it('renders all chart components and table with data from useTransactions', () => {
-    const tx = createMockTransaction({ id: 'api-1', merchantId: 'API_MERCHANT' });
+  it('renders all chart components and table with data', () => {
+    const chartTx = createMockTransaction({ id: 'chart-1', merchantId: 'CHART_MERCHANT' });
+    const tableTx = createMockTransaction({ id: 'table-1', merchantId: 'TABLE_MERCHANT' });
+
+    mockUseChartTransactions.mockReturnValue({
+      transactions: [chartTx],
+      loading: false,
+      error: null,
+      period: 'day',
+      setPeriod: vi.fn(),
+      refresh: vi.fn(),
+    });
+
     mockUseTransactions.mockReturnValue({
-      transactions: [tx],
+      transactions: [tableTx],
       isFiltered: false,
+      currentFilter: {},
       loading: false,
       error: null,
       applyFilter: vi.fn(),
@@ -207,14 +241,16 @@ describe('App', () => {
     expect(screen.getByTestId('histogram')).toBeInTheDocument();
     expect(screen.getByTestId('pie')).toBeInTheDocument();
     expect(screen.getByTestId('line')).toBeInTheDocument();
-    expect(screen.getByTestId('histogram-api-1')).toBeInTheDocument();
-    expect(screen.getByTestId('pie-api-1')).toBeInTheDocument();
-    expect(screen.getByTestId('line-api-1')).toBeInTheDocument();
+    expect(screen.getByTestId('decline')).toBeInTheDocument();
+    expect(screen.getByTestId('histogram-chart-1')).toBeInTheDocument();
+    expect(screen.getByTestId('pie-chart-1')).toBeInTheDocument();
+    expect(screen.getByTestId('line-chart-1')).toBeInTheDocument();
+    expect(screen.getByTestId('decline-chart-1')).toBeInTheDocument();
 
     expect(screen.getByTestId('table')).toBeInTheDocument();
     expect(screen.getByTestId('map')).toBeInTheDocument();
-    expect(screen.getByTestId('table-api-1')).toBeInTheDocument();
-    expect(screen.getByTestId('map-api-1')).toBeInTheDocument();
+    expect(screen.getByTestId('table-table-1')).toBeInTheDocument();
+    expect(screen.getByTestId('map-table-1')).toBeInTheDocument();
   });
 
   describe('live data mixing into pageTransactions', () => {
@@ -225,6 +261,7 @@ describe('App', () => {
       mockUseTransactions.mockReturnValue({
         transactions: [searchTx],
         isFiltered: false,
+        currentFilter: {},
         loading: false,
         error: null,
         applyFilter: vi.fn(),
@@ -251,6 +288,7 @@ describe('App', () => {
       mockUseTransactions.mockReturnValue({
         transactions: [tx],
         isFiltered: false,
+        currentFilter: {},
         loading: false,
         error: null,
         applyFilter: vi.fn(),
@@ -280,6 +318,7 @@ describe('App', () => {
       mockUseTransactions.mockReturnValue({
         transactions: searchTxs,
         isFiltered: false,
+        currentFilter: {},
         loading: false,
         error: null,
         applyFilter: vi.fn(),
@@ -307,6 +346,7 @@ describe('App', () => {
       mockUseTransactions.mockReturnValue({
         transactions: [searchTx],
         isFiltered: false,
+        currentFilter: {},
         loading: false,
         error: null,
         applyFilter: vi.fn(),
@@ -323,8 +363,6 @@ describe('App', () => {
 
       expect(screen.getByTestId('table-search-1')).toBeInTheDocument();
       expect(screen.queryByTestId('table-live-1')).not.toBeInTheDocument();
-
-      expect(screen.getByTestId('histogram-live-1')).toBeInTheDocument();
     });
 
     it('when isFiltered=true: live transactions are NOT mixed into table', () => {
@@ -334,6 +372,7 @@ describe('App', () => {
       mockUseTransactions.mockReturnValue({
         transactions: [searchTx],
         isFiltered: true,
+        currentFilter: {},
         loading: false,
         error: null,
         applyFilter: vi.fn(),
@@ -354,14 +393,24 @@ describe('App', () => {
     });
   });
 
-  describe('chartTransactions always includes live + search (deduplicated)', () => {
-    it('charts receive both live and search transactions regardless of page/filters', () => {
-      const liveTx = createMockTransaction({ id: 'live-1', merchantId: 'LIVE' });
-      const searchTx = createMockTransaction({ id: 'search-1', merchantId: 'SEARCH' });
+  describe('chartTransactions comes from useChartTransactions', () => {
+    it('charts receive data from useChartTransactions, not from useTransactions', () => {
+      const chartTx = createMockTransaction({ id: 'chart-only', merchantId: 'CHART' });
+      const tableTx = createMockTransaction({ id: 'table-only', merchantId: 'TABLE' });
+
+      mockUseChartTransactions.mockReturnValue({
+        transactions: [chartTx],
+        loading: false,
+        error: null,
+        period: 'day',
+        setPeriod: vi.fn(),
+        refresh: vi.fn(),
+      });
 
       mockUseTransactions.mockReturnValue({
-        transactions: [searchTx],
+        transactions: [tableTx],
         isFiltered: true,
+        currentFilter: {},
         loading: false,
         error: null,
         applyFilter: vi.fn(),
@@ -369,17 +418,19 @@ describe('App', () => {
         changePageSize: vi.fn(),
         pagination: { ...defaultPagination, currentPage: 5, pageSize: 20 },
       });
-      mockUseWebSocket.mockReturnValue({
-        liveTransactions: [liveTx],
-        isConnected: true,
-      });
 
       render(<App />);
 
-      expect(screen.getByTestId('histogram-live-1')).toBeInTheDocument();
-      expect(screen.getByTestId('histogram-search-1')).toBeInTheDocument();
-      expect(screen.getByTestId('pie-live-1')).toBeInTheDocument();
-      expect(screen.getByTestId('line-live-1')).toBeInTheDocument();
+      expect(screen.getByTestId('histogram-chart-only')).toBeInTheDocument();
+      expect(screen.getByTestId('pie-chart-only')).toBeInTheDocument();
+      expect(screen.getByTestId('line-chart-only')).toBeInTheDocument();
+      expect(screen.getByTestId('decline-chart-only')).toBeInTheDocument();
+
+      expect(screen.queryByTestId('histogram-table-only')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('pie-table-only')).not.toBeInTheDocument();
+
+      expect(screen.getByTestId('table-table-only')).toBeInTheDocument();
+      expect(screen.queryByTestId('table-chart-only')).not.toBeInTheDocument();
     });
   });
 });
