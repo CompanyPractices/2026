@@ -6,6 +6,7 @@ import org.reactivestreams.Publisher;
 import org.springframework.cache.Cache;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import reactor.core.publisher.Flux;
@@ -24,7 +25,8 @@ public class ResponseCachingDecorator extends ServerHttpResponseDecorator {
 
     @Override
     public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-        if (body instanceof Flux<? extends DataBuffer> fluxBody) {
+        if ((getStatusCode() == null || getStatusCode() == HttpStatus.OK)
+                && body instanceof Flux<? extends DataBuffer> fluxBody) {
             return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
                 DataBuffer joinedBuffers = bufferFactory().join(dataBuffers);
                 var content = new byte[joinedBuffers.readableByteCount()];

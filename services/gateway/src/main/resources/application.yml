@@ -164,8 +164,6 @@ gateway:
   circuit-breaker:
     failure-threshold: ${CIRCUIT_BREAKER_FAILURE_THRESHOLD:3}
     open-duration: ${CIRCUIT_BREAKER_OPEN_DURATION:10s}
-  open-api:
-    url: ${GATEWAY_PUBLIC_URL:http://localhost:${GATEWAY_PORT:8080}}
   health:
     connection-timeout: 5
     request-timeout: 3

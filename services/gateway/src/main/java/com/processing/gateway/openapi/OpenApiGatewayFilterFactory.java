@@ -14,9 +14,11 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.rewrite.ModifyResponseBodyGatewayFilterFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 
@@ -29,16 +31,13 @@ public class OpenApiGatewayFilterFactory
     private static final String TRANSACTIONS_INTERNAL_ROUTE = "/api/internal/route";
     private static final String TRANSACTIONS_PUBLIC_ROUTE = "/api/transactions";
 
-    private final OpenApiProperties openApiProperties;
     private final ObjectMapper mapper;
     private final ModifyResponseBodyGatewayFilterFactory modifyResponseBodyGatewayFilterFactory;
 
     public OpenApiGatewayFilterFactory(
-            OpenApiProperties openApiProperties,
             ObjectMapper mapper,
             ModifyResponseBodyGatewayFilterFactory modifyResponseBodyGatewayFilterFactory) {
         super(NameConfig.class);
-        this.openApiProperties = openApiProperties;
         this.mapper = mapper.copy()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .registerModule(new JavaTimeModule());
@@ -53,7 +52,7 @@ public class OpenApiGatewayFilterFactory
                         String.class,
                         (exchange, body) -> {
                             try {
-                                body = modifyOpenApiJson(body);
+                                body = modifyOpenApiJson(body, exchange.getRequest());
                             } catch (JsonProcessingException e) {
                                 log.error("Error occurred while attempting to read OpenApi json response", e);
 
@@ -77,9 +76,11 @@ public class OpenApiGatewayFilterFactory
                         }));
     }
 
-    private String modifyOpenApiJson(String openApiJson) throws JsonProcessingException {
+    private String modifyOpenApiJson(String openApiJson, ServerHttpRequest request) throws JsonProcessingException {
         OpenAPI openApi = Json.mapper().readValue(openApiJson, OpenAPI.class);
-        openApi.setServers(List.of(new Server().url(openApiProperties.getUrl())));
+
+        URI uri = request.getURI();
+        openApi.setServers(List.of(new Server().url(uri.getScheme() + "://" + uri.getAuthority())));
 
         Paths paths = openApi.getPaths();
         Paths adjustedPaths = new Paths();

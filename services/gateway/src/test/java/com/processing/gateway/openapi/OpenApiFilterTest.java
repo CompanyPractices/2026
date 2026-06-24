@@ -19,11 +19,15 @@ import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFac
 import org.springframework.cloud.gateway.filter.factory.rewrite.ModifyResponseBodyGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.rewrite.RewriteFunction;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.http.server.reactive.MockServerHttpResponse;
+import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,9 +36,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class OpenApiFilterTest {
-
-    @Mock
-    private OpenApiProperties openApiProperties;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -50,10 +51,7 @@ class OpenApiFilterTest {
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() {
-        when(openApiProperties.getUrl()).thenReturn("https://api.public-gateway.com");
-
         var factory = new OpenApiGatewayFilterFactory(
-                openApiProperties,
                 objectMapper,
                 modifyResponseBodyGatewayFilterFactory
         );
@@ -77,7 +75,7 @@ class OpenApiFilterTest {
     }
 
     @Test
-    void shouldModifyOpenApiJsonSuccessfully() throws JsonProcessingException {
+    void shouldModifyOpenApiJsonSuccessfully() throws JsonProcessingException, URISyntaxException {
         String inputJson = """
                 {
                   "openapi": "3.0.1",
@@ -90,7 +88,11 @@ class OpenApiFilterTest {
                 }
                 """;
 
-        Mono<String> resultMono = (Mono<String>) rewriteFunction.apply(exchange, inputJson);
+        MockServerWebExchange mockExchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("http://localhost:9999/api-docs").build()
+        );
+
+        Mono<String> resultMono = (Mono<String>) rewriteFunction.apply(mockExchange, inputJson);
 
         StepVerifier.create(resultMono)
                 .assertNext(outputJson -> {
@@ -98,7 +100,7 @@ class OpenApiFilterTest {
                         OpenAPI resultOpenApi = Json.mapper().readValue(outputJson, OpenAPI.class);
 
                         assertEquals(1, resultOpenApi.getServers().size());
-                        assertEquals("https://api.public-gateway.com", resultOpenApi.getServers().get(0).getUrl());
+                        assertEquals("http://localhost:9999", resultOpenApi.getServers().get(0).getUrl());
 
                         Paths paths = resultOpenApi.getPaths();
 

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -54,6 +55,9 @@ public class GatewayRoutingIntegrationTest {
     static WireMockExtension wrongWm = WireMockExtension.newInstance()
             .options(wireMockConfig().port(9666))
             .build();
+
+    @LocalServerPort
+    private int port;
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -375,7 +379,7 @@ public class GatewayRoutingIntegrationTest {
 
         //Assert
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
-        assertThat(JsonPath.<String>read(response.getBody(), "$.servers[0].url")).isEqualTo("http://gateway.test");
+        assertThat(JsonPath.<String>read(response.getBody(), "$.servers[0].url")).isEqualTo("http://localhost:" + port);
         assertThat(JsonPath.<Object>read(response.getBody(), "$.paths['/api/transactions']")).isNotNull();
         assertThat(JsonPath.<Object>read(response.getBody(), "$.paths['/api/public']")).isNotNull();
         assertThat(response.getBody()).doesNotContain("/api/internal/route", "/internal/health");
