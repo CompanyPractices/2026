@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TransactionMapperTest {
+public class TransactionMapperTest {
 
     private static final Set<String> MATCHED_REQUEST_FIELDS = Set.of(
             "id",

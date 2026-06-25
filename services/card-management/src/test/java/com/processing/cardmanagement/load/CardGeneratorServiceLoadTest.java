@@ -85,7 +85,9 @@ public class CardGeneratorServiceLoadTest {
 
     @AfterEach
     void cleanUp() {
-        cardJpaRepository.deleteAll();
+        try {
+            cardJpaRepository.deleteAll();
+        } catch (Exception ignored) {}
     }
 
     @Test

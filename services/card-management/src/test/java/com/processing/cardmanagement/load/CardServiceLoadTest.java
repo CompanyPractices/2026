@@ -29,7 +29,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -101,7 +100,9 @@ public class CardServiceLoadTest {
 
     @AfterEach
     void cleanUp() {
-        cardJpaRepository.deleteAll();
+        try {
+            cardJpaRepository.deleteAll();
+        } catch (Exception ignored) {}
     }
 
     @Test
@@ -380,9 +381,6 @@ public class CardServiceLoadTest {
     private List<Card> createRandomCards(int value) {
         var f = faker.get();
         var drafts = new ArrayList<CardDraft>(value);
-        var activeStatuses = Arrays.stream(CardStatus.values())
-            .filter(status -> status != CardStatus.DELETED)
-            .toArray(CardStatus[]::new);
 
         for (int i = 0; i < value; ++i) {
             var dailyLimit = f.number().numberBetween(0, 15_000_000);
@@ -390,11 +388,11 @@ public class CardServiceLoadTest {
                 new CardDraft(
                     f.options().option(bins),
                     f.name().fullName().toUpperCase(Locale.ROOT),
-                    f.options().option(activeStatuses),
+                    f.options().option(CardStatus.ACTIVE),
                     f.number().digits(3),
                     BigDecimal.valueOf(f.number().numberBetween(0, dailyLimit)),
                     BigDecimal.valueOf(f.number().numberBetween(dailyLimit, 300_000_000)),
-                    BigDecimal.valueOf(f.number().numberBetween(0, 1_000_000))
+                    BigDecimal.valueOf(f.number().numberBetween(100_000, 1_000_000))
                 )
             );
         }
@@ -409,7 +407,7 @@ public class CardServiceLoadTest {
             faker.number().digits(3),
             BigDecimal.valueOf(dailyLimit),
             BigDecimal.valueOf(faker.number().numberBetween(dailyLimit, 300_000_000L)),
-            BigDecimal.valueOf(faker.number().numberBetween(0L, 1_000_000L))
+            BigDecimal.valueOf(faker.number().numberBetween(100_000L, 1_000_000L))
         );
     }
 

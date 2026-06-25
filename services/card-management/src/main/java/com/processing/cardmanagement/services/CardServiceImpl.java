@@ -37,35 +37,34 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public Card createCard(
-        String bin,
-        String cardholderName,
-        String currencyCode,
-        BigDecimal dailyLimit,
-        BigDecimal monthlyLimit,
-        BigDecimal initialBalance
+            String bin,
+            String cardholderName,
+            String currencyCode,
+            BigDecimal dailyLimit,
+            BigDecimal monthlyLimit,
+            BigDecimal initialBalance
     ) {
         var draft = new CardDraft(
-            bin,
-            cardholderName,
-            CardStatus.ACTIVE,
-            currencyCode,
-            dailyLimit,
-            monthlyLimit,
-            initialBalance
+                bin,
+                cardholderName,
+                CardStatus.ACTIVE,
+                currencyCode,
+                dailyLimit,
+                monthlyLimit,
+                initialBalance
         );
 
         var issuerId = binIssuerService.getIssuerId(draft.bin());
         int validityPeriod = settings.cardValidityPeriod();
         Card savedCard = retryService.supply(
-            settings.maxCardCreationRetries(),
-            () -> cardRepository.create(Card.fromDraft(
-                panGenerator.generatePan(bin),
-                issuerId,
-                validityPeriod,
-                draft
-            ))
+                settings.maxCardCreationRetries(),
+                () -> cardRepository.create(Card.fromDraft(
+                        panGenerator.generatePan(bin),
+                        issuerId,
+                        validityPeriod,
+                        draft
+                ))
         );
-
         eventNotifier.notifyListeners(new CardServiceCreationEvent(1));
         return savedCard;
     }
@@ -75,14 +74,14 @@ public class CardServiceImpl implements CardService {
     @Override
     public List<Card> createCards(List<CardDraft> data) {
         var cards = data
-            .stream()
-            .map(draft -> Card.fromDraft(
-                panGenerator.generatePan(draft.bin()),
-                binIssuerService.getIssuerId(draft.bin()),
-                settings.cardValidityPeriod(),
-                draft
-            ))
-            .toList();
+                .stream()
+                .map(draft -> Card.fromDraft(
+                        panGenerator.generatePan(draft.bin()),
+                        binIssuerService.getIssuerId(draft.bin()),
+                        settings.cardValidityPeriod(),
+                        draft
+                ))
+                .toList();
 
         List<Card> saved;
         try {
@@ -93,12 +92,12 @@ public class CardServiceImpl implements CardService {
                 var list = new ArrayList<Card>(cards.size());
                 for (var card : cards) {
                     list.add(retryService.supply(
-                        settings.maxCardCreationRetries(),
-                        () -> nestedTransactionRunner.runSupplier(() ->
-                            cardRepository.create(
-                                card.copyWithPan(panGenerator.generatePan(card.bin()))
+                            settings.maxCardCreationRetries(),
+                            () -> nestedTransactionRunner.runSupplier(() ->
+                                    cardRepository.create(
+                                            card.copyWithPan(panGenerator.generatePan(card.bin()))
+                                    )
                             )
-                        )
                     ));
                 }
                 return list;
@@ -112,51 +111,51 @@ public class CardServiceImpl implements CardService {
     @Override
     public Card getCard(String pan) {
         return cardRepository
-            .findByPan(pan)
-            .orElseThrow(() -> new CardNotFoundException(pan));
+                .findByPan(pan)
+                .orElseThrow(() -> new CardNotFoundException(pan));
     }
 
     @Override
     public List<Card> getCards(
-        @Nullable Integer limit,
-        @Nullable Long offset,
-        @Nullable CardStatus status,
-        @Nullable String bin,
-        @Nullable String issuerId,
-        @Nullable Instant startDate,
-        @Nullable Instant endDate
+            @Nullable Integer limit,
+            @Nullable Long offset,
+            @Nullable CardStatus status,
+            @Nullable String bin,
+            @Nullable String issuerId,
+            @Nullable Instant startDate,
+            @Nullable Instant endDate
     ) {
         if (limit != null && limit > settings.maxPageLimit()) {
             throw new TooLargeLimitException(limit, settings.maxPageLimit());
         }
         return cardRepository.findCards(
-            limit != null ? limit : defaults.pageLimit(),
-            offset != null ? offset : defaults.pageOffset(),
-            status,
-            bin,
-            issuerId,
-            startDate,
-            endDate
+                limit != null ? limit : defaults.pageLimit(),
+                offset != null ? offset : defaults.pageOffset(),
+                status,
+                bin,
+                issuerId,
+                startDate,
+                endDate
         );
     }
 
     @Override
     public Card patchCard(
-        String pan,
-        @Nullable CardStatus status,
-        @Nullable BigDecimal dailyLimit,
-        @Nullable BigDecimal monthlyLimit,
-        @Nullable BigDecimal availableBalance
+            String pan,
+            @Nullable CardStatus status,
+            @Nullable BigDecimal dailyLimit,
+            @Nullable BigDecimal monthlyLimit,
+            @Nullable BigDecimal availableBalance
     ) {
         return transactionRunner.runSupplier(() -> {
             var card = getCardForUpdate(pan);
             card = cardRepository.update(
-                card.withData(
-                    status != null ? status : card.status(),
-                    dailyLimit != null ? dailyLimit : card.dailyLimit(),
-                    monthlyLimit != null ? monthlyLimit : card.monthlyLimit(),
-                    availableBalance != null ? availableBalance : card.availableBalance()
-                )
+                    card.withData(
+                            status != null ? status : card.status(),
+                            dailyLimit != null ? dailyLimit : card.dailyLimit(),
+                            monthlyLimit != null ? monthlyLimit : card.monthlyLimit(),
+                            availableBalance != null ? availableBalance : card.availableBalance()
+                    )
             );
             eventNotifier.notifyListeners(new CardServicePatchEvent(pan));
             return card;
@@ -178,18 +177,18 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public long countCardsFiltered(
-        @Nullable CardStatus status,
-        @Nullable String bin,
-        @Nullable String issuerId,
-        @Nullable Instant startDate,
-        @Nullable Instant endDate
+            @Nullable CardStatus status,
+            @Nullable String bin,
+            @Nullable String issuerId,
+            @Nullable Instant startDate,
+            @Nullable Instant endDate
     ) {
         return cardRepository.countCardsFiltered(
-            status,
-            bin,
-            issuerId,
-            startDate,
-            endDate
+                status,
+                bin,
+                issuerId,
+                startDate,
+                endDate
         );
     }
 
@@ -213,10 +212,10 @@ public class CardServiceImpl implements CardService {
         return transactionRunner.runSupplier(() -> {
             var card = getCardForUpdate(pan);
             var reservation = reservationRepository
-                .findByRrnAndPanForUpdate(rrn, pan)
-                .orElseThrow(() -> new ReservationNotFoundException(rrn, pan));
+                    .findByRrnAndPanForUpdate(rrn, pan)
+                    .orElseThrow(() -> new ReservationNotFoundException(rrn, pan));
             var rollback = reservationRollbackRepository.save(
-                reservation.startRollback(amount)
+                    reservation.startRollback(amount)
             );
             reservationRepository.save(reservation.rolledBack(rollback));
             card = cardRepository.update(card.withRollback(rollback));
@@ -227,9 +226,9 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public int bulkUpdateStatus(
-        @Nullable List<String> bins,
-        @Nullable List<String> pans,
-        @Nullable CardStatus status
+            @Nullable List<String> bins,
+            @Nullable List<String> pans,
+            CardStatus status
     ) {
 
         if (bins == null && pans == null) {
@@ -252,10 +251,10 @@ public class CardServiceImpl implements CardService {
             }
 
             cards.forEach(card -> cardRepository.update(card.withData(
-                status,
-                card.dailyLimit(),
-                card.monthlyLimit(),
-                card.availableBalance()
+                    status,
+                    card.dailyLimit(),
+                    card.monthlyLimit(),
+                    card.availableBalance()
             )));
 
             return cards.size();
@@ -264,7 +263,7 @@ public class CardServiceImpl implements CardService {
 
     private Card getCardForUpdate(String pan) {
         return cardRepository
-            .findByPanForUpdate(pan)
-            .orElseThrow(() -> new CardNotFoundException(pan));
+                .findByPanForUpdate(pan)
+                .orElseThrow(() -> new CardNotFoundException(pan));
     }
 }

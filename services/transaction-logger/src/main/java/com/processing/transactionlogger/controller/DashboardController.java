@@ -1,8 +1,8 @@
 package com.processing.transactionlogger.controller;
 
+import com.processing.common.dto.transactionlogger.TransactionResponse;
 import com.processing.transactionlogger.dto.ChartBucket;
 import com.processing.transactionlogger.dto.DashboardStatsResponse;
-import com.processing.common.dto.transactionlogger.TransactionResponse;
 import com.processing.transactionlogger.service.TransactionService;
 import com.processing.transactionlogger.specification.ChartsFilter;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,7 +13,11 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -30,7 +34,7 @@ public class DashboardController {
     private final TransactionService transactionService;
 
     /**
-     * Возвращает агрегированную статистику по всем транзакциям
+     * Возвращает агрегированную статистику по всем транзакциям.
      *
      * @return счётчики, суммы, процент одобрения, транзакций в минуту
      */
@@ -59,7 +63,7 @@ public class DashboardController {
     }
 
     /**
-     * Возвращает агрегированные по времени данные для графиков Dashboard
+     * Возвращает агрегированные по времени данные для графиков Dashboard.
      *
      * @param filter гранулярность ({@code hour}/{@code day}) и опциональный диапазон {@code from}/{@code to}
      * @return упорядоченные по времени корзины со счётчиками и суммами
@@ -72,5 +76,4 @@ public class DashboardController {
     public List<ChartBucket> getCharts(@Valid @ModelAttribute ChartsFilter filter) {
         return transactionService.getCharts(filter);
     }
-
 }

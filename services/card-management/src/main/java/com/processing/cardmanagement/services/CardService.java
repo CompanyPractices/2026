@@ -17,12 +17,12 @@ import java.util.List;
 public interface CardService {
 
     Card createCard(
-        String bin,
-        String cardholderName,
-        String currencyCode,
-        BigDecimal dailyLimit,
-        BigDecimal monthlyLimit,
-        BigDecimal initialBalance
+            String bin,
+            String cardholderName,
+            String currencyCode,
+            BigDecimal dailyLimit,
+            BigDecimal monthlyLimit,
+            BigDecimal initialBalance
     );
 
     List<Card> createCards(List<CardDraft> data);
@@ -42,13 +42,13 @@ public interface CardService {
      * @return список карт
      */
     List<Card> getCards(
-        @Nullable Integer limit,
-        @Nullable Long offset,
-        @Nullable CardStatus status,
-        @Nullable String bin,
-        @Nullable String issuerId,
-        @Nullable Instant startDate,
-        @Nullable Instant endDate
+            @Nullable Integer limit,
+            @Nullable Long offset,
+            @Nullable CardStatus status,
+            @Nullable String bin,
+            @Nullable String issuerId,
+            @Nullable Instant startDate,
+            @Nullable Instant endDate
     );
 
     /**
@@ -63,11 +63,11 @@ public interface CardService {
      * @throws CardNotFoundException если карта не найдена
      */
     Card patchCard(
-        String pan,
-        @Nullable CardStatus status,
-        @Nullable BigDecimal dailyLimit,
-        @Nullable BigDecimal monthlyLimit,
-        @Nullable BigDecimal availableBalance
+            String pan,
+            @Nullable CardStatus status,
+            @Nullable BigDecimal dailyLimit,
+            @Nullable BigDecimal monthlyLimit,
+            @Nullable BigDecimal availableBalance
     );
 
     /**
@@ -96,11 +96,11 @@ public interface CardService {
      * @return количество карт
      */
     long countCardsFiltered(
-        @Nullable CardStatus status,
-        @Nullable String bin,
-        @Nullable String issuerId,
-        @Nullable Instant startDate,
-        @Nullable Instant endDate
+            @Nullable CardStatus status,
+            @Nullable String bin,
+            @Nullable String issuerId,
+            @Nullable Instant startDate,
+            @Nullable Instant endDate
     );
 
     /**
@@ -129,8 +129,8 @@ public interface CardService {
     Card rollback(String pan, BigDecimal amount, String rrn);
 
     int bulkUpdateStatus(
-        @Nullable List<String> bin,
-        @Nullable List<String> pans,
-        CardStatus status
+            @Nullable List<String> bin,
+            @Nullable List<String> pans,
+            CardStatus status
     );
 }

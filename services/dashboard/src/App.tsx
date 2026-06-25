@@ -13,6 +13,7 @@ import DeclineReasonChart from './components/DeclineReasonChart.tsx'
 import useChartTransactions from "./hooks/useChartTransactions.ts";
 import { Routes, Route } from 'react-router-dom';
 import TransactionDetailsPage from "./components/TransactionDetailsPage.tsx";
+import ResponseTimeHistogram from "./components/ResponseTimeHistogram.tsx";
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
@@ -93,6 +94,17 @@ function App() {
                                 </h2>
                                 <div className="flex-grow min-h-[300px]">
                                     <TransactionLineChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                </div>
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2 flex justify-center p-4">
+                                <div className="w-full max-w-[800px] bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                                        Статистика времени ответа транзакций
+                                    </h2>
+                                    <div className="flex-grow min-h-[300px]">
+                                        <ResponseTimeHistogram transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                    </div>
                                 </div>
                             </div>
 
