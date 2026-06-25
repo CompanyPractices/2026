@@ -40,8 +40,11 @@ public class SimulationService {
     List<Merchant> merchants = merchantProvider.getMerchant(request.mccCodes(), scenario);
     log.info("Merchants with MCC({}): {}", request.mccCodes(), merchants);
 
-    // Создание транакций
+    // Создание транзакций
     List<RequestFeeData> built = transactionBuilder.build(request.count(), cards, merchants, scenario);
+    merchants = null;
+    cards = null;
+    scenario = null;
 
     acquirerProvider.saveAll(built.stream().map(RequestFeeData::fee).toList());
 
