@@ -130,7 +130,7 @@ info "4. Running terminal simulator (50 TX, mixed scenario)..."
 
 SIM_RESPONSE=$(curl -s -X POST "$GATEWAY/api/simulator/terminal/run" \
     -H "Content-Type: application/json" \
-    -d '{"count": 50, "scenario": "mixed"}' \
+    -d '{"count": 50, "scenario": "mixed", "tps": 50}' \
     --connect-timeout 60)
 
 SUBMITTED=$(echo "$SIM_RESPONSE" | jq -r '.totalSubmitted // 0')

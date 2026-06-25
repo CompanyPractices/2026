@@ -11,6 +11,8 @@ import TransactionHistogram from './components/TransactionHistogram.tsx';
 import {ToastContainer} from "./components/ToastContainer.tsx";
 import DeclineReasonChart from './components/DeclineReasonChart.tsx'
 import useChartTransactions from "./hooks/useChartTransactions.ts";
+import { Routes, Route } from 'react-router-dom';
+import TransactionDetailsPage from "./components/TransactionDetailsPage.tsx";
 import ResponseTimeHistogram from "./components/ResponseTimeHistogram.tsx";
 
 function App() {
@@ -52,94 +54,102 @@ function App() {
 
     return (
         <div className="bg-zinc-200 dark:bg-sage-500 min-h-screen flex flex-col items-center justify-items-stretch">
-            <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
+            <Routes>
+                <Route path="/" element={
+                    <>
+                        <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
 
-            <main className="w-[95%] md:w-[90%] xl:w-3/4 flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
+                        <main className="w-[95%] md:w-[90%] xl:w-3/4 flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
 
-                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
-                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                        Распределение сумм транзакций
-                    </h2>
-                    <div className="flex-grow min-h-[300px]">
-                        <TransactionHistogram transactions={chartTransactions} loading={chartLoading} error={chartError} />
-                    </div>
-                </div>
+                            <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                                <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                                    Распределение сумм транзакций
+                                </h2>
+                                <div className="flex-grow min-h-[300px]">
+                                    <TransactionHistogram transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                </div>
+                            </div>
 
-                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
-                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                        Статистика одобрения транзакций
-                    </h2>
-                    <div className="flex-grow min-h-[300px]">
-                        <TransactionPieChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
-                    </div>
-                </div>
+                            <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                                <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                                    Статистика одобрения транзакций
+                                </h2>
+                                <div className="flex-grow min-h-[300px]">
+                                    <TransactionPieChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                </div>
+                            </div>
 
-                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
-                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                        Причины отклонения транзакций
-                    </h2>
-                    <div className="flex-grow min-h-[300px]">
-                        <DeclineReasonChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
-                    </div>
-                </div>
+                            <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                                <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                                    Причины отклонения транзакций
+                                </h2>
+                                <div className="flex-grow min-h-[300px]">
+                                    <DeclineReasonChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                </div>
+                            </div>
 
-                <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
-                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                        Транзакции за последний час
-                    </h2>
-                    <div className="flex-grow min-h-[300px]">
-                        <TransactionLineChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
-                    </div>
-                </div>
+                            <div className="bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                                <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                                    Транзакции за последний час
+                                </h2>
+                                <div className="flex-grow min-h-[300px]">
+                                    <TransactionLineChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                </div>
+                            </div>
 
-                <div className="col-span-1 md:col-span-2 flex justify-center p-4">
-                    <div className="w-full max-w-[800px] bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
-                        <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                            Статистика времени ответа транзакций
-                        </h2>
-                        <div className="flex-grow min-h-[300px]">
-                            <ResponseTimeHistogram transactions={chartTransactions} loading={chartLoading} error={chartError} />
-                        </div>
-                    </div>
-                </div>
+                            <div className="col-span-1 md:col-span-2 flex justify-center p-4">
+                                <div className="w-full max-w-[800px] bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                                        Статистика времени ответа транзакций
+                                    </h2>
+                                    <div className="flex-grow min-h-[300px]">
+                                        <ResponseTimeHistogram transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                    </div>
+                                </div>
+                            </div>
 
-                <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
-                    <TransactionTable
-                        transactions={pageTransactions}
-                        isFiltered={isFiltered}
-                        currentFilter={currentFilter}
-                        error={error}
-                        loading={loading}
-                        search={applyFilter}
-                        pagination={pagination}
-                        onPageChange={goToPage}
-                        onPageSizeChange={changePageSize}
-                    />
-                </div>
+                            <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
+                                <TransactionTable
+                                    transactions={pageTransactions}
+                                    isFiltered={isFiltered}
+                                    currentFilter={currentFilter}
+                                    error={error}
+                                    loading={loading}
+                                    search={applyFilter}
+                                    pagination={pagination}
+                                    onPageChange={goToPage}
+                                    onPageSizeChange={changePageSize}
+                                />
+                            </div>
 
-                <div className="col-span-1 md:col-span-2 pt-6 bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
-                    <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
-                        Карта транзакций на текущей странице
-                    </h2>
-                    <div className="flex-grow min-h-[550px]">
-                        <TransactionMap transactions={pageTransactions} />
-                    </div>
-                </div>
-            </main>
+                            <div className="col-span-1 md:col-span-2 pt-6 bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
+                                <h2 className="text-xl font-bold text-center drop-shadow-lg dark:text-sage-50 mb-4 font-mono">
+                                    Карта транзакций на текущей странице
+                                </h2>
+                                <div className="flex-grow min-h-[550px]">
+                                    <TransactionMap transactions={pageTransactions} />
+                                </div>
+                            </div>
+                        </main>
 
-            <footer className="m-4 w-5/6 py-4 grid grid-cols-1 md:grid-cols-3 gap-4 dark:text-sage-50">
-                <h1 className="p-4 text-center text-xl font-mono font-bold">
-                    Практика
-                </h1>
-                <h1 className="p-4 text-center text-xl font-mono font-bold">
-                    СМП - Система медленных платежей
-                </h1>
-                <h1 className="p-4 text-center text-xl font-mono font-bold">
-                    2026
-                </h1>
-            </footer>
+                        <footer className="m-4 w-5/6 py-4 grid grid-cols-1 md:grid-cols-3 gap-4 dark:text-sage-50">
+                            <h1 className="p-4 text-center text-xl font-mono font-bold">
+                                Практика
+                            </h1>
+                            <h1 className="p-4 text-center text-xl font-mono font-bold">
+                                СМП - Система медленных платежей
+                            </h1>
+                            <h1 className="p-4 text-center text-xl font-mono font-bold">
+                                2026
+                            </h1>
+                        </footer>
 
-            <ToastContainer />
+                        <ToastContainer />
+                    </>
+                } />
+
+                <Route path="/transaction/:id" element={<TransactionDetailsPage />} />
+            </Routes>
         </div>
     );
 }

@@ -27,12 +27,14 @@ class TerminalSimulatorControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private final int tps = 50;
+
     @Test
     void run_shouldReturnResponseFromService() throws Exception {
-        TerminalRunRequest request = new TerminalRunRequest(10, TerminalScenario.normal);
+        TerminalRunRequest request = new TerminalRunRequest(10, TerminalScenario.normal, tps);
         TerminalRunResponse expectedResponse = new TerminalRunResponse(10, 8, 2, 123L, null);
 
-        when(service.run(10, TerminalScenario.normal)).thenReturn(expectedResponse);
+        when(service.run(10, TerminalScenario.normal, tps)).thenReturn(expectedResponse);
 
         mockMvc.perform(post("/api/simulator/terminal/run")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -48,7 +50,8 @@ class TerminalSimulatorControllerTest {
         String invalidJson = """
             {
                 "count": 5,
-                "scenario": "unknown_scenario"
+                "scenario": "unknown_scenario",
+                "tps": 50,
             }
             """;
 
