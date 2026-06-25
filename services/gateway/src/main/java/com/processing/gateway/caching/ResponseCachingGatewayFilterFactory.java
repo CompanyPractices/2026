@@ -8,8 +8,10 @@ import org.springframework.cloud.gateway.filter.NettyWriteResponseFilter;
 import org.springframework.cloud.gateway.filter.OrderedGatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -42,7 +44,8 @@ public class ResponseCachingGatewayFilterFactory
 
             if (request.getMethod() != HttpMethod.GET) {
                 return chain.filter(exchange).doFinally(signalType -> {
-                    if (exchange.getResponse().getStatusCode() == HttpStatus.OK) {
+                    if (exchange.getResponse().getStatusCode() == HttpStatus.OK
+                        || exchange.getResponse().getStatusCode() == HttpStatus.CREATED) {
                         cache.clear();
                         gatewayMetrics.recordCardsCacheInvalidation();
                     }
@@ -71,6 +74,7 @@ public class ResponseCachingGatewayFilterFactory
         var response = exchange.getResponse();
         response.setStatusCode(HttpStatus.OK);
         response.getHeaders().add(CACHE_HEADER_NAME, CACHE_HIT);
+        response.getHeaders().add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 
         DataBuffer buffer = response.bufferFactory().wrap(cachedBody);
 
