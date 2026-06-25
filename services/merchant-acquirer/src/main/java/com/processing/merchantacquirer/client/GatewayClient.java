@@ -121,7 +121,7 @@ public class GatewayClient {
       if (value > 0) {
         return value;
       }
-    } catch (Exception ignore) {}
+    } catch (Exception ignore) { }
     return DEFAULT_RETRY_AFTER_MS;
   }
 
