@@ -335,6 +335,8 @@ Card Management создает карты, управляет балансом, 
 | `LOAD_TESTS_MAX_PARALLEL_REQUESTS` | `50`                  | Максимальное количество параллельных операций при нагрузочном тестировании    |
 | `OUTBOX_INTERVAL_MS`               | `1000`                | Частота обработки информации у паттерна Outbox в Event-системе                |
 | `OUTBOX_MAX_RETRY_COUNT`           | `3`                   | Максимальное количество повторных попыток обработки события у паттерна Outbox |
+| `METRICS_SCHEDULER_ENABLED`        | `true`                | Включить сбор обновляемых метрик у CardService                                |
+| `METRICS_SHEDULER_UPDATE_RATE_MS`  | `5000`                | Как часто обновлять метрики (в милисекундах)                                  |
 
 ---
 
