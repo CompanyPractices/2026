@@ -41,7 +41,8 @@ public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
                 .body("""
                         {
                             "count": 50,
-                            "scenario": "normal"
+                            "scenario": "normal",
+                            "tps": 50
                         }
                         """)
                 .when()
@@ -108,7 +109,8 @@ public class TC16_TC17_TerminalSimulatorTest extends E2EBaseTest {
                 .body("""
                         {
                             "count": 50,
-                            "scenario": "declines_test"
+                            "scenario": "declines_test",
+                            "tps": 50
                         }
                         """)
                 .when()

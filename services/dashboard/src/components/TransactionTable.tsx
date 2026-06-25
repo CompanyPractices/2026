@@ -8,6 +8,7 @@ import { Filters } from './Filters';
 import { ISSUERS_NAMES, MCC_NAMES } from '../mockData';
 import { useExportCsv } from "../hooks/useExportCsv.ts";
 import { useToastContext } from '../contexts/ToastContext.ts'
+import { Listbox } from '@headlessui/react';
 
 type TransactionTableProps = {
     transactions: Transaction[],
@@ -83,22 +84,36 @@ export function TransactionTable({
 
                 {!loading && !error && sortedTransactions.length > 0 && (
                     <div className="flex items-center gap-3">
-                        <div className="flex items-center ">
-                            <label className="text-sm dark:text-sage-50">Записей:</label>
-                            <select
-                                value={pagination.pageSize}
-                                onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                                className="border border-zinc-300 dark:border-sage-200 rounded-lg bg-zinc-300 dark:bg-sage-400 text-zinc-900 dark:text-sage-50 p-1 text-sm"
-                            >
-                                <option value={10}>10</option>
-                                <option value={20}>20</option>
-                                <option value={50}>50</option>
-                                <option value={100}>100</option>
-                            </select>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-bold dark:text-sage-50">Записей:</label>
+                            <div className="relative w-12">
+                                <Listbox
+                                    value={pagination.pageSize}
+                                    onChange={(size) => onPageSizeChange(size)}
+                                >
+                                    <Listbox.Button className="border border-zinc-300 dark:border-sage-200 rounded-lg bg-zinc-300 dark:bg-sage-400 text-zinc-900 dark:text-sage-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-sage-50 focus:border-transparent cursor-pointer p-2 w-full text-left text-sm">
+                                        {pagination.pageSize}
+                                    </Listbox.Button>
+                                    <Listbox.Options className="absolute top-full left-0 mt-1 w-full rounded-lg bg-zinc-100 dark:bg-zinc-800 p-1 shadow-lg border border-zinc-200 dark:border-zinc-700 z-50 max-h-60 overflow-y-auto focus:outline-none">
+                                        <Listbox.Option value={10} className="cursor-pointer rounded-md p-2 text-zinc-700 dark:text-sage-100 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm">
+                                            10
+                                        </Listbox.Option>
+                                        <Listbox.Option value={20} className="cursor-pointer rounded-md p-2 text-zinc-700 dark:text-sage-100 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm">
+                                            20
+                                        </Listbox.Option>
+                                        <Listbox.Option value={50} className="cursor-pointer rounded-md p-2 text-zinc-700 dark:text-sage-100 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm">
+                                            50
+                                        </Listbox.Option>
+                                        <Listbox.Option value={100} className="cursor-pointer rounded-md p-2 text-zinc-700 dark:text-sage-100 hover:bg-emerald-300 dark:hover:bg-sage-500 text-sm">
+                                            100
+                                        </Listbox.Option>
+                                    </Listbox.Options>
+                                </Listbox>
+                            </div>
                         </div>
                         <button
                             className="
-                                px-3 md:px-3 py-[2px] md:py-0 text-base md:text-lg rounded-xl bg-emerald-400 dark:bg-sage-200 dark:text-sage-400 font-semibold cursor-pointer
+                                px-3 md:px-3 py-[5px]  text-base md:text-lg rounded-xl bg-emerald-400 dark:bg-sage-200 dark:text-sage-400 font-semibold cursor-pointer
                                 hover:bg-emerald-500 hover:text-zinc-200 transition-none hover:transition-colors hover:duration-200
                                 dark:hover:bg-sage-100 dark:hover:text-sage-500
                                 flex items-center gap-1

@@ -7,10 +7,10 @@ import com.processing.common.dto.cardmanagement.CardModelStatus;
 import com.processing.common.dto.terminalsimulator.TerminalRunResponse;
 import com.processing.common.dto.terminalsimulator.TerminalScenario;
 import com.processing.common.dto.transactionlogger.TransactionStatus;
+import com.processing.common.dto.terminalsimulator.TransactionType;
 import com.processing.terminalsimulator.factory.TransactionFactory;
 import com.processing.terminalsimulator.client.GatewayClient;
-import com.processing.terminalsimulator.model.PartofDay;
-import com.processing.common.dto.terminalsimulator.TransactionType;
+import com.processing.terminalsimulator.service.ScenarioTaskGenerator.TransactionTask;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -30,7 +29,7 @@ import java.util.stream.Collectors;
 public class TerminalSimulatorService {
     private final GatewayClient gatewayClient;
     private final TransactionFactory transactionFactory;
-    private final int tps;
+    private final ScenarioTaskGenerator taskGenerator;
     private final int cardsAmount;
     private final TerminalCircuitBreaker circuitBreaker;
 
@@ -39,57 +38,23 @@ public class TerminalSimulatorService {
     // из разных потоков (методы start-continuous и stop)
 
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
+                                     ScenarioTaskGenerator taskGenerator,
                                      TerminalCircuitBreaker circuitBreaker,
-                                     @Value("${simulator.tps:100}") int tps,
                                      @Value("${simulator.cardsAmount:5000}") int cardsAmount) {
         this.gatewayClient = gatewayClient;
         this.transactionFactory = transactionFactory;
+        this.taskGenerator = taskGenerator;
         this.circuitBreaker = circuitBreaker;
-        this.tps = tps;
         this.cardsAmount = cardsAmount;
     }
 
-    private record TransactionTask(TransactionType type, PartofDay partOfDay) {}
-
-    private CardModel getRandomCard(CardModelStatus cardStatus, Map<CardModelStatus, List<CardModel>> cards) {
-        List<CardModel> filtered = cards.get(cardStatus);
-        if (filtered == null || filtered.isEmpty()) {
-            throw new IllegalStateException("No " + cardStatus + " cards available");
-        }
-        int randomIndex = ThreadLocalRandom.current().nextInt(filtered.size());
-        return filtered.get(randomIndex);
-    }
-
-    private List<CardModel> loadCards(TerminalScenario scenario) {
-        boolean needBlocked = scenario == TerminalScenario.mixed || scenario == TerminalScenario.declines_test;
-        int blockedPercent = 20; // 20%
-        int activePercent = (needBlocked) ? 80 : 100;
-
-        List<CardModel> activeCards = gatewayClient.getCardsFromCardManager(CardModelStatus.ACTIVE,
-                (cardsAmount * activePercent / 100));
-        if (activeCards == null || activeCards.isEmpty()) {
-            throw new IllegalStateException("No ACTIVE cards available");
-        }
-        List<CardModel> newCards = new ArrayList<>(activeCards);
-        if (needBlocked) {
-            List<CardModel> blockedCards = gatewayClient.getCardsFromCardManager(CardModelStatus.BLOCKED,
-                    (cardsAmount * blockedPercent / 100));
-            if (blockedCards == null || blockedCards.isEmpty()) {
-                throw new IllegalStateException("No BLOCKED cards available");
-            }
-            newCards.addAll(blockedCards);
-        }
-        return newCards;
-    }
-
-    private AuthorizationResponse executeSingleTransaction(TransactionType transactionType, PartofDay partOfDay,
-                                                           AtomicInteger approved,
+    private AuthorizationResponse executeSingleTransaction(TransactionTask task, AtomicInteger approved,
                                                            AtomicInteger declined,
-                                                           Map<CardModelStatus, List<CardModel>> cardsByStatus,
+                                                           CardRegistry cardRegistry,
                                                            String terminalId) {
-        CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
-        CardModel card = getRandomCard(requiredStatus, cardsByStatus);
-        AuthorizationRequest tx = transactionFactory.create(transactionType, partOfDay, card, terminalId);
+        CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(task.type());
+        CardModel card = cardRegistry.getRandomCard(requiredStatus);
+        AuthorizationRequest tx = transactionFactory.create(task.type(), task.partOfDay(), card, terminalId);
         AuthorizationResponse authResp = gatewayClient.sendToGateway(tx);
 
         if (TransactionStatus.APPROVED.name().equals(authResp.status())) {
@@ -109,55 +74,11 @@ public class TerminalSimulatorService {
         return authResp;
     }
 
-    private void addTask(List<TransactionTask> tasks, TransactionType type, int start, int end, PartofDay partOfDay) {
-        for (int i = start; i < end; i++) {
-            tasks.add(new TransactionTask(type, partOfDay));
-        }
-    }
-
-    private List<TransactionTask> generateTasks(TerminalScenario scenario, int count) {
-        List<TransactionTask> tasks = new ArrayList<>();
-
-        switch (scenario) {
-            case mixed -> {
-                addTask(tasks, TransactionType.NORMAL, 0, (int) (count * 0.7), PartofDay.DAY);
-                addTask(tasks, TransactionType.HIGH_VALUE, (int) (count * 0.7), (int) (count * 0.7 + count * 0.15),
-                        PartofDay.DAY);
-                addTask(tasks, TransactionType.ALMOST_DAILY_LIMIT, (int) (count * 0.7 + count * 0.15),
-                        (int) (count * 0.7 + count * 0.15 + count * 0.1), PartofDay.DAY);
-                addTask(tasks, TransactionType.BLOCKED, (int) (count * 0.7 + count * 0.15 + count * 0.1), count,
-                        PartofDay.DAY);
-            }
-            case declines_test -> {
-                addTask(tasks, TransactionType.INVALID_PAN, 0, (int) (count * 0.2), PartofDay.DAY);
-                addTask(tasks, TransactionType.BLOCKED, (int) (count * 0.2), (int) (count * 0.4), PartofDay.DAY);
-                addTask(tasks, TransactionType.NO_MONEY, (int) (count * 0.4), (int) (count * 0.6), PartofDay.DAY);
-                addTask(tasks, TransactionType.MORE_THAN_DAILY_LIMIT, (int) (count * 0.6), (int) (count * 0.8),
-                        PartofDay.DAY);
-                addTask(tasks, TransactionType.NORMAL, (int) (count * 0.8), count, PartofDay.DAY);
-            }
-            case night_time -> {
-                addTask(tasks, TransactionType.NORMAL, 0, count / 2, PartofDay.NIGHT);
-                addTask(tasks, TransactionType.HIGH_VALUE, count / 2, count, PartofDay.NIGHT);
-            }
-            case normal -> addTask(tasks,  TransactionType.NORMAL, 0, count, PartofDay.DAY);
-            case high_value -> addTask(tasks, TransactionType.HIGH_VALUE, 0, count, PartofDay.DAY);
-        }
-        return tasks;
-    }
-
-    private TransactionTask generateSingleTask(TransactionType transactionType) {
-        return new TransactionTask(transactionType, PartofDay.DAY);
-    }
-
-    public TerminalRunResponse run(int count, TerminalScenario scenario) {
+    public TerminalRunResponse run(int count, TerminalScenario scenario, int tps) {
         long start = System.currentTimeMillis();
-        Map<CardModelStatus, List<CardModel>> cardsByStatus;
-
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
-        List<CardModel> cards = loadCards(scenario);
-        cardsByStatus = cards.stream().collect(Collectors.groupingBy(CardModel::status));
-        List<TransactionTask> tasks = generateTasks(scenario, count);
+        CardRegistry cardRegistry = new CardRegistry(gatewayClient, scenario, cardsAmount);
+        List<TransactionTask> tasks = taskGenerator.generateTasks(scenario, count);
 
         ConcurrentLinkedQueue<AuthorizationResponse> authResponses = new ConcurrentLinkedQueue<>();
         AtomicInteger approved = new AtomicInteger(0);
@@ -180,12 +101,11 @@ public class TerminalSimulatorService {
                         return;
                     }
                     try {
-                        AuthorizationResponse resp = executeSingleTransaction(task.type, task.partOfDay,
-                                approved, declined, cardsByStatus, terminalId);
+                        AuthorizationResponse resp = executeSingleTransaction(task, approved, declined, cardRegistry,
+                                terminalId);
                         authResponses.add(resp);
 
-                        circuitBreaker.recordSuccess(); // errors=0, Если state было half_open: consecutiveSuccesses++,
-                        // state=closed (если successTestThreshold уже набралось)
+                        circuitBreaker.recordSuccess();
                     } catch (org.springframework.web.client.ResourceAccessException e) {
                         handleNetworkFailure(e.getMessage(), authResponses);  // лог, добавление заглушки, и либо из half_open в
                         // open, либо увеличиваем счетчик ошибок и переводим из closed в open (при достижении errorThreshold)
@@ -227,17 +147,11 @@ public class TerminalSimulatorService {
         }
         log.info("Starting continuous simulation. TPS: {}, Scenario: {}", tps, transactionType);
 
-        Map<CardModelStatus, List<CardModel>> cardsByStatus;
         long delayMs = 1000 / tps;
         String terminalId = String.format("TERM%04d", ThreadLocalRandom.current().nextInt(1, 10_000));
-        CardModelStatus requiredStatus = transactionFactory.getRequiredStatus(transactionType);
-        List<CardModel> cards = gatewayClient.getCardsFromCardManager(requiredStatus, cardsAmount);
-        cardsByStatus = cards.stream().collect(Collectors.groupingBy(CardModel::status));
-
-        if (cardsByStatus.isEmpty()) {
-            isContinuousRunning.set(false);
-            throw new IllegalStateException("No cards available for status: " + requiredStatus);
-        }
+        TerminalScenario scenario = (transactionType == TransactionType.BLOCKED) ? TerminalScenario.declines_test
+                : TerminalScenario.normal;
+        CardRegistry cardRegistry = new CardRegistry(gatewayClient, scenario, cardsAmount);
 
         // хочу создать виртуальный поток, один-единственный фоновый поток-диспетчер
         Thread thread = Thread.ofVirtual().unstarted(() -> {
@@ -245,14 +159,14 @@ public class TerminalSimulatorService {
                 // когда я в методе stopContinuous() вызываю continuousLoopThread.interrupt(), я не убиваю поток,
                 // а ставлю ему внутренний флаг interrupted=true
                 while (isContinuousRunning.get() && !Thread.currentThread().isInterrupted()) {
-                    TransactionTask task = generateSingleTask(transactionType);
+                    TransactionTask task = taskGenerator.generateSingleTask(transactionType);
                     executor.submit(() -> {
                         if (!circuitBreaker.isCallAllowed()) {
                             return;
                         }
                         try {
-                            executeSingleTransaction(task.type, task.partOfDay, new AtomicInteger(),
-                                    new AtomicInteger(), cardsByStatus, terminalId);
+                            executeSingleTransaction(task, new AtomicInteger(), new AtomicInteger(), cardRegistry,
+                                    terminalId);
                             circuitBreaker.recordSuccess();
                         } catch (org.springframework.web.client.ResourceAccessException
                                  | org.springframework.web.client.HttpStatusCodeException e) {

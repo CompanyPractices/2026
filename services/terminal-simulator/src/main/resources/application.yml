@@ -11,7 +11,6 @@ spring:
       enabled: true
 
 simulator:
-  tps: 70
   cardsAmount: 10000
   errorThreshold: 2
 

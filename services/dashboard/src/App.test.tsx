@@ -4,6 +4,7 @@ import App from './App';
 import '@testing-library/jest-dom';
 import { Transaction } from "./types";
 import type { PaginationMeta } from "./types";
+import { MemoryRouter } from 'react-router-dom';
 
 type HeaderProps = {
   stats: { totalTransactions: number } | null;
@@ -98,6 +99,10 @@ vi.mock('./components/TransactionsMap.tsx', () => ({
   ),
 }));
 
+vi.mock('./components/TransactionDetailsPage.tsx', () => ({
+  default: () => <div data-testid="transaction-details-page" />,
+}));
+
 const mockUseLiveStats = vi.hoisted(() => vi.fn());
 const mockUseWebSocket = vi.hoisted(() => vi.fn());
 const mockUseTransactions = vi.hoisted(() => vi.fn());
@@ -149,6 +154,12 @@ afterAll(() => {
   Reflect.deleteProperty(global, 'ResizeObserver');
 });
 
+const renderApp = () => {
+  return render(<App />, {
+    wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter>,
+  });
+};
+
 describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -187,14 +198,14 @@ describe('App', () => {
   });
 
   it('renders footer with all three texts', () => {
-    render(<App />);
+    renderApp();
     expect(screen.getByText('Практика')).toBeInTheDocument();
     expect(screen.getByText('СМП - Система медленных платежей')).toBeInTheDocument();
     expect(screen.getByText('2026')).toBeInTheDocument();
   });
 
   it('has correct structure (header, main, footer)', () => {
-    render(<App />);
+    renderApp();
     expect(document.querySelector('header')).toBeInTheDocument();
     expect(document.querySelector('main')).toBeInTheDocument();
     expect(document.querySelector('footer')).toBeInTheDocument();
@@ -207,7 +218,7 @@ describe('App', () => {
       error: 'Network error',
     });
 
-    render(<App />);
+    renderApp();
     expect(screen.getByText('Stats error: Network error')).toBeInTheDocument();
   });
 
@@ -236,7 +247,7 @@ describe('App', () => {
       pagination: { ...defaultPagination, totalElements: 1, totalPages: 1 },
     });
 
-    render(<App />);
+    renderApp();
 
     expect(screen.getByTestId('histogram')).toBeInTheDocument();
     expect(screen.getByTestId('pie')).toBeInTheDocument();
@@ -274,7 +285,7 @@ describe('App', () => {
         isConnected: true,
       });
 
-      render(<App />);
+      renderApp();
 
       expect(screen.getByTestId('table-live-1')).toBeInTheDocument();
       expect(screen.getByTestId('table-search-1')).toBeInTheDocument();
@@ -301,7 +312,7 @@ describe('App', () => {
         isConnected: true,
       });
 
-      render(<App />);
+      renderApp();
 
       const tableItems = screen.getAllByTestId('table-same-id');
       expect(tableItems).toHaveLength(1);
@@ -331,7 +342,7 @@ describe('App', () => {
         isConnected: true,
       });
 
-      render(<App />);
+      renderApp();
 
       const tableItems = screen
           .getByTestId('table')
@@ -359,7 +370,7 @@ describe('App', () => {
         isConnected: true,
       });
 
-      render(<App />);
+      renderApp();
 
       expect(screen.getByTestId('table-search-1')).toBeInTheDocument();
       expect(screen.queryByTestId('table-live-1')).not.toBeInTheDocument();
@@ -385,7 +396,7 @@ describe('App', () => {
         isConnected: true,
       });
 
-      render(<App />);
+      renderApp();
 
       expect(screen.getByTestId('table-search-1')).toBeInTheDocument();
       expect(screen.queryByTestId('table-live-1')).not.toBeInTheDocument();
@@ -419,7 +430,7 @@ describe('App', () => {
         pagination: { ...defaultPagination, currentPage: 5, pageSize: 20 },
       });
 
-      render(<App />);
+      renderApp();
 
       expect(screen.getByTestId('histogram-chart-only')).toBeInTheDocument();
       expect(screen.getByTestId('pie-chart-only')).toBeInTheDocument();
