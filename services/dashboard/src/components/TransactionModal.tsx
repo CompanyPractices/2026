@@ -36,7 +36,11 @@ export function TransactionModal({ transaction, onClose }: TransactionModalProps
     ];
 
     const handleOpenInNewTab = () => {
-        localStorage.setItem(`tx_${transaction.id}`, JSON.stringify(transaction));
+        const maskedTransaction = {
+            ...transaction,
+            pan: hidePan(transaction.pan)
+        };
+        localStorage.setItem(`tx_${transaction.id}`, JSON.stringify(maskedTransaction));
     };
 
     return (
