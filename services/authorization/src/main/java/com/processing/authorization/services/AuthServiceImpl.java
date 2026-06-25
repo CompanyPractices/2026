@@ -175,29 +175,33 @@ public class AuthServiceImpl implements AuthService {
         return true;
     }
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyDDD");
-
     private final AtomicLong baseRrn = new AtomicLong(0);
     private final AtomicLong counter = new AtomicLong(1000);
     private static final int RRN_BLOCK_SIZE = 1000;
 
     public String generateRRN() {
         long currentCounter = counter.getAndIncrement();
+        long currentBaseRrn;
         if (currentCounter >= RRN_BLOCK_SIZE) {
             synchronized (counter) {
-                if (counter.get() >= RRN_BLOCK_SIZE) {
-                    baseRrn.set(limitUsageRepository.fetchRrnBlock());
+                currentCounter = counter.get();
+                if (currentCounter >= RRN_BLOCK_SIZE) {
+                    currentBaseRrn = limitUsageRepository.fetchRrnBlock();
+                    baseRrn.set(currentBaseRrn);
                     counter.set(1);
                     currentCounter = 0;
                 } else {
+                    currentBaseRrn = baseRrn.get();
                     currentCounter = counter.getAndIncrement();
                 }
             }
+        } else {
+            currentBaseRrn = baseRrn.get();
         }
-        long rrn = baseRrn.get() * RRN_BLOCK_SIZE + currentCounter;
-        String currentDay = FORMATTER.format(LocalDateTime.now()).substring(1);
+        long rrn = currentBaseRrn * RRN_BLOCK_SIZE + currentCounter;
 
-        return currentDay + String.format("%08d", rrn);
+        LocalDate now = LocalDate.now();
+        return String.format("%1d%03d%08d", now.getYear() % 10, now.getDayOfYear(), rrn);
     }
 
     private static final Random RANDOM = new SecureRandom();
