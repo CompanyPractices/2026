@@ -8,7 +8,6 @@ spring.datasource.password: ${POSTGRES_PASSWORD:smp_password}
 spring.jpa.hibernate.ddl-auto: validate
 
 spring.flyway.clean-disabled: true
-spring.flyway.clean-on-validation-error: false
 spring.flyway.baseline-on-migrate: true
 spring.flyway.out-of-order: true
 spring.flyway.ignore-migration-patterns: "*:missing"
@@ -26,8 +25,8 @@ logging.level.org.hibernate.engine.jdbc.batch.internal.BatchingBatch: WARN
 # Настройки параллельности
 spring.threads.virtual.enabled: true
 spring.datasource.hikari.maximum-pool-size: 30
-simulation.sender.concurrency: ${CONCURRENCY:50}
-simulation.sender.tps: ${TPS:100}
+simulation.sender.concurrency: ${CONCURRENCY:175}
+simulation.sender.tps: ${TPS:250}
 
 # Actuator
 management:
@@ -39,11 +38,8 @@ management:
     health:
       show-details: always
     prometheus:
-      enabled: true
+      access:
   metrics:
-    export:
-      prometheus:
-        enabled: true
     tags:
       application: merchant-acquirer
     distribution:
@@ -54,6 +50,10 @@ management:
           - 0.5
           - 0.95
           - 0.99
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 gateway.url: ${GATEWAY_URL:http://gateway:8080}
 
