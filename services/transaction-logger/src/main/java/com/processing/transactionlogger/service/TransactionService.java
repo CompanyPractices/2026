@@ -2,10 +2,10 @@ package com.processing.transactionlogger.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.processing.transactionlogger.dto.ChartBucket;
-import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.common.dto.transactionlogger.TransactionRequest;
 import com.processing.common.dto.transactionlogger.TransactionResponse;
+import com.processing.transactionlogger.dto.ChartBucket;
+import com.processing.transactionlogger.dto.DashboardStatsResponse;
 import com.processing.transactionlogger.dto.TransactionSearchResponse;
 import com.processing.transactionlogger.exception.TransactionConflictException;
 import com.processing.transactionlogger.export.TransactionCsvWriter;
@@ -13,8 +13,8 @@ import com.processing.transactionlogger.mapper.TransactionMapper;
 import com.processing.transactionlogger.model.Transaction;
 import com.processing.transactionlogger.model.Transaction_;
 import com.processing.transactionlogger.repository.TransactionRepository;
-import com.processing.transactionlogger.specification.ChartsFilter;
 import com.processing.transactionlogger.repository.TransactionStats;
+import com.processing.transactionlogger.specification.ChartsFilter;
 import com.processing.transactionlogger.specification.OffsetBasedPageRequest;
 import com.processing.transactionlogger.specification.TransactionFilter;
 import com.processing.transactionlogger.specification.TransactionSpecification;
@@ -45,11 +45,13 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
-    /** Верхняя граница числа строк в CSV-экспорте */
+    /** Верхняя граница числа строк в CSV-экспорте. */
     private static final int MAX_EXPORT_ROWS = 50_000;
     private static final String DEFAULT_GRANULARITY = "hour";
-    /** Верхняя граница диапазона по умолчанию, когда {@code to } в charts не задан */
+
+    /** Верхняя граница диапазона по умолчанию, когда {@code to} в charts не задан. */
     private static final Instant FAR_FUTURE = Instant.parse("9999-12-31T23:59:59Z");
+
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
     private final WebSocketManager webSocketManager;
@@ -125,7 +127,7 @@ public class TransactionService {
     }
 
     /**
-     * Возвращает агрегированную статистику по всем транзакциям в БД
+     * Возвращает агрегированную статистику по всем транзакциям в БД.
      *
      * @return статистика: счётчики, суммы, процент одобрения, транзакций в минуту
      */
@@ -147,7 +149,6 @@ public class TransactionService {
         );
     }
 
-
     /**
      * Агрегирует транзакции по временным корзинам (час или день) для графиков Dashboard.
      * Группировка и фильтрация выполняются по {@code createdAt} в полуинтервале
@@ -155,7 +156,7 @@ public class TransactionService {
      *
      * @param filter гранулярность и опциональные границы диапазона ({@code from}/{@code to})
      * @return корзины со счётчиками и суммами, упорядоченные по времени
-     * */
+     */
     @Transactional(readOnly = true)
     public List<ChartBucket> getCharts(ChartsFilter filter) {
         String granularity = Objects.requireNonNullElse(filter.getGranularity(), DEFAULT_GRANULARITY);
@@ -168,7 +169,7 @@ public class TransactionService {
     }
 
     /**
-     * Возвращает последние транзакции, отсортированные по {@code createdAt DESC}
+     * Возвращает последние транзакции, отсортированные по {@code createdAt DESC}.
      *
      * @param limit максимальное число записей (1–500)
      * @return список транзакций
