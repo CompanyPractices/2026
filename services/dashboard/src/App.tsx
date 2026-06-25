@@ -34,7 +34,7 @@ function App() {
         transactions: chartTransactions,
         loading: chartLoading,
         error: chartError,
-    } = useChartTransactions(liveTransactions, { refreshIntervalMs: 180_000 });
+    } = useChartTransactions(liveTransactions, { refreshIntervalMs: 1_200_000 });
 
     const pageTransactions = useMemo(() => {
         const base = transactions || [];
