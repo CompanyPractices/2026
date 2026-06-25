@@ -68,7 +68,7 @@ export default function ResponseTimeHistogram({transactions, loading, error}: Re
             const data = payload[0].payload;
             let rangeLabel;
             if (data.name === 20) {
-                rangeLabel = `100ms+`;
+                rangeLabel = `1000ms+`;
             } else {
                 const data = payload[0].payload;
                 const min = (data.name * range);
@@ -102,7 +102,7 @@ export default function ResponseTimeHistogram({transactions, loading, error}: Re
                         dataKey="name"
                         tickFormatter={(val) => {
                             if (val === 20) {
-                                return `100ms+`
+                                return `1000ms+`
                             }
                             const min = (val * range);
                             const max = ((val + 1) * range);
