@@ -1,19 +1,20 @@
 import TransactionLineChart from "./components/TransactionLineChart.tsx";
-import {Header} from "./components/Header.tsx";
+import { Header } from "./components/Header.tsx";
 import TransactionPieChart from "./components/TransactionPieChart.tsx";
-import {TransactionTable} from "./components/TransactionTable.tsx";
-import {useLiveStats} from "./hooks/useLiveStats.ts";
-import {useWebSocket} from "./hooks/useWebSocket.ts";
-import useTransactions from './hooks/useTransactions.ts'
+import { TransactionTable } from "./components/TransactionTable.tsx";
+import { useLiveStats } from "./hooks/useLiveStats.ts";
+import { useWebSocket } from "./hooks/useWebSocket.ts";
+import useTransactions from './hooks/useTransactions.ts';
 import { useMemo } from 'react';
-import {TransactionMap} from "./components/TransactionsMap.tsx";
+import { TransactionMap } from "./components/TransactionsMap.tsx";
 import TransactionHistogram from './components/TransactionHistogram.tsx';
-import {ToastContainer} from "./components/ToastContainer.tsx";
-import DeclineReasonChart from './components/DeclineReasonChart.tsx'
+import { ToastContainer } from "./components/ToastContainer.tsx";
+import DeclineReasonChart from './components/DeclineReasonChart.tsx';
 import useChartTransactions from "./hooks/useChartTransactions.ts";
 import { Routes, Route } from 'react-router-dom';
 import TransactionDetailsPage from "./components/TransactionDetailsPage.tsx";
 import ResponseTimeHistogram from "./components/ResponseTimeHistogram.tsx";
+import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 
 function App() {
     const { liveTransactions, isConnected } = useWebSocket();
@@ -33,7 +34,7 @@ function App() {
         transactions: chartTransactions,
         loading: chartLoading,
         error: chartError,
-    } = useChartTransactions(liveTransactions, {refreshIntervalMs: 180_000,});
+    } = useChartTransactions(liveTransactions, { refreshIntervalMs: 1_200_000 });
 
     const pageTransactions = useMemo(() => {
         const base = transactions || [];
@@ -57,7 +58,14 @@ function App() {
             <Routes>
                 <Route path="/" element={
                     <>
-                        <Header stats={stats} loading={liveLoading} error={liveError} isConnected={isConnected}/>
+                        <ErrorBoundary name="Header">
+                            <Header
+                                stats={stats}
+                                loading={liveLoading}
+                                error={liveError}
+                                isConnected={isConnected}
+                            />
+                        </ErrorBoundary>
 
                         <main className="w-[95%] md:w-[90%] xl:w-3/4 flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
 
@@ -66,7 +74,13 @@ function App() {
                                     Распределение сумм транзакций
                                 </h2>
                                 <div className="flex-grow min-h-[300px]">
-                                    <TransactionHistogram transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                    <ErrorBoundary name="Распределение сумм">
+                                        <TransactionHistogram
+                                            transactions={chartTransactions}
+                                            loading={chartLoading}
+                                            error={chartError}
+                                        />
+                                    </ErrorBoundary>
                                 </div>
                             </div>
 
@@ -75,7 +89,13 @@ function App() {
                                     Статистика одобрения транзакций
                                 </h2>
                                 <div className="flex-grow min-h-[300px]">
-                                    <TransactionPieChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                    <ErrorBoundary name="Статистика одобрения">
+                                        <TransactionPieChart
+                                            transactions={chartTransactions}
+                                            loading={chartLoading}
+                                            error={chartError}
+                                        />
+                                    </ErrorBoundary>
                                 </div>
                             </div>
 
@@ -84,7 +104,13 @@ function App() {
                                     Причины отклонения транзакций
                                 </h2>
                                 <div className="flex-grow min-h-[300px]">
-                                    <DeclineReasonChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                    <ErrorBoundary name="Причины отклонения">
+                                        <DeclineReasonChart
+                                            transactions={chartTransactions}
+                                            loading={chartLoading}
+                                            error={chartError}
+                                        />
+                                    </ErrorBoundary>
                                 </div>
                             </div>
 
@@ -93,7 +119,13 @@ function App() {
                                     Транзакции за последний час
                                 </h2>
                                 <div className="flex-grow min-h-[300px]">
-                                    <TransactionLineChart transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                    <ErrorBoundary name="Транзакции за час">
+                                        <TransactionLineChart
+                                            transactions={chartTransactions}
+                                            loading={chartLoading}
+                                            error={chartError}
+                                        />
+                                    </ErrorBoundary>
                                 </div>
                             </div>
 
@@ -103,23 +135,31 @@ function App() {
                                         Статистика времени ответа транзакций
                                     </h2>
                                     <div className="flex-grow min-h-[300px]">
-                                        <ResponseTimeHistogram transactions={chartTransactions} loading={chartLoading} error={chartError} />
+                                        <ErrorBoundary name="Время ответа">
+                                            <ResponseTimeHistogram
+                                                transactions={chartTransactions}
+                                                loading={chartLoading}
+                                                error={chartError}
+                                            />
+                                        </ErrorBoundary>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="col-span-1 md:col-span-2 pt-6 place-content-center">
-                                <TransactionTable
-                                    transactions={pageTransactions}
-                                    isFiltered={isFiltered}
-                                    currentFilter={currentFilter}
-                                    error={error}
-                                    loading={loading}
-                                    search={applyFilter}
-                                    pagination={pagination}
-                                    onPageChange={goToPage}
-                                    onPageSizeChange={changePageSize}
-                                />
+                                <ErrorBoundary name="Таблица транзакций">
+                                    <TransactionTable
+                                        transactions={pageTransactions}
+                                        isFiltered={isFiltered}
+                                        currentFilter={currentFilter}
+                                        error={error}
+                                        loading={loading}
+                                        search={applyFilter}
+                                        pagination={pagination}
+                                        onPageChange={goToPage}
+                                        onPageSizeChange={changePageSize}
+                                    />
+                                </ErrorBoundary>
                             </div>
 
                             <div className="col-span-1 md:col-span-2 pt-6 bg-zinc-300 dark:bg-sage-400 rounded-xl shadow-lg flex flex-col p-4">
@@ -127,28 +167,28 @@ function App() {
                                     Карта транзакций на текущей странице
                                 </h2>
                                 <div className="flex-grow min-h-[550px]">
-                                    <TransactionMap transactions={pageTransactions} />
+                                    <ErrorBoundary name="Карта транзакций">
+                                        <TransactionMap transactions={pageTransactions} />
+                                    </ErrorBoundary>
                                 </div>
                             </div>
                         </main>
 
                         <footer className="m-4 w-5/6 py-4 grid grid-cols-1 md:grid-cols-3 gap-4 dark:text-sage-50">
-                            <h1 className="p-4 text-center text-xl font-mono font-bold">
-                                Практика
-                            </h1>
-                            <h1 className="p-4 text-center text-xl font-mono font-bold">
-                                СМП - Система медленных платежей
-                            </h1>
-                            <h1 className="p-4 text-center text-xl font-mono font-bold">
-                                2026
-                            </h1>
+                            <h1 className="p-4 text-center text-xl font-mono font-bold">Практика</h1>
+                            <h1 className="p-4 text-center text-xl font-mono font-bold">СМП - Система медленных платежей</h1>
+                            <h1 className="p-4 text-center text-xl font-mono font-bold">2026</h1>
                         </footer>
 
                         <ToastContainer />
                     </>
                 } />
 
-                <Route path="/transaction/:id" element={<TransactionDetailsPage />} />
+                <Route path="/transaction/:id" element={
+                    <ErrorBoundary name="Детали транзакции">
+                        <TransactionDetailsPage />
+                    </ErrorBoundary>
+                } />
             </Routes>
         </div>
     );
