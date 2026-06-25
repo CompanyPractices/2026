@@ -18,4 +18,16 @@ public record SimulatorRequest(
 
     @Schema(description = "Опциональное переопределение MCC-кодов. Если задано — имеет приоритет "
         + "над MCC сценария", example = "[\"5411\", \"5499\"]")
-    List<String> mccCodes) {}
+    List<String> mccCodes,
+
+    @Schema(description = "Целевой темп отправки транзакций в Gateway (запросов в секунду). "
+        + "Concurrency вычисляется как tps / 2. Если не задано — используется 100",
+        example = "100", minimum = "1")
+    @Min(value = 1, message = "tps must be >= 1") Integer tps) {
+
+  public SimulatorRequest {
+    if (tps == null) {
+      tps = 100;
+    }
+  }
+}

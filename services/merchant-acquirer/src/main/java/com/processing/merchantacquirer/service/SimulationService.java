@@ -48,7 +48,8 @@ public class SimulationService {
 
     acquirerProvider.saveAll(built.stream().map(RequestFeeData::fee).toList());
 
-    SimulatorStats stats = transactionSender.sendAll(built.stream().map(RequestFeeData::authorizationRequest).toList());
+    SimulatorStats stats = transactionSender.sendAll(
+        built.stream().map(RequestFeeData::authorizationRequest).toList(), request.tps());
 
     // Формирование
     LocalDateTime endTime = LocalDateTime.now();
