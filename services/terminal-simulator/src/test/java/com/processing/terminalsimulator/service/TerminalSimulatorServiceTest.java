@@ -45,13 +45,13 @@ class TerminalSimulatorServiceTest {
     private TerminalCircuitBreaker terminalCircuitBreaker;
 
     private TerminalSimulatorService service;
+    private final int tps = 50;
 
     @BeforeEach
     void setUp() {
         int cardsAmount = 5000;
-        int tps = 100;
-        service = new TerminalSimulatorService(gatewayClient, transactionFactory, terminalCircuitBreaker, tps,
-                cardsAmount);
+        ScenarioTaskGenerator taskGenerator = new ScenarioTaskGenerator();
+        service = new TerminalSimulatorService(gatewayClient, transactionFactory, taskGenerator, terminalCircuitBreaker, cardsAmount);
         CardModel activeCard = new CardModel(UUID.randomUUID(), "4000001234560001", "400000", "IVAN IVANOV",
                 YearMonth.of(2030, 1), CardModelStatus.ACTIVE, "643", new BigDecimal(500_002L),
                 new BigDecimal(100_000L), new BigDecimal(20_000_000L), "ISS001",
@@ -84,7 +84,7 @@ class TerminalSimulatorServiceTest {
 
     @Test
     void run_normalScenario_TerminalSimulatorIsAlive() {
-        TerminalRunResponse response = service.run(5, TerminalScenario.normal);
+        TerminalRunResponse response = service.run(5, TerminalScenario.normal, tps);
 
         assertEquals(5, response.totalSubmitted());
         assertEquals(5, response.approved());
@@ -95,7 +95,7 @@ class TerminalSimulatorServiceTest {
     @Test
     void run_normalScenario_callsFactoryWithCorrectType() {
         int totalCount = 10;
-        service.run(totalCount, TerminalScenario.normal);
+        service.run(totalCount, TerminalScenario.normal, tps);
 
         verify(transactionFactory, times(totalCount)).create(eq(TransactionType.NORMAL), eq(PartofDay.DAY),
                 any(CardModel.class), any(String.class));
@@ -104,7 +104,7 @@ class TerminalSimulatorServiceTest {
     @Test
     void run_nightTimeScenario_callsFactoryWithNightParam() {
         int totalCount = 10;
-        service.run(totalCount, TerminalScenario.night_time);
+        service.run(totalCount, TerminalScenario.night_time, tps);
 
         verify(transactionFactory, times(5)).create(eq(TransactionType.NORMAL),
                 eq(PartofDay.NIGHT), any(CardModel.class), any(String.class));
@@ -115,7 +115,7 @@ class TerminalSimulatorServiceTest {
     @Test
     void run_highValueScenario_callsFactoryWithCorrectType() {
         int totalCount = 10;
-        service.run(totalCount, TerminalScenario.high_value);
+        service.run(totalCount, TerminalScenario.high_value, tps);
 
         verify(transactionFactory, times(totalCount)).create(eq(TransactionType.HIGH_VALUE), eq(PartofDay.DAY),
                 any(CardModel.class), any(String.class));
@@ -124,7 +124,7 @@ class TerminalSimulatorServiceTest {
     @Test
     void run_mixedScenario_verifiesProportions() {
         int totalCount = 20;
-        service.run(totalCount, TerminalScenario.mixed);
+        service.run(totalCount, TerminalScenario.mixed, tps);
 
         ArgumentCaptor<TransactionType> typeCaptor = ArgumentCaptor.forClass(TransactionType.class);
         verify(transactionFactory, times(totalCount)).create(typeCaptor.capture(), eq(PartofDay.DAY),
@@ -147,7 +147,7 @@ class TerminalSimulatorServiceTest {
     @Test
     void run_declinesScenario_verifiesProportions() {
         int totalCount = 10;
-        service.run(totalCount, TerminalScenario.declines_test);
+        service.run(totalCount, TerminalScenario.declines_test, tps);
 
         ArgumentCaptor<TransactionType> typeCaptor = ArgumentCaptor.forClass(TransactionType.class);
         verify(transactionFactory, times(totalCount)).create(typeCaptor.capture(), eq(PartofDay.DAY),
@@ -167,7 +167,7 @@ class TerminalSimulatorServiceTest {
     @Test
     void run_whenNoActiveCards_throwsException() {
         when(gatewayClient.getCardsFromCardManager(eq(CardModelStatus.ACTIVE), anyInt())).thenReturn(null);
-        assertThatThrownBy(() -> service.run(5, TerminalScenario.normal))
+        assertThatThrownBy(() -> service.run(5, TerminalScenario.normal, tps))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("No ACTIVE cards available");
     }
@@ -175,7 +175,7 @@ class TerminalSimulatorServiceTest {
     @Test
     void run_whenNoBlockedCardsAndScenarioRequiresThem_throwsException() {
         when(gatewayClient.getCardsFromCardManager(eq(CardModelStatus.BLOCKED), anyInt())).thenReturn(null);
-        assertThatThrownBy(() -> service.run(5, TerminalScenario.mixed))
+        assertThatThrownBy(() -> service.run(5, TerminalScenario.mixed, tps))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("No BLOCKED cards available");
     }

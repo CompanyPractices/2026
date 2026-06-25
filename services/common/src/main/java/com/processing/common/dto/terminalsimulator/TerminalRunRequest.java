@@ -8,5 +8,8 @@ public record TerminalRunRequest(
     @Min(1)
     int count,
     @NotNull
-    TerminalScenario scenario
+    TerminalScenario scenario,
+    @NotNull
+    @Min(1)
+    int tps
 ) {}
