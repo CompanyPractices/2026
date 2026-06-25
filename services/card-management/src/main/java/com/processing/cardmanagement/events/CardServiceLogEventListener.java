@@ -22,6 +22,8 @@ public class CardServiceLogEventListener implements CardEventListener {
             case CardsBatchGeneratedEvent e -> log.info("Generated {} cards: {}",
                 e.statusCount().values().stream().mapToLong(Long::longValue).sum(), e.statusCount());
             case CardServiceBulkUpdateEvent e -> log.info("Bulk updated {} cards to status {}", e.count(), e.status());
+            default -> {
+            }
         }
     }
 }
