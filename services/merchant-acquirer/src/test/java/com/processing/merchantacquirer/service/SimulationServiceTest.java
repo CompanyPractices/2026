@@ -39,7 +39,7 @@ class SimulationServiceTest {
 
     @Test
     void endToEndAcrossRealBeans() {
-        SimulatorRequest request = new SimulatorRequest(3, ScenarioType.grocery, null);
+        SimulatorRequest request = new SimulatorRequest(3, ScenarioType.grocery, null, 100);
         List<CardDataResponse> mockCards = List.of(mock(CardDataResponse.class), mock(CardDataResponse.class));
         Scenario mockScenario = mock(Scenario.class);
         List<Merchant> mockMerchants = List.of(mock(Merchant.class));
@@ -64,7 +64,7 @@ class SimulationServiceTest {
         when(merchantProvider.getMerchant(null, mockScenario)).thenReturn(mockMerchants);
         when(transactionBuilder.build(anyInt(), any(), any(), any()))
                 .thenReturn(mockBuilt);
-        when(transactionSender.sendAll(any())).thenReturn(mockStats);
+        when(transactionSender.sendAll(any(), anyInt())).thenReturn(mockStats);
 
         SimulatorResponse response = simulationService.run(request);
 
@@ -83,7 +83,7 @@ class SimulationServiceTest {
 
     @Test
     void cardProviderUsesRequestCount() {
-        SimulatorRequest request = new SimulatorRequest(4, ScenarioType.grocery, null);
+        SimulatorRequest request = new SimulatorRequest(4, ScenarioType.grocery, null, 100);
         Scenario mockScenario = mock(Scenario.class);
         List<Merchant> mockMerchants = List.of(mock(Merchant.class));
         SimulatorStats mockStats = mock(SimulatorStats.class);
@@ -92,7 +92,7 @@ class SimulationServiceTest {
         when(scenarioProvider.getScenario(ScenarioType.grocery)).thenReturn(mockScenario);
         when(merchantProvider.getMerchant(null, mockScenario)).thenReturn(mockMerchants);
         when(transactionBuilder.build(eq(4), any(), any(), any())).thenReturn(List.of());
-        when(transactionSender.sendAll(any())).thenReturn(mockStats);
+        when(transactionSender.sendAll(any(), anyInt())).thenReturn(mockStats);
 
         SimulatorResponse respone = simulationService.run(request);
 
@@ -102,7 +102,7 @@ class SimulationServiceTest {
 
     @Test
     void scenarioMccReachRepository() {
-        SimulatorRequest request = new SimulatorRequest(1, ScenarioType.travel, null);
+        SimulatorRequest request = new SimulatorRequest(1, ScenarioType.travel, null, 100);
         Scenario mockScenario = mock(Scenario.class);
         List<Merchant> mockMerchants = List.of(mock(Merchant.class));
         SimulatorStats mockStats = mock(SimulatorStats.class);
@@ -112,7 +112,7 @@ class SimulationServiceTest {
         when(merchantProvider.getMerchant(null, mockScenario)).thenReturn(mockMerchants);
         when(transactionBuilder.build(eq(1), any(), any(), any())).thenReturn(List.of());
 
-        when(transactionSender.sendAll(any())).thenReturn(mockStats);
+        when(transactionSender.sendAll(any(), anyInt())).thenReturn(mockStats);
 
         simulationService.run(request);
 
@@ -122,7 +122,7 @@ class SimulationServiceTest {
 
     @Test
     void gatewayFailureDegradesToDeclined() {
-        SimulatorRequest request = new SimulatorRequest(2, ScenarioType.grocery, null);
+        SimulatorRequest request = new SimulatorRequest(2, ScenarioType.grocery, null, 100);
         Scenario mockScenario = mock(Scenario.class);
 
         when(cardProvider.getCards(2)).thenReturn(List.of());
@@ -136,7 +136,7 @@ class SimulationServiceTest {
 
     @Test
     void noMerchants_throws() {
-        SimulatorRequest request = new SimulatorRequest(1, ScenarioType.grocery, null);
+        SimulatorRequest request = new SimulatorRequest(1, ScenarioType.grocery, null, 100);
         Scenario mockScenario = mock(Scenario.class);
 
         when(cardProvider.getCards(1)).thenReturn(List.of());
@@ -149,7 +149,7 @@ class SimulationServiceTest {
 
     @Test
     void noCards_throws() {
-        SimulatorRequest request = new SimulatorRequest(1, ScenarioType.grocery, null);
+        SimulatorRequest request = new SimulatorRequest(1, ScenarioType.grocery, null, 100);
 
         when(cardProvider.getCards(1)).thenThrow(new ResourceNotFoundException("Cards not found"));
 

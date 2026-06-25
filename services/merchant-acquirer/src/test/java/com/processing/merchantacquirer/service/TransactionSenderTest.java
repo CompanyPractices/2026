@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 public class TransactionSenderTest {
     private final GatewayClient gatewayClient = mock(GatewayClient.class);
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
-    private final TransactionSender transactionSender = new TransactionSender(gatewayClient, new TransactionMetrics(registry), 4, 1000);
+    private final TransactionSender transactionSender = new TransactionSender(gatewayClient, new TransactionMetrics(registry));
 
     private AuthorizationRequest request(String stan, String mcc){
         return AuthorizationRequest.builder()
@@ -56,7 +56,7 @@ public class TransactionSenderTest {
         SimulatorStats stats = transactionSender.sendAll(List.of(
                 request("000001", "5411"), request("000002", "5411"), request("000003", "5411"),
                 request("000004", "5412"), request("000005", "5412"), request("000006", "5412")
-        ));
+        ), 1000);
 
         assertEquals(3, stats.approved());
         assertEquals(3, stats.declined());
@@ -69,7 +69,7 @@ public class TransactionSenderTest {
     void gatewayReturnError() {
         when(gatewayClient.processAuthorize(any())).thenThrow(new ExternalServiceException("Gateway", "boom", "0"));
 
-        SimulatorStats stats = transactionSender.sendAll(List.of(request("000001", "5411"), request("000002", "5411")));
+        SimulatorStats stats = transactionSender.sendAll(List.of(request("000001", "5411"), request("000002", "5411")), 1000);
 
         assertEquals(0, stats.approved());
         assertEquals(2, stats.declined());
@@ -80,7 +80,7 @@ public class TransactionSenderTest {
 
     @Test
     void emptyStats() {
-        SimulatorStats stats = transactionSender.sendAll(List.of());
+        SimulatorStats stats = transactionSender.sendAll(List.of(), 1000);
 
         assertEquals(0, stats.responses().size());
         assertEquals(0, stats.approved());
