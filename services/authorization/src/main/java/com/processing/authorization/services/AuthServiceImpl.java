@@ -23,7 +23,6 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.web.client.ResourceAccessException;
 
@@ -174,30 +173,20 @@ public class AuthServiceImpl implements AuthService {
         return true;
     }
 
-    private final AtomicLong baseRrn = new AtomicLong(0);
-    private final AtomicLong counter = new AtomicLong(1000);
+    private final Object monitor = new Object();
+    private long baseRrn;
+    private int counter = 1000;
     private static final int RRN_BLOCK_SIZE = 1000;
 
     public String generateRRN() {
-        long currentCounter = counter.getAndIncrement();
-        long currentBaseRrn;
-        if (currentCounter >= RRN_BLOCK_SIZE) {
-            synchronized (counter) {
-                currentCounter = counter.get();
-                if (currentCounter >= RRN_BLOCK_SIZE) {
-                    currentBaseRrn = limitUsageRepository.fetchRrnBlock();
-                    baseRrn.set(currentBaseRrn);
-                    counter.set(1);
-                    currentCounter = 0;
-                } else {
-                    currentBaseRrn = baseRrn.get();
-                    currentCounter = counter.getAndIncrement();
-                }
+        long rrn;
+        synchronized (monitor) {
+            if (counter == RRN_BLOCK_SIZE) {
+                baseRrn = limitUsageRepository.fetchRrnBlock();
+                counter = 0;
             }
-        } else {
-            currentBaseRrn = baseRrn.get();
+            rrn = baseRrn * RRN_BLOCK_SIZE + (counter++);
         }
-        long rrn = currentBaseRrn * RRN_BLOCK_SIZE + currentCounter;
 
         LocalDate now = LocalDate.now();
         return String.format("%1d%03d%08d", now.getYear() % 10, now.getDayOfYear(), rrn);

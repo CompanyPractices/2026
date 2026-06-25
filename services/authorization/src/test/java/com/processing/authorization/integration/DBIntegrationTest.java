@@ -16,6 +16,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.processing.authorization.client.CardManagementClient;
 import com.processing.authorization.entities.LimitUsage;
@@ -185,8 +190,7 @@ public class DBIntegrationTest {
 
         int deletedCount = limitUsageRepository.deleteByUsageDateBetween(
                 firstDayPreviousMonth,
-                lastDayPreviousMonth
-        );
+                lastDayPreviousMonth);
 
         assertThat(deletedCount).isEqualTo(3);
 
@@ -198,7 +202,7 @@ public class DBIntegrationTest {
     }
 
     private CardModel createCard(CardModelStatus status, YearMonth expiryDate,
-                                 BigDecimal availableBalance, BigDecimal dailyLimit, BigDecimal monthlyLimit) {
+            BigDecimal availableBalance, BigDecimal dailyLimit, BigDecimal monthlyLimit) {
         return new CardModel(
                 UUID.randomUUID(),
                 TEST_PAN,
@@ -211,8 +215,7 @@ public class DBIntegrationTest {
                 monthlyLimit,
                 availableBalance,
                 "I001",
-                Instant.now()
-        );
+                Instant.now());
     }
 
     private CardModel createActiveCard() {
@@ -221,8 +224,7 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000)
-        );
+                BigDecimal.valueOf(10000));
     }
 
     private CardModel createBlockedCard() {
@@ -231,8 +233,7 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000)
-        );
+                BigDecimal.valueOf(10000));
     }
 
     private CardModel createExpiredCardModel() {
@@ -241,8 +242,7 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 1),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000)
-        );
+                BigDecimal.valueOf(10000));
     }
 
     private CardModel createInactiveCardModel() {
@@ -251,8 +251,7 @@ public class DBIntegrationTest {
                 YearMonth.of(2029, 1),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000)
-        );
+                BigDecimal.valueOf(10000));
     }
 
     private CardModel createCardWithLowBalance() {
@@ -261,8 +260,7 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 BigDecimal.valueOf(1000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000)
-        );
+                BigDecimal.valueOf(10000));
     }
 
     private CardModel createActiveCardModelWithLowMonthlyLimit() {
@@ -271,8 +269,7 @@ public class DBIntegrationTest {
                 YearMonth.of(2026, 12),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500),
-                BigDecimal.valueOf(10000)
-        );
+                BigDecimal.valueOf(10000));
     }
 
     private CardModel createCardExpiredByDate() {
@@ -281,8 +278,7 @@ public class DBIntegrationTest {
                 YearMonth.of(2006, 12),
                 BigDecimal.valueOf(100000),
                 BigDecimal.valueOf(500000),
-                BigDecimal.valueOf(10000)
-        );
+                BigDecimal.valueOf(10000));
     }
 
     private LimitUsage createLimitUsage(String pan, LocalDate usageDate, BigDecimal amount) {
@@ -364,6 +360,30 @@ public class DBIntegrationTest {
         long firstNum = Long.parseLong(firstOfFirstBlock.substring(4));
         long secondBlockNum = Long.parseLong(firstOfSecondBlock.substring(4));
         assertThat(secondBlockNum / 1000).isEqualTo(firstNum / 1000 + 1);
+    }
+
+    @Test
+    void generateRRNShouldBeUniqueUnderConcurrentAccess() throws Exception {
+        int threadCount = 10;
+        int iterationsPerThread = 101;
+        Set<String> rrns = ConcurrentHashMap.newKeySet();
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        for (int t = 0; t < threadCount; t++) {
+            executor.submit(() -> {
+                try {
+                    for (int i = 0; i < iterationsPerThread; i++) {
+                        String rrn = authService.generateRRN();
+                        rrns.add(rrn);
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await(5, TimeUnit.SECONDS);
+        executor.shutdownNow();
+        assertThat(rrns).hasSize(threadCount * iterationsPerThread);
     }
 
 }
