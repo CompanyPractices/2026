@@ -22,9 +22,7 @@ import java.time.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.time.format.DateTimeFormatter;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.web.client.ResourceAccessException;
 
@@ -35,7 +33,6 @@ public class AuthServiceImpl implements AuthService {
     private final AuthorizationEventNotifier eventNotifier;
 
     private final CardManagementClient cardManagementClient;
-
 
     @Transactional(rollbackFor = { Exception.class })
     public AuthorizationResponse authorize(AuthorizationRequest request, Instant requestInputTime) {
@@ -176,26 +173,23 @@ public class AuthServiceImpl implements AuthService {
         return true;
     }
 
-    private final AtomicReference<String> lastTimestampAndSeq = new AtomicReference<>("");
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyDDDHHmmss");
+    private final Object monitor = new Object();
+    private long baseRrn;
+    private int counter = 1000;
+    private static final int RRN_BLOCK_SIZE = 1000;
 
     public String generateRRN() {
-        String currentSecond = FORMATTER.format(LocalDateTime.now()).substring(1);
-        String nextValue;
-        while (true) {
-            String currentState = lastTimestampAndSeq.get();
-            int nextSeq = 0;
-            if (currentState != null && currentState.startsWith(currentSecond)) {
-                int lastSeq = Integer.parseInt(currentState.substring(10));
-                nextSeq = (lastSeq + 1) % 100;
+        long rrn;
+        synchronized (monitor) {
+            if (counter == RRN_BLOCK_SIZE) {
+                baseRrn = limitUsageRepository.fetchRrnBlock();
+                counter = 0;
             }
-
-            nextValue = currentSecond + String.format("%02d", nextSeq);
-            if (lastTimestampAndSeq.compareAndSet(currentState, nextValue)) {
-                break;
-            }
+            rrn = baseRrn * RRN_BLOCK_SIZE + (counter++);
         }
-        return nextValue;
+
+        LocalDate now = LocalDate.now();
+        return String.format("%1d%03d%08d", now.getYear() % 10, now.getDayOfYear(), rrn);
     }
 
     private static final Random RANDOM = new SecureRandom();

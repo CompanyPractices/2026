@@ -24,7 +24,7 @@ public class CardManagementHealthController {
         return ResponseEntity.ok(new CardManagementHealthResponse(
             "ok",
             "card-management",
-            cardService.countAllCards()
+            cardService.countAllCardsAndUpdate()
         ));
     }
 }

@@ -92,4 +92,28 @@ public interface LimitUsageRepository extends JpaRepository<LimitUsage, UUID> {
                         @Param("dailyLimit") BigDecimal dailyLimit,
                         @Param("monthlyLimit") BigDecimal monthlyLimit);
 
+        /**
+         * Получает следующее значение из последовательности rrn_seq.
+         *
+         * @return следующее значение последовательности
+         */
+        @Query(value = "SELECT nextval('rrn_seq')", nativeQuery = true)
+        long getNextRrn();
+
+        /**
+         * Устанавливает текущее значение последовательности rrn_seq.
+         * <p>
+         * Используется для тестирования или восстановления после ошибок.
+         *
+         * @param newRrn новое значение последовательности
+         */
+        @Query(value = "SELECT setval('rrn_seq', :newRrn)", nativeQuery = true)
+        void saveRrn(@Param("newRrn") long newRrn);
+
+        /**
+         * Атомарно получает и резервирует значение rrn.
+         *
+         */
+        @Query(value = "SELECT setval('rrn_seq', nextval('rrn_seq'))", nativeQuery = true)
+        long fetchRrnBlock();
 }

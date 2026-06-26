@@ -15,35 +15,27 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 import io.github.bucket4j.Bucket;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class TransactionSender {
   private final GatewayClient gatewayClient;
   private final TransactionMetrics transactionMetrics;
-  private final Semaphore semaphore;
-  private final Bucket bucket;
 
-  public TransactionSender(GatewayClient gatewayClient,
-                           TransactionMetrics transactionMetrics,
-                           @Value("${simulation.sender.concurrency}") int concurrency,
-                           @Value("${simulation.sender.tps}") int tps) {
-    this.gatewayClient = gatewayClient;
-    this.transactionMetrics = transactionMetrics;
-    this.semaphore = new Semaphore(concurrency);
-    this.bucket = Bucket.builder()
+  public SimulatorStats sendAll(List<AuthorizationRequest> requests, int tps) {
+    int concurrency = Math.max(1, tps / 2);
+    Semaphore semaphore = new Semaphore(concurrency);
+    Bucket bucket = Bucket.builder()
             .addLimit(limit -> limit
                     .capacity(tps)
                     .refillGreedy(tps, Duration.ofSeconds(1))
             )
             .build();
-    log.info("Initialized with Concurrency: {} and Target TPS: {}", concurrency, tps);
-  }
-
-  public SimulatorStats sendAll(List<AuthorizationRequest> requests) {
+    log.info("sendAll: target TPS={}, concurrency={}, requests={}", tps, concurrency, requests.size());
 
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
       List<Future<AuthorizationResponse>> futures = new ArrayList<>(requests.size());

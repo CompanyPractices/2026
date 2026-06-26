@@ -409,7 +409,7 @@ public class CardServiceTest {
     void testCountAllCards() {
         var returnValue = 1L;
         when(cardRepository.countAllCards()).thenReturn(returnValue);
-        assertEquals(returnValue, cardService.countAllCards());
+        assertEquals(returnValue, cardService.countAllCardsAndUpdate());
     }
 
     @Test
