@@ -37,6 +37,15 @@ public class TerminalSimulatorService {
     private final AtomicReference<Thread> continuousLoopThread = new AtomicReference<>(null);  // видимость
     // из разных потоков (методы start-continuous и stop)
 
+    private record TransactionLogEntry(
+            long timestampMs,
+            int sequenceNumber,
+            String transactionType,
+            String circuitBreakerState,
+            String resultStatus,
+            String detail
+    ) {}
+
     public  TerminalSimulatorService(GatewayClient gatewayClient, TransactionFactory transactionFactory,
                                      ScenarioTaskGenerator taskGenerator,
                                      TerminalCircuitBreaker circuitBreaker,
@@ -81,23 +90,30 @@ public class TerminalSimulatorService {
         List<TransactionTask> tasks = taskGenerator.generateTasks(scenario, count);
 
         ConcurrentLinkedQueue<AuthorizationResponse> authResponses = new ConcurrentLinkedQueue<>();
+        ConcurrentLinkedQueue<TransactionLogEntry> logEntries = new ConcurrentLinkedQueue<>();
         AtomicInteger approved = new AtomicInteger(0);
         AtomicInteger declined = new AtomicInteger(0);
-
+        AtomicInteger sequenceGenerator = new AtomicInteger(0);
         AtomicInteger totalSubmitted = new AtomicInteger(0);
-        long delayMs = 1000 / tps;
 
+        long delayMs = 1000 / tps;
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            // главный поток заходит и раздает задачи экзекутору
             for (TransactionTask task : tasks) {
                 // неблокирующий метод, закидывает задачу в пул
+                final int seqNum = sequenceGenerator.incrementAndGet(); // исходный порядок генерации таски
                 executor.submit(() -> {  // создаю задачу (объект Runnable), без входящих аргументов, с таким кодом:
                     totalSubmitted.incrementAndGet();
 
+                    String cbSnapshot = circuitBreaker.isCallAllowed() ? "ALLOWED" : "OPEN";
                     if (!circuitBreaker.isCallAllowed()) {
                         authResponses.add(new AuthorizationResponse(null, null, null, null,
                                 null, null, "Circuit Breaker in transaction-simulator: "
                                 + "Gateway is down, request skipped", 0));
+
+                        logEntries.add(new TransactionLogEntry(
+                                System.currentTimeMillis(), seqNum, task.type().name(),
+                                cbSnapshot, "SKIPPED_BY_CB", "Circuit Breaker is OPEN"
+                        ));
                         return;
                     }
                     try {
@@ -106,17 +122,37 @@ public class TerminalSimulatorService {
                         authResponses.add(resp);
 
                         circuitBreaker.recordSuccess();
+
+                        logEntries.add(new TransactionLogEntry(
+                                System.currentTimeMillis(), seqNum, task.type().name(),
+                                cbSnapshot, "SUCCESS", "Status: " + resp.status() + (resp.declineReason() != null ? " (" + resp.declineReason() + ")" : "")
+                        ));
                     } catch (org.springframework.web.client.ResourceAccessException e) {
                         handleNetworkFailure(e.getMessage(), authResponses);  // лог, добавление заглушки, и либо из half_open в
                         // open, либо увеличиваем счетчик ошибок и переводим из closed в open (при достижении errorThreshold)
+
+                        logEntries.add(new TransactionLogEntry(
+                                System.currentTimeMillis(), seqNum, task.type().name(),
+                                cbSnapshot, "CATCH_ResourceAccessException", e.getMessage()
+                        ));
                     } catch (org.springframework.web.client.HttpStatusCodeException e) {
                         if (e.getStatusCode().is5xxServerError()) {
                             handleNetworkFailure("Gateway internal error(5xx): " + e.getStatusCode(), authResponses);
                         } else {
                             handleInternalFailure("Gateway client error(4xx): " + e.getMessage(), e, authResponses);
                         }
+
+                        logEntries.add(new TransactionLogEntry(
+                                System.currentTimeMillis(), seqNum, task.type().name(),
+                                cbSnapshot, "CATCH_HttpStatusCodeException", "Response: " + e.getResponseBodyAsString()
+                        ));
                     } catch (Exception e) {
                         handleInternalFailure("Internal terminal simulation error", e, authResponses);
+
+                        logEntries.add(new TransactionLogEntry(
+                                System.currentTimeMillis(), seqNum, task.type().name(),
+                                cbSnapshot, "INTERNAL_SIM_ERROR", e.getMessage()
+                        ));
                     }
                 });
 
@@ -135,6 +171,23 @@ public class TerminalSimulatorService {
         } catch (Exception e) {
             log.error("Critical execution error in simulation main loop: {}", e.getMessage());
         }
+
+        List<TransactionLogEntry> sortedTimeline = logEntries.stream()
+                .sorted(Comparator.comparingLong(TransactionLogEntry::timestampMs)
+                        .thenComparingInt(TransactionLogEntry::sequenceNumber))
+                .toList();
+
+        log.info("======================= SIMULATION TIMELINE REPORT =======================");
+        for (TransactionLogEntry entry : sortedTimeline) {
+            log.info(String.format("Time: %d | Seq: %04d | CB_Start: %-7s | Type: %-20s | Result: %-15s | Detail: %s",
+                    entry.timestampMs(),
+                    entry.sequenceNumber(),
+                    entry.circuitBreakerState(),
+                    entry.transactionType(),
+                    entry.resultStatus(),
+                    entry.detail()));
+        }
+        log.info("==========================================================================");
 
         long elapsed = System.currentTimeMillis() - start;
         return new TerminalRunResponse(totalSubmitted.get(), approved.get(), declined.get(), elapsed,
