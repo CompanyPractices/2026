@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ErrorBoundary } from '../ErrorBoundary';
-import { ReactNode } from 'react';
+import { ReactNode, ErrorInfo } from 'react';
 
 function BrokenChild({ message = 'Сломался!' }: { message?: string }) {
     throw new Error(message);
@@ -24,7 +24,7 @@ const ERROR_MESSAGES = {
     chart: 'Ошибка графика',
 } as const;
 
-const renderWithBrokenChild = (props: { name?: string; fallback?: ReactNode; onError?: (error: Error, info: any, name: string) => void; children?: ReactNode } = {}) => {
+const renderWithBrokenChild = (props: { name?: string; fallback?: ReactNode; onError?: (error: Error, info: ErrorInfo, name: string) => void; children?: ReactNode } = {}) => {
     const { children = <BrokenChild />, ...rest } = props;
     return render(
         <ErrorBoundary name={TEST_NAMES.widget} {...rest}>
